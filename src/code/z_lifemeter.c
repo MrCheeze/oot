@@ -382,8 +382,6 @@ void Health_Draw(GlobalContext* globalCtx) {
     Graph_CloseDisps(dispRefs, gfxCtx, "../z_lifemeter.c", 606);
 }
 
-u32 Health_IsCritical(void);
-
 void Health_HandleCriticalAlarm(GlobalContext* globalCtx) {
     InterfaceContext* interfaceCtx = &globalCtx->interfaceCtx;
 
