@@ -523,6 +523,9 @@ beginseg
     include "build/src/code/z_construct.o"
     include "build/data/rsp.text.o"
     include "build/data/rsp.rodata.o"
+    include "zelda_magic_fire.o"
+    include "zelda_magic_ice.o"
+    include "zelda_magic_wind.o"
 endseg
 
 beginseg

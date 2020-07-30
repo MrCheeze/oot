@@ -949,7 +949,7 @@ void func_80083108(GlobalContext* globalCtx) {
                     }
                 }
 
-                if (interfaceCtx->restrictions.farores != 0) {
+                if (0) {
                     for (i = 1; i < 4; i++) {
                         if (gSaveContext.equips.buttonItems[i] == ITEM_FARORES_WIND) {
                             if (gSaveContext.buttonStatus[i] == BTN_ENABLED) {
@@ -960,7 +960,7 @@ void func_80083108(GlobalContext* globalCtx) {
                             osSyncPrintf("***(i=%d)***  ", i);
                         }
                     }
-                } else if (interfaceCtx->restrictions.farores == 0) {
+                } else if (1) {
                     for (i = 1; i < 4; i++) {
                         if (gSaveContext.equips.buttonItems[i] == ITEM_FARORES_WIND) {
                             if (gSaveContext.buttonStatus[i] == BTN_DISABLED) {

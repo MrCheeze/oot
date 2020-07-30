@@ -1,3 +1,8 @@
+anime_1_model = 0x08000000;
+anime_2_model = 0x09000000;
+anime_3_model = 0x0A000000;
+anime_4_model = 0x0B000000;
+
 // libultra OS symbols
 D_80000000 = 0x80000000;
 D_80000002 = 0x80000002;

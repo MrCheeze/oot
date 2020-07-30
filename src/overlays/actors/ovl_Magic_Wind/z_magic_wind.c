@@ -122,6 +122,24 @@ u8 sAlphaUpdVals[] = {
     0x00, 0x03, 0x04, 0x07, 0x09, 0x0A, 0x0D, 0x0F, 0x11, 0x12, 0x15, 0x16, 0x19, 0x1B, 0x1C, 0x1F, 0x21, 0x23,
 };
 
+extern TransformUpdateIndex magic_fire_fcurve_data;
+extern TransformUpdateIndex magic_ice_fcurve_data;
+extern TransformUpdateIndex magic_wind_fcurve_data;
+extern SkelCurveLimbList magic_fire_mdl_info;
+extern SkelCurveLimbList magic_ice_mdl_info;
+extern SkelCurveLimbList magic_wind_mdl_info;
+
+TransformUpdateIndex* fcurve_data_list[] = {
+    &magic_wind_fcurve_data,
+    &magic_ice_fcurve_data,
+    &magic_fire_fcurve_data,
+};
+SkelCurveLimbList* mdl_info_list[] = {
+    &magic_wind_mdl_info,
+    &magic_ice_mdl_info,
+    &magic_fire_mdl_info,
+};
+
 void MagicWind_SetupAction(MagicWind* this, MagicWindFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
@@ -130,19 +148,22 @@ void MagicWind_Init(Actor* thisx, GlobalContext* globalCtx) {
     MagicWind* this = THIS;
     Player* player = PLAYER;
 
-    if (SkelCurve_Init(globalCtx, &this->skelCurve, &sLimbList, &sTransformUpdIdx) == 0) {
+    TransformUpdateIndex* fcurve_data_item = fcurve_data_list[player->unk_84F];
+    SkelCurveLimbList* mdl_info_item = mdl_info_list[player->unk_84F];
+
+    if (SkelCurve_Init(globalCtx, &this->skelCurve, mdl_info_item, fcurve_data_item) == 0) {
         // Magic_Wind_Actor_ct (): Construct failed
         osSyncPrintf("Magic_Wind_Actor_ct():コンストラクト失敗\n");
     }
     this->actor.room = -1;
     switch (this->actor.params) {
         case 0:
-            SkelCurve_SetAnim(&this->skelCurve, &sTransformUpdIdx, 0.0f, 60.0f, 0.0f, 1.0f);
+            SkelCurve_SetAnim(&this->skelCurve, fcurve_data_item, 0.0f, fcurve_data_item->unk_10, 0.0f, 1.0f);
             this->timer = 29;
             MagicWind_SetupAction(this, MagicWind_WaitForTimer);
             break;
         case 1:
-            SkelCurve_SetAnim(&this->skelCurve, &sTransformUpdIdx, 60.0f, 0.0f, 60.0f, -1.0f);
+            SkelCurve_SetAnim(&this->skelCurve, fcurve_data_item, fcurve_data_item->unk_10, 0.0f, fcurve_data_item->unk_10, -1.0f);
             MagicWind_SetupAction(this, MagicWind_Shrink);
             // "Indicates start" = %s
             // Means start
@@ -163,7 +184,7 @@ void MagicWind_Destroy(Actor* thisx, GlobalContext* globalCtx) {
 void MagicWind_UpdateAlpha(f32 alpha) {
     s32 i;
     for (i = 0; i < ARRAY_COUNT(sAlphaUpdVals); i++) {
-        sCylinderVtx[sAlphaUpdVals[i]].n.a = alpha * 255.0f;
+        //magic_wind_v[sAlphaUpdVals[i]].n.a = alpha * 255.0f;
     }
 }
 
@@ -258,7 +279,7 @@ void MagicWind_Draw(Actor* thisx, GlobalContext* globalCtx) {
     Graph_OpenDisps(dispRefs, gfxCtx, "../z_magic_wind.c", 661);
     if (this->actionFunc != MagicWind_WaitForTimer) {
         gfxCtx->polyXlu.p = Gfx_CallSetupDL(gfxCtx->polyXlu.p, 25);
-        SkelCurve_Draw(thisx, globalCtx, &this->skelCurve, MagicWind_OverrideLimbDraw, NULL, 1, NULL);
+        SkelCurve_Draw(thisx, globalCtx, &this->skelCurve, NULL, NULL, 1, NULL);
     }
     Graph_CloseDisps(dispRefs, gfxCtx, "../z_magic_wind.c", 673);
 }
