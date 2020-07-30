@@ -54,7 +54,7 @@ typedef struct {
     /* 0xA */ s16 radius;
 } LightInfoPositionalParams;
 
-typedef struct {
+typedef struct LightMapper {
     /* 0x00 */ u8 numLights;
     /* 0x01 */ u8 enablePosLights;
     /* 0x02 */ UNK_TYPE1 pad2[6];
