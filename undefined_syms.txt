@@ -1,3 +1,18 @@
+anime_1_model = 0x08000000;
+anime_2_model = 0x09000000;
+anime_3_model = 0x0A000000;
+anime_4_model = 0x0B000000;
+anime_5_model = 0x0C000000;
+anime_6_model = 0x0D000000;
+anime_1_txt = 0x08000000;
+anime_2_txt = 0x09000000;
+anime_3_txt = 0x0A000000;
+anime_4_txt = 0x0B000000;
+anime_5_txt = 0x0C000000;
+anime_6_txt = 0x0D000000;
+gameplay_object_exchange = 0x06000000;
+Mtx_clear = gMtxClear;
+
 // libultra OS symbols
 D_80000000 = 0x80000000;
 D_80000002 = 0x80000002;
