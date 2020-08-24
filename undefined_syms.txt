@@ -1,3 +1,8 @@
+D_801550D0 = AudiobankHeaderStart;
+D_80155340 = AudiomapHeaderStart;
+D_80155500 = AudioseqHeaderStart;
+D_80155BF0 = AudiowaveHeaderStart;
+
 // libultra OS symbols
 D_80000000 = 0x80000000;
 D_80000002 = 0x80000002;
