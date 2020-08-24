@@ -121,17 +121,17 @@ endseg
 beginseg
     name "Audiobank"
     address 0x10 // fake RAM address to avoid map lookup inaccuracies
-    include "lib/audio/ZeldaAudio_banks.o"
+    include "lib/ZeldaAudio_banks.o"
 endseg
 
 beginseg
     name "Audioseq"
-    include "lib/audio/ZeldaAudioPal_music.o"
+    include "lib/ZeldaAudio_music.o"
 endseg
 
 beginseg
     name "Audiotable"
-    include "lib/audio/ZeldaAudio_table.o"
+    include "lib/ZeldaAudio_table.o"
 endseg
 
 beginseg
@@ -522,10 +522,10 @@ beginseg
     include "build/src/code/code_80110450.o"
     include "build/src/code/z_construct.o"
     include "build/data/rsp.text.o"
-    include "lib/audio/audio_hb.o"
-    include "lib/audio/audio_hm.o"
-    include "lib/audio/audio_hs.o"
-    include "lib/audio/audio_hw.o"
+    include "lib/audio_hb.o"
+    include "lib/audio_hm.o"
+    include "lib/audio_hs.o"
+    include "lib/audio_hw.o"
     include "build/data/rsp.rodata.o"
 endseg
 
