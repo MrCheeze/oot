@@ -159,7 +159,7 @@ static void build_rom(const char *filename)
     }
 
     // calculate checksum
-    n64chksum_calculate(romData, 6105, chksum);
+    n64chksum_calculate(romData, 6102, chksum);
     util_write_uint32_be(romData + 0x10, chksum[0]);
     util_write_uint32_be(romData + 0x14, chksum[1]);
 

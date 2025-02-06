@@ -37,7 +37,7 @@ COMPILER ?= ido
 #   gc-eu-mq       GameCube Europe/PAL Master Quest
 #   gc-jp-ce       GameCube Japan (Collector's Edition disc)
 #   ique-cn        iQue Player (Simplified Chinese)
-VERSION ?= gc-eu-mq-dbg
+VERSION ?= hiratsu3
 # Number of threads to extract and compress with.
 N_THREADS ?= $(shell nproc)
 # Check code syntax with host compiler.
@@ -158,6 +158,14 @@ else ifeq ($(VERSION),gc-eu-mq)
   BUILD_CREATOR := zelda@srd022j
   BUILD_DATE := 03-02-21
   BUILD_TIME := 20:37:19
+  REVISION := 15
+else ifeq ($(VERSION),hiratsu3)
+  REGION ?= US
+  PLATFORM := GC
+  DEBUG_FEATURES ?= 0
+  BUILD_CREATOR := hiratsu@crucian
+  BUILD_DATE := 03-02-28
+  BUILD_TIME := 17:24:12
   REVISION := 15
 else ifeq ($(VERSION),gc-jp-ce)
   REGION ?= JP
@@ -812,14 +820,14 @@ endif
 #### Various Recipes ####
 
 $(ROM): $(ELF)
-	$(ELF2ROM) -cic 6105 $< $@
+	$(ELF2ROM) -cic 6102 $< $@
 
 ifeq ($(PLATFORM),IQUE)
   COMPRESS_ARGS := --format gzip --pad-to 0x4000
   CIC = 6102
 else
   COMPRESS_ARGS := --format yaz0 --pad-to 0x800000 --fill-padding-bytes
-  CIC = 6105
+  CIC = 6102
 endif
 
 $(ROMC): $(ROM) $(ELF) $(BUILD_DIR)/compress_ranges.txt

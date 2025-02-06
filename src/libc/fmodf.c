@@ -16,6 +16,18 @@
  * @return f32 0.0f if y is 0.0f, or x modulo y otherwise
  */
 f32 fmodf(f32 x, f32 y) {
+#if OOT_VERSION == HIRATSU3
+    f32 d;
+    s32 n;
+
+    if (y == 0.0f) {
+        return 0.0f;
+    }
+    d = x / y;
+    n = d;
+
+    return (d - n) * y;
+#else
     s32 n;
 
     if (y == 0.0f) {
@@ -24,4 +36,5 @@ f32 fmodf(f32 x, f32 y) {
     n = x / y;
 
     return x - (n * y);
+#endif
 }

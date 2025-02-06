@@ -33,7 +33,7 @@ ActorProfile En_Mag_Profile = {
 
 static s16 sDelayTimer = 0;
 
-#if OOT_VERSION < GC_US || PLATFORM_IQUE
+#if OOT_VERSION < GC_US || PLATFORM_IQUE || OOT_VERSION == HIRATSU3
 void EnMag_ResetSram(void) {
     static u8 buffer[0x2000];
 
@@ -145,7 +145,7 @@ void EnMag_Init(Actor* thisx, PlayState* play) {
 void EnMag_Destroy(Actor* thisx, PlayState* play) {
 }
 
-#if OOT_VERSION < GC_US || PLATFORM_IQUE
+#if OOT_VERSION < GC_US || PLATFORM_IQUE || OOT_VERSION == HIRATSU3
 void EnMag_CheckSramResetCode(PlayState* play, EnMag* this) {
     static s32 sSramResetCode[] = {
         BTN_DUP, BTN_DDOWN,  BTN_DLEFT, BTN_DRIGHT, BTN_START, BTN_B, BTN_CDOWN,
@@ -195,7 +195,7 @@ void EnMag_Update(Actor* thisx, PlayState* play) {
     Input* input = &play->state.input[0];
     EnMag* this = (EnMag*)thisx;
 
-#if OOT_VERSION < GC_US || PLATFORM_IQUE
+#if OOT_VERSION < GC_US || PLATFORM_IQUE || OOT_VERSION == HIRATSU3
     EnMag_CheckSramResetCode(play, this);
 #endif
 
@@ -262,7 +262,7 @@ void EnMag_Update(Actor* thisx, PlayState* play) {
 
     if (this->globalState == MAG_STATE_FADE_IN) {
         if (this->effectFadeInState == 0) {
-#if !PLATFORM_GC
+#if !PLATFORM_GC || OOT_VERSION == HIRATSU3
             this->effectPrimLodFrac += 0.8f;
             this->effectAlpha += 6.375f;
 #else
@@ -292,7 +292,7 @@ void EnMag_Update(Actor* thisx, PlayState* play) {
                 this->effectFadeInState = 1;
             }
         } else if (this->effectFadeInState == 1) {
-#if !PLATFORM_GC
+#if !PLATFORM_GC || OOT_VERSION == HIRATSU3
             this->effectPrimLodFrac += 2.4f;
 #endif
 #if !OOT_MQ
@@ -302,7 +302,7 @@ void EnMag_Update(Actor* thisx, PlayState* play) {
             this->effectPrimColor[0] += -2.125f;
             this->effectEnvColor[0] += -1.375f;
 #endif
-#if PLATFORM_GC
+#if PLATFORM_GC && OOT_VERSION != HIRATSU3
             this->effectPrimLodFrac += 2.4f;
 #endif
 
@@ -711,7 +711,7 @@ void EnMag_DrawInner(Actor* thisx, PlayState* play, Gfx** gfxP) {
                     (s16)this->copyrightAlpha);
 
     if ((s16)this->copyrightAlpha != 0) {
-#if PLATFORM_N64
+#if PLATFORM_N64 || OOT_VERSION == HIRATSU3
         gDPLoadTextureBlock(gfx++, gTitleCopyright1998Tex, G_IM_FMT_IA, G_IM_SIZ_8b, 128, 16, 0,
                             G_TX_NOMIRROR | G_TX_CLAMP, G_TX_NOMIRROR | G_TX_CLAMP, G_TX_NOMASK, G_TX_NOMASK,
                             G_TX_NOLOD, G_TX_NOLOD);

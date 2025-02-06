@@ -16,6 +16,9 @@
 #include "terminal.h"
 #include "versions.h"
 
+#define PLATFORM_IQUE 1
+#define PLATFORM_GC 0
+
 #pragma increment_block_number "gc-eu:128 gc-eu-mq:128 ntsc-1.0:128 ntsc-1.1:128 ntsc-1.2:128 pal-1.0:128 pal-1.1:128"
 
 #if !PLATFORM_GC
@@ -4660,3 +4663,6 @@ void KaleidoScope_Update(PlayState* play) {
             break;
     }
 }
+
+#define PLATFORM_IQUE 0
+#define PLATFORM_GC 1

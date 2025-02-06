@@ -7,7 +7,7 @@
 s32 gCurrentRegion = 0;
 
 void Locale_Init(void) {
-#if !PLATFORM_GC
+#if !PLATFORM_GC || OOT_VERSION == HIRATSU3
     ALIGNED(4) u8 regionInfo[4];
     u8 countryCode;
 
@@ -41,7 +41,7 @@ void Locale_Init(void) {
             PRINTF_COLOR_ERROR();
             PRINTF(T("z_locale_init: 日本用かアメリカ用か判別できません\n",
                      "z_locale_init: Can't tell if it's for Japan or America\n"));
-            LogUtils_HungupThread("../z_locale.c", LN4(86, 92, 101, UNK_LINE, 118));
+            LogUtils_HungupThread("../z_locale.c", 125);
             PRINTF(VT_RST);
             break;
     }

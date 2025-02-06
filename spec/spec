@@ -987,7 +987,7 @@ endseg
 
 // Overlays for most actors and effects are reordered between versions. On N64 and iQue,
 // the overlays are in some arbitrary order, while on GameCube they are sorted alphabetically.
-#if !PLATFORM_GC
+#if !PLATFORM_GC || OOT_VERSION == HIRATSU3
 #include "overlays_n64_ique.inc"
 #else
 #include "overlays_gc.inc"

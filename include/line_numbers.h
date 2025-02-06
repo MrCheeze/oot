@@ -28,6 +28,8 @@
 #define LN(ntsc_1_0, ntsc_1_1, pal_1_0, ntsc_1_2, pal_1_1, gc_jp, gc_jp_mq, gc_us, gc_us_mq, gc_eu_mq_dbg, gc_eu, gc_eu_mq, gc_jp_ce, ique_cn) (gc_eu)
 #elif OOT_VERSION == GC_EU_MQ
 #define LN(ntsc_1_0, ntsc_1_1, pal_1_0, ntsc_1_2, pal_1_1, gc_jp, gc_jp_mq, gc_us, gc_us_mq, gc_eu_mq_dbg, gc_eu, gc_eu_mq, gc_jp_ce, ique_cn) (gc_eu_mq)
+#elif OOT_VERSION == HIRATSU3
+#define LN(ntsc_1_0, ntsc_1_1, pal_1_0, ntsc_1_2, pal_1_1, gc_jp, gc_jp_mq, gc_us, gc_us_mq, gc_eu_mq_dbg, gc_eu, gc_eu_mq, gc_jp_ce, ique_cn) (ique_cn)
 #elif OOT_VERSION == GC_JP_CE
 #define LN(ntsc_1_0, ntsc_1_1, pal_1_0, ntsc_1_2, pal_1_1, gc_jp, gc_jp_mq, gc_us, gc_us_mq, gc_eu_mq_dbg, gc_eu, gc_eu_mq, gc_jp_ce, ique_cn) (gc_jp_ce)
 #elif OOT_VERSION == IQUE_CN

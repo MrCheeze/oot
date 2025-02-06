@@ -43,7 +43,7 @@ def round_up(n, shift):
 
 def update_crc(decompressed: io.BytesIO) -> io.BytesIO:
     print("Recalculating crc...")
-    calculated_checksum = ipl3checksum.CICKind.CIC_X105.calculateChecksum(
+    calculated_checksum = ipl3checksum.CICKind.CIC_6102_7101.calculateChecksum(
         bytes(decompressed.getbuffer())
     )
     new_crc = struct.pack(f">II", calculated_checksum[0], calculated_checksum[1])

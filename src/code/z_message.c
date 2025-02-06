@@ -8,7 +8,7 @@
 #endif
 
 #pragma increment_block_number "gc-eu:0 gc-eu-mq:0 gc-jp:128 gc-jp-ce:128 gc-jp-mq:128 gc-us:128 gc-us-mq:128" \
-                               "ntsc-1.0:80 ntsc-1.1:80 ntsc-1.2:80 pal-1.0:128 pal-1.1:128"
+                               "ntsc-1.0:80 ntsc-1.1:80 ntsc-1.2:80 pal-1.0:128 pal-1.1:128 hiratsu3:128"
 
 #if !PLATFORM_IQUE
 #define MSG_BUF_DECODED (msgCtx->msgBufDecoded)
@@ -23,7 +23,7 @@
 #define MSG_BUF_WIDE ((u16*)font->msgBufWide)
 #endif
 
-#if !PLATFORM_GC
+#if !PLATFORM_GC || OOT_VERSION == HIRATSU3
 #define OCARINA_BUTTON_A_PRIM_1_R 80
 #define OCARINA_BUTTON_A_PRIM_1_G 150
 #define OCARINA_BUTTON_A_PRIM_1_B 255
@@ -33,7 +33,7 @@
 #define OCARINA_BUTTON_A_PRIM_1_B 150
 #endif
 
-#if !PLATFORM_GC
+#if !PLATFORM_GC || OOT_VERSION == HIRATSU3
 #define OCARINA_BUTTON_A_PRIM_2_R 100
 #define OCARINA_BUTTON_A_PRIM_2_G 200
 #define OCARINA_BUTTON_A_PRIM_2_B 255
@@ -43,7 +43,7 @@
 #define OCARINA_BUTTON_A_PRIM_2_B 200
 #endif
 
-#if !PLATFORM_GC
+#if !PLATFORM_GC || OOT_VERSION == HIRATSU3
 #define OCARINA_BUTTON_A_ENV_1_R 10
 #define OCARINA_BUTTON_A_ENV_1_G 10
 #define OCARINA_BUTTON_A_ENV_1_B 10
@@ -53,7 +53,7 @@
 #define OCARINA_BUTTON_A_ENV_1_B 10
 #endif
 
-#if !PLATFORM_GC
+#if !PLATFORM_GC || OOT_VERSION == HIRATSU3
 #define OCARINA_BUTTON_A_ENV_2_R 50
 #define OCARINA_BUTTON_A_ENV_2_G 50
 #define OCARINA_BUTTON_A_ENV_2_B 255
@@ -63,7 +63,7 @@
 #define OCARINA_BUTTON_A_ENV_2_B 50
 #endif
 
-#if !PLATFORM_GC
+#if !PLATFORM_GC || OOT_VERSION == HIRATSU3
 #define OCARINA_ICON_PRIM_1_R 0
 #define OCARINA_ICON_PRIM_1_G 80
 #define OCARINA_ICON_PRIM_1_B 200
@@ -73,7 +73,7 @@
 #define OCARINA_ICON_PRIM_1_B 80
 #endif
 
-#if !PLATFORM_GC
+#if !PLATFORM_GC || OOT_VERSION == HIRATSU3
 #define OCARINA_ICON_PRIM_2_R 50
 #define OCARINA_ICON_PRIM_2_G 130
 #define OCARINA_ICON_PRIM_2_B 255
@@ -83,7 +83,7 @@
 #define OCARINA_ICON_PRIM_2_B 130
 #endif
 
-#if !PLATFORM_GC
+#if !PLATFORM_GC || OOT_VERSION == HIRATSU3
 #define OCARINA_ICON_ENV_1_R 0
 #define OCARINA_ICON_ENV_1_G 0
 #define OCARINA_ICON_ENV_1_B 0
@@ -93,7 +93,7 @@
 #define OCARINA_ICON_ENV_1_B 0
 #endif
 
-#if !PLATFORM_GC
+#if !PLATFORM_GC || OOT_VERSION == HIRATSU3
 #define OCARINA_ICON_ENV_2_R 0
 #define OCARINA_ICON_ENV_2_G 130
 #define OCARINA_ICON_ENV_2_B 255
@@ -4075,7 +4075,7 @@ void Message_DrawDebugText(PlayState* play, Gfx** p) {
 void Message_Draw(PlayState* play) {
     Gfx* plusOne;
     Gfx* polyOpaP;
-#if OOT_VERSION < GC_US
+#if OOT_VERSION < GC_US || OOT_VERSION == HIRATSU3
     s32 pad;
 #endif
 #if DEBUG_FEATURES
@@ -4129,7 +4129,7 @@ void Message_Update(PlayState* play) {
     };
 #if OOT_VERSION < GC_US
     static s32 sUnknown = 0;
-#elif PLATFORM_IQUE
+#elif PLATFORM_IQUE || OOT_VERSION == HIRATSU3
     static u16 sUnknown = 0;
 #endif
     static char D_80153D74 = 0;
@@ -4142,10 +4142,10 @@ void Message_Update(PlayState* play) {
     s16 averageY;
     s16 playerFocusScreenPosY;
     s16 actorFocusScreenPosY;
-#if OOT_VERSION < GC_US
+#if OOT_VERSION < GC_US || OOT_VERSION == HIRATSU3
     s32 pad1;
 #endif
-#if OOT_NTSC && OOT_VERSION < GC_US
+#if OOT_NTSC && OOT_VERSION < GC_US || OOT_VERSION == HIRATSU3
     s32 pad2;
 #endif
 

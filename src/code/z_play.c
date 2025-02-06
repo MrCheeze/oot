@@ -12,7 +12,7 @@
 #include "z64debug_display.h"
 #include "z64frame_advance.h"
 
-#pragma increment_block_number "gc-eu:128 gc-eu-mq:128 gc-jp:128 gc-jp-ce:128 gc-jp-mq:128 gc-us:128 gc-us-mq:128"
+#pragma increment_block_number "gc-eu:128 gc-eu-mq:128 gc-jp:128 gc-jp-ce:128 gc-jp-mq:128 gc-us:128 gc-us-mq:128 hiratsu3:128"
 
 TransitionTile gTransitionTile;
 s32 gTransitionTileState;
@@ -370,7 +370,7 @@ void Play_Init(GameState* thisx) {
 
     PRINTF("\nSCENE_NO=%d COUNTER=%d\n", ((void)0, gSaveContext.save.entranceIndex), gSaveContext.sceneLayer);
 
-#if PLATFORM_GC
+#if PLATFORM_GC && OOT_VERSION != HIRATSU3
     // When entering Gerudo Valley in the credits, trigger the GC emulator to play the ending movie.
     // The emulator constantly checks whether PC is 0x81000000, so this works even though it's not a valid address.
     if ((gEntranceTable[((void)0, gSaveContext.save.entranceIndex)].sceneId == SCENE_GERUDO_VALLEY) &&

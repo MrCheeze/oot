@@ -849,7 +849,7 @@ AnimTask* AnimTaskQueue_NewTask(AnimTaskQueue* animTaskQueue, s32 type) {
     return task;
 }
 
-#if !PLATFORM_GC
+#if !PLATFORM_GC || OOT_VERSION == HIRATSU3
 #define LINK_ANIMATION_OFFSET(addr, offset) \
     (((uintptr_t)_link_animetionSegmentRomStart) + SEGMENT_OFFSET(addr) + (offset))
 #else

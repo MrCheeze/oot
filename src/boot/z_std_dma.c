@@ -27,8 +27,11 @@
 #include "n64dd.h"
 #endif
 
+#define PLATFORM_N64 1
+#define PLATFORM_GC 0
+
 #pragma increment_block_number "gc-eu:128 gc-eu-mq:128 gc-jp:128 gc-jp-ce:128 gc-jp-mq:128 gc-us:128 gc-us-mq:128" \
-                               "ntsc-1.2:62 pal-1.0:60 pal-1.1:60"
+                               "ntsc-1.2:62 pal-1.0:60 pal-1.1:60 hiratsu3:128"
 
 StackEntry sDmaMgrStackInfo;
 OSMesgQueue sDmaMgrMsgQueue;
@@ -202,7 +205,7 @@ s32 DmaMgr_AudioDmaHandler(OSPiHandle* pihandle, OSIoMesg* mb, s32 direction) {
     ASSERT(direction == OS_READ, "direction == OS_READ", "../z_std_dma.c", 531);
     ASSERT(mb != NULL, "mb != NULL", "../z_std_dma.c", 532);
 
-#if PLATFORM_N64
+#if PLATFORM_N64 && OOT_VERSION != HIRATSU3
     if (D_80121212) {
         while (D_80121214) {
             Sleep_Msec(1000);
@@ -230,7 +233,7 @@ s32 DmaMgr_AudioDmaHandler(OSPiHandle* pihandle, OSIoMesg* mb, s32 direction) {
  * @param size Size of transfer.
  */
 void DmaMgr_DmaFromDriveRom(void* ram, uintptr_t rom, size_t size) {
-#if PLATFORM_N64
+#if PLATFORM_N64 && OOT_VERSION != HIRATSU3
     s32 pad;
 #endif
     OSPiHandle* handle = osDriveRomInit();
@@ -400,7 +403,7 @@ void DmaMgr_ProcessRequest(DmaRequest* req) {
                     DMA_ERROR(req, filename, "Segment Alignment Error",
                               T("セグメント境界をまたがってＤＭＡ転送することはできません",
                                 "DMA transfers cannot cross segment boundaries"),
-                              "../z_std_dma.c", LN3(575, 578, 595, 726));
+                              "../z_std_dma.c", 587);
                 }
 
                 DmaMgr_DmaRomToRam(iter->romStart + vrom - iter->file.vromStart, ram, size);
@@ -421,7 +424,7 @@ void DmaMgr_ProcessRequest(DmaRequest* req) {
                     DMA_ERROR(req, filename, "Can't Transfer Segment",
                               T("圧縮されたセグメントの途中からはＤＭＡ転送することはできません",
                                 "DMA transfer cannot be performed from the middle of a compressed segment"),
-                              "../z_std_dma.c", LN3(595, 598, 615, 746));
+                              "../z_std_dma.c", 607);
                 }
 
                 if (size != iter->file.vromEnd - iter->file.vromStart) {
@@ -430,7 +433,7 @@ void DmaMgr_ProcessRequest(DmaRequest* req) {
                     DMA_ERROR(req, filename, "Can't Transfer Segment",
                               T("圧縮されたセグメントの一部だけをＤＭＡ転送することはできません",
                                 "It is not possible to DMA only part of a compressed segment"),
-                              "../z_std_dma.c", LN3(601, 604, 621, 752));
+                              "../z_std_dma.c", 613);
                 }
 
                 // Reduce the thread priority and decompress the file, the decompression routine handles the DMA
@@ -470,7 +473,7 @@ void DmaMgr_ProcessRequest(DmaRequest* req) {
 
             DMA_ERROR(req, NULL, "DATA DON'T EXIST",
                       T("該当するデータが存在しません", "Corresponding data does not exist"), "../z_std_dma.c",
-                      LN3(621, 624, 641, 771));
+                      633);
             return;
         } else {
             // ROM is uncompressed, allow arbitrary DMA even if the region is not marked in the filesystem
@@ -536,9 +539,9 @@ s32 DmaMgr_RequestAsync(DmaRequest* req, void* ram, uintptr_t vrom, size_t size,
                         OSMesg msg) {
     static s32 sDmaMgrQueueFullLogged = 0;
 
-#if PLATFORM_IQUE
-    PRINTF("dmacopy_bg(%x, %x, %x, %x, %x, %x, %x)\n", req, ram, vrom, size, unk, queue, msg);
-#endif
+    if (0 > 3) {
+        PRINTF("dmacopy_bg(%x, %x, %x, %x, %x, %x, %x)\n", req, ram, vrom, size, unk, queue, msg);
+    }
 
 #if DEBUG_FEATURES
     if ((ram == NULL) || (osMemSize < OS_K0_TO_PHYSICAL(ram) + size) || (vrom & 1) || (vrom > 0x4000000) ||
@@ -549,7 +552,7 @@ s32 DmaMgr_RequestAsync(DmaRequest* req, void* ram, uintptr_t vrom, size_t size,
     }
 #endif
 
-#if PLATFORM_N64
+#if PLATFORM_N64 && OOT_VERSION != HIRATSU3
     if ((B_80121220 != NULL) && (B_80121220->unk_70 != NULL)) {
         if (B_80121220->unk_70(req, ram, vrom, size, unk, queue, msg) != 0) {
             return 0;
@@ -648,7 +651,7 @@ void DmaMgr_Init(void) {
         PRINTF("_bootSegmentRomStart(%08x) != dma_rom_ad[0].rom_b(%08x)\n", _bootSegmentRomStart,
                gDmaDataTable[0].file.vromEnd);
         //! @bug The main code file where fault.c resides is not yet loaded
-        Fault_AddHungupAndCrash("../z_std_dma.c", LN3(837, 840, 859, 1055));
+        Fault_AddHungupAndCrash("../z_std_dma.c", 851);
     }
 
     // Start the DMA manager
@@ -696,3 +699,6 @@ s32 DmaMgr_RequestSyncDebug(void* ram, uintptr_t vrom, size_t size, const char* 
     return 0;
 }
 #endif
+
+#define PLATFORM_N64 0
+#define PLATFORM_GC 1

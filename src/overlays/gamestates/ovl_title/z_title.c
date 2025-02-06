@@ -40,7 +40,7 @@ void ConsoleLogo_PrintBuildInfo(Gfx** gfxP) {
 #endif
 
 void ConsoleLogo_Calc(ConsoleLogoState* this) {
-#if !PLATFORM_GC
+#if !PLATFORM_GC || OOT_VERSION == HIRATSU3
     if ((this->coverAlpha == 0) && (this->visibleDuration != 0)) {
         this->unk_1D4--;
         this->visibleDuration--;
@@ -226,7 +226,7 @@ void ConsoleLogo_Init(GameState* thisx) {
     this->state.destroy = ConsoleLogo_Destroy;
     this->exit = false;
 
-#if OOT_VERSION < GC_US || PLATFORM_IQUE
+#if OOT_VERSION < GC_US || PLATFORM_IQUE || OOT_VERSION == HIRATSU3
     if (!(gPadMgr.validCtrlrsMask & 1)) {
         gSaveContext.fileNum = 0xFEDC;
     } else {
