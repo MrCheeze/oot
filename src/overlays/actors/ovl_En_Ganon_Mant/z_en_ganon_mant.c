@@ -106,7 +106,7 @@ static u16 sVerticesMap[GANON_MANT_NUM_STRANDS * GANON_MANT_NUM_JOINTS] = {
 
 static u64 sForceAlignment = 0;
 
-#include "assets/overlays/ovl_En_Ganon_Mant/ovl_En_Ganon_Mant.c"
+#include "assets/overlays/ovl_En_Ganon_Mant/z_en_ganon_mant.c"
 
 void EnGanonMant_Init(Actor* thisx, PlayState* play) {
     EnGanonMant* this = (EnGanonMant*)thisx;

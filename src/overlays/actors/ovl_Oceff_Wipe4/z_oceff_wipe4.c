@@ -55,7 +55,7 @@ void OceffWipe4_Update(Actor* thisx, PlayState* play) {
     }
 }
 
-#include "assets/overlays/ovl_Oceff_Wipe4/ovl_Oceff_Wipe4.c"
+#include "assets/overlays/ovl_Oceff_Wipe4/z_oceff_wipe4.c"
 
 void OceffWipe4_Draw(Actor* thisx, PlayState* play) {
     u32 scroll = play->state.frames & 0xFFF;

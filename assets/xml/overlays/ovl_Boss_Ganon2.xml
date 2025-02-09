@@ -1,5 +1,5 @@
 <Root>
-    <File Name="ovl_Boss_Ganon2">
+    <File Name="ovl_Boss_Ganon2" OutName="z_boss_ganon2_shape">
         <Texture Name="gGanonLightOrbTex" OutName="ganon_light_orb" Format="i8" Width="64" Height="64" Offset="0x0" Static="Off"/>
         <DList Name="gGanonLightOrbMaterialDL" Offset="0x1040" Static="Off"/>
         <DList Name="gGanonLightOrbModelDL" Offset="0x10B0" Static="Off"/>

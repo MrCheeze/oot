@@ -87,7 +87,7 @@
     include "$(BUILD_DIR)/src/libultra/io/spgetstat.o"
     include "$(BUILD_DIR)/src/libultra/io/spsetstat.o"
     include "$(BUILD_DIR)/src/libultra/os/writebackdcacheall.o"
-    include "$(BUILD_DIR)/src/libultra/os/getcurrfaultedthread.o"
+    include "$(BUILD_DIR)/src/libultra/os/getcurrfaultthread.o"
     include "$(BUILD_DIR)/src/libultra/mgu/mtxf2l.o"
     include "$(BUILD_DIR)/src/libultra/libc/llcvt.o"
     include "$(BUILD_DIR)/src/libultra/io/vigetcurrframebuf.o"

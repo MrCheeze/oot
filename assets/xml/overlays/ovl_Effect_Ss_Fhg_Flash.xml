@@ -1,5 +1,5 @@
 <Root>
-    <File Name="ovl_Effect_Ss_Fhg_Flash">
+    <File Name="ovl_Effect_Ss_Fhg_Flash" OutName="z_eff_fhg_flash">
         <Array Name="sShockVtx" Count="4" Offset="0x0">
             <Vtx/>
         </Array>

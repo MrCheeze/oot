@@ -81,7 +81,7 @@ static UNK_TYPE4 D_809D5C9C = 0; // unused
 
 static EnClearTagEffect sEffects[CLEAR_TAG_EFFECT_COUNT];
 
-#include "assets/overlays/ovl_En_Clear_Tag/ovl_En_Clear_Tag.c"
+#include "assets/overlays/ovl_En_Clear_Tag/z_en_clear_tag.c"
 
 /**
  * Creates a debris effect.

@@ -1,5 +1,5 @@
 <Root>
-    <File Name="ovl_Boss_Sst">
+    <File Name="ovl_Boss_Sst" OutName="z_boss_sst">
         <DList Name="sBodyStaticDList" Offset="0x0"/>
         <DList Name="sHandTrailDList" Offset="0x18"/>
         <DList Name="sIntroVanishDList" Offset="0x478"/>

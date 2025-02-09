@@ -793,7 +793,7 @@ static Gfx* sDisplayLists[] = {
     object_kanban_DL_0013D0, object_kanban_DL_001488, object_kanban_DL_001540,
 };
 
-#include "z_en_kanban_gfx.inc.c"
+#include "z_en_kanban.inc.c"
 
 static f32 sCutAngles[] = {
     /* CUT_POST   */ 0.50f * M_PI,
@@ -806,7 +806,7 @@ static f32 sCutAngles[] = {
 
 static s32 sUnused[] = { 0, 0, 0 }; // Unused zero vector?
 
-#include "assets/overlays/ovl_En_Kanban/ovl_En_Kanban.c"
+#include "assets/overlays/ovl_En_Kanban/z_en_kanban.c"
 
 void EnKanban_Draw(Actor* thisx, PlayState* play) {
     EnKanban* this = (EnKanban*)thisx;

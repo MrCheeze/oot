@@ -87,6 +87,6 @@
     include "$(BUILD_DIR)/src/libultra/os/startthread.o"
     include "$(BUILD_DIR)/src/libultra/io/visetyscale.o"
     include "$(BUILD_DIR)/src/libultra/io/visetxscale.o"
-    include "$(BUILD_DIR)/src/libultra/os/sethwintrroutine.o"
-    include "$(BUILD_DIR)/src/libultra/os/gethwintrroutine.o"
+    include "$(BUILD_DIR)/src/libultra/os/sethwinterrupt.o"
+    include "$(BUILD_DIR)/src/libultra/os/gethwinterrupt.o"
     include "$(BUILD_DIR)/src/libultra/os/setwatchlo.o"

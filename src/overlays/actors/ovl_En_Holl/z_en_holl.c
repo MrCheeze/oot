@@ -406,7 +406,7 @@ void EnHoll_Update(Actor* thisx, PlayState* play) {
     this->actionFunc(this, play);
 }
 
-#include "assets/overlays/ovl_En_Holl/ovl_En_Holl.c"
+#include "assets/overlays/ovl_En_Holl/z_en_holl.c"
 
 void EnHoll_Draw(Actor* thisx, PlayState* play) {
     EnHoll* this = (EnHoll*)thisx;

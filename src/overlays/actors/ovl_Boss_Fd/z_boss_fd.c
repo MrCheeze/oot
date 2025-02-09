@@ -58,7 +58,7 @@ ActorProfile Boss_Fd_Profile = {
     /**/ BossFd_Draw,
 };
 
-#include "z_boss_fd_colchk.inc.c"
+#include "z_boss_fd.inc.c"
 
 static InitChainEntry sInitChain[] = {
     ICHAIN_U8(attentionRangeType, ATTENTION_RANGE_5, ICHAIN_CONTINUE),

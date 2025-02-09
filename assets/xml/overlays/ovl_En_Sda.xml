@@ -1,5 +1,5 @@
 <Root>
-    <File Name="ovl_En_Sda">
+    <File Name="ovl_En_Sda" OutName="z_en_sda">
         <Array Name="D_80AFA398" Count="4" Offset="0x0">
             <Vtx/>
         </Array>

@@ -29,7 +29,7 @@ void ArrowFire_Charge(ArrowFire* this, PlayState* play);
 void ArrowFire_Fly(ArrowFire* this, PlayState* play);
 void ArrowFire_Hit(ArrowFire* this, PlayState* play);
 
-#include "assets/overlays/ovl_Arrow_Fire/ovl_Arrow_Fire.c"
+#include "assets/overlays/ovl_Arrow_Fire/z_arrow_fire.c"
 
 ActorProfile Arrow_Fire_Profile = {
     /**/ ACTOR_ARROW_FIRE,

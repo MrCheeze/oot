@@ -29,7 +29,7 @@ void ArrowIce_Charge(ArrowIce* this, PlayState* play);
 void ArrowIce_Fly(ArrowIce* this, PlayState* play);
 void ArrowIce_Hit(ArrowIce* this, PlayState* play);
 
-#include "assets/overlays/ovl_Arrow_Ice/ovl_Arrow_Ice.c"
+#include "assets/overlays/ovl_Arrow_Ice/z_arrow_ice.c"
 
 ActorProfile Arrow_Ice_Profile = {
     /**/ ACTOR_ARROW_ICE,

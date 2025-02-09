@@ -1,5 +1,5 @@
 <Root>
-    <File Name="ovl_Magic_Wind">
+    <File Name="ovl_Magic_Wind" OutName="z_magic_wind">
         <Skeleton Name="sSkel" Type="Curve" LimbType="Curve" Offset="0x1510"/>
         <CurveAnimation Name="sAnim" SkelOffset="0x1510" Offset="0x14D0"/>
         <Limb Name="sRootLimb" LimbType="Curve" Offset="0x14E0"/>

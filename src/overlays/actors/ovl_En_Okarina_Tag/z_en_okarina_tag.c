@@ -1,3 +1,6 @@
+#include "z_fuusa.inc.c"
+#include "z_tokinoma_data.inc.c"
+
 /*
  * File: z_en_okarina_tag.c
  * Overlay: ovl_En_Okarina_Tag

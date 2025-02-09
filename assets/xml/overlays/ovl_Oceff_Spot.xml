@@ -1,5 +1,5 @@
 <Root>
-    <File Name="ovl_Oceff_Spot">
+    <File Name="ovl_Oceff_Spot" OutName="z_oceff_spot">
         <Texture Name="sTex" OutName="sun_song_effect" Format="i8" Width="32" Height="32" Offset="0x0"/>
         <Array Name="sCylinderVtx" Count="27" Offset="0x400">
             <Vtx/>

@@ -34,7 +34,7 @@ ActorProfile En_Sth_Profile = {
     /**/ NULL,
 };
 
-#include "assets/overlays/ovl_En_Sth/ovl_En_Sth.c"
+#include "assets/overlays/ovl_En_Sth/z_en_sth.c"
 
 static ColliderCylinderInit sCylinderInit = {
     {

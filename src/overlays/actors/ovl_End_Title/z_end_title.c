@@ -27,7 +27,7 @@ ActorProfile End_Title_Profile = {
     /**/ EndTitle_DrawFull,
 };
 
-#include "assets/overlays/ovl_End_Title/ovl_End_Title.c"
+#include "assets/overlays/ovl_End_Title/z_end_title.c"
 
 void EndTitle_Init(Actor* thisx, PlayState* play) {
     EndTitle* this = (EndTitle*)thisx;

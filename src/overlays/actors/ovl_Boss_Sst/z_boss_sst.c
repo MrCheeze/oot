@@ -192,7 +192,7 @@ void BossSst_SpawnIceCrystal(BossSst* this, s32 index);
 void BossSst_SpawnIceShard(BossSst* this);
 void BossSst_IceShatter(BossSst* this);
 
-#include "assets/overlays/ovl_Boss_Sst/ovl_Boss_Sst.c"
+#include "assets/overlays/ovl_Boss_Sst/z_boss_sst.c"
 
 static BossSst* sHead;
 static BossSst* sHands[2];
@@ -252,7 +252,7 @@ ActorProfile Boss_Sst_Profile = {
     /**/ BossSst_DrawHand,
 };
 
-#include "z_boss_sst_colchk.inc.c"
+#include "z_boss_sst.inc.c"
 
 static AnimationHeader* sHandIdleAnims[] = { &gBongoLeftHandIdleAnim, &gBongoRightHandIdleAnim };
 static AnimationHeader* sHandFlatPoses[] = { &gBongoLeftHandFlatPoseAnim, &gBongoRightHandFlatPoseAnim };

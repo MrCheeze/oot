@@ -753,7 +753,7 @@ static void* sTentaclesTextures[] = {
     gBiriTentacles4Tex, gBiriTentacles5Tex, gBiriTentacles6Tex, gBiriTentacles7Tex,
 };
 
-#include "assets/overlays/ovl_En_Bili/ovl_En_Bili.c"
+#include "assets/overlays/ovl_En_Bili/z_en_bili.c"
 
 void EnBili_Draw(Actor* thisx, PlayState* play) {
     EnBili* this = (EnBili*)thisx;

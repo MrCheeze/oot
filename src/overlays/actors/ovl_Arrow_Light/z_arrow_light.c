@@ -29,7 +29,7 @@ void ArrowLight_Charge(ArrowLight* this, PlayState* play);
 void ArrowLight_Fly(ArrowLight* this, PlayState* play);
 void ArrowLight_Hit(ArrowLight* this, PlayState* play);
 
-#include "assets/overlays/ovl_Arrow_Light/ovl_Arrow_Light.c"
+#include "assets/overlays/ovl_Arrow_Light/z_arrow_light.c"
 
 ActorProfile Arrow_Light_Profile = {
     /**/ ACTOR_ARROW_LIGHT,

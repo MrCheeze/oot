@@ -1,5 +1,5 @@
 <Root>
-    <File Name="ovl_En_Clear_Tag">
+    <File Name="ovl_En_Clear_Tag" OutName="z_en_clear_tag">
         <DList Name="gArwingDL" Offset="0x0"/>
         <DList Name="gArwingLaserDL" Offset="0x3C98"/>
         <DList Name="gArwingBackfireDL" Offset="0x3F98"/>

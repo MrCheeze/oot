@@ -60,7 +60,7 @@ ActorProfile Boss_Fd2_Profile = {
     /**/ BossFd2_Draw,
 };
 
-#include "z_boss_fd2_colchk.inc.c"
+#include "z_boss_fd2.inc.c"
 
 static Vec3f sHoleLocations[] = {
     { 0.0f, 90.0f, -243.0f },    { 0.0f, 90.0f, 0.0f },    { 0.0f, 90.0f, 243.0f },

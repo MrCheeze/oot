@@ -1,7 +1,7 @@
 beginseg
     name "ovl_En_GirlA"
     compress
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_GirlA/z_en_girla.o"
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_GirlA/z_en_girlA.o"
     include "$(BUILD_DIR)/src/overlays/actors/ovl_En_GirlA/ovl_En_GirlA_reloc.o"
 endseg
 
@@ -169,8 +169,7 @@ endseg
 beginseg
     name "ovl_En_Zl1"
     compress
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Zl1/z_en_zl1_cutscene_data.o"
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Zl1/z_en_zl1.o"
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Zl1/z_en_girlB.o"
     include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Zl1/ovl_En_Zl1_reloc.o"
 endseg
 
@@ -289,14 +288,13 @@ endseg
 beginseg
     name "ovl_En_Ossan"
     compress
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Ossan/z_en_ossan.o"
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Ossan/z_en_oB1.o"
     include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Ossan/ovl_En_Ossan_reloc.o"
 endseg
 
 beginseg
     name "ovl_Bg_Treemouth"
     compress
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_Bg_Treemouth/z_bg_treemouth_cutscene_data.o"
     include "$(BUILD_DIR)/src/overlays/actors/ovl_Bg_Treemouth/z_bg_treemouth.o"
     include "$(BUILD_DIR)/src/overlays/actors/ovl_Bg_Treemouth/ovl_Bg_Treemouth_reloc.o"
 endseg
@@ -367,7 +365,7 @@ endseg
 beginseg
     name "ovl_En_Xc"
     compress
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Xc/z_en_xc.o"
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Xc/z_en_oA2.o"
     include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Xc/ovl_En_Xc_reloc.o"
 endseg
 
@@ -430,7 +428,7 @@ endseg
 beginseg
     name "ovl_En_OE2"
     compress
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_OE2/z_en_oe2.o"
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_OE2/z_en_oE2.o"
     include "$(BUILD_DIR)/src/overlays/actors/ovl_En_OE2/ovl_En_OE2_reloc.o"
 endseg
 
@@ -626,9 +624,6 @@ endseg
 beginseg
     name "ovl_Bg_Toki_Swd"
     compress
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_Bg_Toki_Swd/z_bg_toki_swd_cutscene_data_1.o"
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_Bg_Toki_Swd/z_bg_toki_swd_cutscene_data_2.o"
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_Bg_Toki_Swd/z_bg_toki_swd_cutscene_data_3.o"
     include "$(BUILD_DIR)/src/overlays/actors/ovl_Bg_Toki_Swd/z_bg_toki_swd.o"
     include "$(BUILD_DIR)/src/overlays/actors/ovl_Bg_Toki_Swd/ovl_Bg_Toki_Swd_reloc.o"
 endseg
@@ -685,14 +680,14 @@ endseg
 beginseg
     name "ovl_En_Lightbox"
     compress
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Lightbox/z_en_lightbox.o"
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Lightbox/z_en_lbox.o"
     include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Lightbox/ovl_En_Lightbox_reloc.o"
 endseg
 
 beginseg
     name "ovl_En_Pu_box"
     compress
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Pu_box/z_en_pu_box.o"
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Pu_box/z_en_pubox.o"
     include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Pu_box/ovl_En_Pu_box_reloc.o"
 endseg
 
@@ -776,14 +771,6 @@ endseg
 beginseg
     name "ovl_Demo_Kankyo"
     compress
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_Demo_Kankyo/z_demo_kankyo_cutscene_data1.o"
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_Demo_Kankyo/z_demo_kankyo_cutscene_data2.o"
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_Demo_Kankyo/z_demo_kankyo_cutscene_data3.o"
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_Demo_Kankyo/z_demo_kankyo_cutscene_data4.o"
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_Demo_Kankyo/z_demo_kankyo_cutscene_data5.o"
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_Demo_Kankyo/z_demo_kankyo_cutscene_data6.o"
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_Demo_Kankyo/z_demo_kankyo_cutscene_data7.o"
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_Demo_Kankyo/z_demo_kankyo_cutscene_data8.o"
     include "$(BUILD_DIR)/src/overlays/actors/ovl_Demo_Kankyo/z_demo_kankyo.o"
     include "$(BUILD_DIR)/src/overlays/actors/ovl_Demo_Kankyo/ovl_Demo_Kankyo_reloc.o"
 endseg
@@ -1022,7 +1009,7 @@ endseg
 beginseg
     name "ovl_Bg_Haka_MeganeBG"
     compress
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_Bg_Haka_MeganeBG/z_bg_haka_meganebg.o"
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_Bg_Haka_MeganeBG/z_bg_haka_meganeBG.o"
     include "$(BUILD_DIR)/src/overlays/actors/ovl_Bg_Haka_MeganeBG/ovl_Bg_Haka_MeganeBG_reloc.o"
 endseg
 
@@ -1589,21 +1576,21 @@ endseg
 beginseg
     name "ovl_En_Insect"
     compress
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Insect/z_en_insect.o"
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Insect/z_en_mushi.o"
     include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Insect/ovl_En_Insect_reloc.o"
 endseg
 
 beginseg
     name "ovl_En_Butte"
     compress
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Butte/z_en_butte.o"
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Butte/z_en_choo.o"
     include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Butte/ovl_En_Butte_reloc.o"
 endseg
 
 beginseg
     name "ovl_En_Fish"
     compress
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Fish/z_en_fish.o"
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Fish/z_en_sakana.o"
     include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Fish/ovl_En_Fish_reloc.o"
 endseg
 
@@ -1687,7 +1674,7 @@ endseg
 beginseg
     name "ovl_En_Skjneedle"
     compress
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Skjneedle/z_en_skjneedle.o"
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Skjneedle/z_en_skj_needle.o"
     include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Skjneedle/ovl_En_Skjneedle_reloc.o"
 endseg
 
@@ -1841,7 +1828,6 @@ endseg
 beginseg
     name "ovl_En_Okarina_Tag"
     compress
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Okarina_Tag/z_en_okarina_tag_cutscene_data.o"
     include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Okarina_Tag/z_en_okarina_tag.o"
     include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Okarina_Tag/ovl_En_Okarina_Tag_reloc.o"
 endseg
@@ -1856,7 +1842,7 @@ endseg
 beginseg
     name "ovl_En_Goroiwa"
     compress
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Goroiwa/z_en_goroiwa.o"
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Goroiwa/z_en_gr.o"
     include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Goroiwa/ovl_En_Goroiwa_reloc.o"
 endseg
 
@@ -2556,7 +2542,7 @@ endseg
 beginseg
     name "ovl_Effect_Ss_Hahen"
     compress
-    include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_Hahen/z_eff_ss_hahen.o"
+    include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_Hahen/z_eff_hahen.o"
     include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_Hahen/ovl_Effect_Ss_Hahen_reloc.o"
 endseg
 
@@ -2605,14 +2591,14 @@ endseg
 beginseg
     name "ovl_Effect_Ss_Fhg_Flash"
     compress
-    include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_Fhg_Flash/z_eff_ss_fhg_flash.o"
+    include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_Fhg_Flash/z_eff_fhg_flash.o"
     include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_Fhg_Flash/ovl_Effect_Ss_Fhg_Flash_reloc.o"
 endseg
 
 beginseg
     name "ovl_Effect_Ss_K_Fire"
     compress
-    include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_K_Fire/z_eff_ss_k_fire.o"
+    include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_K_Fire/z_eff_k_fire.o"
     include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_K_Fire/ovl_Effect_Ss_K_Fire_reloc.o"
 endseg
 
@@ -2626,35 +2612,35 @@ endseg
 beginseg
     name "ovl_Effect_Ss_Kakera"
     compress
-    include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_Kakera/z_eff_ss_kakera.o"
+    include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_Kakera/z_eff_kakera.o"
     include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_Kakera/ovl_Effect_Ss_Kakera_reloc.o"
 endseg
 
 beginseg
     name "ovl_Effect_Ss_Ice_Piece"
     compress
-    include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_Ice_Piece/z_eff_ss_ice_piece.o"
+    include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_Ice_Piece/z_eff_ice_piece.o"
     include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_Ice_Piece/ovl_Effect_Ss_Ice_Piece_reloc.o"
 endseg
 
 beginseg
     name "ovl_Effect_Ss_En_Ice"
     compress
-    include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_En_Ice/z_eff_ss_en_ice.o"
+    include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_En_Ice/z_eff_en_ice.o"
     include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_En_Ice/ovl_Effect_Ss_En_Ice_reloc.o"
 endseg
 
 beginseg
     name "ovl_Effect_Ss_Fire_Tail"
     compress
-    include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_Fire_Tail/z_eff_ss_fire_tail.o"
+    include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_Fire_Tail/z_eff_fire_tail.o"
     include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_Fire_Tail/ovl_Effect_Ss_Fire_Tail_reloc.o"
 endseg
 
 beginseg
     name "ovl_Effect_Ss_En_Fire"
     compress
-    include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_En_Fire/z_eff_ss_en_fire.o"
+    include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_En_Fire/z_eff_en_fire.o"
     include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_En_Fire/ovl_Effect_Ss_En_Fire_reloc.o"
 endseg
 
@@ -2668,7 +2654,7 @@ endseg
 beginseg
     name "ovl_Effect_Ss_Fcircle"
     compress
-    include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_Fcircle/z_eff_ss_fcircle.o"
+    include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_Fcircle/z_eff_fcircle.o"
     include "$(BUILD_DIR)/src/overlays/effects/ovl_Effect_Ss_Fcircle/ovl_Effect_Ss_Fcircle_reloc.o"
 endseg
 
@@ -2787,7 +2773,7 @@ endseg
 beginseg
     name "ovl_En_GeldB"
     compress
-    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_GeldB/z_en_geldb.o"
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_GeldB/z_en_geldB.o"
     include "$(BUILD_DIR)/src/overlays/actors/ovl_En_GeldB/ovl_En_GeldB_reloc.o"
 endseg
 

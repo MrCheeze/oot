@@ -26,7 +26,7 @@
 
 #include "global.h"
 
-#include "assets/overlays/ovl_Boss_Ganon/ovl_Boss_Ganon.h"
+#include "assets/overlays/ovl_Boss_Ganon/z_boss_ganon_shape.h"
 #include "assets/objects/object_ganon/object_ganon.h"
 #include "assets/objects/object_ganon_anime1/object_ganon_anime1.h"
 #include "assets/objects/object_ganon_anime2/object_ganon_anime2.h"
@@ -5031,4 +5031,4 @@ void BossGanon_DrawEffects(PlayState* play) {
     CLOSE_DISPS(gfxCtx, "../z_boss_ganon.c", 11255);
 }
 
-#include "assets/overlays/ovl_Boss_Ganon/ovl_Boss_Ganon.c"
+#include "assets/overlays/ovl_Boss_Ganon/z_boss_ganon_shape.c"

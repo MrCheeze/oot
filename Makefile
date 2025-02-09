@@ -554,26 +554,26 @@ ifneq ($(NON_MATCHING),1)
 $(BUILD_DIR)/src/boot/driverominit.o: POSTPROCESS_OBJ := $(PYTHON) tools/patch_ique_driverominit.py
 endif
 
-$(BUILD_DIR)/src/boot/viconfig.o: OPTFLAGS := -O2
+$(BUILD_DIR)/src/boot/sys_vimgr.o: OPTFLAGS := -O2
 endif
 
-$(BUILD_DIR)/src/code/jpegutils.o: OPTFLAGS := -O2
-$(BUILD_DIR)/src/code/jpegdecoder.o: OPTFLAGS := -O2
+$(BUILD_DIR)/src/code/make.o: OPTFLAGS := -O2
+$(BUILD_DIR)/src/code/load.o: OPTFLAGS := -O2
 
 $(BUILD_DIR)/src/code/fault_n64.o: CFLAGS += -trapuv
-$(BUILD_DIR)/src/code/fault_gc.o: CFLAGS += -trapuv
-$(BUILD_DIR)/src/code/fault_gc.o: OPTFLAGS := -O2 -g3
-$(BUILD_DIR)/src/code/fault_gc_drawer.o: CFLAGS += -trapuv
-$(BUILD_DIR)/src/code/fault_gc_drawer.o: OPTFLAGS := -O2 -g3
+$(BUILD_DIR)/src/code/fault.o: CFLAGS += -trapuv
+$(BUILD_DIR)/src/code/fault.o: OPTFLAGS := -O2 -g3
+$(BUILD_DIR)/src/code/faultprint.o: CFLAGS += -trapuv
+$(BUILD_DIR)/src/code/faultprint.o: OPTFLAGS := -O2 -g3
 
 $(BUILD_DIR)/src/code/ucode_disas.o: OPTFLAGS := -O2 -g3
 
 ifeq ($(PLATFORM),N64)
-$(BUILD_DIR)/src/code/z_rumble.o: CFLAGS += -DNO_SQRTF_INTRINSIC
+$(BUILD_DIR)/src/code/z_vibctl2.o: CFLAGS += -DNO_SQRTF_INTRINSIC
 endif
 
-$(BUILD_DIR)/src/code/jpegutils.o: CC := $(CC_OLD)
-$(BUILD_DIR)/src/code/jpegdecoder.o: CC := $(CC_OLD)
+$(BUILD_DIR)/src/code/make.o: CC := $(CC_OLD)
+$(BUILD_DIR)/src/code/load.o: CC := $(CC_OLD)
 
 ifeq ($(PLATFORM),IQUE)
 # Some files are compiled with EGCS on iQue
@@ -627,15 +627,15 @@ $(BUILD_DIR)/src/libu64/%.o: OPTFLAGS := -O2
 $(BUILD_DIR)/src/audio/%.o: OPTFLAGS := -O2
 
 # Use signed chars instead of unsigned for this audio file (needed to match AudioDebug_ScrPrt)
-$(BUILD_DIR)/src/audio/general.o: CFLAGS += -signed
+$(BUILD_DIR)/src/audio/Game.o: CFLAGS += -signed
 
 ifeq ($(PLATFORM),N64)
-$(BUILD_DIR)/src/audio/general.o: CFLAGS += -DNO_SQRTF_INTRINSIC
+$(BUILD_DIR)/src/audio/Game.o: CFLAGS += -DNO_SQRTF_INTRINSIC
 endif
 
 # Put string literals in .data for some audio files (needed to match these files with literals)
-$(BUILD_DIR)/src/audio/sfx.o: CFLAGS += -use_readwrite_const
-$(BUILD_DIR)/src/audio/sequence.o: CFLAGS += -use_readwrite_const
+$(BUILD_DIR)/src/audio/Inter.o: CFLAGS += -use_readwrite_const
+$(BUILD_DIR)/src/audio/seq_inter.o: CFLAGS += -use_readwrite_const
 
 ifeq ($(PLATFORM),IQUE)
 $(BUILD_DIR)/src/libultra/%.o: CC := $(EGCS_CC)
@@ -943,7 +943,7 @@ endif
 	$(OBJDUMP_CMD)
 
 # Incremental link to move z_message and z_game_over data into rodata
-$(BUILD_DIR)/src/code/z_message_z_game_over.o: $(BUILD_DIR)/src/code/z_message.o $(BUILD_DIR)/src/code/z_game_over.o
+$(BUILD_DIR)/src/code/z_message_z_game_over.o: $(BUILD_DIR)/src/code/z_message.o $(BUILD_DIR)/src/code/z_gameover.o
 	$(LD) -r -G 0 -T linker_scripts/data_with_rodata.ld -o $@ $^
 
 $(BUILD_DIR)/dmadata_table_spec.h $(BUILD_DIR)/compress_ranges.txt: $(BUILD_DIR)/spec

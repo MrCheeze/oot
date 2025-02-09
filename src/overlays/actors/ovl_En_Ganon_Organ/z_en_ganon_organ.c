@@ -28,7 +28,7 @@ ActorProfile En_Ganon_Organ_Profile = {
 
 static u64 sForceAlignment = 0;
 
-#include "assets/overlays/ovl_En_Ganon_Organ/ovl_En_Ganon_Organ.c"
+#include "assets/overlays/ovl_En_Ganon_Organ/z_en_ganon_organ.c"
 
 void EnGanonOrgan_Init(Actor* thisx, PlayState* play) {
     thisx->flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;

@@ -42,7 +42,7 @@ ActorProfile En_Jj_Profile = {
 
 static s32 sUnused = 0;
 
-#include "z_en_jj_cutscene_data.inc.c"
+#include "z_en_jj.inc.c"
 
 static s32 sUnused2[] = { 0, 0 };
 

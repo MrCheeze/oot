@@ -30,7 +30,7 @@ void EnSsh_Drop(EnSsh* this, PlayState* play);
 void EnSsh_Return(EnSsh* this, PlayState* play);
 void EnSsh_Start(EnSsh* this, PlayState* play);
 
-#include "assets/overlays/ovl_En_Ssh/ovl_En_Ssh.c"
+#include "assets/overlays/ovl_En_St/z_en_st_shape.c"
 
 ActorProfile En_Ssh_Profile = {
     /**/ ACTOR_EN_SSH,

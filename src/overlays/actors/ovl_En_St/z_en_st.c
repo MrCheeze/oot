@@ -23,7 +23,7 @@ void EnSt_Die(EnSt* this, PlayState* play);
 void EnSt_BounceAround(EnSt* this, PlayState* play);
 void EnSt_FinishBouncing(EnSt* this, PlayState* play);
 
-#include "assets/overlays/ovl_En_St/ovl_En_St.c"
+#include "assets/overlays/ovl_En_St/z_en_st_shape.c"
 
 ActorProfile En_St_Profile = {
     /**/ ACTOR_EN_ST,

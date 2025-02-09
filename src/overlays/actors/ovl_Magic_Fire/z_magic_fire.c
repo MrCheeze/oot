@@ -42,7 +42,7 @@ ActorProfile Magic_Fire_Profile = {
     /**/ MagicFire_Draw,
 };
 
-#include "assets/overlays/ovl_Magic_Fire/ovl_Magic_Fire.c"
+#include "assets/overlays/ovl_Magic_Fire/z_magic_fire.c"
 
 static ColliderCylinderInit sCylinderInit = {
     {

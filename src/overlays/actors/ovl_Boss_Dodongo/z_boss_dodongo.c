@@ -47,7 +47,7 @@ ActorProfile Boss_Dodongo_Profile = {
     /**/ BossDodongo_Draw,
 };
 
-#include "z_boss_dodongo_data.inc.c"
+#include "z_boss_dodongo.inc.c"
 
 static InitChainEntry sInitChain[] = {
     ICHAIN_U8(attentionRangeType, ATTENTION_RANGE_5, ICHAIN_CONTINUE),

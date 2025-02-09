@@ -52,18 +52,6 @@ variables:
   gSampleBankTable: 0x801137E0
   sShadowTex: 0x80AE1D60
 assets:
-- name: code/fbdemo_circle
-  xml_path: assets/xml/code/fbdemo_circle.xml
-  start_offset: 0xEB748
-  end_offset: 0xEC968
-- name: code/fbdemo_triforce
-  xml_path: assets/xml/code/fbdemo_triforce.xml
-  start_offset: 0xEABD0
-  end_offset: 0xEACA0
-- name: code/fbdemo_wipe1
-  xml_path: assets/xml/code/fbdemo_wipe1.xml
-  start_offset: 0xEACA0
-  end_offset: 0xEB630
 - name: misc/link_animetion
   xml_path: assets/xml/misc/link_animetion.xml
 - name: misc/z_select_static
@@ -906,10 +894,6 @@ assets:
   xml_path: assets/xml/overlays/ovl_En_Sda.xml
   start_offset: 0x1498
   end_offset: 0x1528
-- name: overlays/ovl_En_Ssh
-  xml_path: assets/xml/overlays/ovl_En_Ssh.xml
-  start_offset: 0x2150
-  end_offset: 0x21E0
 - name: overlays/ovl_En_St
   xml_path: assets/xml/overlays/ovl_En_St.xml
   start_offset: 0x26A0

@@ -1,5 +1,5 @@
 <Root>
-    <File Name="ovl_Oceff_Wipe3">
+    <File Name="ovl_Oceff_Wipe3" OutName="z_oceff_wipe3">
         <Texture Name="sTex" OutName="saria_song_effect" Format="i8" Width="64" Height="64" Offset="0x0"/>
         <Array Name="sFrustumVtx" Count="22" Offset="0x1000">
             <Vtx/>

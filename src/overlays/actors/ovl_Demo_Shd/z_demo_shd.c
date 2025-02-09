@@ -27,7 +27,7 @@ ActorProfile Demo_Shd_Profile = {
     /**/ DemoShd_Draw,
 };
 
-#include "assets/overlays/ovl_Demo_Shd/ovl_Demo_Shd.c"
+#include "assets/overlays/ovl_Demo_Shd/z_demo_shd.c"
 
 void DemoShd_SetupAction(DemoShd* this, DemoShdActionFunc actionFunc) {
     this->actionFunc = actionFunc;

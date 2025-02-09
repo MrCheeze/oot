@@ -5,8 +5,6 @@
 
 MtxF gSkinLimbMatrices[60]; // holds matrices for each limb of the skeleton currently being drawn
 
-static s32 sUnused;
-
 void Skin_UpdateVertices(MtxF* mtx, SkinVertex* skinVertices, SkinLimbModif* modifEntry, Vtx* vtxBuf, Vec3f* pos) {
     Vtx* vtx;
     SkinVertex* vertexEntry;

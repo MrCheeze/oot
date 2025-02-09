@@ -23,10 +23,10 @@ beginseg
     include "*$(BUILD_DIR)/boot_bss_idle.o"
     include "*$(BUILD_DIR)/boot_bss_viconfig.o"
 #endif
-    include "$(BUILD_DIR)/src/boot/boot_main.o"
+    include "$(BUILD_DIR)/src/boot/boot.o"
     include "$(BUILD_DIR)/src/boot/idle.o"
 #if OOT_VERSION >= PAL_1_0
-    include "$(BUILD_DIR)/src/boot/viconfig.o"
+    include "$(BUILD_DIR)/src/boot/sys_vimgr.o"
 #endif
     include "$(BUILD_DIR)/src/boot/carthandle.o"
     include "$(BUILD_DIR)/src/boot/z_std_dma.o"
@@ -34,7 +34,7 @@ beginseg
     include "*$(BUILD_DIR)/boot_bss_z_std_dma.o"
 #endif
 #if !PLATFORM_IQUE
-    include "$(BUILD_DIR)/src/boot/yaz0.o"
+    include "$(BUILD_DIR)/src/boot/z_std_dma_slid.o"
 #else
     include "$(BUILD_DIR)/src/boot/inflate.o"
 #endif
@@ -46,7 +46,7 @@ beginseg
     include "$(BUILD_DIR)/src/boot/assert.o"
 #endif
 #if !PLATFORM_IQUE
-    include "$(BUILD_DIR)/src/boot/is_debug.o"
+    include "$(BUILD_DIR)/src/boot/fakeprintf.o"
 #else
     include "$(BUILD_DIR)/src/boot/is_debug_ique.o"
 #endif
@@ -539,27 +539,27 @@ beginseg
 #endif
     include "$(BUILD_DIR)/src/code/z_actor_dlftbls.o"
     include "$(BUILD_DIR)/src/code/z_bgcheck.o"
-    include "$(BUILD_DIR)/src/code/z_bg_collect.o"
-    include "$(BUILD_DIR)/src/code/z_bg_item.o"
+    include "$(BUILD_DIR)/src/code/z_bgcheck_collection.o"
+    include "$(BUILD_DIR)/src/code/z_bgcheck_movebg.o"
     include "$(BUILD_DIR)/src/code/z_camera.o"
-    include "$(BUILD_DIR)/src/code/z_collision_btltbls.o"
+    include "$(BUILD_DIR)/src/code/z_collision_btl_tbl.o"
     include "$(BUILD_DIR)/src/code/z_collision_check.o"
     include "$(BUILD_DIR)/src/code/z_common_data.o"
     include "$(BUILD_DIR)/src/code/z_debug.o"
     include "$(BUILD_DIR)/src/code/z_debug_display.o"
     include "$(BUILD_DIR)/src/code/z_demo.o"
-    include "$(BUILD_DIR)/src/code/z_memory_utils.o"
+    include "$(BUILD_DIR)/src/code/z_displib.o"
     include "$(BUILD_DIR)/src/code/z_draw.o"
-    include "$(BUILD_DIR)/src/code/z_sfx_source.o"
+    include "$(BUILD_DIR)/src/code/z_effect_SE.o"
     include "$(BUILD_DIR)/src/code/z_elf_message.o"
-    include "$(BUILD_DIR)/src/code/z_face_reaction.o"
-    include "$(BUILD_DIR)/src/code/z_env_flags.o"
+    include "$(BUILD_DIR)/src/code/z_en_msk.o"
+    include "$(BUILD_DIR)/src/code/z_event.o"
     include "$(BUILD_DIR)/src/code/z_fcurve_data.o"
     include "$(BUILD_DIR)/src/code/z_fcurve_data_skelanime.o"
     include "$(BUILD_DIR)/src/code/z_game_dlftbls.o"
     include "$(BUILD_DIR)/src/code/z_horse.o"
     include "$(BUILD_DIR)/src/code/z_jpeg.o"
-    include "$(BUILD_DIR)/src/code/z_kaleido_setup.o"
+    include "$(BUILD_DIR)/src/code/z_kaleido.o"
     include "$(BUILD_DIR)/src/code/z_kanfont.o"
     include "$(BUILD_DIR)/src/code/z_kankyo.o"
     include "$(BUILD_DIR)/src/code/z_lib.o"
@@ -570,22 +570,22 @@ beginseg
 #if DEBUG_ASSETS
     include "$(BUILD_DIR)/src/code/z_moji.o"
 #endif
-    include "$(BUILD_DIR)/src/code/z_prenmi_buff.o"
+    include "$(BUILD_DIR)/src/code/z_nmibuf.o"
     include "$(BUILD_DIR)/src/code/z_nulltask.o"
     include "$(BUILD_DIR)/src/code/z_olib.o"
     include "$(BUILD_DIR)/src/code/z_onepointdemo.o"
     include "$(BUILD_DIR)/src/code/z_map_exp.o"
-    include "$(BUILD_DIR)/src/code/z_map_data.o"
+    include "$(BUILD_DIR)/src/code/z_map_exp_data.o"
     include "$(BUILD_DIR)/src/code/z_parameter.o"
     include "$(BUILD_DIR)/src/code/z_path.o"
-    include "$(BUILD_DIR)/src/code/z_frame_advance.o"
+    include "$(BUILD_DIR)/src/code/z_pause.o"
     include "$(BUILD_DIR)/src/code/z_player_lib.o"
     include "$(BUILD_DIR)/src/code/z_prenmi.o"
     include "$(BUILD_DIR)/src/code/z_quake.o"
     include "$(BUILD_DIR)/src/code/z_rcp.o"
     include "$(BUILD_DIR)/src/code/z_room.o"
     include "$(BUILD_DIR)/src/code/z_sample.o"
-    include "$(BUILD_DIR)/src/code/z_inventory.o"
+    include "$(BUILD_DIR)/src/code/z_save_area.o"
     include "$(BUILD_DIR)/src/code/z_scene.o"
     include "$(BUILD_DIR)/src/code/object_table.o"
     include "$(BUILD_DIR)/src/code/z_scene_table.o"
@@ -594,8 +594,9 @@ beginseg
     include "$(BUILD_DIR)/src/code/z_skin_awb.o"
     include "$(BUILD_DIR)/src/code/z_skin_matrix.o"
     include "$(BUILD_DIR)/src/code/z_sram.o"
-    include "$(BUILD_DIR)/src/code/z_ss_sram.o"
-    include "$(BUILD_DIR)/src/code/z_rumble.o"
+    include "$(BUILD_DIR)/src/code/ssSRAMrdwt.o"
+    include "$(BUILD_DIR)/src/code/z_vibctl.o"
+    include "$(BUILD_DIR)/src/code/z_vibctl2.o"
 #if DEBUG_ASSETS
     include "$(BUILD_DIR)/data/z_text.data.o"
 #endif
@@ -611,13 +612,13 @@ beginseg
     include "$(BUILD_DIR)/src/code/z_fbdemo.o"
     include "$(BUILD_DIR)/src/code/z_fbdemo_triforce.o"
     include "$(BUILD_DIR)/src/code/z_fbdemo_wipe1.o"
-    include "$(BUILD_DIR)/src/code/z_fbdemo_circle.o"
+    include "$(BUILD_DIR)/src/code/z_fbdemo_wipe3.o"
     include "$(BUILD_DIR)/src/code/z_fbdemo_fade.o"
-    include "$(BUILD_DIR)/src/code/shrink_window.o"
+    include "$(BUILD_DIR)/src/code/z_shrink_window.o"
 #if DEBUG_FEATURES
     include "$(BUILD_DIR)/src/code/db_camera.o"
 #endif
-    include "$(BUILD_DIR)/src/code/z_cutscene_spline.o"
+    include "$(BUILD_DIR)/src/code/camdemo.o"
 #if DEBUG_FEATURES
     include "$(BUILD_DIR)/src/code/mempak.o"
 #endif
@@ -625,11 +626,11 @@ beginseg
     include "$(BUILD_DIR)/src/code/z_kaleido_scope_call.o"
     include "$(BUILD_DIR)/src/code/z_play.o"
     include "$(BUILD_DIR)/src/code/PreRender.o"
-    include "$(BUILD_DIR)/src/code/TwoHeadGfxArena.o"
+    include "$(BUILD_DIR)/src/code/THA_GA.o"
     include "$(BUILD_DIR)/src/code/TwoHeadArena.o"
-    include "$(BUILD_DIR)/src/code/audio_stop_all_sfx.o"
-    include "$(BUILD_DIR)/src/code/audio_thread_manager.o"
-    include "$(BUILD_DIR)/src/code/title_setup.o"
+    include "$(BUILD_DIR)/src/code/audio.o"
+    include "$(BUILD_DIR)/src/code/audioMgr.o"
+    include "$(BUILD_DIR)/src/code/first_game.o"
     include "$(BUILD_DIR)/src/code/game.o"
     include "$(BUILD_DIR)/src/code/gamealloc.o"
     include "$(BUILD_DIR)/src/code/graph.o"
@@ -648,7 +649,7 @@ beginseg
     include "$(BUILD_DIR)/src/code/sys_math_atan.o"
     include "$(BUILD_DIR)/src/code/sys_matrix.o"
     include "$(BUILD_DIR)/src/code/sys_ucode.o"
-    include "$(BUILD_DIR)/src/code/sys_rumble.o"
+    include "$(BUILD_DIR)/src/code/sys_vibctl2.o"
     include "$(BUILD_DIR)/src/code/sys_freeze.o"
 #if DEBUG_FEATURES
     include "$(BUILD_DIR)/src/code/sys_debug_controller.o"
@@ -664,8 +665,8 @@ beginseg
 #if PLATFORM_N64
     include "$(BUILD_DIR)/src/code/fault_n64.o"
 #else
-    include "$(BUILD_DIR)/src/code/fault_gc.o"
-    include "$(BUILD_DIR)/src/code/fault_gc_drawer.o"
+    include "$(BUILD_DIR)/src/code/fault.o"
+    include "$(BUILD_DIR)/src/code/faultprint.o"
 #endif
     include "$(BUILD_DIR)/src/code/kanread.o"
 #if DEBUG_FEATURES
@@ -676,11 +677,11 @@ beginseg
 #if OOT_VERSION < NTSC_1_1 || !PLATFORM_N64
     pad_text
 #endif
-    include "$(BUILD_DIR)/src/audio/lib/data.o"
-    include "$(BUILD_DIR)/src/audio/lib/synthesis.o"
-    include "$(BUILD_DIR)/src/audio/lib/heap.o"
-    include "$(BUILD_DIR)/src/audio/lib/load.o"
-    include "$(BUILD_DIR)/src/audio/lib/thread.o"
+    include "$(BUILD_DIR)/src/audio/lib/Works.o"
+    include "$(BUILD_DIR)/src/audio/lib/Driver.o"
+    include "$(BUILD_DIR)/src/audio/lib/Memory.o"
+    include "$(BUILD_DIR)/src/audio/lib/System.o"
+    include "$(BUILD_DIR)/src/audio/lib/Port.o"
     include "$(BUILD_DIR)/src/audio/lib/dcache.o"
     include "$(BUILD_DIR)/src/audio/lib/aisetnextbuf.o"
 #if OOT_PAL_N64
@@ -688,18 +689,17 @@ beginseg
     pad_text
     pad_text
 #endif
-    include "$(BUILD_DIR)/src/audio/lib/playback.o"
-    include "$(BUILD_DIR)/src/audio/lib/effects.o"
-    include "$(BUILD_DIR)/src/audio/lib/seqplayer.o"
-    include "$(BUILD_DIR)/src/audio/general.o"
+    include "$(BUILD_DIR)/src/audio/lib/Channel.o"
+    include "$(BUILD_DIR)/src/audio/lib/Effect.o"
+    include "$(BUILD_DIR)/src/audio/lib/Track.o"
+    include "$(BUILD_DIR)/src/audio/Game.o"
 #if !PLATFORM_N64 && !DEBUG_FEATURES
     pad_text
 #endif
-    include "$(BUILD_DIR)/src/audio/sfx_params.o"
-    include "$(BUILD_DIR)/src/audio/sfx.o"
-    include "$(BUILD_DIR)/src/audio/sequence.o"
-    include "$(BUILD_DIR)/src/audio/data.o"
-    include "$(BUILD_DIR)/src/audio/session_config.o"
+    include "$(BUILD_DIR)/src/audio/ina_flagtbl.o"
+    include "$(BUILD_DIR)/src/audio/fx_inter.o"
+    include "$(BUILD_DIR)/src/audio/seq_inter.o"
+    include "$(BUILD_DIR)/src/audio/audiowork.o"
     include "$(BUILD_DIR)/src/audio/session_init.o"
 
     // libu64
@@ -713,16 +713,16 @@ beginseg
 #elif PLATFORM_GC
     include "$(BUILD_DIR)/src/libu64/logseverity_gc.o"
     include "$(BUILD_DIR)/src/libu64/gfxprint.o"
-    include "$(BUILD_DIR)/src/libu64/rcp_utils.o"
-    include "$(BUILD_DIR)/src/libu64/loadfragment2_gc.o"
+    include "$(BUILD_DIR)/src/libu64/KillRspRdp.o"
+    include "$(BUILD_DIR)/src/libu64/loadfragment2.o"
 #if DEBUG_FEATURES
     include "$(BUILD_DIR)/src/libu64/mtxuty-cvt.o"
 #endif
-    include "$(BUILD_DIR)/src/libu64/relocation_gc.o"
-    include "$(BUILD_DIR)/src/libu64/load_gc.o"
-    include "$(BUILD_DIR)/src/libu64/system_heap.o"
+    include "$(BUILD_DIR)/src/libu64/loadfragment.o"
+    include "$(BUILD_DIR)/src/libu64/loadfragmentfix2.o"
+    include "$(BUILD_DIR)/src/libu64/libC.o"
     include "$(BUILD_DIR)/src/libu64/pad.o"
-    include "$(BUILD_DIR)/src/libu64/padsetup.o"
+    include "$(BUILD_DIR)/src/libu64/osContInitX.o"
 #elif PLATFORM_IQUE
     include "$(BUILD_DIR)/src/libu64/system_heap.o"
     include "$(BUILD_DIR)/src/libu64/debug.o"
@@ -750,7 +750,7 @@ beginseg
     include "$(BUILD_DIR)/src/libc64/fp.o"
     include "$(BUILD_DIR)/src/libc64/malloc.o"
     include "$(BUILD_DIR)/src/libc64/qrand.o"
-    include "$(BUILD_DIR)/src/libc64/__osMalloc_gc.o"
+    include "$(BUILD_DIR)/src/libc64/__osMalloc.o"
     include "$(BUILD_DIR)/src/libc64/sprintf.o"
     include "$(BUILD_DIR)/src/libc64/aprintf.o"
     include "$(BUILD_DIR)/src/libc64/sleep.o"
@@ -766,8 +766,8 @@ beginseg
 #endif
 
     // jpeg
-    include "$(BUILD_DIR)/src/code/jpegutils.o"
-    include "$(BUILD_DIR)/src/code/jpegdecoder.o"
+    include "$(BUILD_DIR)/src/code/make.o"
+    include "$(BUILD_DIR)/src/code/load.o"
 
     // libultra
 #if PLATFORM_N64
@@ -848,7 +848,7 @@ beginseg
     align 0x40
     include "$(BUILD_DIR)/src/buffers/zbuffer.o"
     include "$(BUILD_DIR)/src/buffers/gfxbuffers.o"
-    include "$(BUILD_DIR)/src/buffers/audio_heap.o"
+    include "$(BUILD_DIR)/src/audio/heap.o"
 endseg
 
 #if PLATFORM_N64
@@ -935,7 +935,7 @@ beginseg
     name "ovl_file_choose"
     compress
     include "$(BUILD_DIR)/src/overlays/gamestates/ovl_file_choose/z_file_nameset_data.o"
-    include "$(BUILD_DIR)/src/overlays/gamestates/ovl_file_choose/z_file_copy_erase.o"
+    include "$(BUILD_DIR)/src/overlays/gamestates/ovl_file_choose/z_file_copy_del.o"
     include "$(BUILD_DIR)/src/overlays/gamestates/ovl_file_choose/z_file_nameset.o"
     include "$(BUILD_DIR)/src/overlays/gamestates/ovl_file_choose/z_file_choose.o"
     include "$(BUILD_DIR)/src/overlays/gamestates/ovl_file_choose/ovl_file_choose_reloc.o"
@@ -949,7 +949,7 @@ beginseg
     include "$(BUILD_DIR)/src/overlays/misc/ovl_kaleido_scope/z_kaleido_equipment.o"
     include "$(BUILD_DIR)/src/overlays/misc/ovl_kaleido_scope/z_kaleido_item.o"
     include "$(BUILD_DIR)/src/overlays/misc/ovl_kaleido_scope/z_kaleido_map.o"
-    include "$(BUILD_DIR)/src/overlays/misc/ovl_kaleido_scope/z_kaleido_prompt.o"
+    include "$(BUILD_DIR)/src/overlays/misc/ovl_kaleido_scope/z_kaleido_save.o"
     include "$(BUILD_DIR)/src/overlays/misc/ovl_kaleido_scope/z_kaleido_scope.o"
     include "$(BUILD_DIR)/src/overlays/misc/ovl_kaleido_scope/z_lmap_mark.o"
 #if !OOT_MQ

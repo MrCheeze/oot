@@ -16,7 +16,7 @@ void func_80896950(BgJyaCobra* this, PlayState* play);
 void func_808969F8(BgJyaCobra* this, PlayState* play);
 void func_80896ABC(BgJyaCobra* this, PlayState* play);
 
-#include "assets/overlays/ovl_Bg_Jya_Cobra/ovl_Bg_Jya_Cobra.c"
+#include "assets/overlays/ovl_Bg_Jya_Cobra/z_bg_jya_cobra.c"
 
 ActorProfile Bg_Jya_Cobra_Profile = {
     /**/ ACTOR_BG_JYA_COBRA,

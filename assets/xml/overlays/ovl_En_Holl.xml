@@ -1,5 +1,5 @@
 <Root>
-    <File Name="ovl_En_Holl">
+    <File Name="ovl_En_Holl" OutName="z_en_holl">
         <Array Name="sPlaneVtx" Count="4" Offset="0x0">
             <Vtx/>
         </Array>

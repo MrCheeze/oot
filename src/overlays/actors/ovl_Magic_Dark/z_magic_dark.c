@@ -30,7 +30,7 @@ ActorProfile Magic_Dark_Profile = {
     /**/ MagicDark_OrbDraw,
 };
 
-#include "assets/overlays/ovl_Magic_Dark/ovl_Magic_Dark.c"
+#include "assets/overlays/ovl_Magic_Dark/z_magic_dark.c"
 
 // unused
 static Color_RGBA8 D_80B88B10[] = { { 50, 100, 150, 200 }, { 255, 200, 150, 100 } };

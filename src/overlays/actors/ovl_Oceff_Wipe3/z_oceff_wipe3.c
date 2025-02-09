@@ -26,7 +26,7 @@ ActorProfile Oceff_Wipe3_Profile = {
     /**/ OceffWipe3_Draw,
 };
 
-#include "assets/overlays/ovl_Oceff_Wipe3/ovl_Oceff_Wipe3.c"
+#include "assets/overlays/ovl_Oceff_Wipe3/z_oceff_wipe3.c"
 
 void OceffWipe3_Init(Actor* thisx, PlayState* play) {
     OceffWipe3* this = (OceffWipe3*)thisx;
