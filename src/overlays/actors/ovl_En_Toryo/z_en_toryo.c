@@ -9,14 +9,14 @@
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY)
 
-void EnToryo_Init(Actor* thisx, PlayState* play);
-void EnToryo_Destroy(Actor* thisx, PlayState* play);
-void EnToryo_Update(Actor* thisx, PlayState* play);
-void EnToryo_Draw(Actor* thisx, PlayState* play);
+void En_Toryo_Actor_ct(Actor* thisx, PlayState* play);
+void En_Toryo_Actor_dt(Actor* thisx, PlayState* play);
+void En_Toryo_Actor_move(Actor* thisx, PlayState* play);
+void En_Toryo_Actor_draw(Actor* thisx, PlayState* play);
 
-void EnToryo_Idle(EnToryo* this, PlayState* play);
-s32 EnToryo_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx);
-void EnToryo_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx);
+static void mode_move_wait(EnToryo* this, PlayState* play);
+static s32 func_before_display(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx);
+static void func_after_display(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx);
 
 ActorProfile En_Toryo_Profile = {
     /**/ ACTOR_EN_TORYO,
@@ -24,13 +24,13 @@ ActorProfile En_Toryo_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_TORYO,
     /**/ sizeof(EnToryo),
-    /**/ EnToryo_Init,
-    /**/ EnToryo_Destroy,
-    /**/ EnToryo_Update,
-    /**/ EnToryo_Draw,
+    /**/ En_Toryo_Actor_ct,
+    /**/ En_Toryo_Actor_dt,
+    /**/ En_Toryo_Actor_move,
+    /**/ En_Toryo_Actor_draw,
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit atinfodata = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -50,9 +50,9 @@ static ColliderCylinderInit sCylinderInit = {
     { 18, 63, 0, { 0, 0, 0 } },
 };
 
-static CollisionCheckInfoInit2 sColChkInfoInit = { 0, 0, 0, 0, MASS_IMMOVABLE };
+static CollisionCheckInfoInit2 statusdata = { 0, 0, 0, 0, MASS_IMMOVABLE };
 
-static DamageTable sDamageTable = {
+static DamageTable btldata = {
     /* Deku nut      */ DMG_ENTRY(0, 0x0),
     /* Deku stick    */ DMG_ENTRY(0, 0x0),
     /* Slingshot     */ DMG_ENTRY(0, 0x0),
@@ -87,11 +87,11 @@ static DamageTable sDamageTable = {
     /* Unknown 2     */ DMG_ENTRY(0, 0x0),
 };
 
-static AnimationSpeedInfo sEnToryoAnimation = { &object_toryo_Anim_000E50, 1.0f, 0, 0 };
+static AnimationSpeedInfo anime_ct_data = { &object_toryo_Anim_000E50, 1.0f, 0, 0 };
 
-static Vec3f sMultVec = { 800.0f, 1000.0f, 0.0f };
+static Vec3f pos = { 800.0f, 1000.0f, 0.0f };
 
-void EnToryo_Init(Actor* thisx, PlayState* play) {
+void En_Toryo_Actor_ct(Actor* thisx, PlayState* play) {
     EnToryo* this = (EnToryo*)thisx;
     s32 pad;
 
@@ -114,35 +114,35 @@ void EnToryo_Init(Actor* thisx, PlayState* play) {
     }
 
     if ((this->stateFlags & 7) == 0) {
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     }
 
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 42.0f);
-    SkelAnime_InitFlex(play, &this->skelAnime, &object_toryo_Skel_007150, NULL, this->jointTable, this->morphTable, 17);
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
-    CollisionCheck_SetInfo2(&this->actor.colChkInfo, &sDamageTable, &sColChkInfoInit);
-    Actor_UpdateBgCheckInfo(play, &this->actor, 0.0f, 0.0f, 0.0f, UPDBGCHECKINFO_FLAG_2);
-    Animation_Change(&this->skelAnime, sEnToryoAnimation.animation, 1.0f, 0.0f,
-                     Animation_GetLastFrame(sEnToryoAnimation.animation), sEnToryoAnimation.mode,
-                     sEnToryoAnimation.morphFrames);
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 42.0f);
+    Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &object_toryo_Skel_007150, NULL, this->jointTable, this->morphTable, 17);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set5(play, &this->collider, &this->actor, &atinfodata);
+    CollisionCheck_Status_set3(&this->actor.colChkInfo, &btldata, &statusdata);
+    Actor_BGcheck2(play, &this->actor, 0.0f, 0.0f, 0.0f, UPDBGCHECKINFO_FLAG_2);
+    Skeleton_Info2_init(&this->skelAnime, anime_ct_data.animation, 1.0f, 0.0f,
+                     Si2_anime_end_frame(anime_ct_data.animation), anime_ct_data.mode,
+                     anime_ct_data.morphFrames);
     this->stateFlags |= 8;
     this->actor.attentionRangeType = ATTENTION_RANGE_6;
-    this->actionFunc = EnToryo_Idle;
+    this->actionFunc = mode_move_wait;
 }
 
-void EnToryo_Destroy(Actor* thisx, PlayState* play) {
+void En_Toryo_Actor_dt(Actor* thisx, PlayState* play) {
     EnToryo* this = (EnToryo*)thisx;
 
-    Collider_DestroyCylinder(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider);
 }
 
-s32 EnToryo_TalkRespond(EnToryo* this, PlayState* play) {
+s32 toryo_endmsg_chk(EnToryo* this, PlayState* play) {
     s32 pad;
     Player* player = GET_PLAYER(play);
     s32 ret = 1;
 
-    switch (Message_GetState(&play->msgCtx)) {
+    switch (message_check(&play->msgCtx)) {
         case TEXT_STATE_NONE:
         case TEXT_STATE_DONE_HAS_NEXT:
         case TEXT_STATE_CLOSING:
@@ -151,9 +151,9 @@ s32 EnToryo_TalkRespond(EnToryo* this, PlayState* play) {
             ret = 1;
             break;
         case TEXT_STATE_CHOICE:
-            if (Message_ShouldAdvance(play)) {
+            if (pad_on_check(play)) {
                 if (play->msgCtx.choiceIndex == 0) {
-                    Message_CloseTextbox(play);
+                    message_close(play);
                     this->actor.parent = NULL;
                     player->exchangeItemId = EXCH_ITEM_NONE;
                     play->msgCtx.msgMode = MSGMODE_PAUSED;
@@ -169,27 +169,27 @@ s32 EnToryo_TalkRespond(EnToryo* this, PlayState* play) {
             switch (this->actor.textId) {
                 case 0x5028:
                     ret = 1;
-                    if (Message_ShouldAdvance(play)) {
+                    if (pad_on_check(play)) {
                         SET_INFTABLE(INFTABLE_172);
                         ret = 0;
                     }
                     break;
                 case 0x601B:
                     ret = 1;
-                    if (Message_ShouldAdvance(play)) {
+                    if (pad_on_check(play)) {
                         ret = 4;
                     }
                     break;
                 case 0x606F:
                     ret = 1;
-                    if (Message_ShouldAdvance(play)) {
+                    if (pad_on_check(play)) {
                         SET_INFTABLE(INFTABLE_171);
                         ret = 0;
                     }
                     break;
                 case 0x606A:
                     ret = 1;
-                    if (Message_ShouldAdvance(play)) {
+                    if (pad_on_check(play)) {
                         SET_INFTABLE(INFTABLE_170);
                         ret = 0;
                     }
@@ -200,7 +200,7 @@ s32 EnToryo_TalkRespond(EnToryo* this, PlayState* play) {
                 case 0x606E:
                 default:
                     ret = 1;
-                    if (Message_ShouldAdvance(play)) {
+                    if (pad_on_check(play)) {
                         ret = 0;
                     }
                     break;
@@ -210,12 +210,12 @@ s32 EnToryo_TalkRespond(EnToryo* this, PlayState* play) {
     return ret;
 }
 
-s32 EnToryo_DoneTalking(EnToryo* this, PlayState* play) {
+s32 toryo_endcry_chk(EnToryo* this, PlayState* play) {
     s32 pad;
     Player* player = GET_PLAYER(play);
     s32 ret = 5;
 
-    switch (Message_GetState(&play->msgCtx)) {
+    switch (message_check(&play->msgCtx)) {
         case TEXT_STATE_NONE:
         case TEXT_STATE_DONE_HAS_NEXT:
         case TEXT_STATE_CLOSING:
@@ -225,7 +225,7 @@ s32 EnToryo_DoneTalking(EnToryo* this, PlayState* play) {
             ret = 5;
             break;
         case TEXT_STATE_DONE:
-            if (Message_ShouldAdvance(play)) {
+            if (pad_on_check(play)) {
                 ret = 0;
             }
             break;
@@ -233,12 +233,12 @@ s32 EnToryo_DoneTalking(EnToryo* this, PlayState* play) {
     return ret;
 }
 
-u32 EnToryo_ReactToExchangeItem(EnToryo* this, PlayState* play) {
+u32 toryo_set_msg_get_item(EnToryo* this, PlayState* play) {
     u32 ret;
 
     if (this->exchangeItemId != EXCH_ITEM_NONE) {
         if (this->exchangeItemId == EXCH_ITEM_POACHERS_SAW) {
-            Sfx_PlaySfxCentered(NA_SE_SY_TRE_BOX_APPEAR);
+            Na_StartSystemSe_F(NA_SE_SY_TRE_BOX_APPEAR);
             if (GET_INFTABLE(INFTABLE_171)) {
                 ret = 0x606E;
             } else {
@@ -252,8 +252,8 @@ u32 EnToryo_ReactToExchangeItem(EnToryo* this, PlayState* play) {
     return ret;
 }
 
-s32 EnToryo_GetTextId(EnToryo* this, PlayState* play) {
-    s32 textId = MaskReaction_GetTextId(play, MASK_REACTION_SET_CARPENTER_BOSS);
+s32 toryo_set_msg(EnToryo* this, PlayState* play) {
+    s32 textId = get_mask_message(play, MASK_REACTION_SET_CARPENTER_BOSS);
     s32 ret = textId;
 
     if (textId == 0) {
@@ -281,63 +281,63 @@ s32 EnToryo_GetTextId(EnToryo* this, PlayState* play) {
     return ret;
 }
 
-void EnToryo_HandleTalking(EnToryo* this, PlayState* play) {
+static void func_talk(EnToryo* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     s16 posX;
     s16 posY;
 
     if (this->messageState == 3) {
-        Actor_TalkOfferAccepted(&this->actor, play);
-        Message_ContinueTextbox(play, this->actor.textId);
+        Actor_talk_check(&this->actor, play);
+        message_set2(play, this->actor.textId);
         this->messageState = 1;
     }
 
     if (this->messageState == 1) {
-        this->messageState = EnToryo_TalkRespond(this, play);
+        this->messageState = toryo_endmsg_chk(this, play);
     }
 
     if (this->messageState == 5) {
-        this->messageState = EnToryo_DoneTalking(this, play);
+        this->messageState = toryo_endcry_chk(this, play);
         return;
     }
 
     if (this->messageState == 2) {
-        Message_ContinueTextbox(play, this->actor.textId);
+        message_set2(play, this->actor.textId);
         this->messageState = 1;
     }
 
     if (this->messageState == 4) {
-        if (Actor_HasParent(&this->actor, play)) {
+        if (Actor_carry_check(&this->actor, play)) {
             this->actor.parent = NULL;
             this->messageState = 5;
         } else {
-            Actor_OfferGetItem(&this->actor, play, GI_BROKEN_GORONS_SWORD, 100.0f, 10.0f);
+            Actor_carry_request_set2(&this->actor, play, GI_BROKEN_GORONS_SWORD, 100.0f, 10.0f);
         }
         return;
     }
 
     if (this->messageState == 0) {
-        if (Actor_TalkOfferAccepted(&this->actor, play)) {
-            this->exchangeItemId = Actor_GetPlayerExchangeItemId(play);
+        if (Actor_talk_check(&this->actor, play)) {
+            this->exchangeItemId = Actor_get_item_check(play);
             if (this->exchangeItemId != EXCH_ITEM_NONE) {
-                player->actor.textId = EnToryo_ReactToExchangeItem(this, play);
+                player->actor.textId = toryo_set_msg_get_item(this, play);
                 this->actor.textId = player->actor.textId;
             }
             this->messageState = 1;
             return;
         }
 
-        Actor_GetScreenPos(play, &this->actor, &posX, &posY);
+        Actor_display_position_set(play, &this->actor, &posX, &posY);
         if ((posX >= 0) && (posX <= SCREEN_WIDTH) && (posY >= 0) && (posY <= SCREEN_HEIGHT)) {
-            this->actor.textId = EnToryo_GetTextId(this, play);
-            Actor_OfferTalkExchangeEquiCylinder(&this->actor, play, 100.0f, EXCH_ITEM_POACHERS_SAW);
+            this->actor.textId = toryo_set_msg(this, play);
+            Actor_talk_request_get_item(&this->actor, play, 100.0f, EXCH_ITEM_POACHERS_SAW);
         }
     }
 }
 
-void EnToryo_Idle(EnToryo* this, PlayState* play) {
-    SkelAnime_Update(&this->skelAnime);
-    EnToryo_HandleTalking(this, play);
+static void mode_move_wait(EnToryo* this, PlayState* play) {
+    Skeleton_Info2_anime_play(&this->skelAnime);
+    func_talk(this, play);
     if (this->messageState != 0) {
         this->stateFlags |= 0x10;
     } else {
@@ -345,14 +345,14 @@ void EnToryo_Idle(EnToryo* this, PlayState* play) {
     }
 }
 
-void EnToryo_Update(Actor* thisx, PlayState* play) {
+void En_Toryo_Actor_move(Actor* thisx, PlayState* play) {
     EnToryo* this = (EnToryo*)thisx;
     ColliderCylinder* collider = &this->collider;
     Player* player = GET_PLAYER(play);
     f32 rot;
 
-    Collider_UpdateCylinder(thisx, collider);
-    CollisionCheck_SetOC(play, &play->colChkCtx, (Collider*)collider);
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(thisx, collider);
+    CollisionCheck_setOC(play, &play->colChkCtx, (Collider*)collider);
 
     this->actionFunc(this, play);
 
@@ -362,28 +362,28 @@ void EnToryo_Update(Actor* thisx, PlayState* play) {
         this->interactInfo.trackPos.z = player->actor.focus.pos.z;
 
         if (this->stateFlags & 0x10) {
-            Npc_TrackPoint(thisx, &this->interactInfo, 0, NPC_TRACKING_FULL_BODY);
+            eye_moveM(thisx, &this->interactInfo, 0, NPC_TRACKING_FULL_BODY);
             return;
         }
 
         rot = thisx->yawTowardsPlayer - thisx->shape.rot.y;
         if ((rot < DEG_TO_BINANG2(80.0f)) && (rot > DEG_TO_BINANG2(-80.0f))) {
-            Npc_TrackPoint(thisx, &this->interactInfo, 0, NPC_TRACKING_HEAD_AND_TORSO);
+            eye_moveM(thisx, &this->interactInfo, 0, NPC_TRACKING_HEAD_AND_TORSO);
         } else {
-            Npc_TrackPoint(thisx, &this->interactInfo, 0, NPC_TRACKING_NONE);
+            eye_moveM(thisx, &this->interactInfo, 0, NPC_TRACKING_NONE);
         }
     }
 }
 
-void EnToryo_Draw(Actor* thisx, PlayState* play) {
+void En_Toryo_Actor_draw(Actor* thisx, PlayState* play) {
     EnToryo* this = (EnToryo*)thisx;
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
-    SkelAnime_DrawFlexOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
-                          EnToryo_OverrideLimbDraw, EnToryo_PostLimbDraw, this);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
+    Si2_draw_SV(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
+                          func_before_display, func_after_display, this);
 }
 
-s32 EnToryo_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+static s32 func_before_display(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     EnToryo* this = (EnToryo*)thisx;
 
     if (this->stateFlags & 8) {
@@ -401,12 +401,12 @@ s32 EnToryo_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f*
     return 0;
 }
 
-void EnToryo_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
+static void func_after_display(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
     EnToryo* this = (EnToryo*)thisx;
 
     switch (limbIndex) {
         case 15:
-            Matrix_MultVec3f(&sMultVec, &this->actor.focus.pos);
+            Matrix_Position(&pos, &this->actor.focus.pos);
             break;
     }
 }

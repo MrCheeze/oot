@@ -6,7 +6,7 @@ typedef struct FaceChange {
     /* 0x02 */ s16 timer;
 } FaceChange; // size = 0x4
 
-s16 FaceChange_UpdateBlinking(FaceChange* faceChange, s16 blinkIntervalBase, s16 blinkIntervalRandRange, s16 blinkDuration);
-s16 FaceChange_UpdateRandomSet(FaceChange* faceChange, s16 changeTimerBase, s16 changeTimerRandRange, s16 faceSetRange);
+s16 Eye_Anime_pattern_set(FaceChange* faceChange, s16 blinkIntervalBase, s16 blinkIntervalRandRange, s16 blinkDuration);
+s16 Mouth_Anime_pattern_set(FaceChange* faceChange, s16 changeTimerBase, s16 changeTimerRandRange, s16 faceSetRange);
 
 #endif

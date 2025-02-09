@@ -9,16 +9,16 @@
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY)
 
-void EnMs_Init(Actor* thisx, PlayState* play);
-void EnMs_Destroy(Actor* thisx, PlayState* play);
-void EnMs_Update(Actor* thisx, PlayState* play);
-void EnMs_Draw(Actor* thisx, PlayState* play);
+void En_Ms_actor_ct(Actor* thisx, PlayState* play);
+void En_Ms_actor_dt(Actor* thisx, PlayState* play);
+void En_Ms_actor_move(Actor* thisx, PlayState* play);
+void En_Ms_actor_draw(Actor* thisx, PlayState* play);
 
-void EnMs_SetOfferText(EnMs* this, PlayState* play);
-void EnMs_Wait(EnMs* this, PlayState* play);
-void EnMs_Talk(EnMs* this, PlayState* play);
-void EnMs_Sell(EnMs* this, PlayState* play);
-void EnMs_TalkAfterPurchase(EnMs* this, PlayState* play);
+void Ms_MessageSet(EnMs* this, PlayState* play);
+void Ms_talk_wait(EnMs* this, PlayState* play);
+void Ms_talk_start(EnMs* this, PlayState* play);
+void Ms_carry_wait(EnMs* this, PlayState* play);
+void Ms_carry_start(EnMs* this, PlayState* play);
 
 ActorProfile En_Ms_Profile = {
     /**/ ACTOR_EN_MS,
@@ -26,13 +26,13 @@ ActorProfile En_Ms_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_MS,
     /**/ sizeof(EnMs),
-    /**/ EnMs_Init,
-    /**/ EnMs_Destroy,
-    /**/ EnMs_Update,
-    /**/ EnMs_Draw,
+    /**/ En_Ms_actor_ct,
+    /**/ En_Ms_actor_dt,
+    /**/ En_Ms_actor_move,
+    /**/ En_Ms_actor_draw,
 };
 
-static ColliderCylinderInitType1 sCylinderInit = {
+static ColliderCylinderInitType1 MsPipeData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -44,144 +44,144 @@ static ColliderCylinderInitType1 sCylinderInit = {
     { 22, 37, 0, { 0 } },
 };
 
-static s16 sPrices[] = {
+static s16 seed_price[] = {
     10, 20, 30, 40, 50, 60, 70, 80, 90, 100,
 };
 
-static u16 sOfferTextIDs[] = {
+static u16 msg[] = {
     0x405E, 0x405F, 0x4060, 0x4061, 0x4062, 0x4063, 0x4064, 0x4065, 0x4066, 0x4067,
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_U8(attentionRangeType, ATTENTION_RANGE_2, ICHAIN_CONTINUE),
     ICHAIN_F32(lockOnArrowOffset, 500, ICHAIN_STOP),
 };
 
-void EnMs_SetOfferText(EnMs* this, PlayState* play) {
-    this->actor.textId = MaskReaction_GetTextId(play, MASK_REACTION_SET_MAGIC_BEAN_SALESMAN);
+void Ms_MessageSet(EnMs* this, PlayState* play) {
+    this->actor.textId = get_mask_message(play, MASK_REACTION_SET_MAGIC_BEAN_SALESMAN);
     if (this->actor.textId == 0) {
         if (BEANS_BOUGHT >= 10) {
             this->actor.textId = 0x406B;
         } else {
-            this->actor.textId = sOfferTextIDs[BEANS_BOUGHT];
+            this->actor.textId = msg[BEANS_BOUGHT];
         }
     }
 }
 
-void EnMs_Init(Actor* thisx, PlayState* play) {
+void En_Ms_actor_ct(Actor* thisx, PlayState* play) {
     EnMs* this = (EnMs*)thisx;
     s32 pad;
 
     if (LINK_AGE_IN_YEARS != YEARS_CHILD) {
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
         return;
     }
-    Actor_ProcessInitChain(&this->actor, sInitChain);
-    SkelAnime_InitFlex(play, &this->skelAnime, &gBeanSalesmanSkel, &gBeanSalesmanEatingAnim, this->jointTable,
+    ValueSet_process(&this->actor, value_init);
+    Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &gBeanSalesmanSkel, &gBeanSalesmanEatingAnim, this->jointTable,
                        this->morphTable, 9);
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinderType1(play, &this->collider, &this->actor, &sCylinderInit);
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 35.0f);
-    Actor_SetScale(&this->actor, 0.015f);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set3(play, &this->collider, &this->actor, &MsPipeData);
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 35.0f);
+    Actor_set_scale(&this->actor, 0.015f);
 
     this->actor.colChkInfo.mass = MASS_IMMOVABLE;
     this->actor.speed = 0.0f;
     this->actor.velocity.y = 0.0f;
     this->actor.gravity = -1.0f;
 
-    EnMs_SetOfferText(this, play);
+    Ms_MessageSet(this, play);
 
-    this->actionFunc = EnMs_Wait;
+    this->actionFunc = Ms_talk_wait;
 }
 
-void EnMs_Destroy(Actor* thisx, PlayState* play) {
+void En_Ms_actor_dt(Actor* thisx, PlayState* play) {
     EnMs* this = (EnMs*)thisx;
 
-    Collider_DestroyCylinder(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider);
 }
 
-void EnMs_Wait(EnMs* this, PlayState* play) {
+void Ms_talk_wait(EnMs* this, PlayState* play) {
     s16 yawDiff;
 
     yawDiff = this->actor.yawTowardsPlayer - this->actor.shape.rot.y;
-    EnMs_SetOfferText(this, play);
+    Ms_MessageSet(this, play);
 
-    if (Actor_TalkOfferAccepted(&this->actor, play)) {
-        this->actionFunc = EnMs_Talk;
+    if (Actor_talk_check(&this->actor, play)) {
+        this->actionFunc = Ms_talk_start;
     } else if ((this->actor.xzDistToPlayer < 90.0f) && (ABS(yawDiff) < 0x2000)) { // talk range
-        Actor_OfferTalk(&this->actor, play, 90.0f);
+        Actor_talk_request2(&this->actor, play, 90.0f);
     }
 }
 
-void EnMs_Talk(EnMs* this, PlayState* play) {
+void Ms_talk_start(EnMs* this, PlayState* play) {
     u8 dialogState;
 
-    dialogState = Message_GetState(&play->msgCtx);
+    dialogState = message_check(&play->msgCtx);
     if (dialogState != TEXT_STATE_CHOICE) {
-        if ((dialogState == TEXT_STATE_DONE) && Message_ShouldAdvance(play)) { // advanced final textbox
-            this->actionFunc = EnMs_Wait;
+        if ((dialogState == TEXT_STATE_DONE) && pad_on_check(play)) { // advanced final textbox
+            this->actionFunc = Ms_talk_wait;
         }
-    } else if (Message_ShouldAdvance(play)) {
+    } else if (pad_on_check(play)) {
         switch (play->msgCtx.choiceIndex) {
             case 0: // yes
-                if (gSaveContext.save.info.playerData.rupees < sPrices[BEANS_BOUGHT]) {
-                    Message_ContinueTextbox(play, 0x4069); // not enough rupees text
+                if (z_common_data.save.info.playerData.rupees < seed_price[BEANS_BOUGHT]) {
+                    message_set2(play, 0x4069); // not enough rupees text
                     return;
                 }
-                Actor_OfferGetItem(&this->actor, play, GI_MAGIC_BEAN, 90.0f, 10.0f);
-                this->actionFunc = EnMs_Sell;
+                Actor_carry_request_set2(&this->actor, play, GI_MAGIC_BEAN, 90.0f, 10.0f);
+                this->actionFunc = Ms_carry_wait;
                 return;
             case 1: // no
-                Message_ContinueTextbox(play, 0x4068);
+                message_set2(play, 0x4068);
             default:
                 return;
         }
     }
 }
 
-void EnMs_Sell(EnMs* this, PlayState* play) {
-    if (Actor_HasParent(&this->actor, play)) {
-        Rupees_ChangeBy(-sPrices[BEANS_BOUGHT]);
+void Ms_carry_wait(EnMs* this, PlayState* play) {
+    if (Actor_carry_check(&this->actor, play)) {
+        lupy_increase(-seed_price[BEANS_BOUGHT]);
         this->actor.parent = NULL;
-        this->actionFunc = EnMs_TalkAfterPurchase;
+        this->actionFunc = Ms_carry_start;
     } else {
-        Actor_OfferGetItem(&this->actor, play, GI_MAGIC_BEAN, 90.0f, 10.0f);
+        Actor_carry_request_set2(&this->actor, play, GI_MAGIC_BEAN, 90.0f, 10.0f);
     }
 }
 
-void EnMs_TalkAfterPurchase(EnMs* this, PlayState* play) {
+void Ms_carry_start(EnMs* this, PlayState* play) {
     // if dialog state is 6 and player responded to textbox
-    if ((Message_GetState(&play->msgCtx)) == TEXT_STATE_DONE && Message_ShouldAdvance(play)) {
-        Message_ContinueTextbox(play, 0x406C);
-        this->actionFunc = EnMs_Talk;
+    if ((message_check(&play->msgCtx)) == TEXT_STATE_DONE && pad_on_check(play)) {
+        message_set2(play, 0x406C);
+        this->actionFunc = Ms_talk_start;
     }
 }
 
-void EnMs_Update(Actor* thisx, PlayState* play) {
+void En_Ms_actor_move(Actor* thisx, PlayState* play) {
     EnMs* this = (EnMs*)thisx;
     s32 pad;
 
     this->activeTimer++;
-    Actor_SetFocus(&this->actor, 20.0f);
+    Actor_world_to_eye(&this->actor, 20.0f);
     this->actor.lockOnArrowOffset = 500.0f;
-    Actor_SetScale(&this->actor, 0.015f);
-    SkelAnime_Update(&this->skelAnime);
+    Actor_set_scale(&this->actor, 0.015f);
+    Skeleton_Info2_anime_play(&this->skelAnime);
     this->actionFunc(this, play);
 
-    if (gSaveContext.save.entranceIndex == ENTR_LON_LON_RANCH_0 &&
-        gSaveContext.sceneLayer == 8) { // ride carpet if in credits
-        Actor_MoveXZGravity(&this->actor);
+    if (z_common_data.save.entranceIndex == ENTR_LON_LON_RANCH_0 &&
+        z_common_data.sceneLayer == 8) { // ride carpet if in credits
+        Actor_position_moveF(&this->actor);
         PRINTF("OOOHHHHHH %f\n", this->actor.velocity.y);
-        Actor_UpdateBgCheckInfo(play, &this->actor, 0.0f, 0.0f, 0.0f, UPDBGCHECKINFO_FLAG_2);
+        Actor_BGcheck2(play, &this->actor, 0.0f, 0.0f, 0.0f, UPDBGCHECKINFO_FLAG_2);
     }
-    Collider_UpdateCylinder(&this->actor, &this->collider);
-    CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
+    CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
 }
 
-void EnMs_Draw(Actor* thisx, PlayState* play) {
+void En_Ms_actor_draw(Actor* thisx, PlayState* play) {
     EnMs* this = (EnMs*)thisx;
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
-    SkelAnime_DrawFlexOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount, NULL,
+    _texture_z_light_fog_prim(play->state.gfxCtx);
+    Si2_draw_SV(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount, NULL,
                           NULL, this);
 }

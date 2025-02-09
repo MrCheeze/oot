@@ -33,7 +33,7 @@ typedef struct ActorEntry {
 typedef struct TransitionActorEntry {
     struct {
         s8 room;    // Room to switch to
-        s8 bgCamIndex; // How the camera reacts during the transition. See `Camera_ChangeDoorCam`
+        s8 bgCamIndex; // How the camera reacts during the transition. See `setDoorCameraInfo`
     } /* 0x00 */ sides[2]; // 0 = front, 1 = back
     /* 0x04 */ s16   id;
     /* 0x06 */ Vec3s pos;
@@ -158,7 +158,7 @@ typedef enum RoomType {
     /* 2 */ ROOM_TYPE_INDOORS, // Reduces player run speed and blocks player from attacking or jumping.
     /* 3 */ ROOM_TYPE_3, // Unused. Color dithering is turned off when drawing the room and other things.
     /* 4 */ ROOM_TYPE_4, // Unused. Prevents switching to CAM_SET_HORSE when mounting a horse.
-    /* 5 */ ROOM_TYPE_BOSS // Disables Environment_AdjustLights
+    /* 5 */ ROOM_TYPE_BOSS // Disables set_add_light_global
 } RoomType;
 
 typedef enum RoomEnvironmentType {
@@ -538,7 +538,7 @@ typedef void (*SceneDrawConfigFunc)(struct PlayState*);
 #define SCENE_CAM_TYPE_DEFAULT 0
 #define SCENE_CAM_TYPE_FIXED_SHOP_VIEWPOINT 0x10 // Camera exhibits fixed behaviors and viewpoint changing is handled by shops
 #define SCENE_CAM_TYPE_FIXED_TOGGLE_VIEWPOINT 0x20 // Camera exhibits fixed behaviors and viewpoint can be toggled with c-up
-#define SCENE_CAM_TYPE_FIXED 0x30 // Camera exhibits fixed behaviors (see `Play_CamIsNotFixed` usages for examples)
+#define SCENE_CAM_TYPE_FIXED 0x30 // Camera exhibits fixed behaviors (see `Game_play_change_camera_check` usages for examples)
 #define SCENE_CAM_TYPE_FIXED_MARKET 0x40 // Camera exhibits fixed behaviors and delays textboxes by a small amount before they start to appear
 #define SCENE_CAM_TYPE_SHOOTING_GALLERY 0x50 // Unreferenced in code, and used only by the main layer of the shooting gallery scene
 
@@ -660,12 +660,12 @@ typedef enum SceneCommandTypeID {
 #define SCENE_CMD_MISC_SETTINGS(sceneCamType, worldMapLocation) \
     { SCENE_CMD_ID_MISC_SETTINGS, sceneCamType, CMD_W(worldMapLocation) }
 
-s32 Scene_ExecuteCommands(struct PlayState* play, SceneCmd* sceneCmd);
-void Scene_ResetTransitionActorList(struct GameState* state, TransitionActorList* transitionActors);
-void Scene_SetTransitionForNextEntrance(struct PlayState* play);
-void Scene_Draw(struct PlayState* play);
+s32 Scene_ct(struct PlayState* play, SceneCmd* sceneCmd);
+void Door_info_ct(struct GameState* state, TransitionActorList* transitionActors);
+void Exit_Fade_Set(struct PlayState* play);
+void call_scene_proc(struct PlayState* play);
 
-extern EntranceInfo gEntranceTable[ENTR_MAX];
-extern SceneTableEntry gSceneTable[SCENE_ID_MAX];
+extern EntranceInfo scene_status_data[ENTR_MAX];
+extern SceneTableEntry scene_data_status[SCENE_ID_MAX];
 
 #endif

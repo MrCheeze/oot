@@ -5,13 +5,13 @@
  * is in progress and automatically begin the next one as soon as the current DMA completes. If there is already a
  * second DMA queued (DMA is full), -1 is returned to indicate the buffer could not be submitted.
  *
- * Note that this is not the same as the original libultra osAiSetNextBuffer, see comments in the function.
+ * Note that this is not the same as the original libultra osAiSetNextBuffer2, see comments in the function.
  *
  * @param buf Next audio buffer. Must be an 8-byte aligned KSEG0 (0x80XXXXXX) address.
  * @param size Length of next audio buffer in bytes, maximum size 0x40000 bytes / 256 KiB. Should be a multiple of 8.
  * @return 0 if the DMA was enqueued successfully, -1 if the DMA could not yet be queued.
  */
-s32 osAiSetNextBuffer(void* buf, u32 size) {
+s32 osAiSetNextBuffer2(void* buf, u32 size) {
     static u8 hdwrBugFlag = false;
     u32 bufAdjusted = (u32)buf;
     s32 status;

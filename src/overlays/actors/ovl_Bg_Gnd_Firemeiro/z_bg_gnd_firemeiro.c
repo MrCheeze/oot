@@ -18,14 +18,14 @@
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED)
 
-void BgGndFiremeiro_Init(Actor* thisx, PlayState* play);
-void BgGndFiremeiro_Destroy(Actor* thisx, PlayState* play2);
-void BgGndFiremeiro_Update(Actor* thisx, PlayState* play);
-void BgGndFiremeiro_Draw(Actor* thisx, PlayState* play);
+void Bg_Gnd_Firemeiro_Actor_ct(Actor* thisx, PlayState* play);
+void Bg_Gnd_Firemeiro_Actor_dt(Actor* thisx, PlayState* play2);
+void Bg_Gnd_Firemeiro_Actor_move(Actor* thisx, PlayState* play);
+void Bg_Gnd_Firemeiro_Actor_draw(Actor* thisx, PlayState* play);
 
-void BgGndFiremeiro_Sink(BgGndFiremeiro* this, PlayState* play);
-void BgGndFiremeiro_Shake(BgGndFiremeiro* this, PlayState* play);
-void BgGndFiremeiro_Rise(BgGndFiremeiro* this, PlayState* play);
+static void move_down(BgGndFiremeiro* this, PlayState* play);
+void move_queike(BgGndFiremeiro* this, PlayState* play);
+static void move_wait(BgGndFiremeiro* this, PlayState* play);
 
 ActorProfile Bg_Gnd_Firemeiro_Profile = {
     /**/ ACTOR_BG_GND_FIREMEIRO,
@@ -33,30 +33,30 @@ ActorProfile Bg_Gnd_Firemeiro_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_DEMO_KEKKAI,
     /**/ sizeof(BgGndFiremeiro),
-    /**/ BgGndFiremeiro_Init,
-    /**/ BgGndFiremeiro_Destroy,
-    /**/ BgGndFiremeiro_Update,
-    /**/ BgGndFiremeiro_Draw,
+    /**/ Bg_Gnd_Firemeiro_Actor_ct,
+    /**/ Bg_Gnd_Firemeiro_Actor_dt,
+    /**/ Bg_Gnd_Firemeiro_Actor_move,
+    /**/ Bg_Gnd_Firemeiro_Actor_draw,
 };
 
-void BgGndFiremeiro_Init(Actor* thisx, PlayState* play) {
+void Bg_Gnd_Firemeiro_Actor_ct(Actor* thisx, PlayState* play) {
     s32 pad;
     BgGndFiremeiro* this = (BgGndFiremeiro*)thisx;
     CollisionHeader* colHeader = NULL;
 
-    ActorShape_Init(&this->dyna.actor.shape, 0.0f, NULL, 0.0f);
-    Actor_SetScale(&this->dyna.actor, 0.1f);
+    Shape_Info_init(&this->dyna.actor.shape, 0.0f, NULL, 0.0f);
+    Actor_set_scale(&this->dyna.actor, 0.1f);
     this->initPos = this->dyna.actor.world.pos;
 
     if (this->dyna.actor.params == 0) {
-        DynaPolyActor_Init(&this->dyna, 0);
-        CollisionHeader_GetVirtual(&gFireTrialPlatformCol, &colHeader);
-        this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
-        this->actionFunc = BgGndFiremeiro_Rise;
+        MoveBG_ct(&this->dyna, 0);
+        DynaPolyUty_bgdi_SG2KSG(&gFireTrialPlatformCol, &colHeader);
+        this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
+        this->actionFunc = move_wait;
     }
 }
 
-void BgGndFiremeiro_Destroy(Actor* thisx, PlayState* play2) {
+void Bg_Gnd_Firemeiro_Actor_dt(Actor* thisx, PlayState* play2) {
     PlayState* play = play2;
     BgGndFiremeiro* this = (BgGndFiremeiro*)thisx;
 
@@ -64,13 +64,13 @@ void BgGndFiremeiro_Destroy(Actor* thisx, PlayState* play2) {
         return;
     }
 
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
 }
 
-void BgGndFiremeiro_Sink(BgGndFiremeiro* this, PlayState* play) {
+static void move_down(BgGndFiremeiro* this, PlayState* play) {
     f32 sunkHeight = this->initPos.y - 150.0f;
 
-    if (DynaPolyActor_IsPlayerOnTop(&this->dyna)) {
+    if (MoveBG_checkRidePlayerStatus(&this->dyna)) {
         this->timer = 10;
     }
 
@@ -81,55 +81,55 @@ void BgGndFiremeiro_Sink(BgGndFiremeiro* this, PlayState* play) {
             this->dyna.actor.world.pos.y = sunkHeight;
         }
 
-        Actor_PlaySfx_FlaggedCentered2(&this->dyna.actor, NA_SE_EV_ROLL_STAND_2 - SFX_FLAG);
+        Actor_fix_level_SE_set(&this->dyna.actor, NA_SE_EV_ROLL_STAND_2 - SFX_FLAG);
     }
 
     if (this->timer > 0) {
         this->timer--;
     } else {
-        this->actionFunc = BgGndFiremeiro_Rise;
+        this->actionFunc = move_wait;
     }
 }
 
-void BgGndFiremeiro_Shake(BgGndFiremeiro* this, PlayState* play) {
+void move_queike(BgGndFiremeiro* this, PlayState* play) {
     s32 pad;
     f32 randSign;
 
-    if (DynaPolyActor_IsPlayerOnTop(&this->dyna)) {
+    if (MoveBG_checkRidePlayerStatus(&this->dyna)) {
         if (this->timer > 0) {
             this->timer--;
 
             randSign = ((this->timer & 1) ? 2.0f : -2.0f);
 
             this->dyna.actor.world.pos = this->initPos;
-            this->dyna.actor.world.pos.x += randSign * Math_SinS(this->timer * 0x2FFF);
-            this->dyna.actor.world.pos.z += randSign * Math_CosS(this->timer * 0x2FFF);
-            this->dyna.actor.world.pos.y += Math_CosS(this->timer * 0x7FFF);
+            this->dyna.actor.world.pos.x += randSign * sin_s(this->timer * 0x2FFF);
+            this->dyna.actor.world.pos.z += randSign * cos_s(this->timer * 0x2FFF);
+            this->dyna.actor.world.pos.y += cos_s(this->timer * 0x7FFF);
 
             if (!(this->timer % 4)) {
-                Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_BLOCK_SHAKE);
+                Actor_SE_set(&this->dyna.actor, NA_SE_EV_BLOCK_SHAKE);
             }
         } else {
             this->timer = 10;
             this->dyna.actor.world.pos = this->initPos;
-            this->actionFunc = BgGndFiremeiro_Sink;
+            this->actionFunc = move_down;
         }
     } else {
         this->dyna.actor.world.pos = this->initPos;
-        this->actionFunc = BgGndFiremeiro_Rise;
+        this->actionFunc = move_wait;
     }
 }
 
-void BgGndFiremeiro_Rise(BgGndFiremeiro* this, PlayState* play) {
+static void move_wait(BgGndFiremeiro* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     Actor* thisx = &this->dyna.actor;
 
-    if ((player->currentBoots != PLAYER_BOOTS_HOVER) && DynaPolyActor_IsPlayerOnTop(&this->dyna)) {
+    if ((player->currentBoots != PLAYER_BOOTS_HOVER) && MoveBG_checkRidePlayerStatus(&this->dyna)) {
         if (thisx->world.pos.y < this->initPos.y) {
-            this->actionFunc = BgGndFiremeiro_Sink;
+            this->actionFunc = move_down;
             this->timer = 20;
         } else {
-            this->actionFunc = BgGndFiremeiro_Shake;
+            this->actionFunc = move_queike;
             this->timer = 20;
         }
     } else {
@@ -142,15 +142,15 @@ void BgGndFiremeiro_Rise(BgGndFiremeiro* this, PlayState* play) {
     }
 }
 
-void BgGndFiremeiro_Update(Actor* thisx, PlayState* play) {
+void Bg_Gnd_Firemeiro_Actor_move(Actor* thisx, PlayState* play) {
     BgGndFiremeiro* this = (BgGndFiremeiro*)thisx;
 
     this->actionFunc(this, play);
 }
 
-void BgGndFiremeiro_Draw(Actor* thisx, PlayState* play) {
+void Bg_Gnd_Firemeiro_Actor_draw(Actor* thisx, PlayState* play) {
     OPEN_DISPS(play->state.gfxCtx, "../z_bg_gnd_firemeiro.c", 280);
-    Gfx_SetupDL_37Opa(play->state.gfxCtx);
+    _polygon_z_light_fog_prim(play->state.gfxCtx);
 
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_bg_gnd_firemeiro.c", 282);
     gSPDisplayList(POLY_OPA_DISP++, gFireTrialPlatformDL);

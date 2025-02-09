@@ -8,9 +8,9 @@ struct PlayState;
 struct Actor;
 struct Player;
 
-void Horse_ResetHorseData(struct PlayState* play);
-void Horse_FixLakeHyliaPosition(struct PlayState* play);
-void Horse_InitPlayerHorse(struct PlayState* play, struct Player* player);
-void Horse_RotateToPoint(struct Actor* actor, Vec3f* pos, s16 turnAmount);
+void Horse_goto_Default(struct PlayState* play);
+void Horse_escape_Spot06Water(struct PlayState* play);
+void Horse_Set_Check(struct PlayState* play, struct Player* player);
+void horse_rot_trace_pos(struct Actor* actor, Vec3f* pos, s16 turnAmount);
 
 #endif

@@ -13,21 +13,21 @@ typedef union TwoHeadGfxArena {
     };
 } TwoHeadGfxArena; // size = 0x10
 
-void THGA_Init(TwoHeadGfxArena* thga, void* start, size_t size);
-void THGA_Destroy(TwoHeadGfxArena* thga);
-u32 THGA_IsCrash(TwoHeadGfxArena* thga);
-void THGA_Reset(TwoHeadGfxArena* thga);
-s32 THGA_GetRemaining(TwoHeadGfxArena* thga);
-Gfx* THGA_GetHead(TwoHeadGfxArena* thga);
-void THGA_SetHead(TwoHeadGfxArena* thga, Gfx* newHead);
-void* THGA_GetTail(TwoHeadGfxArena* thga);
-Gfx* THGA_AllocDisplayList(TwoHeadGfxArena* thga, size_t num);
-Gfx* THGA_AllocGfx(TwoHeadGfxArena* thga);
-Gfx* THGA_AllocGfx2(TwoHeadGfxArena* thga);
-void* THGA_AllocTail(TwoHeadGfxArena* thga, size_t size);
-Mtx* THGA_AllocMtxArray(TwoHeadGfxArena* thga, size_t num);
-Mtx* THGA_AllocMtx(TwoHeadGfxArena* thga);
-Vtx* THGA_AllocVtxArray(TwoHeadGfxArena* thga, size_t num);
-Vtx* THGA_AllocVtx(TwoHeadGfxArena* thga);
+void THA_GA_ct(TwoHeadGfxArena* thga, void* start, size_t size);
+void THA_GA_dt(TwoHeadGfxArena* thga);
+u32 THA_GA_isCrash(TwoHeadGfxArena* thga);
+void THA_GA_init(TwoHeadGfxArena* thga);
+s32 THA_GA_getFreeBytes(TwoHeadGfxArena* thga);
+Gfx* THA_GA_getHeadPtr(TwoHeadGfxArena* thga);
+void THA_GA_setHeadPtr(TwoHeadGfxArena* thga, Gfx* newHead);
+void* THA_GA_getTailPtr(TwoHeadGfxArena* thga);
+Gfx* THA_GA_nextPtrN(TwoHeadGfxArena* thga, size_t num);
+Gfx* THA_GA_nextPtr1(TwoHeadGfxArena* thga);
+Gfx* THA_GA_NEXT_DISP(TwoHeadGfxArena* thga);
+void* THA_GA_alloc(TwoHeadGfxArena* thga, size_t size);
+Mtx* THA_GA_allocMtxN(TwoHeadGfxArena* thga, size_t num);
+Mtx* THA_GA_allocMtx1(TwoHeadGfxArena* thga);
+Vtx* THA_GA_allocVtxN(TwoHeadGfxArena* thga, size_t num);
+Vtx* THA_GA_allocVtx1(TwoHeadGfxArena* thga);
 
 #endif

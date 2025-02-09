@@ -38,12 +38,12 @@ typedef struct IrqMgr {
     /* 0x278 */ OSTime retraceTime;
 } IrqMgr; // size = 0x280
 
-void IrqMgr_Init(IrqMgr* irqMgr, void* stack, OSPri pri, u8 retraceCount);
+void CreateIRQManager(IrqMgr* irqMgr, void* stack, OSPri pri, u8 retraceCount);
 
-void IrqMgr_AddClient(IrqMgr* irqMgr, IrqMgrClient* client, OSMesgQueue* msgQueue);
-void IrqMgr_RemoveClient(IrqMgr* irqMgr, IrqMgrClient* client);
+void irqmgr_AddClient(IrqMgr* irqMgr, IrqMgrClient* client, OSMesgQueue* msgQueue);
+void irqmgr_RemoveClient(IrqMgr* irqMgr, IrqMgrClient* client);
 
-extern vu32 gIrqMgrResetStatus;
-extern volatile OSTime gIrqMgrRetraceTime;
+extern vu32 ResetStatus;
+extern volatile OSTime RetraceTime;
 
 #endif

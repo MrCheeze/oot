@@ -4,8 +4,8 @@
 #include "ultra64.h"
 #include "stdint.h"
 
-extern uintptr_t gSegments[NUM_SEGMENTS];
+extern uintptr_t SegmentBaseAddress[NUM_SEGMENTS];
 
-#define SEGMENTED_TO_VIRTUAL(addr) (void*)(gSegments[SEGMENT_NUMBER(addr)] + SEGMENT_OFFSET(addr) + K0BASE)
+#define SEGMENTED_TO_VIRTUAL(addr) (void*)(SegmentBaseAddress[SEGMENT_NUMBER(addr)] + SEGMENT_OFFSET(addr) + K0BASE)
 
 #endif

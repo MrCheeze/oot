@@ -1,9 +1,9 @@
 <Root>
     <File Name="ovl_En_Sda" OutName="z_en_sda">
-        <Array Name="D_80AFA398" Count="4" Offset="0x0">
+        <Array Name="shadow_test_v" Count="4" Offset="0x0">
             <Vtx/>
         </Array>
-        <DList Name="D_80AFA3D8" Offset="0x40"/>
-        <DList Name="D_80AFA3F8" Offset="0x60"/>
+        <DList Name="p_shadow_MODE" Offset="0x40"/>
+        <DList Name="p_shadow_model" Offset="0x60"/>
     </File>
 </Root>

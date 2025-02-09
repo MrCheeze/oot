@@ -37,13 +37,13 @@ typedef enum ObjectId {
 #undef DEFINE_OBJECT_EMPTY
 #undef DEFINE_OBJECT_UNSET
 
-void Object_InitContext(struct PlayState* play, ObjectContext* objectCtx);
-void Object_UpdateEntries(ObjectContext* objectCtx);
-s32 Object_GetSlot(ObjectContext* objectCtx, s16 objectId);
-s32 Object_IsLoaded(ObjectContext* objectCtx, s32 slot);
-void func_800981B8(ObjectContext* objectCtx);
+void Object_Exchange_ct(struct PlayState* play, ObjectContext* objectCtx);
+void Object_Exchange_check(ObjectContext* objectCtx);
+s32 Object_Exchange_bank_check(ObjectContext* objectCtx, s16 objectId);
+s32 Object_Exchange_bank_dma_check(ObjectContext* objectCtx, s32 slot);
+void Object_Exchange_read_all(ObjectContext* objectCtx);
 
-extern u32 gObjectTableSize;
-extern RomFile gObjectTable[OBJECT_ID_MAX];
+extern u32 object_exchange_bank_max;
+extern RomFile object_exchange_rom_address[OBJECT_ID_MAX];
 
 #endif

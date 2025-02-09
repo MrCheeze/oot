@@ -2,7 +2,7 @@
 
 // Linker symbol declarations (used in the table below)
 #define DEFINE_GAMESTATE(typeName, enumName, name) DECLARE_OVERLAY_SEGMENT(name)
-#define DEFINE_GAMESTATE_INTERNAL(typeName, enumName)
+#define DEFINE_GAMESTATE_INTERNAL(typeName, enumName, name)
 
 #include "tables/gamestate_table.h"
 
@@ -10,9 +10,9 @@
 #undef DEFINE_GAMESTATE_INTERNAL
 
 // Gamestate Overlay Table definition
-#define DEFINE_GAMESTATE_INTERNAL(typeName, enumName)                                                     \
+#define DEFINE_GAMESTATE_INTERNAL(typeName, enumName, name)                                               \
     {                                                                                                     \
-        NULL, ROM_FILE_UNSET,          NULL, NULL, NULL, typeName##_Init, typeName##_Destroy, NULL, NULL, \
+        NULL, ROM_FILE_UNSET,          NULL, NULL, NULL, name##_init, name##_cleanup, NULL, NULL,         \
         0,    sizeof(typeName##State),                                                                    \
     },
 
@@ -23,15 +23,15 @@
         _ovl_##name##SegmentStart,                 \
         _ovl_##name##SegmentEnd,                   \
         NULL,                                      \
-        typeName##_Init,                           \
-        typeName##_Destroy,                        \
+        name##_init,                               \
+        name##_cleanup,                            \
         NULL,                                      \
         NULL,                                      \
         0,                                         \
         sizeof(typeName##State),                   \
     },
 
-GameStateOverlay gGameStateOverlayTable[] = {
+GameStateOverlay game_dlftbls[] = {
 #include "tables/gamestate_table.h"
 };
 

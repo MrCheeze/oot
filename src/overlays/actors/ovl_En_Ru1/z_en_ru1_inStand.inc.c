@@ -1,22 +1,22 @@
-void func_80AEFC54(EnRu1* this, PlayState* play) {
+void En_Ru1_Actor_Stand_Init(EnRu1* this, PlayState* play) {
     if (GET_INFTABLE(INFTABLE_145) && !GET_INFTABLE(INFTABLE_146)) {
         s32 pad;
 
-        func_80AEB264(this, &gRutoChildWait2Anim, 0, 0, 0);
+        En_Ru1_Change_Anime(this, &gRutoChildWait2Anim, 0, 0, 0);
         this->action = 41;
-        this->unk_28C = EnRu1_FindSwitch(play);
-        func_80AEB0EC(this, 1);
+        this->unk_28C = En_Ru1_Search_Stand_Actor(play);
+        En_Ru1_SetConect_inStand(this, 1);
         this->actor.flags &= ~(ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY);
     } else {
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     }
 }
 
-void func_80AEFCE8(EnRu1* this, PlayState* play) {
-    this->unk_28C = EnRu1_FindSwitch(play);
+void En_Ru1_Option_Actor_main_search_stand(EnRu1* this, PlayState* play) {
+    this->unk_28C = En_Ru1_Search_Stand_Actor(play);
     if (this->unk_28C != NULL) {
         this->action = 42;
         this->drawConfig = 1;
-        func_80AEB0EC(this, 1);
+        En_Ru1_SetConect_inStand(this, 1);
     }
 }

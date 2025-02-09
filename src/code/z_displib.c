@@ -12,7 +12,7 @@
  *
  * @return dest
  */
-void* MemCpy(void* dest, const void* src, s32 len) {
+void* Memcpy(void* dest, const void* src, s32 len) {
     u8* d = dest;
     const u8* s = src;
 
@@ -27,7 +27,7 @@ void* MemCpy(void* dest, const void* src, s32 len) {
 /**
  * memset: sets `len` bytes to `val` starting at address `dest`.
  *
- * @see There are two other memsets in this codebase, Lib_MemSet(), memset().
+ * @see There are two other memsets in this codebase, mem_clear(), memset().
  * This one is unused.
  *
  * @param dest address to start at
@@ -36,7 +36,7 @@ void* MemCpy(void* dest, const void* src, s32 len) {
  *
  * @return dest
  */
-void* MemSet(void* dest, s32 val, s32 len) {
+void* Memset(void* dest, s32 val, s32 len) {
     u8* d = dest;
     s32 s = len;
 

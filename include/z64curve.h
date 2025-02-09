@@ -47,16 +47,16 @@ typedef struct SkelCurve {
 typedef s32 (*OverrideCurveLimbDraw)(struct PlayState* play, SkelCurve* skelCuve, s32 limbIndex, void* thisx);
 typedef void (*PostCurveLimbDraw)(struct PlayState* play, SkelCurve* skelCuve, s32 limbIndex, void* thisx);
 
-f32 Curve_Interpolate(f32 x, CurveInterpKnot* knots, s32 knotCount);
+f32 FcurveData_Calc(f32 x, CurveInterpKnot* knots, s32 knotCount);
 
-void SkelCurve_Clear(SkelCurve* skelCurve);
-s32 SkelCurve_Init(struct PlayState* play, SkelCurve* skelCurve, CurveSkeletonHeader* skeletonHeaderSeg,
+void FcSkeletonInfo_allClear(SkelCurve* skelCurve);
+s32 FcSkeletonInfo_ct(struct PlayState* play, SkelCurve* skelCurve, CurveSkeletonHeader* skeletonHeaderSeg,
                    CurveAnimationHeader* animation);
-void SkelCurve_Destroy(struct PlayState* play, SkelCurve* skelCurve);
-void SkelCurve_SetAnim(SkelCurve* skelCurve, CurveAnimationHeader* animation, f32 arg2, f32 endFrame, f32 curFrame,
+void FcSkeletonInfo_dt(struct PlayState* play, SkelCurve* skelCurve);
+void FcSkeletonInfo_init(SkelCurve* skelCurve, CurveAnimationHeader* animation, f32 arg2, f32 endFrame, f32 curFrame,
                        f32 playSpeed);
-s32 SkelCurve_Update(struct PlayState* play, SkelCurve* skelCurve);
-void SkelCurve_Draw(Actor* actor, struct PlayState* play, SkelCurve* skelCurve, OverrideCurveLimbDraw overrideLimbDraw,
+s32 FcSkeletonInfo_play(struct PlayState* play, SkelCurve* skelCurve);
+void FcSkeletonInfo_draw(Actor* actor, struct PlayState* play, SkelCurve* skelCurve, OverrideCurveLimbDraw overrideLimbDraw,
                     PostCurveLimbDraw postLimbDraw, s32 lod, void* data);
 
 #endif

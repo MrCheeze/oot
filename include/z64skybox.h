@@ -64,12 +64,12 @@ typedef struct SkyboxFile {
     /* 0x08 */ RomFile palette;
 } SkyboxFile; // size = 0x10
 
-extern SkyboxFile gNormalSkyFiles[];
+extern SkyboxFile vrbox_tenso[];
 
-void Skybox_Init(struct GameState* state, SkyboxContext* skyboxCtx, s16 skyboxId);
-Mtx* Skybox_UpdateMatrix(SkyboxContext* skyboxCtx, f32 x, f32 y, f32 z);
-void Skybox_Draw(SkyboxContext* skyboxCtx, struct GraphicsContext* gfxCtx, s16 skyboxId, s16 blend, f32 x, f32 y,
+void vr_box_ct(struct GameState* state, SkyboxContext* skyboxCtx, s16 skyboxId);
+Mtx* vr_mtx_set(SkyboxContext* skyboxCtx, f32 x, f32 y, f32 z);
+void vr_box_draw(SkyboxContext* skyboxCtx, struct GraphicsContext* gfxCtx, s16 skyboxId, s16 blend, f32 x, f32 y,
                  f32 z);
-void Skybox_Update(SkyboxContext* skyboxCtx);
+void vr_box_move(SkyboxContext* skyboxCtx);
 
 #endif

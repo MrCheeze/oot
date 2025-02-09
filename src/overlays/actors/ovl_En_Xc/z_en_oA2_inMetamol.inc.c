@@ -1,13 +1,13 @@
-void func_80B3FA08(EnXc* this, PlayState* play) {
+void En_Oa2_Actor_Metamol_Init(EnXc* this, PlayState* play) {
     this->action = SHEIK_ACTION_53;
     this->triforceAngle = kREG(24) + 0x53FC;
 }
 
-void func_80B3FA2C(void) {
-    Audio_PlayCutsceneEffectsSequence(SEQ_CS_EFFECTS_SHEIK_TRANSFORM);
+void En_Oa2_Metamol_Set_TransformSound(void) {
+    Na_StartDemoSe(SEQ_CS_EFFECTS_SHEIK_TRANSFORM);
 }
 
-void EnXc_PlayTriforceSFX(Actor* thisx, PlayState* play) {
+void En_Oa2_Metamol_Set_TryforceSound(Actor* thisx, PlayState* play) {
     EnXc* this = (EnXc*)thisx;
 
     if (this->unk_2A8) {
@@ -17,30 +17,30 @@ void EnXc_PlayTriforceSFX(Actor* thisx, PlayState* play) {
         Vec3f sp1C = { 0.0f, 0.0f, 0.0f };
         f32 wDest;
 
-        Matrix_MultVec3f(&sp1C, &src);
-        SkinMatrix_Vec3fMtxFMultXYZW(&play->viewProjectionMtxF, &src, &pos, &wDest);
-        SfxSource_PlaySfxAtFixedWorldPos(play, &pos, 80, NA_SE_EV_TRIFORCE_MARK);
+        Matrix_Position(&sp1C, &src);
+        Skin_Matrix_PrjMulVector(&play->viewProjectionMtxF, &src, &pos, &wDest);
+        Effect_SE_Info_new(play, &pos, 80, NA_SE_EV_TRIFORCE_MARK);
         this->unk_2A8 = 0;
     }
 }
 
-void func_80B3FAE0(EnXc* this) {
-    if (Animation_OnFrame(&this->skelAnime, 38.0f)) {
-        Sfx_PlaySfxAtPos(&this->actor.projectedPos, NA_SE_VO_SK_SHOUT);
-        func_80B3FA2C();
+void En_Oa2_Metamol_Set_ShoutSound(EnXc* this) {
+    if (Skeleton_Info_frame_check(&this->skelAnime, 38.0f)) {
+        Na_StartObjectSe_F(&this->actor.projectedPos, NA_SE_VO_SK_SHOUT);
+        En_Oa2_Metamol_Set_TransformSound();
     }
 }
 
-void EnXc_CalcTriforce(Actor* thisx, PlayState* play) {
+void En_Oa2_calc_tryforce(Actor* thisx, PlayState* play) {
     EnXc* this = (EnXc*)thisx;
 
-    if (EnXc_CheckForCue(this, play, 21, 4)) {
+    if (En_Oa2_Check_npcdemopnt(this, play, 21, 4)) {
         this->unk_274 = 1;
         if (this->unk_2AC == 0) {
             this->unk_2AC = 1;
             this->unk_2A8 = 1;
         }
-    } else if (EnXc_CheckForCue(this, play, 19, 4)) {
+    } else if (En_Oa2_Check_npcdemopnt(this, play, 19, 4)) {
         this->unk_274 = 2;
     }
     if (this->unk_274 != 0) {
@@ -84,8 +84,8 @@ void EnXc_CalcTriforce(Actor* thisx, PlayState* play) {
     }
 }
 
-void func_80B3FF0C(EnXc* this, PlayState* play) {
-    if (EnXc_CheckForNoCue(this, play, 1, 4)) {
+void En_Oa2_Metamol_check_WaitToGreet(EnXc* this, PlayState* play) {
+    if (En_Oa2_Check2_npcdemopnt(this, play, 1, 4)) {
         CutsceneContext* csCtx = &play->csCtx;
 
         if (csCtx->state != 0) {
@@ -109,87 +109,87 @@ void func_80B3FF0C(EnXc* this, PlayState* play) {
     }
 }
 
-void EnXc_SetupShowTriforceAction(EnXc* this, PlayState* play) {
-    if (EnXc_CheckForCue(this, play, 10, 4)) {
-        Animation_Change(&this->skelAnime, &gSheikShowingTriforceOnHandAnim, 1.0f, 0.0f,
-                         Animation_GetLastFrame(&gSheikShowingTriforceOnHandAnim), ANIMMODE_ONCE, -8.0f);
+void En_Oa2_Metamol_check_GreetToChenge(EnXc* this, PlayState* play) {
+    if (En_Oa2_Check_npcdemopnt(this, play, 10, 4)) {
+        Skeleton_Info2_init(&this->skelAnime, &gSheikShowingTriforceOnHandAnim, 1.0f, 0.0f,
+                         Si2_anime_end_frame(&gSheikShowingTriforceOnHandAnim), ANIMMODE_ONCE, -8.0f);
         this->action = SHEIK_ACTION_SHOW_TRIFORCE;
         this->drawMode = SHEIK_DRAW_TRIFORCE;
     }
 }
 
-void EnXc_SetupShowTriforceIdleAction(EnXc* this, s32 animFinished) {
+void En_Oa2_Metamol_check_ChengeToPosing(EnXc* this, s32 animFinished) {
     if (animFinished) {
-        Animation_Change(&this->skelAnime, &gSheikShowingTriforceOnHandIdleAnim, 1.0f, 0.0f,
-                         Animation_GetLastFrame(&gSheikShowingTriforceOnHandIdleAnim), ANIMMODE_LOOP, 0.0f);
+        Skeleton_Info2_init(&this->skelAnime, &gSheikShowingTriforceOnHandIdleAnim, 1.0f, 0.0f,
+                         Si2_anime_end_frame(&gSheikShowingTriforceOnHandIdleAnim), ANIMMODE_LOOP, 0.0f);
         this->action = SHEIK_ACTION_SHOW_TRIFORCE_IDLE;
     }
 }
-void func_80B400AC(EnXc* this, PlayState* play) {
-    if (EnXc_CheckForCue(this, play, 9, 4)) {
-        Actor_Kill(&this->actor);
+void En_Oa2_Metamol_check_PosingToDisappear(EnXc* this, PlayState* play) {
+    if (En_Oa2_Check_npcdemopnt(this, play, 9, 4)) {
+        Actor_delete(&this->actor);
     }
 }
 
-void EnXc_ActionFunc53(EnXc* this, PlayState* play) {
-    func_80B3FF0C(this, play);
+void En_Oa2_Metamol_main_wait(EnXc* this, PlayState* play) {
+    En_Oa2_Metamol_check_WaitToGreet(this, play);
 }
 
-void EnXc_ActionFunc54(EnXc* this, PlayState* play) {
-    EnXc_AnimIsFinished(this);
-    EnXc_BgCheck(this, play);
-    EnXc_SetEyePattern(this);
-    EnXc_SetupShowTriforceAction(this, play);
+void En_Oa2_Metamol_main_greet(EnXc* this, PlayState* play) {
+    En_Oa2_Animation_Basic(this);
+    En_Oa2_BGcheck(this, play);
+    En_Oa2_set_eye_pattern(this);
+    En_Oa2_Metamol_check_GreetToChenge(this, play);
 #if DEBUG_FEATURES
     func_80B3C888(this, play);
 #endif
 }
 
-void EnXc_ShowTriforce(EnXc* this, PlayState* play) {
-    s32 animFinished = EnXc_AnimIsFinished(this);
+void En_Oa2_Metamol_main_chenge(EnXc* this, PlayState* play) {
+    s32 animFinished = En_Oa2_Animation_Basic(this);
 
-    EnXc_BgCheck(this, play);
-    EnXc_SetEyePattern(this);
-    EnXc_CalcTriforce(&this->actor, play);
-    func_80B3FAE0(this);
-    EnXc_SetupShowTriforceIdleAction(this, animFinished);
+    En_Oa2_BGcheck(this, play);
+    En_Oa2_set_eye_pattern(this);
+    En_Oa2_calc_tryforce(&this->actor, play);
+    En_Oa2_Metamol_Set_ShoutSound(this);
+    En_Oa2_Metamol_check_ChengeToPosing(this, animFinished);
 #if DEBUG_FEATURES
     func_80B3C888(this, play);
 #endif
 }
 
-void EnXc_ShowTriforceIdle(EnXc* this, PlayState* play) {
-    EnXc_AnimIsFinished(this);
-    EnXc_BgCheck(this, play);
-    EnXc_SetEyePattern(this);
-    EnXc_CalcTriforce(&this->actor, play);
-    func_80B400AC(this, play);
+void En_Oa2_Metamol_main_posing(EnXc* this, PlayState* play) {
+    En_Oa2_Animation_Basic(this);
+    En_Oa2_BGcheck(this, play);
+    En_Oa2_set_eye_pattern(this);
+    En_Oa2_calc_tryforce(&this->actor, play);
+    En_Oa2_Metamol_check_PosingToDisappear(this, play);
 }
 
-s32 EnXc_TriforceOverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+s32 En_Oa2_SetDraw_par(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     if (limbIndex == 15) {
         *dList = gSheikDL_011620;
     }
     return 0;
 }
 
-void EnXc_TriforcePostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
+void En_Oa2_Metamol_AfterDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
     s32 pad[2];
     EnXc* this = (EnXc*)thisx;
 
     if (limbIndex == 15) {
         Vec3f vec = { 0.0f, 0.0f, 0.0f };
-        EnXc_PlayTriforceSFX(&this->actor, play);
-        Matrix_MultVec3f(&vec, &this->handPos);
+        En_Oa2_Metamol_Set_TryforceSound(&this->actor, play);
+        Matrix_Position(&vec, &this->handPos);
         this->unk_2BC = 1;
     }
 }
 
-void EnXc_DrawTriforce(Actor* thisx, PlayState* play) {
+void En_Oa2_Actor_draw_tryforce(Actor* thisx, PlayState* play) {
     EnXc* this = (EnXc*)thisx;
     s32 pad;
     s16 eyeIdx = this->eyeIdx;
-    void* eyeTexture = sEyeTextures[eyeIdx];
+    void* eyeTexture = en_oa2_eye[eyeIdx];
     SkelAnime* skelAnime = &this->skelAnime;
     GraphicsContext* gfxCtx = play->state.gfxCtx;
     s32 pad2;
@@ -201,24 +201,24 @@ void EnXc_DrawTriforce(Actor* thisx, PlayState* play) {
         s32* envColor = this->triforceEnvColor;
         f32* scale = this->triforceScale;
 
-        Matrix_Push();
-        Matrix_Translate(kREG(16) + 100.0f, kREG(17) + 4460.0f, kREG(18) + 1190.0f, MTXMODE_APPLY);
-        Matrix_RotateZYX(kREG(22), kREG(23), this->triforceAngle, MTXMODE_APPLY);
-        Matrix_Scale(scale[0], scale[1], scale[2], MTXMODE_APPLY);
+        Matrix_push();
+        Matrix_translate(kREG(16) + 100.0f, kREG(17) + 4460.0f, kREG(18) + 1190.0f, MTXMODE_APPLY);
+        Matrix_rotateXYZ(kREG(22), kREG(23), this->triforceAngle, MTXMODE_APPLY);
+        Matrix_scale(scale[0], scale[1], scale[2], MTXMODE_APPLY);
         MATRIX_TO_MTX(mtx, "../z_en_oA2_inMetamol.c", 602);
-        Matrix_Pop();
-        Gfx_SetupDL_25Xlu(gfxCtx);
+        Matrix_pull();
+        _texture_z_light_fog_prim_xlu(gfxCtx);
         gDPSetPrimColor(POLY_XLU_DISP++, 0, 0x80, 255, 255, primColor[2], primColor[3]);
         gDPSetEnvColor(POLY_XLU_DISP++, 255, envColor[1], 0, 128);
         gSPMatrix(POLY_XLU_DISP++, mtx, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
         gSPDisplayList(POLY_XLU_DISP++, gSheikDL_012970);
     }
 
-    func_8002EBCC(thisx, play, 0);
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    Actor_HiliteReflect_set_init(thisx, play, 0);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
     gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(eyeTexture));
     gSPSegment(POLY_OPA_DISP++, 0x09, SEGMENTED_TO_VIRTUAL(eyeTexture));
-    SkelAnime_DrawFlexOpa(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount,
-                          EnXc_TriforceOverrideLimbDraw, EnXc_TriforcePostLimbDraw, this);
+    Si2_draw_SV(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount,
+                          En_Oa2_SetDraw_par, En_Oa2_Metamol_AfterDraw, this);
     CLOSE_DISPS(gfxCtx, "../z_en_oA2_inMetamol.c", 668);
 }

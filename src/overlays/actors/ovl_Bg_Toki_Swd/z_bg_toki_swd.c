@@ -2,7 +2,7 @@
 #include "z64cutscene_commands.h"
 
 // clang-format off
-CutsceneData gPullMasterSwordCs[] = {
+CutsceneData tokinoma_demo_swd0_data[] = {
     CS_HEADER(9, 425),
     CS_PLAYER_CUE_LIST(1),
         CS_PLAYER_CUE(PLAYER_CUEID_12, 0, 256, 0x0000, 0x0000, 0x0000, 0, 54, 52, 0, 54, 52, CS_FLOAT(0x0, 0.0f), CS_FLOAT(0x0, 0.0f), CS_FLOAT(0x0, 0.0f)),
@@ -83,7 +83,7 @@ CutsceneData gPullMasterSwordCs[] = {
 #include "z64cutscene_commands.h"
 
 // clang-format off
-CutsceneData gPlaceMasterSwordCs[] = {
+CutsceneData tokinoma_demo_swd1_data[] = {
     CS_HEADER(9, 368),
     CS_CAM_EYE_SPLINE(0, 126),
         CS_CAM_POINT(CS_CAM_CONTINUE, 0x00, 0, CS_FLOAT(0x42700000, 60.0f), -1, 101, -110, 0x616D),
@@ -184,7 +184,7 @@ CutsceneData gPlaceMasterSwordCs[] = {
 #include "z64cutscene_commands.h"
 
 // clang-format off
-CutsceneData gRevealMasterSwordCs[] = {
+CutsceneData tokinoma_demo_first_data[] = {
     CS_HEADER(11, 3000),
     CS_UNK_DATA_LIST(0x00000021, 1),
         CS_UNK_DATA(0x00010000, 0x0BB80000, 0x00000000, 0x00000000, 0xFFFFFFF8, 0xFFFFFFFF, 0x00000000, 0xFFFFFFF8, 0xFFFFFFFF, 0x00000000, 0x00000000, 0x00000000),
@@ -289,18 +289,18 @@ CutsceneData gRevealMasterSwordCs[] = {
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void BgTokiSwd_Init(Actor* thisx, PlayState* play);
-void BgTokiSwd_Destroy(Actor* thisx, PlayState* play);
-void BgTokiSwd_Update(Actor* thisx, PlayState* play);
-void BgTokiSwd_Draw(Actor* thisx, PlayState* play2);
+void Bg_Toki_Swd_actor_ct(Actor* thisx, PlayState* play);
+void Bg_Toki_Swd_actor_dt(Actor* thisx, PlayState* play);
+void Bg_Toki_Swd_actor_move(Actor* thisx, PlayState* play);
+void Bg_Toki_Swd_actor_draw(Actor* thisx, PlayState* play2);
 
-void func_808BAF40(BgTokiSwd* this, PlayState* play);
-void func_808BB0AC(BgTokiSwd* this, PlayState* play);
-void func_808BB128(BgTokiSwd* this, PlayState* play);
+static void mode_wait(BgTokiSwd* this, PlayState* play);
+static void mode_demo_wait(BgTokiSwd* this, PlayState* play);
+void mode_no_draw(BgTokiSwd* this, PlayState* play);
 
-extern CutsceneData gPullMasterSwordCs[];
-extern CutsceneData gPlaceMasterSwordCs[];
-extern CutsceneData gRevealMasterSwordCs[];
+extern CutsceneData tokinoma_demo_swd0_data[];
+extern CutsceneData tokinoma_demo_swd1_data[];
+extern CutsceneData tokinoma_demo_first_data[];
 
 ActorProfile Bg_Toki_Swd_Profile = {
     /**/ ACTOR_BG_TOKI_SWD,
@@ -308,13 +308,13 @@ ActorProfile Bg_Toki_Swd_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_TOKI_OBJECTS,
     /**/ sizeof(BgTokiSwd),
-    /**/ BgTokiSwd_Init,
-    /**/ BgTokiSwd_Destroy,
-    /**/ BgTokiSwd_Update,
-    /**/ BgTokiSwd_Draw,
+    /**/ Bg_Toki_Swd_actor_ct,
+    /**/ Bg_Toki_Swd_actor_dt,
+    /**/ Bg_Toki_Swd_actor_move,
+    /**/ Bg_Toki_Swd_actor_draw,
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit TokiSwdOcData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -334,71 +334,71 @@ static ColliderCylinderInit sCylinderInit = {
     { 10, 70, 0, { 0 } },
 };
 
-static CollisionCheckInfoInit sColChkInfoInit = { 10, 35, 100, MASS_IMMOVABLE };
+static CollisionCheckInfoInit TokiSwdStatusData = { 10, 35, 100, MASS_IMMOVABLE };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F_DIV1000(scale, 25, ICHAIN_STOP),
 };
 
-void BgTokiSwd_SetupAction(BgTokiSwd* this, BgTokiSwdActionFunc actionFunc) {
+void Bg_Toki_Swd_actor_set_process(BgTokiSwd* this, BgTokiSwdActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
 
-void BgTokiSwd_Init(Actor* thisx, PlayState* play) {
+void Bg_Toki_Swd_actor_ct(Actor* thisx, PlayState* play) {
     s32 pad;
     BgTokiSwd* this = (BgTokiSwd*)thisx;
 
-    Actor_ProcessInitChain(&this->actor, sInitChain);
+    ValueSet_process(&this->actor, value_init);
     this->actor.shape.yOffset = 800.0f;
-    BgTokiSwd_SetupAction(this, func_808BAF40);
+    Bg_Toki_Swd_actor_set_process(this, mode_wait);
 
     if (LINK_IS_ADULT) {
         this->actor.draw = NULL;
     }
 
-    if (gSaveContext.sceneLayer == 5) {
+    if (z_common_data.sceneLayer == 5) {
         play->roomCtx.drawParams[0] = 0xFF;
     }
 
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinder(play, &this->collider, thisx, &sCylinderInit);
-    Collider_UpdateCylinder(&this->actor, &this->collider);
-    CollisionCheck_SetInfo(&this->actor.colChkInfo, NULL, &sColChkInfoInit);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set5(play, &this->collider, thisx, &TokiSwdOcData);
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
+    CollisionCheck_Status_set2(&this->actor.colChkInfo, NULL, &TokiSwdStatusData);
 }
 
-void BgTokiSwd_Destroy(Actor* thisx, PlayState* play) {
+void Bg_Toki_Swd_actor_dt(Actor* thisx, PlayState* play) {
     BgTokiSwd* this = (BgTokiSwd*)thisx;
 
-    Collider_DestroyCylinder(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider);
 }
 
-void func_808BAF40(BgTokiSwd* this, PlayState* play) {
+static void mode_wait(BgTokiSwd* this, PlayState* play) {
     if (!GET_EVENTCHKINF(EVENTCHKINF_REVEALED_MASTER_SWORD) && !IS_CUTSCENE_LAYER &&
-        Actor_IsFacingAndNearPlayer(&this->actor, 800.0f, 0x7530) && !Play_InCsMode(play)) {
+        Actor_player_distance_direction_check(&this->actor, 800.0f, 0x7530) && !Game_play_demo_mode_check(play)) {
         SET_EVENTCHKINF(EVENTCHKINF_REVEALED_MASTER_SWORD);
-        play->csCtx.script = gRevealMasterSwordCs;
-        gSaveContext.cutsceneTrigger = 1;
+        play->csCtx.script = tokinoma_demo_first_data;
+        z_common_data.cutsceneTrigger = 1;
     }
     if (!LINK_IS_ADULT || GET_EVENTCHKINF(EVENTCHKINF_55)) {
-        if (Actor_HasParent(&this->actor, play)) {
+        if (Actor_carry_check(&this->actor, play)) {
             if (!LINK_IS_ADULT) {
-                Item_Give(play, ITEM_SWORD_MASTER);
-                play->csCtx.script = gPullMasterSwordCs;
+                item_get_setting(play, ITEM_SWORD_MASTER);
+                play->csCtx.script = tokinoma_demo_swd0_data;
             } else {
-                play->csCtx.script = gPlaceMasterSwordCs;
+                play->csCtx.script = tokinoma_demo_swd1_data;
             }
             SEQCMD_STOP_SEQUENCE(SEQ_PLAYER_BGM_MAIN, 0);
             SEQCMD_PLAY_SEQUENCE(SEQ_PLAYER_BGM_MAIN, 0, 0, NA_BGM_MASTER_SWORD);
-            gSaveContext.cutsceneTrigger = 1;
+            z_common_data.cutsceneTrigger = 1;
             this->actor.parent = NULL;
-            BgTokiSwd_SetupAction(this, func_808BB0AC);
+            Bg_Toki_Swd_actor_set_process(this, mode_demo_wait);
         } else {
-            if (Actor_IsFacingPlayer(&this->actor, 0x2000)) {
-                Actor_OfferCarry(&this->actor, play);
+            if (Actor_player_direction_check(&this->actor, 0x2000)) {
+                Actor_carry_request(&this->actor, play);
             }
         }
     }
-    if (gSaveContext.sceneLayer == 5) {
+    if (z_common_data.sceneLayer == 5) {
         if (play->roomCtx.drawParams[0] > 0) {
             play->roomCtx.drawParams[0]--;
         } else {
@@ -407,49 +407,49 @@ void func_808BAF40(BgTokiSwd* this, PlayState* play) {
     }
 }
 
-void func_808BB0AC(BgTokiSwd* this, PlayState* play) {
+static void mode_demo_wait(BgTokiSwd* this, PlayState* play) {
     Player* player;
 
     // if sword has a parent it has been pulled/placed from the pedestal
-    if (Actor_HasParent(&this->actor, play)) {
+    if (Actor_carry_check(&this->actor, play)) {
         if (!LINK_IS_ADULT) {
-            Actor_PlaySfx(&this->actor, NA_SE_IT_SWORD_PUTAWAY_STN);
+            Actor_SE_set(&this->actor, NA_SE_IT_SWORD_PUTAWAY_STN);
             this->actor.draw = NULL; // sword has been pulled, don't draw sword
         } else {
-            this->actor.draw = BgTokiSwd_Draw; // sword has been placed, draw the master sword
+            this->actor.draw = Bg_Toki_Swd_actor_draw; // sword has been placed, draw the master sword
         }
-        BgTokiSwd_SetupAction(this, func_808BB128);
+        Bg_Toki_Swd_actor_set_process(this, mode_no_draw);
     } else {
         player = GET_PLAYER(play);
         player->interactRangeActor = &this->actor;
     }
 }
 
-void func_808BB128(BgTokiSwd* this, PlayState* play) {
-    if (CutsceneFlags_Get(play, 1) && (play->roomCtx.drawParams[0] < 0xFF)) {
+void mode_no_draw(BgTokiSwd* this, PlayState* play) {
+    if (eventbit_check(play, 1) && (play->roomCtx.drawParams[0] < 0xFF)) {
         play->roomCtx.drawParams[0] += 5;
     }
 }
 
-void BgTokiSwd_Update(Actor* thisx, PlayState* play) {
+void Bg_Toki_Swd_actor_move(Actor* thisx, PlayState* play) {
     BgTokiSwd* this = (BgTokiSwd*)thisx;
 
     this->actionFunc(this, play);
-    CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
+    CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
 }
 
-void BgTokiSwd_Draw(Actor* thisx, PlayState* play2) {
+void Bg_Toki_Swd_actor_draw(Actor* thisx, PlayState* play2) {
     PlayState* play = play2;
     BgTokiSwd* this = (BgTokiSwd*)thisx;
     s32 pad[3];
 
     OPEN_DISPS(play->state.gfxCtx, "../z_bg_toki_swd.c", 727);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
 
-    func_8002EBCC(&this->actor, play, 0);
+    Actor_HiliteReflect_set_init(&this->actor, play, 0);
 
-    gSPSegment(POLY_OPA_DISP++, 0x08, Gfx_TexScroll(play->state.gfxCtx, 0, -(play->gameplayFrames % 0x80), 32, 32));
+    gSPSegment(POLY_OPA_DISP++, 0x08, tex_scroll2(play->state.gfxCtx, 0, -(play->gameplayFrames % 0x80), 32, 32));
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_bg_toki_swd.c", 742);
     gSPDisplayList(POLY_OPA_DISP++, object_toki_objects_DL_001BD0);
 

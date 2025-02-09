@@ -15,14 +15,14 @@
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void BgHidanFslift_Init(Actor* thisx, PlayState* play);
-void BgHidanFslift_Destroy(Actor* thisx, PlayState* play);
-void BgHidanFslift_Update(Actor* thisx, PlayState* play);
-void BgHidanFslift_Draw(Actor* thisx, PlayState* play);
+void Bg_Hidan_Fslift_actor_ct(Actor* thisx, PlayState* play);
+void Bg_Hidan_Fslift_actor_dt(Actor* thisx, PlayState* play);
+void Bg_Hidan_Fslift_actor_move(Actor* thisx, PlayState* play);
+void Bg_Hidan_Fslift_actor_draw(Actor* thisx, PlayState* play);
 
-void BgHidanFslift_Idle(BgHidanFslift* this, PlayState* play);
-void BgHidanFslift_Descend(BgHidanFslift* this, PlayState* play);
-void BgHidanFslift_Ascend(BgHidanFslift* this, PlayState* play);
+static void mode_wait(BgHidanFslift* this, PlayState* play);
+static void mode_down(BgHidanFslift* this, PlayState* play);
+static void mode_up(BgHidanFslift* this, PlayState* play);
 
 ActorProfile Bg_Hidan_Fslift_Profile = {
     /**/ ACTOR_BG_HIDAN_FSLIFT,
@@ -30,39 +30,39 @@ ActorProfile Bg_Hidan_Fslift_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_HIDAN_OBJECTS,
     /**/ sizeof(BgHidanFslift),
-    /**/ BgHidanFslift_Init,
-    /**/ BgHidanFslift_Destroy,
-    /**/ BgHidanFslift_Update,
-    /**/ BgHidanFslift_Draw,
+    /**/ Bg_Hidan_Fslift_actor_ct,
+    /**/ Bg_Hidan_Fslift_actor_dt,
+    /**/ Bg_Hidan_Fslift_actor_move,
+    /**/ Bg_Hidan_Fslift_actor_draw,
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeScale, 300, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDownward, 350, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDistance, 2000, ICHAIN_STOP),
 };
 
-void BgHidanFslift_Init(Actor* thisx, PlayState* play) {
+void Bg_Hidan_Fslift_actor_ct(Actor* thisx, PlayState* play) {
     s32 pad1;
     BgHidanFslift* this = (BgHidanFslift*)thisx;
     CollisionHeader* colHeader = NULL;
     s32 pad2;
 
-    Actor_ProcessInitChain(&this->dyna.actor, sInitChain);
-    DynaPolyActor_Init(&this->dyna, DYNA_TRANSFORM_POS);
-    CollisionHeader_GetVirtual(&gFireTempleHookshotElevatorCol, &colHeader);
-    this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, thisx, colHeader);
-    if (Actor_SpawnAsChild(&play->actorCtx, &this->dyna.actor, play, ACTOR_OBJ_HSBLOCK, this->dyna.actor.world.pos.x,
+    ValueSet_process(&this->dyna.actor, value_init);
+    MoveBG_ct(&this->dyna, DYNA_TRANSFORM_POS);
+    DynaPolyUty_bgdi_SG2KSG(&gFireTempleHookshotElevatorCol, &colHeader);
+    this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, thisx, colHeader);
+    if (Actor_info_make_child_actor(&play->actorCtx, &this->dyna.actor, play, ACTOR_OBJ_HSBLOCK, this->dyna.actor.world.pos.x,
                            this->dyna.actor.world.pos.y + 40.0f, this->dyna.actor.world.pos.z + -28.0f, 0, 0, 0,
                            2) == NULL) {
-        Actor_Kill(&this->dyna.actor);
+        Actor_delete(&this->dyna.actor);
         return;
     }
-    this->actionFunc = BgHidanFslift_Idle;
+    this->actionFunc = mode_wait;
 }
 
-void BgHidanFslift_SetHookshotTargetPos(BgHidanFslift* this) {
+void hidan_fslift_set_fs_pos(BgHidanFslift* this) {
     if (this->dyna.actor.child != NULL && this->dyna.actor.child->update != NULL) {
         this->dyna.actor.child->world.pos.x = this->dyna.actor.world.pos.x;
         this->dyna.actor.child->world.pos.y = this->dyna.actor.world.pos.y + 40.0f;
@@ -72,18 +72,18 @@ void BgHidanFslift_SetHookshotTargetPos(BgHidanFslift* this) {
     }
 }
 
-void BgHidanFslift_Destroy(Actor* thisx, PlayState* play) {
+void Bg_Hidan_Fslift_actor_dt(Actor* thisx, PlayState* play) {
     BgHidanFslift* this = (BgHidanFslift*)thisx;
 
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
 }
 
-void BgHidanFslift_SetupIdle(BgHidanFslift* this) {
+static void mode_wait_init(BgHidanFslift* this) {
     this->timer = 40;
-    this->actionFunc = BgHidanFslift_Idle;
+    this->actionFunc = mode_wait;
 }
 
-void BgHidanFslift_Idle(BgHidanFslift* this, PlayState* play) {
+static void mode_wait(BgHidanFslift* this, PlayState* play) {
     s32 nearHomePos;
 
     if (this->timer) {
@@ -95,57 +95,57 @@ void BgHidanFslift_Idle(BgHidanFslift* this, PlayState* play) {
         if ((this->dyna.actor.world.pos.y - this->dyna.actor.home.pos.y) < 0.5f) {
             nearHomePos = true;
         }
-        if (DynaPolyActor_IsPlayerAbove(&this->dyna) && nearHomePos) {
-            this->actionFunc = BgHidanFslift_Ascend;
+        if (MoveBG_checkOverPlayerStatus(&this->dyna) && nearHomePos) {
+            this->actionFunc = mode_up;
         } else if (!nearHomePos) {
-            this->actionFunc = BgHidanFslift_Descend;
+            this->actionFunc = mode_down;
         }
     }
 }
 
-void BgHidanFslift_Descend(BgHidanFslift* this, PlayState* play) {
-    if (Math_StepToF(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y, 4.0f)) {
-        Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_BLOCK_BOUND);
-        BgHidanFslift_SetupIdle(this);
+static void mode_down(BgHidanFslift* this, PlayState* play) {
+    if (chase_f(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y, 4.0f)) {
+        Actor_SE_set(&this->dyna.actor, NA_SE_EV_BLOCK_BOUND);
+        mode_wait_init(this);
     } else {
-        Actor_PlaySfx_Flagged(&this->dyna.actor, NA_SE_EV_ELEVATOR_MOVE3 - SFX_FLAG);
+        Actor_level_SE_set(&this->dyna.actor, NA_SE_EV_ELEVATOR_MOVE3 - SFX_FLAG);
     }
-    BgHidanFslift_SetHookshotTargetPos(this);
+    hidan_fslift_set_fs_pos(this);
 }
 
-void BgHidanFslift_Ascend(BgHidanFslift* this, PlayState* play) {
-    if (DynaPolyActor_IsPlayerAbove(&this->dyna)) {
-        if (Math_StepToF(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y + 790.0f, 4.0f)) {
-            Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_BLOCK_BOUND);
-            BgHidanFslift_SetupIdle(this);
+static void mode_up(BgHidanFslift* this, PlayState* play) {
+    if (MoveBG_checkOverPlayerStatus(&this->dyna)) {
+        if (chase_f(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y + 790.0f, 4.0f)) {
+            Actor_SE_set(&this->dyna.actor, NA_SE_EV_BLOCK_BOUND);
+            mode_wait_init(this);
         } else {
-            Actor_PlaySfx_Flagged(&this->dyna.actor, NA_SE_EV_ELEVATOR_MOVE3 - SFX_FLAG);
+            Actor_level_SE_set(&this->dyna.actor, NA_SE_EV_ELEVATOR_MOVE3 - SFX_FLAG);
         }
     } else {
-        BgHidanFslift_SetupIdle(this);
+        mode_wait_init(this);
     }
-    BgHidanFslift_SetHookshotTargetPos(this);
+    hidan_fslift_set_fs_pos(this);
 }
 
-void BgHidanFslift_Update(Actor* thisx, PlayState* play) {
+void Bg_Hidan_Fslift_actor_move(Actor* thisx, PlayState* play) {
     BgHidanFslift* this = (BgHidanFslift*)thisx;
 
     this->actionFunc(this, play);
-    if (DynaPolyActor_IsPlayerOnTop(&this->dyna)) {
+    if (MoveBG_checkRidePlayerStatus(&this->dyna)) {
         if (this->cameraSetting == CAM_SET_NONE) {
             this->cameraSetting = CAM_SET_DUNGEON0;
         }
-        Camera_RequestSetting(play->cameraPtrs[CAM_ID_MAIN], CAM_SET_ELEVATOR_PLATFORM);
-    } else if (!DynaPolyActor_IsPlayerOnTop(&this->dyna)) {
+        changeCameraSet(play->cameraPtrs[CAM_ID_MAIN], CAM_SET_ELEVATOR_PLATFORM);
+    } else if (!MoveBG_checkRidePlayerStatus(&this->dyna)) {
         if (this->cameraSetting != CAM_SET_NONE) {
             // Given the values that get set to `cameraSetting`, it seems likely that it was intended to be
             // passed to the function call below. But instead `CAM_SET_DUNGEON0` is used directly.
-            Camera_RequestSetting(play->cameraPtrs[CAM_ID_MAIN], CAM_SET_DUNGEON0);
+            changeCameraSet(play->cameraPtrs[CAM_ID_MAIN], CAM_SET_DUNGEON0);
         }
         this->cameraSetting = CAM_SET_NONE;
     }
 }
 
-void BgHidanFslift_Draw(Actor* thisx, PlayState* play) {
-    Gfx_DrawDListOpa(play, gFireTempleHookshotElevatorDL);
+void Bg_Hidan_Fslift_actor_draw(Actor* thisx, PlayState* play) {
+    Cheap_gfx_display(play, gFireTempleHookshotElevatorDL);
 }

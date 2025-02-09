@@ -1,24 +1,24 @@
-void EnNb_InitKidnap(EnNb* this, PlayState* play) {
-    EnNb_SetCurrentAnim(this, &gNabooruTrappedInVortexPushingGroundAnim, 0, 0.0f, 0);
+void En_Nb_Kidnap_Init(EnNb* this, PlayState* play) {
+    En_Nb_Change_Anime(this, &gNabooruTrappedInVortexPushingGroundAnim, 0, 0.0f, 0);
     this->action = NB_KIDNAPPED;
     this->actor.shape.shadowAlpha = 0;
     SET_EVENTCHKINF(EVENTCHKINF_95);
 }
 
-void EnNb_PlayCrySFX(EnNb* this, PlayState* play) {
+void En_Nb_Kidnap_Set_CrySound(EnNb* this, PlayState* play) {
     if (play->csCtx.curFrame == 3) {
-        Sfx_PlaySfxAtPos(&this->actor.projectedPos, NA_SE_VO_NB_CRY_0);
+        Na_StartObjectSe_F(&this->actor.projectedPos, NA_SE_VO_NB_CRY_0);
     }
 }
 
-void EnNb_PlayAgonySFX(EnNb* this, PlayState* play) {
+void En_Nb_Kidnap_Set_AgonySound(EnNb* this, PlayState* play) {
     if (play->csCtx.curFrame == 420) {
-        Sfx_PlaySfxAtPos(&this->actor.projectedPos, NA_SE_VO_NB_AGONY);
+        Na_StartObjectSe_F(&this->actor.projectedPos, NA_SE_VO_NB_AGONY);
     }
 }
 
-void EnNb_SetPosInPortal(EnNb* this, PlayState* play) {
-    CsCmdActorCue* cue = EnNb_GetCue(play, 1);
+void En_Nb_Kidnap_Movement_Fall(EnNb* this, PlayState* play) {
+    CsCmdActorCue* cue = En_Nb_Get_npcdemopnt(play, 1);
     Vec3f* pos = &this->actor.world.pos;
     f32 lerp;
     s32 pad;
@@ -26,7 +26,7 @@ void EnNb_SetPosInPortal(EnNb* this, PlayState* play) {
     Vec3f endPos;
 
     if (cue != NULL) {
-        lerp = Environment_LerpWeightAccelDecel(cue->endFrame, cue->startFrame, play->csCtx.curFrame, 4, 4);
+        lerp = get_parcent_forAccelBrake(cue->endFrame, cue->startFrame, play->csCtx.curFrame, 4, 4);
         startPos.x = cue->startPos.x;
         startPos.y = cue->startPos.y;
         startPos.z = cue->startPos.z;
@@ -41,40 +41,40 @@ void EnNb_SetPosInPortal(EnNb* this, PlayState* play) {
     }
 }
 
-void EnNb_SetupCaptureCutsceneState(EnNb* this, PlayState* play) {
-    EnNb_SetStartPosRotFromCue1(this, play, 1);
+void En_Nb_Kidnap_setup_Wait(EnNb* this, PlayState* play) {
+    En_Nb_Set_DemoStartPosAngle(this, play, 1);
     this->action = NB_KIDNAPPED;
     this->drawMode = NB_DRAW_NOTHING;
     this->actor.shape.shadowAlpha = 0;
 }
 
-void EnNb_SetRaisedArmCaptureAnim(EnNb* this, s32 animFinished) {
+void En_Nb_Kidnap_Check_Animation_fall(EnNb* this, s32 animFinished) {
     AnimationHeader* animation = &gNabooruSuckedByVortexAnim;
 
     if (animFinished) {
-        Animation_Change(&this->skelAnime, animation, 1.0f, 0.0f, Animation_GetLastFrame(animation), ANIMMODE_LOOP,
+        Skeleton_Info2_init(&this->skelAnime, animation, 1.0f, 0.0f, Si2_anime_end_frame(animation), ANIMMODE_LOOP,
                          0.0f);
     }
 }
 
-void EnNb_SetupLookAroundInKidnap(EnNb* this) {
+void En_Nb_Kidnap_setup_Struggle(EnNb* this) {
     AnimationHeader* animation = &gNabooruTrappedInVortexPushingGroundAnim;
 
-    Animation_Change(&this->skelAnime, animation, 1.0f, 0.0f, Animation_GetLastFrame(animation), ANIMMODE_LOOP, -8.0f);
+    Skeleton_Info2_init(&this->skelAnime, animation, 1.0f, 0.0f, Si2_anime_end_frame(animation), ANIMMODE_LOOP, -8.0f);
     this->action = NB_KIDNAPPED_LOOK_AROUND;
     this->drawMode = NB_DRAW_DEFAULT;
 }
 
-void EnNb_SetupKidnap(EnNb* this) {
+void En_Nb_Kidnap_setup_Fall(EnNb* this) {
     AnimationHeader* animation = &gNabooruTrappedInVortexRaisingArmAnim;
 
-    Animation_Change(&this->skelAnime, animation, 1.0f, 0.0f, Animation_GetLastFrame(animation), ANIMMODE_ONCE, -8.0f);
+    Skeleton_Info2_init(&this->skelAnime, animation, 1.0f, 0.0f, Si2_anime_end_frame(animation), ANIMMODE_ONCE, -8.0f);
     this->action = NB_PORTAL_FALLTHROUGH;
     this->drawMode = NB_DRAW_DEFAULT;
 }
 
-void EnNb_CheckKidnapCsMode(EnNb* this, PlayState* play) {
-    CsCmdActorCue* cue = EnNb_GetCue(play, 1);
+void En_Nb_Kidnap_Check_DemoMode(EnNb* this, PlayState* play) {
+    CsCmdActorCue* cue = En_Nb_Get_npcdemopnt(play, 1);
     s32 nextCueId;
     s32 currentCueId;
 
@@ -85,16 +85,16 @@ void EnNb_CheckKidnapCsMode(EnNb* this, PlayState* play) {
         if (nextCueId != currentCueId) {
             switch (nextCueId) {
                 case 1:
-                    EnNb_SetupCaptureCutsceneState(this, play);
+                    En_Nb_Kidnap_setup_Wait(this, play);
                     break;
                 case 7:
-                    EnNb_SetupLookAroundInKidnap(this);
+                    En_Nb_Kidnap_setup_Struggle(this);
                     break;
                 case 8:
-                    EnNb_SetupKidnap(this);
+                    En_Nb_Kidnap_setup_Fall(this);
                     break;
                 case 9:
-                    Actor_Kill(&this->actor);
+                    Actor_delete(&this->actor);
                     break;
                 default:
                     // "Operation Doesn't Exist!!!!!!!!"
@@ -106,25 +106,25 @@ void EnNb_CheckKidnapCsMode(EnNb* this, PlayState* play) {
     }
 }
 
-void func_80AB23A8(EnNb* this, PlayState* play) {
-    EnNb_PlayCrySFX(this, play);
-    EnNb_CheckKidnapCsMode(this, play);
+void En_Nb_Kidnap_Actor_main_hide(EnNb* this, PlayState* play) {
+    En_Nb_Kidnap_Set_CrySound(this, play);
+    En_Nb_Kidnap_Check_DemoMode(this, play);
 }
 
-void EnNb_MovingInPortal(EnNb* this, PlayState* play) {
-    EnNb_PlayCrySFX(this, play);
-    EnNb_PlayAgonySFX(this, play);
-    EnNb_UpdateEyes(this);
-    EnNb_UpdateSkelAnime(this);
-    EnNb_CheckKidnapCsMode(this, play);
+void En_Nb_Kidnap_Actor_main_struggle(EnNb* this, PlayState* play) {
+    En_Nb_Kidnap_Set_CrySound(this, play);
+    En_Nb_Kidnap_Set_AgonySound(this, play);
+    En_Nb_set_eye_pattern(this);
+    En_Nb_Animation_Base(this);
+    En_Nb_Kidnap_Check_DemoMode(this, play);
 }
 
-void EnNb_SuckedInByPortal(EnNb* this, PlayState* play) {
+void En_Nb_Kidnap_Actor_main_Fall(EnNb* this, PlayState* play) {
     s32 animFinished;
 
-    EnNb_UpdateEyes(this);
-    animFinished = EnNb_UpdateSkelAnime(this);
-    EnNb_SetRaisedArmCaptureAnim(this, animFinished);
-    EnNb_SetPosInPortal(this, play);
-    EnNb_CheckKidnapCsMode(this, play);
+    En_Nb_set_eye_pattern(this);
+    animFinished = En_Nb_Animation_Base(this);
+    En_Nb_Kidnap_Check_Animation_fall(this, animFinished);
+    En_Nb_Kidnap_Movement_Fall(this, play);
+    En_Nb_Kidnap_Check_DemoMode(this, play);
 }

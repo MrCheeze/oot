@@ -1,8 +1,8 @@
 <Root>
     <File Name="ovl_En_Kanban" OutName="z_en_kanban">
-        <Array Name="sShadowVtx" Count="4" Offset="0x0">
+        <Array Name="shadow_test_v" Count="4" Offset="0x0">
             <Vtx/>
         </Array>
-        <DList Name="sShadowDL" Offset="0x40"/>
+        <DList Name="kanban_shadow_model" Offset="0x40"/>
     </File>
 </Root>

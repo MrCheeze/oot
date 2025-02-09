@@ -10,38 +10,38 @@
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void EnRl_Init(Actor* thisx, PlayState* play);
-void EnRl_Destroy(Actor* thisx, PlayState* play);
-void EnRl_Update(Actor* thisx, PlayState* play);
-void EnRl_Draw(Actor* thisx, PlayState* play);
+void En_Rl_Actor_ct(Actor* thisx, PlayState* play);
+void En_Rl_Actor_dt(Actor* thisx, PlayState* play);
+void En_Rl_Actor_main(Actor* thisx, PlayState* play);
+void En_Rl_Actor_draw(Actor* thisx, PlayState* play);
 
-void func_80AE7798(EnRl* this, PlayState* play);
-void func_80AE77B8(EnRl* this, PlayState* play);
-void func_80AE77F8(EnRl* this, PlayState* play);
-void func_80AE7838(EnRl* this, PlayState* play);
-void func_80AE7C64(EnRl* this, PlayState* play);
-void func_80AE7C94(EnRl* this, PlayState* play);
-void func_80AE7CE8(EnRl* this, PlayState* play);
-void func_80AE7D40(EnRl* this, PlayState* play);
-void func_80AE7FD0(EnRl* this, PlayState* play);
-void func_80AE7FDC(EnRl* this, PlayState* play);
-void func_80AE7D94(EnRl* this, PlayState* play);
+void En_Rl_Actor_main_wait(EnRl* this, PlayState* play);
+void En_Rl_Actor_main_greet(EnRl* this, PlayState* play);
+void En_Rl_Actor_main_handup(EnRl* this, PlayState* play);
+void En_Rl_Actor_main_cheer(EnRl* this, PlayState* play);
+void En_Rl_Seal_Actor_main_hide(EnRl* this, PlayState* play);
+void En_Rl_Seal_Actor_main_fade(EnRl* this, PlayState* play);
+void En_Rl_Seal_Actor_main_handup(EnRl* this, PlayState* play);
+void En_Rl_Seal_Actor_main_pray(EnRl* this, PlayState* play);
+void En_Rl_Actor_draw_none(EnRl* this, PlayState* play);
+void En_Rl_Actor_draw_normal(EnRl* this, PlayState* play);
+void En_Rl_Actor_draw_alpha(EnRl* this, PlayState* play);
 
-static void* D_80AE81A0[] = { object_rl_Tex_003620, object_rl_Tex_003960, object_rl_Tex_003B60 };
+static void* en_rl_eye[] = { object_rl_Tex_003620, object_rl_Tex_003960, object_rl_Tex_003B60 };
 
-void EnRl_Destroy(Actor* thisx, PlayState* play) {
+void En_Rl_Actor_dt(Actor* thisx, PlayState* play) {
     EnRl* this = (EnRl*)thisx;
 
-    SkelAnime_Free(&this->skelAnime, play);
+    Skeleton_Info_dt(&this->skelAnime, play);
 }
 
-void func_80AE72D0(EnRl* this) {
+void En_Rl_set_eye_pattern(EnRl* this) {
     s32 pad[3];
     s16* timer = &this->timer;
     s16* eyeTextureIndex = &this->eyeTextureIndex;
 
     if (DECR(*timer) == 0) {
-        *timer = Rand_S16Offset(60, 60);
+        *timer = get_random_timer(60, 60);
     }
 
     *eyeTextureIndex = *timer;
@@ -52,8 +52,8 @@ void func_80AE72D0(EnRl* this) {
 
 #if DEBUG_FEATURES
 void func_80AE7358(EnRl* this) {
-    Animation_Change(&this->skelAnime, &object_rl_Anim_000A3C, 1.0f, 0.0f,
-                     Animation_GetLastFrame(&object_rl_Anim_000A3C), ANIMMODE_LOOP, 0.0f);
+    Skeleton_Info2_init(&this->skelAnime, &object_rl_Anim_000A3C, 1.0f, 0.0f,
+                     Si2_anime_end_frame(&object_rl_Anim_000A3C), ANIMMODE_LOOP, 0.0f);
     this->action = 4;
     this->drawConfig = 0;
     this->alpha = 0;
@@ -78,15 +78,15 @@ void func_80AE73D8(EnRl* this, PlayState* play) {
 }
 #endif
 
-void func_80AE744C(EnRl* this, PlayState* play) {
-    Actor_UpdateBgCheckInfo(play, &this->actor, 75.0f, 30.0f, 30.0f, UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
+void En_Rl_BGcheck(EnRl* this, PlayState* play) {
+    Actor_BGcheck2(play, &this->actor, 75.0f, 30.0f, 30.0f, UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
 }
 
-s32 func_80AE7494(EnRl* this) {
-    return SkelAnime_Update(&this->skelAnime);
+s32 En_Rl_Animation_Base(EnRl* this) {
+    return Skeleton_Info2_anime_play(&this->skelAnime);
 }
 
-s32 func_80AE74B4(EnRl* this, PlayState* play, u16 cueId, s32 cueChannel) {
+s32 En_Rl_Check_npcdemopnt(EnRl* this, PlayState* play, u16 cueId, s32 cueChannel) {
     CsCmdActorCue* cue;
 
     if (play->csCtx.state != CS_STATE_IDLE) {
@@ -99,7 +99,7 @@ s32 func_80AE74B4(EnRl* this, PlayState* play, u16 cueId, s32 cueChannel) {
     return false;
 }
 
-s32 func_80AE74FC(EnRl* this, PlayState* play, u16 cueId, s32 cueChannel) {
+s32 En_Rl_Check2_npcdemopnt(EnRl* this, PlayState* play, u16 cueId, s32 cueChannel) {
     CsCmdActorCue* cue;
 
     if (play->csCtx.state != CS_STATE_IDLE) {
@@ -116,68 +116,68 @@ s32 func_80AE74FC(EnRl* this, PlayState* play, u16 cueId, s32 cueChannel) {
 
 #include "z_en_rl_inKenjyanomaDemo02.inc.c"
 
-static EnRlActionFunc sActionFuncs[] = {
-    func_80AE7798, func_80AE77B8, func_80AE77F8, func_80AE7838,
-    func_80AE7C64, func_80AE7C94, func_80AE7CE8, func_80AE7D40,
-};
+void En_Rl_Actor_main(Actor* thisx, PlayState* play) {
+    static EnRlActionFunc proc[] = {
+        En_Rl_Actor_main_wait, En_Rl_Actor_main_greet, En_Rl_Actor_main_handup, En_Rl_Actor_main_cheer,
+        En_Rl_Seal_Actor_main_hide, En_Rl_Seal_Actor_main_fade, En_Rl_Seal_Actor_main_handup, En_Rl_Seal_Actor_main_pray,
+    };
 
-void EnRl_Update(Actor* thisx, PlayState* play) {
     EnRl* this = (EnRl*)thisx;
 
-    if ((this->action < 0) || (this->action > 7) || (sActionFuncs[this->action] == NULL)) {
+    if ((this->action < 0) || (this->action > 7) || (proc[this->action] == NULL)) {
         PRINTF(VT_FGCOL(RED) "メインモードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
         return;
     }
-    sActionFuncs[this->action](this, play);
+    proc[this->action](this, play);
 }
 
-void EnRl_Init(Actor* thisx, PlayState* play) {
+void En_Rl_Actor_ct(Actor* thisx, PlayState* play) {
     EnRl* this = (EnRl*)thisx;
 
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 50.0f);
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 50.0f);
     if (this->actor.params == 2) {
-        func_80AE7878(this, play);
+        En_Rl_KenjyanomaDemo02_Init(this, play);
     } else {
-        func_80AE7544(this, play);
+        En_Rl_Kenjyanoma_Init(this, play);
     }
 }
-void func_80AE7FD0(EnRl* this, PlayState* play) {
+void En_Rl_Actor_draw_none(EnRl* this, PlayState* play) {
 }
 
-void func_80AE7FDC(EnRl* this, PlayState* play) {
+void En_Rl_Actor_draw_normal(EnRl* this, PlayState* play) {
     s32 pad[2];
     s16 temp = this->eyeTextureIndex;
-    void* tex = D_80AE81A0[temp];
+    void* tex = en_rl_eye[temp];
     SkelAnime* skelAnime = &this->skelAnime;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_rl.c", 416);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
 
     gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(tex));
     gSPSegment(POLY_OPA_DISP++, 0x09, SEGMENTED_TO_VIRTUAL(tex));
     gDPSetEnvColor(POLY_OPA_DISP++, 0, 0, 0, 255);
-    gSPSegment(POLY_OPA_DISP++, 0x0C, &D_80116280[2]);
+    gSPSegment(POLY_OPA_DISP++, 0x0C, &Actor_change_render_mode[2]);
 
-    SkelAnime_DrawFlexOpa(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount, NULL, NULL,
+    Si2_draw_SV(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount, NULL, NULL,
                           &this->actor);
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_rl.c", 437);
 }
 
-static EnRlDrawFunc sDrawFuncs[] = {
-    func_80AE7FD0,
-    func_80AE7FDC,
-    func_80AE7D94,
-};
+void En_Rl_Actor_draw(Actor* thisx, PlayState* play) {
+    static EnRlDrawFunc proc[] = {
+        En_Rl_Actor_draw_none,
+        En_Rl_Actor_draw_normal,
+        En_Rl_Actor_draw_alpha,
+    };
 
-void EnRl_Draw(Actor* thisx, PlayState* play) {
     EnRl* this = (EnRl*)thisx;
 
-    if (this->drawConfig < 0 || this->drawConfig >= 3 || sDrawFuncs[this->drawConfig] == NULL) {
+    if (this->drawConfig < 0 || this->drawConfig >= 3 || proc[this->drawConfig] == NULL) {
         PRINTF(VT_FGCOL(RED) "描画モードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
         return;
     }
-    sDrawFuncs[this->drawConfig](this, play);
+    proc[this->drawConfig](this, play);
 }
 
 ActorProfile En_Rl_Profile = {
@@ -186,8 +186,8 @@ ActorProfile En_Rl_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_RL,
     /**/ sizeof(EnRl),
-    /**/ EnRl_Init,
-    /**/ EnRl_Destroy,
-    /**/ EnRl_Update,
-    /**/ EnRl_Draw,
+    /**/ En_Rl_Actor_ct,
+    /**/ En_Rl_Actor_dt,
+    /**/ En_Rl_Actor_main,
+    /**/ En_Rl_Actor_draw,
 };

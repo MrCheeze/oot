@@ -1,6 +1,6 @@
 #include "global.h"
 
-void Sleep_Cycles(OSTime cycles) {
+void csleep(OSTime cycles) {
     OSMesgQueue mq;
     OSMesg msg;
     OSTimer timer;
@@ -10,19 +10,19 @@ void Sleep_Cycles(OSTime cycles) {
     osRecvMesg(&mq, NULL, OS_MESG_BLOCK);
 }
 
-void Sleep_Nsec(u32 nsec) {
-    Sleep_Cycles(OS_NSEC_TO_CYCLES(nsec));
+void nsleep(u32 nsec) {
+    csleep(OS_NSEC_TO_CYCLES(nsec));
 }
 
-void Sleep_Usec(u32 usec) {
-    Sleep_Cycles(OS_USEC_TO_CYCLES(usec));
+void usleep(u32 usec) {
+    csleep(OS_USEC_TO_CYCLES(usec));
 }
 
 // originally "msleep"
-void Sleep_Msec(u32 ms) {
-    Sleep_Cycles((ms * OS_CPU_COUNTER) / 1000ull);
+void msleep(u32 ms) {
+    csleep((ms * OS_CPU_COUNTER) / 1000ull);
 }
 
-void Sleep_Sec(u32 sec) {
-    Sleep_Cycles(sec * OS_CPU_COUNTER);
+void sleep(u32 sec) {
+    csleep(sec * OS_CPU_COUNTER);
 }

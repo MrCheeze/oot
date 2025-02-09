@@ -1,8 +1,8 @@
 #include "global.h"
 
-s16 gLinkObjectIds[] = { OBJECT_LINK_BOY, OBJECT_LINK_CHILD };
+s16 object_exchange_player_bank[] = { OBJECT_LINK_BOY, OBJECT_LINK_CHILD };
 
-u32 gObjectTableSize = ARRAY_COUNT(gObjectTable);
+u32 object_exchange_bank_max = ARRAY_COUNT(object_exchange_rom_address);
 
 // Object linker symbol declarations (used in the table below)
 #define DEFINE_OBJECT(name, _1) DECLARE_ROM_SEGMENT(name)
@@ -20,7 +20,7 @@ u32 gObjectTableSize = ARRAY_COUNT(gObjectTable);
 #define DEFINE_OBJECT_EMPTY(name, _1) ROM_FILE_EMPTY(name),
 #define DEFINE_OBJECT_UNSET(_0) ROM_FILE_UNSET,
 
-RomFile gObjectTable[] = {
+RomFile object_exchange_rom_address[] = {
 #include "tables/object_table.h"
 };
 

@@ -9,18 +9,18 @@
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED)
 
-void EnNwc_Init(Actor* thisx, PlayState* play);
-void EnNwc_Destroy(Actor* thisx, PlayState* play);
-void EnNwc_Update(Actor* thisx, PlayState* play);
-void EnNwc_Draw(Actor* thisx, PlayState* play);
+void En_Nwc_Actor_ct(Actor* thisx, PlayState* play);
+void En_Nwc_Actor_dt(Actor* thisx, PlayState* play);
+void En_Nwc_Actor_move(Actor* thisx, PlayState* play);
+void En_Nwc_Actor_draw(Actor* thisx, PlayState* play);
 
-void EnNwc_SetUpdate(EnNwc* this, EnNwcUpdateFunc updateFunc);
-void EnNwc_ChickNoop(EnNwcChick* chick, EnNwc* this, PlayState* play);
-void EnNwc_ChickBgCheck(EnNwcChick* chick, PlayState* play);
-void EnNwc_ChickFall(EnNwcChick* chick, EnNwc* this, PlayState* play);
-void EnNwc_UpdateChicks(EnNwc* this, PlayState* play);
-void EnNwc_DrawChicks(EnNwc* this, PlayState* play);
-void EnNwc_Idle(EnNwc* this, PlayState* play);
+void En_Nwc_Actor_set_process(EnNwc* this, EnNwcUpdateFunc updateFunc);
+void Piyo_Object_non(EnNwcChick* chick, EnNwc* this, PlayState* play);
+void Piyo_Object_BGcheck(EnNwcChick* chick, PlayState* play);
+void Piyo_Object_wait(EnNwcChick* chick, EnNwc* this, PlayState* play);
+void Piyo_Object_move(EnNwc* this, PlayState* play);
+void Piyo_Object_draw(EnNwc* this, PlayState* play);
+static void move_wait(EnNwc* this, PlayState* play);
 
 #define CHICK_BG_FLOOR (1 << 0)
 #define CHICK_BG_WALL (1 << 1)
@@ -36,13 +36,13 @@ ActorProfile En_Nwc_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_NWC,
     /**/ sizeof(EnNwc),
-    /**/ EnNwc_Init,
-    /**/ EnNwc_Destroy,
-    /**/ EnNwc_Update,
-    /**/ EnNwc_Draw,
+    /**/ En_Nwc_Actor_ct,
+    /**/ En_Nwc_Actor_dt,
+    /**/ En_Nwc_Actor_move,
+    /**/ En_Nwc_Actor_draw,
 };
 
-static ColliderJntSphElementInit sJntSphElementInit = {
+static ColliderJntSphElementInit PiyoElemData = {
     {
         ELEM_MATERIAL_UNK1,
         { 0x00000000, 0x00, 0x00 },
@@ -54,7 +54,7 @@ static ColliderJntSphElementInit sJntSphElementInit = {
     { 0, { { 0, 0, 0 }, 10 }, 100 },
 };
 
-static ColliderJntSphInitType1 sJntSphInit = {
+static ColliderJntSphInitType1 PiyoAcInfoData = {
     {
         COL_MATERIAL_HIT3,
         AT_NONE,
@@ -66,14 +66,14 @@ static ColliderJntSphInitType1 sJntSphInit = {
     NULL,
 };
 
-void EnNwc_SetUpdate(EnNwc* this, EnNwcUpdateFunc updateFunc) {
+void En_Nwc_Actor_set_process(EnNwc* this, EnNwcUpdateFunc updateFunc) {
     this->updateFunc = updateFunc;
 }
 
-void EnNwc_ChickNoop(EnNwcChick* chick, EnNwc* this, PlayState* play) {
+void Piyo_Object_non(EnNwcChick* chick, EnNwc* this, PlayState* play) {
 }
 
-void EnNwc_ChickBgCheck(EnNwcChick* chick, PlayState* play) {
+void Piyo_Object_BGcheck(EnNwcChick* chick, PlayState* play) {
     CollisionPoly* groundPoly;
     s32 bgId;
     Vec3f outPos;
@@ -83,14 +83,14 @@ void EnNwc_ChickBgCheck(EnNwcChick* chick, PlayState* play) {
     outPos.x = chick->pos.x;
     outPos.y = chick->pos.y;
     outPos.z = chick->pos.z;
-    if (BgCheck_EntitySphVsWall1(&play->colCtx, &outPos, &chick->pos, &chick->lastPos, 10.0f, &chick->floorPoly,
+    if (T_BGCheck_ObjWallCheck2(&play->colCtx, &outPos, &chick->pos, &chick->lastPos, 10.0f, &chick->floorPoly,
                                  20.0f)) {
         chick->bgFlags |= CHICK_BG_WALL;
     }
     //! @bug The use of outPos here is totally wrong. Even if it didn't get overwritten
     //       by the wall check, it should add an offset to the y-value so the raycast
     //       doesn't go through the floor and cause the chicks to ignore all floors.
-    chick->floorY = BgCheck_EntityRaycastDown3(&play->colCtx, &groundPoly, &bgId, &outPos);
+    chick->floorY = T_BGCheck_ObjGroundCheck_ai(&play->colCtx, &groundPoly, &bgId, &outPos);
     dy = chick->floorY - chick->pos.y;
     if ((0.0f <= dy) && (dy < 40.0f)) {
         chick->pos.y = chick->floorY;
@@ -98,18 +98,18 @@ void EnNwc_ChickBgCheck(EnNwcChick* chick, PlayState* play) {
     }
 }
 
-void EnNwc_ChickFall(EnNwcChick* chick, EnNwc* this, PlayState* play) {
+void Piyo_Object_wait(EnNwcChick* chick, EnNwc* this, PlayState* play) {
     chick->velY -= 0.1f;
     if (chick->velY < -10.0f) {
         chick->velY = -10.0f;
     }
     chick->pos.y += chick->velY;
-    EnNwc_ChickBgCheck(chick, play);
+    Piyo_Object_BGcheck(chick, play);
     if (chick) {} // Needed for matching. Possibly from remnant of unfinished code?
 }
 
-void EnNwc_UpdateChicks(EnNwc* this, PlayState* play) {
-    static EnNwcChickFunc chickActionFuncs[] = { EnNwc_ChickNoop, EnNwc_ChickFall };
+void Piyo_Object_move(EnNwc* this, PlayState* play) {
+    static EnNwcChickFunc piyo_object_proc[] = { Piyo_Object_non, Piyo_Object_wait };
     EnNwcChick* chick = this->chicks;
     ColliderJntSphElement* element = &this->collider.elements[0];
     Vec3f prevChickPos;
@@ -118,9 +118,9 @@ void EnNwc_UpdateChicks(EnNwc* this, PlayState* play) {
 
     prevChickPos.y = 99999.9f;
     for (i = 0; i < this->count; i++, prevChickPos = chick->pos, chick++, element++) {
-        Math_Vec3f_Copy(&chick->lastPos, &chick->pos);
+        xyz_t_move(&chick->lastPos, &chick->pos);
 
-        chickActionFuncs[chick->type](chick, this, play);
+        piyo_object_proc[chick->type](chick, this, play);
 
         element->dim.worldSphere.center.x = chick->pos.x;
         element->dim.worldSphere.center.y = chick->pos.y;
@@ -145,7 +145,7 @@ void EnNwc_UpdateChicks(EnNwc* this, PlayState* play) {
     }
 }
 
-void EnNwc_DrawChicks(EnNwc* this, PlayState* play) {
+void Piyo_Object_draw(EnNwc* this, PlayState* play) {
     s32 i;
     Gfx* dList1;
     Gfx* dList2;
@@ -154,7 +154,7 @@ void EnNwc_DrawChicks(EnNwc* this, PlayState* play) {
     EnNwcChick* chick;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_nwc.c", 316);
-    func_80093C80(play);
+    _texture_z_light_fog_prim2(play);
 
     dList1 = POLY_XLU_DISP;
     dList2 = dList1 + 3 * this->count + 1;
@@ -169,8 +169,8 @@ void EnNwc_DrawChicks(EnNwc* this, PlayState* play) {
         if (chick->type != CHICK_NONE) {
             Mtx* mtx;
 
-            Matrix_SetTranslateRotateYXZ(chick->pos.x, chick->pos.y + chick->height, chick->pos.z, &chick->rot);
-            Matrix_Scale(0.01f, 0.01f, 0.01f, MTXMODE_APPLY);
+            Matrix_softcv3_load(chick->pos.x, chick->pos.y + chick->height, chick->pos.z, &chick->rot);
+            Matrix_scale(0.01f, 0.01f, 0.01f, MTXMODE_APPLY);
             mtx = MATRIX_FINALIZE(play->state.gfxCtx, "../z_en_nwc.c", 346);
             gDPSetEnvColor(dList1++, 0, 100, 255, 255);
             gSPMatrix(dList1++, mtx, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
@@ -184,15 +184,15 @@ void EnNwc_DrawChicks(EnNwc* this, PlayState* play) {
 
     chick = this->chicks;
     POLY_XLU_DISP = dList3;
-    Gfx_SetupDL_44Xlu(play->state.gfxCtx);
+    _texture_decal_shadow(play->state.gfxCtx);
     gSPDisplayList(POLY_XLU_DISP++, gCuccoChickSetupShadowDL);
 
     for (i = 0; i < this->count; i++, chick++) {
         if ((chick->type != CHICK_NONE) && (chick->floorPoly != NULL)) {
-            func_80038A28(chick->floorPoly, chick->pos.x, chick->floorY, chick->pos.z, &floorMat);
-            Matrix_Put(&floorMat);
-            Matrix_RotateY(BINANG_TO_RAD(chick->rot.y), MTXMODE_APPLY);
-            Matrix_Scale(1.0f, 1.0f, 1.0f, MTXMODE_APPLY);
+            T_Polygon_Ground_Matrix(chick->floorPoly, chick->pos.x, chick->floorY, chick->pos.z, &floorMat);
+            Matrix_put(&floorMat);
+            Matrix_rotateY(BINANG_TO_RAD(chick->rot.y), MTXMODE_APPLY);
+            Matrix_scale(1.0f, 1.0f, 1.0f, MTXMODE_APPLY);
             MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx, "../z_en_nwc.c", 388);
             gSPDisplayList(POLY_XLU_DISP++, gCuccoChickShadowDL);
         }
@@ -200,7 +200,7 @@ void EnNwc_DrawChicks(EnNwc* this, PlayState* play) {
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_nwc.c", 395);
 }
 
-void EnNwc_Init(Actor* thisx, PlayState* play) {
+void En_Nwc_Actor_ct(Actor* thisx, PlayState* play) {
     s32 pad;
     EnNwc* this = (EnNwc*)thisx;
     ColliderJntSphElementInit elementInits[16];
@@ -208,47 +208,47 @@ void EnNwc_Init(Actor* thisx, PlayState* play) {
     EnNwcChick* chick;
     s32 i;
 
-    element = sJntSphInit.elements = elementInits;
+    element = PiyoAcInfoData.elements = elementInits;
     for (i = 0; i < 16; i++, element++) {
-        *element = sJntSphElementInit;
+        *element = PiyoElemData;
     }
 
-    Collider_InitJntSph(play, &this->collider);
-    Collider_SetJntSphAllocType1(play, &this->collider, &this->actor, &sJntSphInit);
+    ClObjJntSph_ct(play, &this->collider);
+    ClObjJntSph_set3(play, &this->collider, &this->actor, &PiyoAcInfoData);
     this->count = 16;
     chick = this->chicks;
     for (i = 0; i < this->count; i++, chick++) {
         chick->type = CHICK_NORMAL;
-        chick->pos.x = thisx->world.pos.x + ((Rand_ZeroOne() * 100.0f) - 50.0f);
+        chick->pos.x = thisx->world.pos.x + ((fqrand() * 100.0f) - 50.0f);
         chick->pos.y = thisx->world.pos.y + 20.0f;
-        chick->pos.z = thisx->world.pos.z + ((Rand_ZeroOne() * 100.0f) - 50.0f);
+        chick->pos.z = thisx->world.pos.z + ((fqrand() * 100.0f) - 50.0f);
         chick->height = 5;
     }
-    EnNwc_SetUpdate(this, EnNwc_Idle);
+    En_Nwc_Actor_set_process(this, move_wait);
 }
 
-void EnNwc_Destroy(Actor* thisx, PlayState* play) {
+void En_Nwc_Actor_dt(Actor* thisx, PlayState* play) {
     s32 pad;
     EnNwc* this = (EnNwc*)thisx;
 
-    Collider_FreeJntSph(play, &this->collider);
+    ClObjJntSph_dt(play, &this->collider);
 }
 
-void EnNwc_Idle(EnNwc* this, PlayState* play) {
-    EnNwc_UpdateChicks(this, play);
+static void move_wait(EnNwc* this, PlayState* play) {
+    Piyo_Object_move(this, play);
 }
 
-void EnNwc_Update(Actor* thisx, PlayState* play) {
+void En_Nwc_Actor_move(Actor* thisx, PlayState* play) {
     s32 pad;
     EnNwc* this = (EnNwc*)thisx;
 
     this->updateFunc(this, play);
-    CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
+    CollisionCheck_setAC(play, &play->colChkCtx, &this->collider.base);
 }
 
-void EnNwc_Draw(Actor* thisx, PlayState* play) {
+void En_Nwc_Actor_draw(Actor* thisx, PlayState* play) {
     s32 pad;
     EnNwc* this = (EnNwc*)thisx;
 
-    EnNwc_DrawChicks(this, play);
+    Piyo_Object_draw(this, play);
 }

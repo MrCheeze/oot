@@ -2222,11 +2222,11 @@ def main():
     message_table_staff : MessageTableDesc = None
 
     if config.text_lang == "NTSC":
-        message_tables[0]   = MessageTableDesc("sJpnMessageEntryTable",   "jpn_message_data_static",   jpn_decoder, None)
-        message_tables[1]   = MessageTableDesc("sNesMessageEntryTable",   "nes_message_data_static",   nes_decoder, None)
+        message_tables[0]   = MessageTableDesc("message_tbl",             "jpn_message_data_static",   jpn_decoder, None)
+        message_tables[1]   = MessageTableDesc("message_tbl_nes",         "nes_message_data_static",   nes_decoder, None)
         message_tables[2]   = None
         message_tables[3]   = None
-        message_table_staff = MessageTableDesc("sStaffMessageEntryTable", "staff_message_data_static", nes_decoder, None)
+        message_table_staff = MessageTableDesc("message_tbl_staff",       "staff_message_data_static", nes_decoder, None)
     elif config.text_lang == "PAL":
         message_tables[0]   = None
         message_tables[1]   = MessageTableDesc("sNesMessageEntryTable",   "nes_message_data_static",   nes_decoder, None)

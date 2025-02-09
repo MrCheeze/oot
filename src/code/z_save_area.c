@@ -3,28 +3,28 @@
 #include "assets/textures/icon_item_24_static/icon_item_24_static.h"
 #include "assets/textures/parameter_static/parameter_static.h"
 
-// Bit Flag array in which gBitFlags[n] is literally (1 << n)
-u32 gBitFlags[] = {
+// Bit Flag array in which check_bit[n] is literally (1 << n)
+u32 check_bit[] = {
     (1 << 0),  (1 << 1),  (1 << 2),  (1 << 3),  (1 << 4),  (1 << 5),  (1 << 6),  (1 << 7),
     (1 << 8),  (1 << 9),  (1 << 10), (1 << 11), (1 << 12), (1 << 13), (1 << 14), (1 << 15),
     (1 << 16), (1 << 17), (1 << 18), (1 << 19), (1 << 20), (1 << 21), (1 << 22), (1 << 23),
     (1 << 24), (1 << 25), (1 << 26), (1 << 27), (1 << 28), (1 << 29), (1 << 30), (1 << 31),
 };
 
-u16 gEquipMasks[EQUIP_TYPE_MAX] = {
+u16 bit_check_data[EQUIP_TYPE_MAX] = {
     0xF << (EQUIP_TYPE_SWORD * 4),  // EQUIP_TYPE_SWORD
     0xF << (EQUIP_TYPE_SHIELD * 4), // EQUIP_TYPE_SHIELD
     0xF << (EQUIP_TYPE_TUNIC * 4),  // EQUIP_TYPE_TUNIC
     0xF << (EQUIP_TYPE_BOOTS * 4),  // EQUIP_TYPE_BOOTS
 };
-u16 gEquipNegMasks[EQUIP_TYPE_MAX] = {
+u16 bit_and_data[EQUIP_TYPE_MAX] = {
     (u16) ~(0xF << (EQUIP_TYPE_SWORD * 4)),  // EQUIP_TYPE_SWORD
     (u16) ~(0xF << (EQUIP_TYPE_SHIELD * 4)), // EQUIP_TYPE_SHIELD
     (u16) ~(0xF << (EQUIP_TYPE_TUNIC * 4)),  // EQUIP_TYPE_TUNIC
     (u16) ~(0xF << (EQUIP_TYPE_BOOTS * 4)),  // EQUIP_TYPE_BOOTS
 };
 
-u32 gUpgradeMasks[UPG_MAX] = {
+u32 non_equip_bit[UPG_MAX] = {
     0x00000007, // UPG_QUIVER
     0x00000038, // UPG_BOMB_BAG
     0x000001C0, // UPG_STRENGTH
@@ -34,7 +34,7 @@ u32 gUpgradeMasks[UPG_MAX] = {
     0x000E0000, // UPG_DEKU_STICKS
     0x00700000, // UPG_DEKU_NUTS
 };
-u32 gUpgradeNegMasks[UPG_MAX] = {
+u32 non_equip_and[UPG_MAX] = {
     ~0x00000007, // UPG_QUIVER
     ~0x00000038, // UPG_BOMB_BAG
     ~0x000001C0, // UPG_STRENGTH
@@ -45,14 +45,14 @@ u32 gUpgradeNegMasks[UPG_MAX] = {
     ~0x00700000, // UPG_DEKU_NUTS
 };
 
-u8 gEquipShifts[EQUIP_TYPE_MAX] = {
+u8 bit_shift_data[EQUIP_TYPE_MAX] = {
     EQUIP_TYPE_SWORD * 4,  // EQUIP_TYPE_SWORD
     EQUIP_TYPE_SHIELD * 4, // EQUIP_TYPE_SHIELD
     EQUIP_TYPE_TUNIC * 4,  // EQUIP_TYPE_TUNIC
     EQUIP_TYPE_BOOTS * 4,  // EQUIP_TYPE_BOOTS
 };
 
-u8 gUpgradeShifts[UPG_MAX] = {
+u8 non_equip_shift[UPG_MAX] = {
     0,  // UPG_QUIVER
     3,  // UPG_BOMB_BAG
     6,  // UPG_STRENGTH
@@ -63,7 +63,7 @@ u8 gUpgradeShifts[UPG_MAX] = {
     20, // UPG_DEKU_NUTS
 };
 
-u16 gUpgradeCapacities[UPG_MAX][4] = {
+u16 item_max_data[UPG_MAX][4] = {
     { 0, 30, 40, 50 },     // UPG_QUIVER
     { 0, 20, 30, 40 },     // UPG_BOMB_BAG
     { 0, 0, 0, 0 },        // UPG_STRENGTH (unused)
@@ -74,10 +74,10 @@ u16 gUpgradeCapacities[UPG_MAX][4] = {
     { 0, 20, 30, 40 },     // UPG_DEKU_NUTS
 };
 
-u32 gGsFlagsMasks[] = { 0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000 };
-u32 gGsFlagsShifts[] = { 0, 8, 16, 24 };
+u32 bit_check_kinsta[] = { 0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000 };
+u32 bit_shift_kinsta[] = { 0, 8, 16, 24 };
 
-void* gItemIcons[] = {
+void* item_data[] = {
     // icon_item_static 32x32 rgba32
     gItemIconDekuStickTex,         // ITEM_DEKU_STICK
     gItemIconDekuNutTex,           // ITEM_DEKU_NUT
@@ -216,7 +216,7 @@ void* gItemIcons[] = {
 };
 
 // Used to map item IDs to inventory slots
-u8 gItemSlots[] = {
+u8 number_pt[] = {
     SLOT_DEKU_STICK,    // ITEM_DEKU_STICK
     SLOT_DEKU_NUT,      // ITEM_DEKU_NUT
     SLOT_BOMB,          // ITEM_BOMB
@@ -275,41 +275,41 @@ u8 gItemSlots[] = {
     SLOT_TRADE_ADULT,   // ITEM_CLAIM_CHECK
 };
 
-void Inventory_ChangeEquipment(s16 equipment, u16 value) {
-    gSaveContext.save.info.equips.equipment &= gEquipNegMasks[equipment];
-    gSaveContext.save.info.equips.equipment |= value << gEquipShifts[equipment];
+void SetEquip_Item(s16 equipment, u16 value) {
+    z_common_data.save.info.equips.equipment &= bit_and_data[equipment];
+    z_common_data.save.info.equips.equipment |= value << bit_shift_data[equipment];
 }
 
-u8 Inventory_DeleteEquipment(PlayState* play, s16 equipment) {
+u8 ClearEquip_Item(PlayState* play, s16 equipment) {
     Player* player = GET_PLAYER(play);
     s32 pad;
-    u16 equipValue = gSaveContext.save.info.equips.equipment & gEquipMasks[equipment];
+    u16 equipValue = z_common_data.save.info.equips.equipment & bit_check_data[equipment];
 
     PRINTF(T("装備アイテム抹消 = %d  zzz=%d\n", "Erasing equipment item = %d  zzz=%d\n"), equipment, equipValue);
 
     if (equipValue) {
-        equipValue >>= gEquipShifts[equipment];
+        equipValue >>= bit_shift_data[equipment];
 
-        gSaveContext.save.info.equips.equipment &= gEquipNegMasks[equipment];
-        gSaveContext.save.info.inventory.equipment ^= OWNED_EQUIP_FLAG(equipment, equipValue - 1);
+        z_common_data.save.info.equips.equipment &= bit_and_data[equipment];
+        z_common_data.save.info.inventory.equipment ^= OWNED_EQUIP_FLAG(equipment, equipValue - 1);
 
         if (equipment == EQUIP_TYPE_TUNIC) {
-            gSaveContext.save.info.equips.equipment |= EQUIP_VALUE_TUNIC_KOKIRI << (EQUIP_TYPE_TUNIC * 4);
+            z_common_data.save.info.equips.equipment |= EQUIP_VALUE_TUNIC_KOKIRI << (EQUIP_TYPE_TUNIC * 4);
         }
 
         if (equipment == EQUIP_TYPE_SWORD) {
-            gSaveContext.save.info.equips.buttonItems[0] = ITEM_NONE;
-            gSaveContext.save.info.infTable[INFTABLE_INDEX_1DX] = 1;
+            z_common_data.save.info.equips.buttonItems[0] = ITEM_NONE;
+            z_common_data.save.info.infTable[INFTABLE_INDEX_1DX] = 1;
         }
 
-        Player_SetEquipmentData(play, player);
+        player_ability_set(play, player);
         play->pauseCtx.cursorSpecialPos = PAUSE_CURSOR_PAGE_LEFT;
     }
 
     return equipValue;
 }
 
-void Inventory_ChangeUpgrade(s16 upgrade, s16 value) {
-    gSaveContext.save.info.inventory.upgrades &= gUpgradeNegMasks[upgrade];
-    gSaveContext.save.info.inventory.upgrades |= value << gUpgradeShifts[upgrade];
+void Set_Non_Equip_Register(s16 upgrade, s16 value) {
+    z_common_data.save.info.inventory.upgrades &= non_equip_and[upgrade];
+    z_common_data.save.info.inventory.upgrades |= value << non_equip_shift[upgrade];
 }

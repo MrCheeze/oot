@@ -19,13 +19,13 @@
 
 #define FLAGS 0
 
-void BgHidanDalm_Init(Actor* thisx, PlayState* play);
-void BgHidanDalm_Destroy(Actor* thisx, PlayState* play);
-void BgHidanDalm_Update(Actor* thisx, PlayState* play);
-void BgHidanDalm_Draw(Actor* thisx, PlayState* play);
+void Bg_Hidan_Dalm_actor_ct(Actor* thisx, PlayState* play);
+void Bg_Hidan_Dalm_actor_dt(Actor* thisx, PlayState* play);
+void Bg_Hidan_Dalm_actor_move(Actor* thisx, PlayState* play);
+void Bg_Hidan_Dalm_actor_draw(Actor* thisx, PlayState* play);
 
-void BgHidanDalm_Wait(BgHidanDalm* this, PlayState* play);
-void BgHidanDalm_Shrink(BgHidanDalm* this, PlayState* play);
+static void mode_wait(BgHidanDalm* this, PlayState* play);
+static void mode_damage(BgHidanDalm* this, PlayState* play);
 
 ActorProfile Bg_Hidan_Dalm_Profile = {
     /**/ ACTOR_BG_HIDAN_DALM,
@@ -33,13 +33,13 @@ ActorProfile Bg_Hidan_Dalm_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_HIDAN_OBJECTS,
     /**/ sizeof(BgHidanDalm),
-    /**/ BgHidanDalm_Init,
-    /**/ BgHidanDalm_Destroy,
-    /**/ BgHidanDalm_Update,
-    /**/ BgHidanDalm_Draw,
+    /**/ Bg_Hidan_Dalm_actor_ct,
+    /**/ Bg_Hidan_Dalm_actor_dt,
+    /**/ Bg_Hidan_Dalm_actor_move,
+    /**/ Bg_Hidan_Dalm_actor_draw,
 };
 
-static ColliderTrisElementInit sTrisElementInit[4] = {
+static ColliderTrisElementInit HidanDalmAcTrisElemData[4] = {
     {
         {
             ELEM_MATERIAL_UNK0,
@@ -86,7 +86,7 @@ static ColliderTrisElementInit sTrisElementInit[4] = {
     },
 };
 
-static ColliderTrisInit sTrisInit = {
+static ColliderTrisInit HidanDalmAcTrisData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -96,46 +96,46 @@ static ColliderTrisInit sTrisInit = {
         COLSHAPE_TRIS,
     },
     4,
-    sTrisElementInit,
+    HidanDalmAcTrisElemData,
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_CONTINUE),
     ICHAIN_F32_DIV1000(gravity, -200, ICHAIN_STOP),
 };
 
-void BgHidanDalm_Init(Actor* thisx, PlayState* play) {
+void Bg_Hidan_Dalm_actor_ct(Actor* thisx, PlayState* play) {
     BgHidanDalm* this = (BgHidanDalm*)thisx;
     s32 pad;
     CollisionHeader* colHeader = NULL;
 
-    Actor_ProcessInitChain(thisx, sInitChain);
-    DynaPolyActor_Init(&this->dyna, 0);
-    CollisionHeader_GetVirtual(&gFireTempleHammerableTotemCol, &colHeader);
-    this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, thisx, colHeader);
-    Collider_InitTris(play, &this->collider);
-    Collider_SetTris(play, &this->collider, thisx, &sTrisInit, this->colliderItems);
+    ValueSet_process(thisx, value_init);
+    MoveBG_ct(&this->dyna, 0);
+    DynaPolyUty_bgdi_SG2KSG(&gFireTempleHammerableTotemCol, &colHeader);
+    this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, thisx, colHeader);
+    ClObjTris_ct(play, &this->collider);
+    ClObjTris_set5_nzm(play, &this->collider, thisx, &HidanDalmAcTrisData, this->colliderItems);
 
     this->switchFlag = PARAMS_GET_U(thisx->params, 8, 8);
     thisx->params &= 0xFF;
-    if (Flags_GetSwitch(play, this->switchFlag)) {
-        Actor_Kill(thisx);
+    if (Actor_Environment_sw_Check(play, this->switchFlag)) {
+        Actor_delete(thisx);
     } else {
-        this->actionFunc = BgHidanDalm_Wait;
+        this->actionFunc = mode_wait;
     }
 }
 
-void BgHidanDalm_Destroy(Actor* thisx, PlayState* play) {
+void Bg_Hidan_Dalm_actor_dt(Actor* thisx, PlayState* play) {
     BgHidanDalm* this = (BgHidanDalm*)thisx;
 
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
-    Collider_DestroyTris(play, &this->collider);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
+    ClObjTris_dt_nzf(play, &this->collider);
 }
 
-void BgHidanDalm_Wait(BgHidanDalm* this, PlayState* play) {
+static void mode_wait(BgHidanDalm* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    if ((this->collider.base.acFlags & AC_HIT) && !Player_InCsMode(play) &&
+    if ((this->collider.base.acFlags & AC_HIT) && !player_demo_check(play) &&
         (player->meleeWeaponAnimation == PLAYER_MWA_HAMMER_FORWARD ||
          player->meleeWeaponAnimation == PLAYER_MWA_HAMMER_SIDE)) {
         this->collider.base.acFlags &= ~AC_HIT;
@@ -145,32 +145,32 @@ void BgHidanDalm_Wait(BgHidanDalm* this, PlayState* play) {
         } else {
             this->dyna.actor.world.rot.y += 0x4000;
         }
-        this->dyna.actor.world.pos.x += 32.5f * Math_SinS(this->dyna.actor.world.rot.y);
-        this->dyna.actor.world.pos.z += 32.5f * Math_CosS(this->dyna.actor.world.rot.y);
+        this->dyna.actor.world.pos.x += 32.5f * sin_s(this->dyna.actor.world.rot.y);
+        this->dyna.actor.world.pos.z += 32.5f * cos_s(this->dyna.actor.world.rot.y);
 
-        Player_SetCsActionWithHaltedActors(play, &this->dyna.actor, PLAYER_CSACTION_8);
+        player_demo_mode_set(play, &this->dyna.actor, PLAYER_CSACTION_8);
         this->dyna.actor.flags |= ACTOR_FLAG_UPDATE_CULLING_DISABLED;
-        this->actionFunc = BgHidanDalm_Shrink;
+        this->actionFunc = mode_damage;
         this->dyna.actor.bgCheckFlags &= ~BGCHECKFLAG_GROUND_TOUCH;
         this->dyna.actor.bgCheckFlags &= ~BGCHECKFLAG_WALL;
         this->dyna.actor.speed = 10.0f;
-        Flags_SetSwitch(play, this->switchFlag);
-        Player_PlaySfx(GET_PLAYER(play), NA_SE_IT_HAMMER_HIT);
-        Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_DARUMA_VANISH);
+        Actor_Environment_sw_On(play, this->switchFlag);
+        player_SE_set(GET_PLAYER(play), NA_SE_IT_HAMMER_HIT);
+        Actor_SE_set(&this->dyna.actor, NA_SE_EV_DARUMA_VANISH);
     } else {
-        CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
+        CollisionCheck_setAC(play, &play->colChkCtx, &this->collider.base);
     }
 }
 
-void BgHidanDalm_Shrink(BgHidanDalm* this, PlayState* play) {
-    static Vec3f accel = { 0, 0, 0 };
+static void mode_damage(BgHidanDalm* this, PlayState* play) {
+    static Vec3f acc = { 0, 0, 0 };
     s32 i;
     Vec3f velocity;
     Vec3f pos;
 
-    if (Math_StepToF(&this->dyna.actor.scale.x, 0.0f, 0.004f)) {
-        Player_SetCsActionWithHaltedActors(play, &this->dyna.actor, PLAYER_CSACTION_7);
-        Actor_Kill(&this->dyna.actor);
+    if (chase_f(&this->dyna.actor.scale.x, 0.0f, 0.004f)) {
+        player_demo_mode_set(play, &this->dyna.actor, PLAYER_CSACTION_7);
+        Actor_delete(&this->dyna.actor);
     }
 
     this->dyna.actor.scale.y = this->dyna.actor.scale.z = this->dyna.actor.scale.x;
@@ -180,55 +180,55 @@ void BgHidanDalm_Shrink(BgHidanDalm* this, PlayState* play) {
     pos.z = this->dyna.actor.world.pos.z;
 
     for (i = 0; i < 4; i++) {
-        velocity.x = 5.0f * Math_SinS(this->dyna.actor.world.rot.y + 0x8000) + (Rand_ZeroOne() - 0.5f) * 5.0f;
-        velocity.z = 5.0f * Math_CosS(this->dyna.actor.world.rot.y + 0x8000) + (Rand_ZeroOne() - 0.5f) * 5.0f;
-        velocity.y = (Rand_ZeroOne() - 0.5f) * 1.5f;
-        EffectSsKiraKira_SpawnSmallYellow(play, &pos, &velocity, &accel);
+        velocity.x = 5.0f * sin_s(this->dyna.actor.world.rot.y + 0x8000) + (fqrand() - 0.5f) * 5.0f;
+        velocity.z = 5.0f * cos_s(this->dyna.actor.world.rot.y + 0x8000) + (fqrand() - 0.5f) * 5.0f;
+        velocity.y = (fqrand() - 0.5f) * 1.5f;
+        Effect_SS_KiraKira_ct_direct(play, &pos, &velocity, &acc);
     }
 }
 
-void BgHidanDalm_Update(Actor* thisx, PlayState* play) {
+void Bg_Hidan_Dalm_actor_move(Actor* thisx, PlayState* play) {
     BgHidanDalm* this = (BgHidanDalm*)thisx;
 
     this->actionFunc(this, play);
-    Actor_MoveXZGravity(&this->dyna.actor);
-    Actor_UpdateBgCheckInfo(play, &this->dyna.actor, 10.0f, 15.0f, 32.0f,
+    Actor_position_moveF(&this->dyna.actor);
+    Actor_BGcheck2(play, &this->dyna.actor, 10.0f, 15.0f, 32.0f,
                             UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
 }
 
 /**
  * Update vertices of collider tris based on the current matrix
  */
-void BgHidanDalm_UpdateCollider(BgHidanDalm* this) {
+void set_ac_tris(BgHidanDalm* this) {
     Vec3f pos2;
     Vec3f pos1;
     Vec3f pos0;
 
-    Matrix_MultVec3f(&sTrisElementInit[0].dim.vtx[0], &pos0);
-    Matrix_MultVec3f(&sTrisElementInit[0].dim.vtx[1], &pos1);
-    Matrix_MultVec3f(&sTrisElementInit[0].dim.vtx[2], &pos2);
-    Collider_SetTrisVertices(&this->collider, 0, &pos0, &pos1, &pos2);
-    Matrix_MultVec3f(&sTrisElementInit[1].dim.vtx[2], &pos1);
-    Collider_SetTrisVertices(&this->collider, 1, &pos0, &pos2, &pos1);
+    Matrix_Position(&HidanDalmAcTrisElemData[0].dim.vtx[0], &pos0);
+    Matrix_Position(&HidanDalmAcTrisElemData[0].dim.vtx[1], &pos1);
+    Matrix_Position(&HidanDalmAcTrisElemData[0].dim.vtx[2], &pos2);
+    CollisionCheck_Uty_setTrisPos(&this->collider, 0, &pos0, &pos1, &pos2);
+    Matrix_Position(&HidanDalmAcTrisElemData[1].dim.vtx[2], &pos1);
+    CollisionCheck_Uty_setTrisPos(&this->collider, 1, &pos0, &pos2, &pos1);
 
-    Matrix_MultVec3f(&sTrisElementInit[2].dim.vtx[0], &pos0);
-    Matrix_MultVec3f(&sTrisElementInit[2].dim.vtx[1], &pos1);
-    Matrix_MultVec3f(&sTrisElementInit[2].dim.vtx[2], &pos2);
-    Collider_SetTrisVertices(&this->collider, 2, &pos0, &pos1, &pos2);
-    Matrix_MultVec3f(&sTrisElementInit[3].dim.vtx[1], &pos2);
-    Collider_SetTrisVertices(&this->collider, 3, &pos0, &pos2, &pos1);
+    Matrix_Position(&HidanDalmAcTrisElemData[2].dim.vtx[0], &pos0);
+    Matrix_Position(&HidanDalmAcTrisElemData[2].dim.vtx[1], &pos1);
+    Matrix_Position(&HidanDalmAcTrisElemData[2].dim.vtx[2], &pos2);
+    CollisionCheck_Uty_setTrisPos(&this->collider, 2, &pos0, &pos1, &pos2);
+    Matrix_Position(&HidanDalmAcTrisElemData[3].dim.vtx[1], &pos2);
+    CollisionCheck_Uty_setTrisPos(&this->collider, 3, &pos0, &pos2, &pos1);
 }
 
-void BgHidanDalm_Draw(Actor* thisx, PlayState* play) {
+void Bg_Hidan_Dalm_actor_draw(Actor* thisx, PlayState* play) {
     BgHidanDalm* this = (BgHidanDalm*)thisx;
 
     if (this->dyna.actor.params == 0) {
-        Gfx_DrawDListOpa(play, gFireTempleHammerableTotemBodyDL);
+        Cheap_gfx_display(play, gFireTempleHammerableTotemBodyDL);
     } else {
-        Gfx_DrawDListOpa(play, gFireTempleHammerableTotemHeadDL);
+        Cheap_gfx_display(play, gFireTempleHammerableTotemHeadDL);
     }
 
-    if (this->actionFunc == BgHidanDalm_Wait) {
-        BgHidanDalm_UpdateCollider(this);
+    if (this->actionFunc == mode_wait) {
+        set_ac_tris(this);
     }
 }

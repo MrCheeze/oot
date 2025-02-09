@@ -10,14 +10,14 @@
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY | ACTOR_FLAG_UPDATE_CULLING_DISABLED)
 
-void EnNiwGirl_Init(Actor* thisx, PlayState* play);
-void EnNiwGirl_Destroy(Actor* thisx, PlayState* play);
-void EnNiwGirl_Update(Actor* thisx, PlayState* play);
-void EnNiwGirl_Draw(Actor* thisx, PlayState* play);
+void En_Niw_Girl_actor_ct(Actor* thisx, PlayState* play);
+void En_Niw_Girl_actor_dt(Actor* thisx, PlayState* play);
+void En_Niw_Girl_actor_move(Actor* thisx, PlayState* play);
+void En_Niw_Girl_actor_draw(Actor* thisx, PlayState* play);
 
-void EnNiwGirl_Talk(EnNiwGirl* this, PlayState* play);
-void func_80AB94D0(EnNiwGirl* this, PlayState* play);
-void func_80AB9210(EnNiwGirl* this, PlayState* play);
+static void mode_wait_init(EnNiwGirl* this, PlayState* play);
+static void mode_wait(EnNiwGirl* this, PlayState* play);
+static void mode_run(EnNiwGirl* this, PlayState* play);
 
 ActorProfile En_Niw_Girl_Profile = {
     /**/ ACTOR_EN_NIW_GIRL,
@@ -25,13 +25,13 @@ ActorProfile En_Niw_Girl_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GR,
     /**/ sizeof(EnNiwGirl),
-    /**/ EnNiwGirl_Init,
-    /**/ EnNiwGirl_Destroy,
-    /**/ EnNiwGirl_Update,
-    /**/ EnNiwGirl_Draw,
+    /**/ En_Niw_Girl_actor_ct,
+    /**/ En_Niw_Girl_actor_dt,
+    /**/ En_Niw_Girl_actor_move,
+    /**/ En_Niw_Girl_actor_draw,
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit OcInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -51,28 +51,28 @@ static ColliderCylinderInit sCylinderInit = {
     { 10, 30, 0, { 0, 0, 0 } },
 };
 
-void EnNiwGirl_Init(Actor* thisx, PlayState* play) {
+void En_Niw_Girl_actor_ct(Actor* thisx, PlayState* play) {
     EnNiwGirl* this = (EnNiwGirl*)thisx;
     s32 pad;
     Vec3f vec1;
     Vec3f vec2;
     s32 pad2;
 
-    SkelAnime_InitFlex(play, &this->skelAnime, &gNiwGirlSkel, &gNiwGirlRunAnim, this->jointTable, this->morphTable, 17);
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
+    Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &gNiwGirlSkel, &gNiwGirlRunAnim, this->jointTable, this->morphTable, 17);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set5(play, &this->collider, &this->actor, &OcInfoData);
     this->actor.attentionRangeType = ATTENTION_RANGE_6;
     if (this->actor.params < 0) {
         this->actor.params = 0;
     }
     this->path = PARAMS_GET_U(this->actor.params, 8, 8);
     this->actor.gravity = -3.0f;
-    Matrix_RotateY(BINANG_TO_RAD_ALT(this->actor.shape.rot.y), MTXMODE_NEW);
+    Matrix_rotateY(BINANG_TO_RAD_ALT(this->actor.shape.rot.y), MTXMODE_NEW);
     vec2.x = vec2.y = vec2.z = 0.0f;
     vec1.x = vec1.y = 0.0f;
     vec1.z = 50.0;
-    Matrix_MultVec3f(&vec1, &vec2);
-    this->chasedEnNiw = (EnNiw*)Actor_SpawnAsChild(
+    Matrix_Position(&vec1, &vec2);
+    this->chasedEnNiw = (EnNiw*)Actor_info_make_child_actor(
         &play->actorCtx, &this->actor, play, ACTOR_EN_NIW, this->actor.world.pos.x + vec2.x,
         this->actor.world.pos.y + vec2.y, this->actor.world.pos.z + vec2.z, 0, this->actor.world.rot.y, 0, 0xA);
     if (this->chasedEnNiw != NULL) {
@@ -80,38 +80,38 @@ void EnNiwGirl_Init(Actor* thisx, PlayState* play) {
         PRINTF(VT_FGCOL(YELLOW) "☆☆☆☆☆ きゃははははは、まてー ☆☆☆☆☆ %d\n" VT_RST, this->path);
         PRINTF("\n\n");
         this->actor.colChkInfo.mass = MASS_IMMOVABLE;
-        this->actionFunc = EnNiwGirl_Talk;
+        this->actionFunc = mode_wait_init;
     } else {
         PRINTF("\n\n");
         PRINTF(VT_FGCOL(GREEN) "☆☆☆☆☆ なぜか、セットできむぅあせん ☆☆☆☆☆ %d\n" VT_RST, this->actor.params);
         PRINTF(VT_FGCOL(YELLOW) "☆☆☆☆☆ んんがくく ☆☆☆☆☆ %d\n" VT_RST, this->path);
         PRINTF("\n\n");
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     }
 }
 
-void EnNiwGirl_Destroy(Actor* thisx, PlayState* play) {
+void En_Niw_Girl_actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void EnNiwGirl_Jump(EnNiwGirl* this, PlayState* play) {
-    f32 frameCount = Animation_GetLastFrame(&gNiwGirlRunAnim);
-    Animation_Change(&this->skelAnime, &gNiwGirlRunAnim, 1.0f, 0.0f, frameCount, 0, -10.0f);
+void mode_run_init(EnNiwGirl* this, PlayState* play) {
+    f32 frameCount = Si2_anime_end_frame(&gNiwGirlRunAnim);
+    Skeleton_Info2_init(&this->skelAnime, &gNiwGirlRunAnim, 1.0f, 0.0f, frameCount, 0, -10.0f);
     this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
-    this->actionFunc = func_80AB9210;
+    this->actionFunc = mode_run;
 }
 
-void func_80AB9210(EnNiwGirl* this, PlayState* play) {
+static void mode_run(EnNiwGirl* this, PlayState* play) {
     Path* path = &play->pathList[this->path];
     f32 xDistBetween;
     f32 zDistBetween;
 
-    SkelAnime_Update(&this->skelAnime);
-    Math_ApproachF(&this->actor.speed, 3.0f, 0.2f, 0.4f);
+    Skeleton_Info2_anime_play(&this->skelAnime);
+    add_calc2(&this->actor.speed, 3.0f, 0.2f, 0.4f);
 
     // Find the X and Z distance between the girl and the cuckoo she is chasing
     xDistBetween = this->chasedEnNiw->actor.world.pos.x - this->actor.world.pos.x;
     zDistBetween = this->chasedEnNiw->actor.world.pos.z - this->actor.world.pos.z;
-    if (Message_GetState(&play->msgCtx) != TEXT_STATE_NONE) {
+    if (message_check(&play->msgCtx) != TEXT_STATE_NONE) {
         this->chasedEnNiw->path = 0;
     }
     if (sqrtf(SQ(xDistBetween) + SQ(zDistBetween)) < 70.0f) {
@@ -122,27 +122,27 @@ void func_80AB9210(EnNiwGirl* this, PlayState* play) {
     }
 
     // Change her angle so that she is always facing the cuckoo
-    Math_SmoothStepToS(&this->actor.shape.rot.y, RAD_TO_BINANG(Math_FAtan2F(xDistBetween, zDistBetween)), 3,
+    add_calc_short_angle2(&this->actor.shape.rot.y, RAD_TO_BINANG(fatan2(xDistBetween, zDistBetween)), 3,
                        this->unk_27C, 0);
-    Math_ApproachF(&this->unk_27C, 5000.0f, 30.0f, 150.0f);
+    add_calc2(&this->unk_27C, 5000.0f, 30.0f, 150.0f);
     this->actor.world.rot.y = this->actor.shape.rot.y;
 
     // Only allow Link to talk to her when she is playing the jumping animation
-    if ((this->jumpTimer == 0) || (Player_GetMask(play) != PLAYER_MASK_NONE)) {
+    if ((this->jumpTimer == 0) || (mask_check(play) != PLAYER_MASK_NONE)) {
         this->jumpTimer = 60;
-        this->actionFunc = EnNiwGirl_Talk;
+        this->actionFunc = mode_wait_init;
     }
 }
 
-void EnNiwGirl_Talk(EnNiwGirl* this, PlayState* play) {
-    Animation_Change(&this->skelAnime, &gNiwGirlJumpAnim, 1.0f, 0.0f, Animation_GetLastFrame(&gNiwGirlJumpAnim), 0,
+static void mode_wait_init(EnNiwGirl* this, PlayState* play) {
+    Skeleton_Info2_init(&this->skelAnime, &gNiwGirlJumpAnim, 1.0f, 0.0f, Si2_anime_end_frame(&gNiwGirlJumpAnim), 0,
                      -10.0f);
     this->actor.flags |= ACTOR_FLAG_ATTENTION_ENABLED;
     this->actor.textId = 0x7000;
     if (GET_EVENTCHKINF(EVENTCHKINF_80) && (this->unk_27A == 0)) {
         this->actor.textId = 0x70EA;
     }
-    switch (Player_GetMask(play)) {
+    switch (mask_check(play)) {
         case PLAYER_MASK_KEATON:
             this->actor.textId = 0x7118;
             break;
@@ -161,58 +161,58 @@ void EnNiwGirl_Talk(EnNiwGirl* this, PlayState* play) {
             break;
     }
     this->unk_270 = 6;
-    this->actionFunc = func_80AB94D0;
+    this->actionFunc = mode_wait;
 }
 
-void func_80AB94D0(EnNiwGirl* this, PlayState* play) {
-    SkelAnime_Update(&this->skelAnime);
-    if (Message_GetState(&play->msgCtx) != TEXT_STATE_NONE) {
+static void mode_wait(EnNiwGirl* this, PlayState* play) {
+    Skeleton_Info2_anime_play(&this->skelAnime);
+    if (message_check(&play->msgCtx) != TEXT_STATE_NONE) {
         this->chasedEnNiw->path = 0;
     }
-    Math_ApproachZeroF(&this->actor.speed, 0.8f, 0.2f);
-    if (Actor_TalkOfferAccepted(&this->actor, play)) {
+    add_calc0(&this->actor.speed, 0.8f, 0.2f);
+    if (Actor_talk_check(&this->actor, play)) {
         if (this->actor.textId == 0x70EA) {
             this->unk_27A = 1;
         }
     } else {
-        if ((this->jumpTimer == 0) && Message_GetState(&play->msgCtx) == TEXT_STATE_NONE) {
-            this->jumpTimer = Rand_ZeroFloat(100.0f) + 250.0f;
-            this->actionFunc = EnNiwGirl_Jump;
+        if ((this->jumpTimer == 0) && message_check(&play->msgCtx) == TEXT_STATE_NONE) {
+            this->jumpTimer = rnd_f(100.0f) + 250.0f;
+            this->actionFunc = mode_run_init;
         } else {
-            Actor_OfferTalk(&this->actor, play, 100.0f);
+            Actor_talk_request2(&this->actor, play, 100.0f);
         }
     }
 }
 
-void EnNiwGirl_Update(Actor* thisx, PlayState* play) {
+void En_Niw_Girl_actor_move(Actor* thisx, PlayState* play) {
     EnNiwGirl* this = (EnNiwGirl*)thisx;
     EnNiwGirlActionFunc tempActionFunc;
     Player* player = GET_PLAYER(play);
 
-    Actor_SetScale(&this->actor, 0.013f);
+    Actor_set_scale(&this->actor, 0.013f);
     this->unkUpTimer++;
-    tempActionFunc = func_80AB94D0;
+    tempActionFunc = mode_wait;
     if (this->blinkTimer == 0) {
         this->eyeIndex++;
         if (this->eyeIndex >= 3) {
             this->eyeIndex = 0;
-            this->blinkTimer = (s16)Rand_ZeroFloat(60.0f) + 20;
+            this->blinkTimer = (s16)rnd_f(60.0f) + 20;
         }
     }
     this->unk_280 = 30.0f;
-    Actor_SetFocus(&this->actor, 30.0f);
+    Actor_world_to_eye(&this->actor, 30.0f);
     if (tempActionFunc == this->actionFunc) {
         this->interactInfo.trackPos = player->actor.world.pos;
         if (!LINK_IS_ADULT) {
             this->interactInfo.trackPos.y = player->actor.world.pos.y - 10.0f;
         }
-        Npc_TrackPoint(&this->actor, &this->interactInfo, 2, NPC_TRACKING_FULL_BODY);
+        eye_moveM(&this->actor, &this->interactInfo, 2, NPC_TRACKING_FULL_BODY);
         this->headRot = this->interactInfo.headRot;
         this->torsoRot = this->interactInfo.torsoRot;
     } else {
-        Math_SmoothStepToS(&this->torsoRot.y, 0, 5, 3000, 0);
-        Math_SmoothStepToS(&this->headRot.y, 0, 5, 3000, 0);
-        Math_SmoothStepToS(&this->headRot.z, 0, 5, 3000, 0);
+        add_calc_short_angle2(&this->torsoRot.y, 0, 5, 3000, 0);
+        add_calc_short_angle2(&this->headRot.y, 0, 5, 3000, 0);
+        add_calc_short_angle2(&this->headRot.z, 0, 5, 3000, 0);
     }
     if (this->blinkTimer != 0) {
         this->blinkTimer--;
@@ -221,14 +221,14 @@ void EnNiwGirl_Update(Actor* thisx, PlayState* play) {
         this->jumpTimer--;
     }
     this->actionFunc(this, play);
-    Actor_MoveXZGravity(&this->actor);
-    Actor_UpdateBgCheckInfo(play, &this->actor, 100.0f, 100.0f, 200.0f,
+    Actor_position_moveF(&this->actor);
+    Actor_BGcheck2(play, &this->actor, 100.0f, 100.0f, 200.0f,
                             UPDBGCHECKINFO_FLAG_2 | UPDBGCHECKINFO_FLAG_3 | UPDBGCHECKINFO_FLAG_4);
-    Collider_UpdateCylinder(&this->actor, &this->collider);
-    CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
+    CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
 }
 
-s32 EnNiwGirlOverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+s32 En_Niw_Girl_draw_sub(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     EnNiwGirl* this = (EnNiwGirl*)thisx;
 
     if (limbIndex == 3) {
@@ -243,19 +243,19 @@ s32 EnNiwGirlOverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f
 
 static Vec3f sConstVec3f = { 0.2f, 0.2f, 0.2f };
 
-void EnNiwGirl_Draw(Actor* thisx, PlayState* play) {
-    static void* eyeTextures[] = { gNiwGirlEyeOpenTex, gNiwGirlEyeHalfTex, gNiwGirlEyeClosedTex };
+void En_Niw_Girl_actor_draw(Actor* thisx, PlayState* play) {
+    static void* bg_eye_txt[] = { gNiwGirlEyeOpenTex, gNiwGirlEyeHalfTex, gNiwGirlEyeClosedTex };
     EnNiwGirl* this = (EnNiwGirl*)thisx;
     s32 pad;
     Vec3f sp4C = sConstVec3f;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_niw_girl.c", 573);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
-    gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(eyeTextures[this->eyeIndex]));
-    SkelAnime_DrawFlexOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
-                          EnNiwGirlOverrideLimbDraw, NULL, this);
-    func_80033C30(&this->actor.world.pos, &sp4C, 255, play);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
+    gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(bg_eye_txt[this->eyeIndex]));
+    Si2_draw_SV(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
+                          En_Niw_Girl_draw_sub, NULL, this);
+    Shadow_draw(&this->actor.world.pos, &sp4C, 255, play);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_niw_girl.c", 592);
 }

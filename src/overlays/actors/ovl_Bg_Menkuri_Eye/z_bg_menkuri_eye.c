@@ -9,10 +9,10 @@
 
 #define FLAGS ACTOR_FLAG_DRAW_CULLING_DISABLED
 
-void BgMenkuriEye_Init(Actor* thisx, PlayState* play);
-void BgMenkuriEye_Destroy(Actor* thisx, PlayState* play);
-void BgMenkuriEye_Update(Actor* thisx, PlayState* play);
-void BgMenkuriEye_Draw(Actor* thisx, PlayState* play);
+void Bg_Menkuri_Eye_actor_ct(Actor* thisx, PlayState* play);
+void Bg_Menkuri_Eye_actor_dt(Actor* thisx, PlayState* play);
+void Bg_Menkuri_Eye_actor_move(Actor* thisx, PlayState* play);
+void Bg_Menkuri_Eye_actor_draw(Actor* thisx, PlayState* play);
 
 ActorProfile Bg_Menkuri_Eye_Profile = {
     /**/ ACTOR_BG_MENKURI_EYE,
@@ -20,15 +20,15 @@ ActorProfile Bg_Menkuri_Eye_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_MENKURI_OBJECTS,
     /**/ sizeof(BgMenkuriEye),
-    /**/ BgMenkuriEye_Init,
-    /**/ BgMenkuriEye_Destroy,
-    /**/ BgMenkuriEye_Update,
-    /**/ BgMenkuriEye_Draw,
+    /**/ Bg_Menkuri_Eye_actor_ct,
+    /**/ Bg_Menkuri_Eye_actor_dt,
+    /**/ Bg_Menkuri_Eye_actor_move,
+    /**/ Bg_Menkuri_Eye_actor_draw,
 };
 
-static s32 sNumEyesShot;
+static s32 arrow_hit_count;
 
-static ColliderJntSphElementInit sJntSphElementsInit[1] = {
+static ColliderJntSphElementInit MenkuriEyeAcSphElemData[1] = {
     {
         {
             ELEM_MATERIAL_UNK4,
@@ -42,7 +42,7 @@ static ColliderJntSphElementInit sJntSphElementsInit[1] = {
     },
 };
 
-static ColliderJntSphInit sJntSphInit = {
+static ColliderJntSphInit MenkuriEyeAcSphData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -52,48 +52,48 @@ static ColliderJntSphInit sJntSphInit = {
         COLSHAPE_JNTSPH,
     },
     1,
-    sJntSphElementsInit,
+    MenkuriEyeAcSphElemData,
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_STOP),
 };
 
-void BgMenkuriEye_Init(Actor* thisx, PlayState* play) {
+void Bg_Menkuri_Eye_actor_ct(Actor* thisx, PlayState* play) {
     BgMenkuriEye* this = (BgMenkuriEye*)thisx;
     ColliderJntSphElement* colliderList;
 
-    Actor_ProcessInitChain(&this->actor, sInitChain);
-    Collider_InitJntSph(play, &this->collider);
-    Collider_SetJntSph(play, &this->collider, &this->actor, &sJntSphInit, this->colliderItems);
+    ValueSet_process(&this->actor, value_init);
+    ClObjJntSph_ct(play, &this->collider);
+    ClObjJntSph_set5_nzm(play, &this->collider, &this->actor, &MenkuriEyeAcSphData, this->colliderItems);
     this->collider.elements[0].dim.worldSphere.center.x = this->actor.world.pos.x;
     this->collider.elements[0].dim.worldSphere.center.y = this->actor.world.pos.y;
     this->collider.elements[0].dim.worldSphere.center.z = this->actor.world.pos.z;
     colliderList = this->collider.elements;
     colliderList->dim.worldSphere.radius = colliderList->dim.modelSphere.radius;
-    if (!Flags_GetSwitch(play, this->actor.params)) {
-        sNumEyesShot = 0;
+    if (!Actor_Environment_sw_Check(play, this->actor.params)) {
+        arrow_hit_count = 0;
     }
     this->framesUntilDisable = -1;
 }
 
-void BgMenkuriEye_Destroy(Actor* thisx, PlayState* play) {
+void Bg_Menkuri_Eye_actor_dt(Actor* thisx, PlayState* play) {
     BgMenkuriEye* this = (BgMenkuriEye*)thisx;
 
-    Collider_DestroyJntSph(play, &this->collider);
+    ClObjJntSph_dt_nzf(play, &this->collider);
 }
 
-void BgMenkuriEye_Update(Actor* thisx, PlayState* play) {
+void Bg_Menkuri_Eye_actor_move(Actor* thisx, PlayState* play) {
     BgMenkuriEye* this = (BgMenkuriEye*)thisx;
 
-    if (!Flags_GetSwitch(play, this->actor.params)) {
+    if (!Actor_Environment_sw_Check(play, this->actor.params)) {
         if (this->framesUntilDisable != -1) {
             if (this->framesUntilDisable != 0) {
                 this->framesUntilDisable--;
             }
             if (this->framesUntilDisable == 0) {
                 this->framesUntilDisable = -1;
-                sNumEyesShot--;
+                arrow_hit_count--;
             }
         }
     }
@@ -101,38 +101,38 @@ void BgMenkuriEye_Update(Actor* thisx, PlayState* play) {
         (ABS((s16)(this->collider.base.ac->world.rot.y - this->actor.shape.rot.y)) > 0x5000)) {
         this->collider.base.acFlags &= ~AC_HIT;
         if (this->framesUntilDisable == -1) {
-            Actor_PlaySfx(&this->actor, NA_SE_EN_AMOS_DAMAGE);
-            sNumEyesShot++;
-            sNumEyesShot = CLAMP_MAX(sNumEyesShot, 4);
+            Actor_SE_set(&this->actor, NA_SE_EN_AMOS_DAMAGE);
+            arrow_hit_count++;
+            arrow_hit_count = CLAMP_MAX(arrow_hit_count, 4);
         }
         this->framesUntilDisable = 416;
-        if (sNumEyesShot == 4) {
-            Flags_SetSwitch(play, this->actor.params);
-            Sfx_PlaySfxCentered(NA_SE_SY_CORRECT_CHIME);
+        if (arrow_hit_count == 4) {
+            Actor_Environment_sw_On(play, this->actor.params);
+            Na_StartSystemSe_F(NA_SE_SY_CORRECT_CHIME);
         }
     }
     if (this->framesUntilDisable == -1) {
-        CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
+        CollisionCheck_setAC(play, &play->colChkCtx, &this->collider.base);
     }
-    Actor_SetFocus(&this->actor, 0.0f);
+    Actor_world_to_eye(&this->actor, 0.0f);
 }
 
-void BgMenkuriEye_Draw(Actor* thisx, PlayState* play) {
+void Bg_Menkuri_Eye_actor_draw(Actor* thisx, PlayState* play) {
     BgMenkuriEye* this = (BgMenkuriEye*)thisx;
     s32 pad;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_bg_menkuri_eye.c", 292);
-    Gfx_SetupDL_25Xlu(play->state.gfxCtx);
-    if (Flags_GetSwitch(play, this->actor.params)) {
+    _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
+    if (Actor_Environment_sw_Check(play, this->actor.params)) {
         gDPSetEnvColor(POLY_XLU_DISP++, 200, 0, 0, 255);
     } else if (this->framesUntilDisable == -1) {
         gDPSetEnvColor(POLY_XLU_DISP++, 200, 0, 0, 0);
     } else {
         gDPSetEnvColor(POLY_XLU_DISP++, 200, 0, 0, 255);
     }
-    Matrix_Translate(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z, MTXMODE_NEW);
-    Matrix_RotateZYX(this->actor.world.rot.x, this->actor.world.rot.y, this->actor.world.rot.z, MTXMODE_APPLY);
-    Matrix_Scale(this->actor.scale.x, this->actor.scale.y, this->actor.scale.z, MTXMODE_APPLY);
+    Matrix_translate(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z, MTXMODE_NEW);
+    Matrix_rotateXYZ(this->actor.world.rot.x, this->actor.world.rot.y, this->actor.world.rot.z, MTXMODE_APPLY);
+    Matrix_scale(this->actor.scale.x, this->actor.scale.y, this->actor.scale.z, MTXMODE_APPLY);
     MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx, "../z_bg_menkuri_eye.c", 331);
 
     gSPDisplayList(POLY_XLU_DISP++, gGTGEyeStatueEyeDL);

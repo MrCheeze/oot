@@ -1,1 +1,1 @@
-STACK(sBootThreadStack, BOOT_STACK_SIZE);
+STACK(bootStack, BOOT_STACK_SIZE);

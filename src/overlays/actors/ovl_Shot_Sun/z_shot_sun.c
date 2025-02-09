@@ -12,14 +12,14 @@
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY)
 
-void ShotSun_Init(Actor* thisx, PlayState* play);
-void ShotSun_Destroy(Actor* thisx, PlayState* play);
-void ShotSun_Update(Actor* thisx, PlayState* play);
+void Shot_Sun_Actor_ct(Actor* thisx, PlayState* play);
+void Shot_Sun_Actor_dt(Actor* thisx, PlayState* play);
+void Shot_Sun_Actor_move(Actor* thisx, PlayState* play);
 
-void ShotSun_SpawnFairy(ShotSun* this, PlayState* play);
-void ShotSun_TriggerFairy(ShotSun* this, PlayState* play);
-void ShotSun_UpdateFairySpawner(ShotSun* this, PlayState* play);
-void ShotSun_UpdateHyliaSun(ShotSun* this, PlayState* play);
+static void move_appeare(ShotSun* this, PlayState* play);
+static void move_waitcamera(ShotSun* this, PlayState* play);
+void move_ocarina(ShotSun* this, PlayState* play);
+static void move_wait(ShotSun* this, PlayState* play);
 
 ActorProfile Shot_Sun_Profile = {
     /**/ ACTOR_SHOT_SUN,
@@ -27,9 +27,9 @@ ActorProfile Shot_Sun_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(ShotSun),
-    /**/ ShotSun_Init,
-    /**/ ShotSun_Destroy,
-    /**/ ShotSun_Update,
+    /**/ Shot_Sun_Actor_ct,
+    /**/ Shot_Sun_Actor_dt,
+    /**/ Shot_Sun_Actor_move,
     /**/ NULL,
 };
 
@@ -39,7 +39,7 @@ typedef enum FairySpawnerState {
     /* 2 */ SPAWNER_OCARINA_PLAYING
 } FairySpawnerState;
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit ShotSun_OcInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -59,7 +59,7 @@ static ColliderCylinderInit sCylinderInit = {
     { 30, 60, 0, { 0, 0, 0 } },
 };
 
-void ShotSun_Init(Actor* thisx, PlayState* play) {
+void Shot_Sun_Actor_ct(Actor* thisx, PlayState* play) {
     ShotSun* this = (ShotSun*)thisx;
     s32 params;
 
@@ -70,26 +70,26 @@ void ShotSun_Init(Actor* thisx, PlayState* play) {
         this->fairySpawnerState = SPAWNER_OUT_OF_RANGE;
         this->actor.flags |= ACTOR_FLAG_UPDATE_CULLING_DISABLED;
         this->actor.flags |= ACTOR_FLAG_UPDATE_DURING_OCARINA;
-        this->actionFunc = ShotSun_UpdateFairySpawner;
+        this->actionFunc = move_ocarina;
         this->actor.flags |= ACTOR_FLAG_LOCK_ON_DISABLED;
     } else {
-        Collider_InitCylinder(play, &this->collider);
-        Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
-        this->actionFunc = ShotSun_UpdateHyliaSun;
+        ClObjPipe_ct(play, &this->collider);
+        ClObjPipe_set5(play, &this->collider, &this->actor, &ShotSun_OcInfoData);
+        this->actionFunc = move_wait;
         this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
     }
 }
 
-void ShotSun_Destroy(Actor* thisx, PlayState* play) {
+void Shot_Sun_Actor_dt(Actor* thisx, PlayState* play) {
     ShotSun* this = (ShotSun*)thisx;
     s32 params = PARAMS_GET_U(this->actor.params, 0, 8);
 
     if (params != 0x40 && params != 0x41) {
-        Collider_DestroyCylinder(play, &this->collider);
+        ClObjPipe_dt(play, &this->collider);
     }
 }
 
-void ShotSun_SpawnFairy(ShotSun* this, PlayState* play) {
+static void move_appeare(ShotSun* this, PlayState* play) {
     s32 params = PARAMS_GET_U(this->actor.params, 0, 8);
     s32 fairyType;
 
@@ -106,31 +106,31 @@ void ShotSun_SpawnFairy(ShotSun* this, PlayState* play) {
         }
 
         //! @bug fairyType may be uninitialized
-        Actor_Spawn(&play->actorCtx, play, ACTOR_EN_ELF, this->actor.home.pos.x, this->actor.home.pos.y,
+        Actor_info_make_actor(&play->actorCtx, play, ACTOR_EN_ELF, this->actor.home.pos.x, this->actor.home.pos.y,
                     this->actor.home.pos.z, 0, 0, 0, fairyType);
 
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     }
 }
 
-void ShotSun_TriggerFairy(ShotSun* this, PlayState* play) {
-    if ((func_8005B198() == this->actor.category) || (this->timer != 0)) {
-        this->actionFunc = ShotSun_SpawnFairy;
+static void move_waitcamera(ShotSun* this, PlayState* play) {
+    if ((getAttentionDemoPart() == this->actor.category) || (this->timer != 0)) {
+        this->actionFunc = move_appeare;
         this->timer = 50;
 
-        Actor_Spawn(&play->actorCtx, play, ACTOR_DEMO_KANKYO, this->actor.home.pos.x, this->actor.home.pos.y,
+        Actor_info_make_actor(&play->actorCtx, play, ACTOR_DEMO_KANKYO, this->actor.home.pos.x, this->actor.home.pos.y,
                     this->actor.home.pos.z, 0, 0, 0, DEMOKANKYO_SPARKLES);
 
-        Sfx_PlaySfxAtPos(&this->actor.projectedPos, NA_SE_EV_TRE_BOX_APPEAR);
+        Na_StartObjectSe_F(&this->actor.projectedPos, NA_SE_EV_TRE_BOX_APPEAR);
     }
 }
 
-void ShotSun_UpdateFairySpawner(ShotSun* this, PlayState* play) {
+void move_ocarina(ShotSun* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     s32 pad;
     s32 params = PARAMS_GET_U(this->actor.params, 0, 8);
 
-    if (Math3D_Vec3fDistSq(&this->actor.world.pos, &player->actor.world.pos) > SQ(150.0f)) {
+    if (Math3DLengthSquare(&this->actor.world.pos, &player->actor.world.pos) > SQ(150.0f)) {
         this->fairySpawnerState = SPAWNER_OUT_OF_RANGE;
     } else {
         if (this->fairySpawnerState == SPAWNER_OUT_OF_RANGE) {
@@ -142,13 +142,13 @@ void ShotSun_UpdateFairySpawner(ShotSun* this, PlayState* play) {
             }
         }
         if (this->fairySpawnerState == SPAWNER_OCARINA_START) {
-            Message_StartOcarina(play, OCARINA_ACTION_FREE_PLAY);
+            ocarina_set(play, OCARINA_ACTION_FREE_PLAY);
             this->fairySpawnerState = SPAWNER_OCARINA_PLAYING;
         } else if (this->fairySpawnerState == SPAWNER_OCARINA_PLAYING && play->msgCtx.ocarinaMode == OCARINA_MODE_04) {
             if ((params == 0x40 && play->msgCtx.lastPlayedSong == OCARINA_SONG_SUNS) ||
                 (params == 0x41 && play->msgCtx.lastPlayedSong == OCARINA_SONG_STORMS)) {
-                this->actionFunc = ShotSun_TriggerFairy;
-                OnePointCutscene_Attention(play, &this->actor);
+                this->actionFunc = move_waitcamera;
+                makeActorAttentionDemo(play, &this->actor);
                 this->timer = 0;
             } else {
                 this->fairySpawnerState = SPAWNER_OUT_OF_RANGE;
@@ -158,20 +158,20 @@ void ShotSun_UpdateFairySpawner(ShotSun* this, PlayState* play) {
     }
 }
 
-void ShotSun_UpdateHyliaSun(ShotSun* this, PlayState* play) {
+static void move_wait(ShotSun* this, PlayState* play) {
     Vec3s cylinderPos;
     Player* player = GET_PLAYER(play);
     EnItem00* collectible;
     s32 pad;
 
     if (this->collider.base.acFlags & AC_HIT) {
-        Sfx_PlaySfxCentered(NA_SE_SY_CORRECT_CHIME);
+        Na_StartSystemSe_F(NA_SE_SY_CORRECT_CHIME);
         PRINTF(VT_FGCOL(CYAN) "SHOT_SUN HIT!!!!!!!\n" VT_RST);
         if (INV_CONTENT(ITEM_ARROW_FIRE) == ITEM_NONE) {
-            Actor_Spawn(&play->actorCtx, play, ACTOR_ITEM_ETCETERA, 700.0f, -800.0f, 7261.0f, 0, 0, 0, 7);
+            Actor_info_make_actor(&play->actorCtx, play, ACTOR_ITEM_ETCETERA, 700.0f, -800.0f, 7261.0f, 0, 0, 0, 7);
             play->csCtx.script = SEGMENTED_TO_VIRTUAL(gLakeHyliaFireArrowsCS);
             if (1) {}
-            gSaveContext.cutsceneTrigger = 1;
+            z_common_data.cutsceneTrigger = 1;
         } else {
             Vec3f spawnPos;
 
@@ -179,16 +179,16 @@ void ShotSun_UpdateHyliaSun(ShotSun* this, PlayState* play) {
             spawnPos.y = -800.0f;
             spawnPos.z = 7261.0f;
 
-            collectible = Item_DropCollectible(play, &spawnPos, ITEM00_MAGIC_LARGE);
+            collectible = Item_set0(play, &spawnPos, ITEM00_MAGIC_LARGE);
             if (collectible != NULL) {
                 collectible->despawnTimer = 6000;
                 collectible->actor.speed = 0.0f;
             }
         }
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     } else {
-        if (!(this->actor.xzDistToPlayer > 120.0f) && gSaveContext.save.dayTime >= CLOCK_TIME(6, 30) &&
-            gSaveContext.save.dayTime < CLOCK_TIME(7, 30)) {
+        if (!(this->actor.xzDistToPlayer > 120.0f) && z_common_data.save.dayTime >= CLOCK_TIME(6, 30) &&
+            z_common_data.save.dayTime < CLOCK_TIME(7, 30)) {
             cylinderPos.x = player->bodyPartsPos[PLAYER_BODYPART_HEAD].x + play->envCtx.sunPos.x * (1.0f / 6.0f);
             cylinderPos.y =
                 player->bodyPartsPos[PLAYER_BODYPART_HEAD].y - 30.0f + play->envCtx.sunPos.y * (1.0f / 6.0f);
@@ -196,13 +196,13 @@ void ShotSun_UpdateHyliaSun(ShotSun* this, PlayState* play) {
 
             this->hitboxPos = cylinderPos;
 
-            Collider_SetCylinderPosition(&this->collider, &cylinderPos);
-            CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
+            CollisionCheck_Uty_SetPipeC_s(&this->collider, &cylinderPos);
+            CollisionCheck_setAC(play, &play->colChkCtx, &this->collider.base);
         }
     }
 }
 
-void ShotSun_Update(Actor* thisx, PlayState* play) {
+void Shot_Sun_Actor_move(Actor* thisx, PlayState* play) {
     ShotSun* this = (ShotSun*)thisx;
 
     this->actionFunc(this, play);

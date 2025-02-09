@@ -10,26 +10,26 @@
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE)
 
-void EnDodojr_Init(Actor* thisx, PlayState* play);
-void EnDodojr_Destroy(Actor* thisx, PlayState* play);
-void EnDodojr_Update(Actor* thisx, PlayState* play);
-void EnDodojr_Draw(Actor* thisx, PlayState* play);
+void En_Dodojr_Actor_ct(Actor* thisx, PlayState* play);
+void En_Dodojr_Actor_dt(Actor* thisx, PlayState* play);
+void En_Dodojr_move(Actor* thisx, PlayState* play);
+void En_Dodojr_display(Actor* thisx, PlayState* play);
 
-void EnDodojr_WaitUnderground(EnDodojr* this, PlayState* play);
-void EnDodojr_DropItem(EnDodojr* this, PlayState* play);
-void EnDodojr_EmergeFromGround(EnDodojr* this, PlayState* play);
-void EnDodojr_CrawlTowardsTarget(EnDodojr* this, PlayState* play);
-void EnDodojr_StunnedBounce(EnDodojr* this, PlayState* play);
-void EnDodojr_JumpAttackBounce(EnDodojr* this, PlayState* play);
-void EnDodojr_Stunned(EnDodojr* this, PlayState* play);
-void EnDodojr_SwallowBomb(EnDodojr* this, PlayState* play);
-void EnDodojr_SwallowedBombDeathBounce(EnDodojr* this, PlayState* play);
-void EnDodojr_SwallowedBombDeathSequence(EnDodojr* this, PlayState* play);
-void EnDodojr_StandardDeathBounce(EnDodojr* this, PlayState* play);
-void EnDodojr_Despawn(EnDodojr* this, PlayState* play);
-void EnDodojr_DeathSequence(EnDodojr* this, PlayState* play);
-void EnDodojr_WaitFreezeFrames(EnDodojr* this, PlayState* play);
-void EnDodojr_EatBomb(EnDodojr* this, PlayState* play);
+void dj_wait_underground(EnDodojr* this, PlayState* play);
+void dj_dead(EnDodojr* this, PlayState* play);
+void dj_appear(EnDodojr* this, PlayState* play);
+void dj_move(EnDodojr* this, PlayState* play);
+void dj_freeze_jump(EnDodojr* this, PlayState* play);
+void dj_attack(EnDodojr* this, PlayState* play);
+void dj_freeze(EnDodojr* this, PlayState* play);
+void dj_bom_eat_after(EnDodojr* this, PlayState* play);
+void dj_bom_eat_jump(EnDodojr* this, PlayState* play);
+void dj_bom_eat_dead(EnDodojr* this, PlayState* play);
+void dj_dead_jump(EnDodojr* this, PlayState* play);
+void dj_hide(EnDodojr* this, PlayState* play);
+void dj_explosion(EnDodojr* this, PlayState* play);
+void dj_hit_now(EnDodojr* this, PlayState* play);
+void dj_bom_eat(EnDodojr* this, PlayState* play);
 
 ActorProfile En_Dodojr_Profile = {
     /**/ ACTOR_EN_DODOJR,
@@ -37,13 +37,13 @@ ActorProfile En_Dodojr_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_DODOJR,
     /**/ sizeof(EnDodojr),
-    /**/ EnDodojr_Init,
-    /**/ EnDodojr_Destroy,
-    /**/ EnDodojr_Update,
-    /**/ EnDodojr_Draw,
+    /**/ En_Dodojr_Actor_ct,
+    /**/ En_Dodojr_Actor_dt,
+    /**/ En_Dodojr_move,
+    /**/ En_Dodojr_display,
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit EnDjOcInfoData = {
     {
         COL_MATERIAL_HIT6,
         AT_ON | AT_TYPE_ENEMY,
@@ -63,79 +63,79 @@ static ColliderCylinderInit sCylinderInit = {
     { 18, 20, 0, { 0, 0, 0 } },
 };
 
-static CollisionCheckInfoInit2 sColChkInit = { 1, 2, 25, 25, MASS_IMMOVABLE };
+static CollisionCheckInfoInit2 DjStatusData = { 1, 2, 25, 25, MASS_IMMOVABLE };
 
-void EnDodojr_Init(Actor* thisx, PlayState* play) {
+void En_Dodojr_Actor_ct(Actor* thisx, PlayState* play) {
     EnDodojr* this = (EnDodojr*)thisx;
 
-    ActorShape_Init(&this->actor.shape, 0.0f, NULL, 18.0f);
-    SkelAnime_Init(play, &this->skelAnime, &object_dodojr_Skel_0020E0, &object_dodojr_Anim_0009D4, this->jointTable,
+    Shape_Info_init(&this->actor.shape, 0.0f, NULL, 18.0f);
+    Skeleton_Info2_M_ct(play, &this->skelAnime, &object_dodojr_Skel_0020E0, &object_dodojr_Anim_0009D4, this->jointTable,
                    this->morphTable, 15);
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
-    CollisionCheck_SetInfo2(&this->actor.colChkInfo, DamageTable_Get(4), &sColChkInit);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set5(play, &this->collider, &this->actor, &EnDjOcInfoData);
+    CollisionCheck_Status_set3(&this->actor.colChkInfo, CollisionBtlTbl_get(4), &DjStatusData);
 
     this->actor.naviEnemyId = NAVI_ENEMY_BABY_DODONGO;
     this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
 
-    Actor_SetScale(&this->actor, 0.02f);
+    Actor_set_scale(&this->actor, 0.02f);
 
-    this->actionFunc = EnDodojr_WaitUnderground;
+    this->actionFunc = dj_wait_underground;
 }
 
-void EnDodojr_Destroy(Actor* thisx, PlayState* play) {
+void En_Dodojr_Actor_dt(Actor* thisx, PlayState* play) {
     EnDodojr* this = (EnDodojr*)thisx;
 
-    Collider_DestroyCylinder(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider);
 }
 
-void EnDodojr_DoSwallowedBombEffects(EnDodojr* this) {
-    Actor_PlaySfx(&this->actor, NA_SE_IT_BOMB_EXPLOSION);
-    Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_RED, 200, COLORFILTER_BUFFLAG_OPA, 8);
+void set_effect_in_stomach(EnDodojr* this) {
+    Actor_SE_set(&this->actor, NA_SE_IT_BOMB_EXPLOSION);
+    Set_Fog(&this->actor, COLORFILTER_COLORFLAG_RED, 200, COLORFILTER_BUFFLAG_OPA, 8);
 }
 
-void EnDodojr_SpawnLargeDust(EnDodojr* this, PlayState* play, s32 count) {
+static void set_dust_effect(EnDodojr* this, PlayState* play, s32 count) {
     Color_RGBA8 prim = { 170, 130, 90, 255 };
     Color_RGBA8 env = { 100, 60, 20, 0 };
     Vec3f velocity = { 0.0f, 0.0f, 0.0f };
     Vec3f accel = { 0.0f, 0.3f, 0.0f };
     Vec3f pos;
-    s16 angle = ((Rand_ZeroOne() - 0.5f) * 65536.0f);
+    s16 angle = ((fqrand() - 0.5f) * 65536.0f);
     s32 i;
 
     pos.y = this->dustPos.y;
 
     for (i = count; i >= 0; i--, angle += (s16)(0x10000 / count)) {
-        accel.x = (Rand_ZeroOne() - 0.5f) * 4.0f;
-        accel.z = (Rand_ZeroOne() - 0.5f) * 4.0f;
+        accel.x = (fqrand() - 0.5f) * 4.0f;
+        accel.z = (fqrand() - 0.5f) * 4.0f;
 
-        pos.x = (Math_SinS(angle) * 22.0f) + this->dustPos.x;
-        pos.z = (Math_CosS(angle) * 22.0f) + this->dustPos.z;
+        pos.x = (sin_s(angle) * 22.0f) + this->dustPos.x;
+        pos.z = (cos_s(angle) * 22.0f) + this->dustPos.z;
 
-        func_8002836C(play, &pos, &velocity, &accel, &prim, &env, 120, 40, 10);
+        Effect_SS_Dust_sc_cl_co_ct(play, &pos, &velocity, &accel, &prim, &env, 120, 40, 10);
     }
 }
 
-void EnDodojr_SpawnSmallDust(EnDodojr* this, PlayState* play, Vec3f* arg2) {
+void set_move_dust_effect(EnDodojr* this, PlayState* play, Vec3f* arg2) {
     Color_RGBA8 prim = { 170, 130, 90, 255 };
     Color_RGBA8 env = { 100, 60, 20, 0 };
     Vec3f velocity = { 0.0f, 0.0f, 0.0f };
     Vec3f accel = { 0.0f, 0.3f, 0.0f };
     Vec3f pos;
-    s16 angle = ((Rand_ZeroOne() - 0.5f) * 65536.0f);
+    s16 angle = ((fqrand() - 0.5f) * 65536.0f);
 
     pos.y = this->actor.floorHeight;
 
-    accel.x = (Rand_ZeroOne() - 0.5f) * 2;
-    accel.z = (Rand_ZeroOne() - 0.5f) * 2;
+    accel.x = (fqrand() - 0.5f) * 2;
+    accel.z = (fqrand() - 0.5f) * 2;
 
-    pos.x = (Math_SinS(angle) * 11.0f) + arg2->x;
-    pos.z = (Math_CosS(angle) * 11.0f) + arg2->z;
+    pos.x = (sin_s(angle) * 11.0f) + arg2->x;
+    pos.z = (cos_s(angle) * 11.0f) + arg2->z;
 
-    func_8002836C(play, &pos, &velocity, &accel, &prim, &env, 100, 60, 8);
+    Effect_SS_Dust_sc_cl_co_ct(play, &pos, &velocity, &accel, &prim, &env, 100, 60, 8);
 }
 
-s32 EnDodojr_UpdateBounces(EnDodojr* this, PlayState* play) {
+static s32 bound(EnDodojr* this, PlayState* play) {
     if (this->actor.velocity.y >= 0.0f) {
         return false;
     }
@@ -145,9 +145,9 @@ s32 EnDodojr_UpdateBounces(EnDodojr* this, PlayState* play) {
     }
 
     if (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_DODO_M_GND);
+        Actor_SE_set(&this->actor, NA_SE_EN_DODO_M_GND);
         this->dustPos = this->actor.world.pos;
-        EnDodojr_SpawnLargeDust(this, play, 10);
+        set_dust_effect(this, play, 10);
         this->actor.velocity.y = 10.0f / (4 - this->counter);
         this->counter--;
 
@@ -160,19 +160,19 @@ s32 EnDodojr_UpdateBounces(EnDodojr* this, PlayState* play) {
     return false;
 }
 
-void EnDodojr_SetupCrawlTowardsTarget(EnDodojr* this) {
-    f32 lastFrame = Animation_GetLastFrame(&object_dodojr_Anim_000860);
+void dj_move_ct(EnDodojr* this) {
+    f32 lastFrame = Si2_anime_end_frame(&object_dodojr_Anim_000860);
 
-    Animation_Change(&this->skelAnime, &object_dodojr_Anim_000860, 1.8f, 0.0f, lastFrame, ANIMMODE_LOOP_INTERP, -10.0f);
+    Skeleton_Info2_init(&this->skelAnime, &object_dodojr_Anim_000860, 1.8f, 0.0f, lastFrame, ANIMMODE_LOOP_INTERP, -10.0f);
     this->actor.velocity.y = 0.0f;
     this->actor.speed = 2.6f;
     this->actor.gravity = -0.8f;
 }
 
-void EnDodojr_SetupFlipBounce(EnDodojr* this) {
-    f32 lastFrame = Animation_GetLastFrame(&object_dodojr_Anim_0004A0);
+void dj_freeze_jump_ct(EnDodojr* this) {
+    f32 lastFrame = Si2_anime_end_frame(&object_dodojr_Anim_0004A0);
 
-    Animation_Change(&this->skelAnime, &object_dodojr_Anim_0004A0, 1.0f, 0.0f, lastFrame, ANIMMODE_ONCE, -10.0f);
+    Skeleton_Info2_init(&this->skelAnime, &object_dodojr_Anim_0004A0, 1.0f, 0.0f, lastFrame, ANIMMODE_ONCE, -10.0f);
     this->actor.speed = 0.0f;
     this->actor.velocity.x = 0.0f;
     this->actor.velocity.z = 0.0f;
@@ -184,24 +184,24 @@ void EnDodojr_SetupFlipBounce(EnDodojr* this) {
     }
 }
 
-void EnDodojr_SetupSwallowedBombDeathSequence(EnDodojr* this) {
-    f32 lastFrame = Animation_GetLastFrame(&object_dodojr_Anim_0005F0);
+void dj_freeze_ct(EnDodojr* this) {
+    f32 lastFrame = Si2_anime_end_frame(&object_dodojr_Anim_0005F0);
 
-    Animation_Change(&this->skelAnime, &object_dodojr_Anim_0005F0, 1.0f, 0.0f, lastFrame, ANIMMODE_LOOP, 0.0f);
+    Skeleton_Info2_init(&this->skelAnime, &object_dodojr_Anim_0005F0, 1.0f, 0.0f, lastFrame, ANIMMODE_LOOP, 0.0f);
     this->actor.velocity.y = 0.0f;
     this->actor.gravity = -0.8f;
 }
 
-void EnDodojr_SetupJumpAttackBounce(EnDodojr* this) {
-    f32 lastFrame = Animation_GetLastFrame(&object_dodojr_Anim_000724);
+void dj_attack_ct(EnDodojr* this) {
+    f32 lastFrame = Si2_anime_end_frame(&object_dodojr_Anim_000724);
 
-    Animation_Change(&this->skelAnime, &object_dodojr_Anim_000724, 1.0f, 0.0f, lastFrame, ANIMMODE_LOOP, -10.0f);
+    Skeleton_Info2_init(&this->skelAnime, &object_dodojr_Anim_000724, 1.0f, 0.0f, lastFrame, ANIMMODE_LOOP, -10.0f);
     this->actor.gravity = -0.8f;
     this->counter = 3;
     this->actor.velocity.y = 10.0f;
 }
 
-void EnDodojr_SetupDespawn(EnDodojr* this) {
+void dj_hide_ct(EnDodojr* this) {
     this->actor.shape.shadowDraw = NULL;
     this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
     this->actor.home.pos = this->actor.world.pos;
@@ -211,16 +211,16 @@ void EnDodojr_SetupDespawn(EnDodojr* this) {
     this->dustPos = this->actor.world.pos;
 }
 
-void EnDodojr_SetupEatBomb(EnDodojr* this) {
-    Animation_Change(&this->skelAnime, &object_dodojr_Anim_000724, 1.0f, 8.0f, 12.0f, ANIMMODE_ONCE, 0.0f);
-    Actor_PlaySfx(&this->actor, NA_SE_EN_DODO_M_EAT);
+void dj_bom_eat_ct(EnDodojr* this) {
+    Skeleton_Info2_init(&this->skelAnime, &object_dodojr_Anim_000724, 1.0f, 8.0f, 12.0f, ANIMMODE_ONCE, 0.0f);
+    Actor_SE_set(&this->actor, NA_SE_EN_DODO_M_EAT);
     this->actor.speed = 0.0f;
     this->actor.velocity.x = 0.0f;
     this->actor.velocity.z = 0.0f;
     this->actor.gravity = -0.8f;
 }
 
-s32 EnDodojr_CheckNearbyBombs(EnDodojr* this, PlayState* play) {
+s32 dj_bomb_search(EnDodojr* this, PlayState* play) {
     Actor* bomb;
     Vec3f maxBombRange = { 99999.0f, 99999.0f, 99999.0f };
     s32 foundBomb = false;
@@ -261,12 +261,12 @@ s32 EnDodojr_CheckNearbyBombs(EnDodojr* this, PlayState* play) {
     return foundBomb;
 }
 
-s32 EnDodojr_TryEatBomb(EnDodojr* this) {
+s32 bom_eat_check(EnDodojr* this) {
     if (this->bomb == NULL) {
         return false;
     } else if (this->bomb->parent != NULL) {
         return false;
-    } else if (Math_Vec3f_DistXYZ(&this->actor.world.pos, &this->bomb->world.pos) > 30.0f) {
+    } else if (search_position_distance(&this->actor.world.pos, &this->bomb->world.pos) > 30.0f) {
         return false;
     } else {
         this->bomb->parent = &this->actor;
@@ -274,7 +274,7 @@ s32 EnDodojr_TryEatBomb(EnDodojr* this) {
     }
 }
 
-void EnDodojr_UpdateCrawl(EnDodojr* this, PlayState* play) {
+void dj_search_move_sub(EnDodojr* this, PlayState* play) {
     f32 angles[] = { 0.0f, 210.0f, 60.0f, 270.0f, 120.0f, 330.0f, 180.0f, 30.0f, 240.0f, 90.0f, 300.0f, 150.0f };
     s32 pad;
     Player* player = GET_PLAYER(play);
@@ -283,7 +283,7 @@ void EnDodojr_UpdateCrawl(EnDodojr* this, PlayState* play) {
 
     if ((this->bomb == NULL) || (this->bomb->update == NULL) ||
         ((this->bomb != NULL) && (this->bomb->parent != NULL))) {
-        EnDodojr_CheckNearbyBombs(this, play);
+        dj_bomb_search(this, play);
     }
 
     if (this->bomb != NULL) {
@@ -292,7 +292,7 @@ void EnDodojr_UpdateCrawl(EnDodojr* this, PlayState* play) {
         crawlTargetPos = player->actor.world.pos;
     }
 
-    if (Math_Vec3f_DistXYZ(&this->actor.world.pos, &crawlTargetPos) > 80.0f) {
+    if (search_position_distance(&this->actor.world.pos, &crawlTargetPos) > 80.0f) {
         angleIndex =
             (s16)(this->actor.home.pos.x + this->actor.home.pos.y + this->actor.home.pos.z + play->state.frames / 30) %
             12;
@@ -301,11 +301,11 @@ void EnDodojr_UpdateCrawl(EnDodojr* this, PlayState* play) {
         crawlTargetPos.z += 80.0f * cosf(angles[angleIndex]);
     }
 
-    Math_SmoothStepToS(&this->actor.world.rot.y, Math_Vec3f_Yaw(&this->actor.world.pos, &crawlTargetPos), 10, 1000, 1);
+    add_calc_short_angle2(&this->actor.world.rot.y, search_position_angleY(&this->actor.world.pos, &crawlTargetPos), 10, 1000, 1);
     this->actor.shape.rot.y = this->actor.world.rot.y;
 }
 
-s32 EnDodojr_IsPlayerWithinAttackRange(EnDodojr* this) {
+s32 dj_attack_check(EnDodojr* this) {
     if (this->actor.xzDistToPlayer > 40.0f) {
         return false;
     } else {
@@ -313,28 +313,28 @@ s32 EnDodojr_IsPlayerWithinAttackRange(EnDodojr* this) {
     }
 }
 
-void EnDodojr_SetupStandardDeathBounce(EnDodojr* this) {
-    Actor_PlaySfx(&this->actor, NA_SE_EN_DODO_M_DEAD);
+void dj_dead_ct(EnDodojr* this) {
+    Actor_SE_set(&this->actor, NA_SE_EN_DODO_M_DEAD);
     this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
-    EnDodojr_SetupFlipBounce(this);
-    this->actionFunc = EnDodojr_StandardDeathBounce;
+    dj_freeze_jump_ct(this);
+    this->actionFunc = dj_dead_jump;
 }
 
-s32 EnDodojr_CheckDamaged(EnDodojr* this, PlayState* play) {
-    if ((this->actionFunc == EnDodojr_SwallowBomb) || (this->actionFunc == EnDodojr_SwallowedBombDeathBounce) ||
-        (this->actionFunc == EnDodojr_SwallowedBombDeathSequence) || (this->actionFunc == EnDodojr_Despawn) ||
-        (this->actionFunc == EnDodojr_StandardDeathBounce) || (this->actionFunc == EnDodojr_DeathSequence) ||
-        (this->actionFunc == EnDodojr_DropItem)) {
+static s32 hitcheck(EnDodojr* this, PlayState* play) {
+    if ((this->actionFunc == dj_bom_eat_after) || (this->actionFunc == dj_bom_eat_jump) ||
+        (this->actionFunc == dj_bom_eat_dead) || (this->actionFunc == dj_hide) ||
+        (this->actionFunc == dj_dead_jump) || (this->actionFunc == dj_explosion) ||
+        (this->actionFunc == dj_dead)) {
         return false;
     }
 
     if (play->actorCtx.unk_02 != 0) {
-        if (this->actionFunc != EnDodojr_WaitUnderground) {
-            if (this->actionFunc == EnDodojr_EmergeFromGround) {
-                this->actor.shape.shadowDraw = ActorShadow_DrawCircle;
+        if (this->actionFunc != dj_wait_underground) {
+            if (this->actionFunc == dj_appear) {
+                this->actor.shape.shadowDraw = Actor_shadow_circle;
             }
 
-            EnDodojr_SetupStandardDeathBounce(this);
+            dj_dead_ct(this);
         }
         return false;
     }
@@ -344,51 +344,51 @@ s32 EnDodojr_CheckDamaged(EnDodojr* this, PlayState* play) {
     } else {
         this->collider.base.acFlags &= ~AC_HIT;
 
-        if ((this->actionFunc == EnDodojr_WaitUnderground) || (this->actionFunc == EnDodojr_EmergeFromGround)) {
-            this->actor.shape.shadowDraw = ActorShadow_DrawCircle;
+        if ((this->actionFunc == dj_wait_underground) || (this->actionFunc == dj_appear)) {
+            this->actor.shape.shadowDraw = Actor_shadow_circle;
         }
 
         if ((this->actor.colChkInfo.damageEffect == 0) && (this->actor.colChkInfo.damage != 0)) {
-            Enemy_StartFinishingBlow(play, &this->actor);
+            Actor_info_finish(play, &this->actor);
             this->freezeFrameTimer = 2;
-            this->actionFunc = EnDodojr_WaitFreezeFrames;
+            this->actionFunc = dj_hit_now;
             return true;
         }
 
-        if ((this->actor.colChkInfo.damageEffect == 1) && (this->actionFunc != EnDodojr_Stunned) &&
-            (this->actionFunc != EnDodojr_StunnedBounce)) {
-            Actor_PlaySfx(&this->actor, NA_SE_EN_GOMA_JR_FREEZE);
+        if ((this->actor.colChkInfo.damageEffect == 1) && (this->actionFunc != dj_freeze) &&
+            (this->actionFunc != dj_freeze_jump)) {
+            Actor_SE_set(&this->actor, NA_SE_EN_GOMA_JR_FREEZE);
             this->stunTimer = 120;
-            Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_BLUE, 200, COLORFILTER_BUFFLAG_OPA, 120);
-            EnDodojr_SetupFlipBounce(this);
-            this->actionFunc = EnDodojr_StunnedBounce;
+            Set_Fog(&this->actor, COLORFILTER_COLORFLAG_BLUE, 200, COLORFILTER_BUFFLAG_OPA, 120);
+            dj_freeze_jump_ct(this);
+            this->actionFunc = dj_freeze_jump;
         }
 
         return false;
     }
 }
 
-void EnDodojr_UpdateCollider(EnDodojr* this, PlayState* play) {
-    Collider_UpdateCylinder(&this->actor, &this->collider);
+void dj_collision_check(EnDodojr* this, PlayState* play) {
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
 
-    if ((this->actionFunc != EnDodojr_WaitUnderground) && (this->actionFunc != EnDodojr_DropItem)) {
-        if ((this->actionFunc == EnDodojr_EmergeFromGround) || (this->actionFunc == EnDodojr_CrawlTowardsTarget) ||
-            (this->actionFunc == EnDodojr_JumpAttackBounce)) {
-            CollisionCheck_SetAT(play, &play->colChkCtx, &this->collider.base);
+    if ((this->actionFunc != dj_wait_underground) && (this->actionFunc != dj_dead)) {
+        if ((this->actionFunc == dj_appear) || (this->actionFunc == dj_move) ||
+            (this->actionFunc == dj_attack)) {
+            CollisionCheck_setAT(play, &play->colChkCtx, &this->collider.base);
         }
 
-        if ((this->actionFunc == EnDodojr_EmergeFromGround) || (this->actionFunc == EnDodojr_CrawlTowardsTarget) ||
-            (this->actionFunc == EnDodojr_StunnedBounce) || (this->actionFunc == EnDodojr_Stunned) ||
-            (this->actionFunc == EnDodojr_JumpAttackBounce)) {
-            CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
+        if ((this->actionFunc == dj_appear) || (this->actionFunc == dj_move) ||
+            (this->actionFunc == dj_freeze_jump) || (this->actionFunc == dj_freeze) ||
+            (this->actionFunc == dj_attack)) {
+            CollisionCheck_setAC(play, &play->colChkCtx, &this->collider.base);
         }
 
-        CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
+        CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
     }
 }
 
-void EnDodojr_WaitUnderground(EnDodojr* this, PlayState* play) {
-    f32 lastFrame = Animation_GetLastFrame(&object_dodojr_Anim_000860);
+void dj_wait_underground(EnDodojr* this, PlayState* play) {
+    f32 lastFrame = Si2_anime_end_frame(&object_dodojr_Anim_000860);
     Player* player = GET_PLAYER(play);
     f32 dist;
 
@@ -396,9 +396,9 @@ void EnDodojr_WaitUnderground(EnDodojr* this, PlayState* play) {
         dist = this->actor.world.pos.y - player->actor.world.pos.y;
 
         if (!(dist >= 40.0f)) {
-            Animation_Change(&this->skelAnime, &object_dodojr_Anim_000860, 1.8f, 0.0f, lastFrame, ANIMMODE_LOOP_INTERP,
+            Skeleton_Info2_init(&this->skelAnime, &object_dodojr_Anim_000860, 1.8f, 0.0f, lastFrame, ANIMMODE_LOOP_INTERP,
                              -10.0f);
-            Actor_PlaySfx(&this->actor, NA_SE_EN_DODO_M_UP);
+            Actor_SE_set(&this->actor, NA_SE_EN_DODO_M_UP);
             this->actor.world.pos.y -= 60.0f;
             this->actor.flags |= ACTOR_FLAG_ATTENTION_ENABLED;
             this->actor.world.rot.x -= 0x4000;
@@ -406,59 +406,59 @@ void EnDodojr_WaitUnderground(EnDodojr* this, PlayState* play) {
             this->dustPos = this->actor.world.pos;
             //! @bug floorHeight is always 0 at this point, so the dust is consistently drawn at y=0
             this->dustPos.y = this->actor.floorHeight;
-            this->actionFunc = EnDodojr_EmergeFromGround;
+            this->actionFunc = dj_appear;
         }
     }
 }
 
-void EnDodojr_EmergeFromGround(EnDodojr* this, PlayState* play) {
+void dj_appear(EnDodojr* this, PlayState* play) {
     f32 sp2C;
 
-    Math_SmoothStepToS(&this->actor.shape.rot.x, 0, 4, 0x3E8, 0x64);
+    add_calc_short_angle2(&this->actor.shape.rot.x, 0, 4, 0x3E8, 0x64);
     sp2C = this->actor.shape.rot.x;
     sp2C /= 16384.0f;
     this->actor.world.pos.y = this->actor.home.pos.y + (60.0f * sp2C);
-    EnDodojr_SpawnLargeDust(this, play, 3);
+    set_dust_effect(this, play, 3);
 
     if (sp2C == 0.0f) {
-        this->actor.shape.shadowDraw = ActorShadow_DrawCircle;
+        this->actor.shape.shadowDraw = Actor_shadow_circle;
         this->actor.world.rot.x = this->actor.shape.rot.x;
         this->actor.speed = 2.6f;
-        this->actionFunc = EnDodojr_CrawlTowardsTarget;
+        this->actionFunc = dj_move;
     }
 }
 
-void EnDodojr_CrawlTowardsTarget(EnDodojr* this, PlayState* play) {
-    Actor_UpdateVelocityXZGravity(&this->actor);
-    EnDodojr_SpawnSmallDust(this, play, &this->actor.world.pos);
+void dj_move(EnDodojr* this, PlayState* play) {
+    Actor_position_speed_set(&this->actor);
+    set_move_dust_effect(this, play, &this->actor.world.pos);
 
     if (DECR(this->crawlSfxTimer) == 0) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_DODO_M_MOVE);
+        Actor_SE_set(&this->actor, NA_SE_EN_DODO_M_MOVE);
         this->crawlSfxTimer = 5;
     }
 
-    if (EnDodojr_TryEatBomb(this)) {
-        EnDodojr_SetupEatBomb(this);
-        this->actionFunc = EnDodojr_EatBomb;
+    if (bom_eat_check(this)) {
+        dj_bom_eat_ct(this);
+        this->actionFunc = dj_bom_eat;
         return;
     }
 
-    EnDodojr_UpdateCrawl(this, play);
+    dj_search_move_sub(this, play);
 
-    if (EnDodojr_IsPlayerWithinAttackRange(this)) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_DODO_M_CRY);
-        EnDodojr_SetupJumpAttackBounce(this);
-        this->actionFunc = EnDodojr_JumpAttackBounce;
+    if (dj_attack_check(this)) {
+        Actor_SE_set(&this->actor, NA_SE_EN_DODO_M_CRY);
+        dj_attack_ct(this);
+        this->actionFunc = dj_attack;
     }
 
     if (this->actor.bgCheckFlags & BGCHECKFLAG_WALL) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_DODO_M_DOWN);
-        EnDodojr_SetupDespawn(this);
-        this->actionFunc = EnDodojr_Despawn;
+        Actor_SE_set(&this->actor, NA_SE_EN_DODO_M_DOWN);
+        dj_hide_ct(this);
+        this->actionFunc = dj_hide;
     }
 }
 
-void EnDodojr_EatBomb(EnDodojr* this, PlayState* play) {
+void dj_bom_eat(EnDodojr* this, PlayState* play) {
     EnBom* bomb;
 
     if (((s16)this->skelAnime.curFrame - 8) < 4) {
@@ -466,55 +466,55 @@ void EnDodojr_EatBomb(EnDodojr* this, PlayState* play) {
         bomb->timer++;
         this->bomb->world.pos = this->headPos;
     } else {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_DODO_K_DRINK);
-        Actor_Kill(this->bomb);
+        Actor_SE_set(&this->actor, NA_SE_EN_DODO_K_DRINK);
+        Actor_delete(this->bomb);
         this->timer = 24;
         this->counter = 0;
-        this->actionFunc = EnDodojr_SwallowBomb;
+        this->actionFunc = dj_bom_eat_after;
     }
 }
 
-void EnDodojr_SwallowBomb(EnDodojr* this, PlayState* play) {
+void dj_bom_eat_after(EnDodojr* this, PlayState* play) {
     if (DECR(this->timer) == 0) {
-        EnDodojr_DoSwallowedBombEffects(this);
+        set_effect_in_stomach(this);
         this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
-        EnDodojr_SetupFlipBounce(this);
-        this->actionFunc = EnDodojr_SwallowedBombDeathBounce;
+        dj_freeze_jump_ct(this);
+        this->actionFunc = dj_bom_eat_jump;
     }
 }
 
-void EnDodojr_SwallowedBombDeathBounce(EnDodojr* this, PlayState* play) {
+void dj_bom_eat_jump(EnDodojr* this, PlayState* play) {
     // Scale up briefly to expand from the swallowed bomb exploding.
     this->rootScale = 1.2f;
     this->rootScale *= ((f32)this->actor.colorFilterTimer / 8);
-    Actor_UpdateVelocityXZGravity(&this->actor);
+    Actor_position_speed_set(&this->actor);
 
-    if (EnDodojr_UpdateBounces(this, play)) {
+    if (bound(this, play)) {
         this->timer = 60;
-        EnDodojr_SetupSwallowedBombDeathSequence(this);
+        dj_freeze_ct(this);
         this->counter = 7;
-        this->actionFunc = EnDodojr_SwallowedBombDeathSequence;
+        this->actionFunc = dj_bom_eat_dead;
     }
 }
 
-void EnDodojr_SwallowedBombDeathSequence(EnDodojr* this, PlayState* play) {
-    EnDodojr_DeathSequence(this, play);
+void dj_bom_eat_dead(EnDodojr* this, PlayState* play) {
+    dj_explosion(this, play);
 }
 
-void EnDodojr_StunnedBounce(EnDodojr* this, PlayState* play) {
-    Actor_UpdateVelocityXZGravity(&this->actor);
+void dj_freeze_jump(EnDodojr* this, PlayState* play) {
+    Actor_position_speed_set(&this->actor);
 
-    if (EnDodojr_UpdateBounces(this, play)) {
-        EnDodojr_SetupSwallowedBombDeathSequence(this);
-        this->actionFunc = EnDodojr_Stunned;
+    if (bound(this, play)) {
+        dj_freeze_ct(this);
+        this->actionFunc = dj_freeze;
     }
 
-    Math_SmoothStepToS(&this->actor.shape.rot.y, 0, 4, 1000, 10);
+    add_calc_short_angle2(&this->actor.shape.rot.y, 0, 4, 1000, 10);
     this->actor.world.rot.x = this->actor.shape.rot.x;
     this->actor.colorFilterTimer = this->stunTimer;
 }
 
-void EnDodojr_Stunned(EnDodojr* this, PlayState* play) {
+void dj_freeze(EnDodojr* this, PlayState* play) {
     if (DECR(this->stunTimer) != 0) {
         if (this->stunTimer < 30) {
             // Shake back and forth to indicate recovering from stun.
@@ -529,59 +529,59 @@ void EnDodojr_Stunned(EnDodojr* this, PlayState* play) {
             return;
         }
     } else {
-        EnDodojr_SetupCrawlTowardsTarget(this);
-        this->actionFunc = EnDodojr_CrawlTowardsTarget;
+        dj_move_ct(this);
+        this->actionFunc = dj_move;
     }
 }
 
-void EnDodojr_JumpAttackBounce(EnDodojr* this, PlayState* play) {
+void dj_attack(EnDodojr* this, PlayState* play) {
     this->actor.flags |= ACTOR_FLAG_SFX_FOR_PLAYER_BODY_HIT;
-    Actor_UpdateVelocityXZGravity(&this->actor);
+    Actor_position_speed_set(&this->actor);
 
-    if (EnDodojr_UpdateBounces(this, play)) {
-        EnDodojr_SetupCrawlTowardsTarget(this);
-        this->actionFunc = EnDodojr_CrawlTowardsTarget;
+    if (bound(this, play)) {
+        dj_move_ct(this);
+        this->actionFunc = dj_move;
     }
 }
 
-void EnDodojr_Despawn(EnDodojr* this, PlayState* play) {
+void dj_hide(EnDodojr* this, PlayState* play) {
     f32 burrowStep;
 
-    Math_SmoothStepToS(&this->actor.shape.rot.x, 0x4000, 4, 1000, 100);
+    add_calc_short_angle2(&this->actor.shape.rot.x, 0x4000, 4, 1000, 100);
 
     if (DECR(this->timer) != 0) {
         burrowStep = (30 - this->timer) / 30.0f;
         this->actor.world.pos.y = this->actor.home.pos.y - (60.0f * burrowStep);
     } else {
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     }
 
-    EnDodojr_SpawnLargeDust(this, play, 3);
+    set_dust_effect(this, play, 3);
 }
 
-void EnDodojr_StandardDeathBounce(EnDodojr* this, PlayState* play) {
-    Actor_UpdateVelocityXZGravity(&this->actor);
-    Math_SmoothStepToS(&this->actor.shape.rot.y, 0, 4, 1000, 10);
+void dj_dead_jump(EnDodojr* this, PlayState* play) {
+    Actor_position_speed_set(&this->actor);
+    add_calc_short_angle2(&this->actor.shape.rot.y, 0, 4, 1000, 10);
     this->actor.world.rot.x = this->actor.shape.rot.x;
 
-    if (EnDodojr_UpdateBounces(this, play)) {
+    if (bound(this, play)) {
         this->timer = 60;
-        EnDodojr_SetupSwallowedBombDeathSequence(this);
+        dj_freeze_ct(this);
         this->counter = 7;
-        this->actionFunc = EnDodojr_DeathSequence;
+        this->actionFunc = dj_explosion;
     }
 }
 
-void EnDodojr_DeathSequence(EnDodojr* this, PlayState* play) {
+void dj_explosion(EnDodojr* this, PlayState* play) {
     EnBom* bomb;
 
     if (this->counter != 0) {
         if (this->actor.colorFilterTimer == 0) {
-            Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_RED, 200, COLORFILTER_BUFFLAG_OPA, this->counter);
+            Set_Fog(&this->actor, COLORFILTER_COLORFLAG_RED, 200, COLORFILTER_BUFFLAG_OPA, this->counter);
             this->counter--;
         }
     } else {
-        bomb = (EnBom*)Actor_Spawn(&play->actorCtx, play, ACTOR_EN_BOM, this->actor.world.pos.x,
+        bomb = (EnBom*)Actor_info_make_actor(&play->actorCtx, play, ACTOR_EN_BOM, this->actor.world.pos.x,
                                    this->actor.world.pos.y, this->actor.world.pos.z, 0, 0, 0, BOMB_BODY);
 
         if (bomb != NULL) {
@@ -589,65 +589,65 @@ void EnDodojr_DeathSequence(EnDodojr* this, PlayState* play) {
         }
 
         this->timer = 8;
-        this->actionFunc = EnDodojr_DropItem;
+        this->actionFunc = dj_dead;
     }
 }
 
-void EnDodojr_DropItem(EnDodojr* this, PlayState* play) {
+void dj_dead(EnDodojr* this, PlayState* play) {
     if (DECR(this->timer) == 0) {
-        Item_DropCollectibleRandom(play, NULL, &this->actor.world.pos, 0x40);
-        Actor_Kill(&this->actor);
+        Item_Set_Std(play, NULL, &this->actor.world.pos, 0x40);
+        Actor_delete(&this->actor);
     }
 }
 
-void EnDodojr_WaitFreezeFrames(EnDodojr* this, PlayState* play) {
+void dj_hit_now(EnDodojr* this, PlayState* play) {
     if (DECR(this->freezeFrameTimer) == 0) {
-        EnDodojr_SetupStandardDeathBounce(this);
+        dj_dead_ct(this);
     }
 }
 
-void EnDodojr_Update(Actor* thisx, PlayState* play) {
+void En_Dodojr_move(Actor* thisx, PlayState* play) {
     EnDodojr* this = (EnDodojr*)thisx;
 
-    SkelAnime_Update(&this->skelAnime);
-    Actor_MoveXZGravity(&this->actor);
-    EnDodojr_CheckDamaged(this, play);
+    Skeleton_Info2_anime_play(&this->skelAnime);
+    Actor_position_moveF(&this->actor);
+    hitcheck(this, play);
 
-    if (this->actionFunc != EnDodojr_WaitUnderground) {
-        Actor_UpdateBgCheckInfo(play, &this->actor, this->collider.dim.radius, this->collider.dim.height, 0.0f,
+    if (this->actionFunc != dj_wait_underground) {
+        Actor_BGcheck2(play, &this->actor, this->collider.dim.radius, this->collider.dim.height, 0.0f,
                                 UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
     }
 
     this->actionFunc(this, play);
-    Actor_SetFocus(&this->actor, 10.0f);
-    EnDodojr_UpdateCollider(this, play);
+    Actor_world_to_eye(&this->actor, 10.0f);
+    dj_collision_check(this, play);
 }
 
-s32 EnDodojr_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+s32 en_ddj_display1(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     EnDodojr* this = (EnDodojr*)thisx;
     Vec3f D_809F7F64 = { 480.0f, 620.0f, 0.0f };
 
     if (limbIndex == 1) {
-        Matrix_Scale((this->rootScale * 0.5f) + 1.0f, this->rootScale + 1.0f, (this->rootScale * 0.5f) + 1.0f,
+        Matrix_scale((this->rootScale * 0.5f) + 1.0f, this->rootScale + 1.0f, (this->rootScale * 0.5f) + 1.0f,
                      MTXMODE_APPLY);
     }
 
     if (limbIndex == 4) {
-        Matrix_MultVec3f(&D_809F7F64, &this->headPos);
+        Matrix_Position(&D_809F7F64, &this->headPos);
     }
 
     return false;
 }
 
-void EnDodojr_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
+void en_ddj_display2(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
 }
 
-void EnDodojr_Draw(Actor* thisx, PlayState* play) {
+void En_Dodojr_display(Actor* thisx, PlayState* play) {
     EnDodojr* this = (EnDodojr*)thisx;
 
-    if ((this->actionFunc != EnDodojr_WaitUnderground) && (this->actionFunc != EnDodojr_DropItem)) {
-        Gfx_SetupDL_25Opa(play->state.gfxCtx);
-        SkelAnime_DrawOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, EnDodojr_OverrideLimbDraw,
-                          EnDodojr_PostLimbDraw, &this->actor);
+    if ((this->actionFunc != dj_wait_underground) && (this->actionFunc != dj_dead)) {
+        _texture_z_light_fog_prim(play->state.gfxCtx);
+        Si2_draw(play, this->skelAnime.skeleton, this->skelAnime.jointTable, en_ddj_display1,
+                          en_ddj_display2, &this->actor);
     }
 }

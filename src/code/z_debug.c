@@ -15,13 +15,13 @@ typedef struct InputCombo {
 #pragma increment_block_number "gc-eu:160 gc-eu-mq:160 gc-jp:160 gc-jp-ce:160 gc-jp-mq:160 gc-us:160 gc-us-mq:160" \
                                "ique-cn:128 ntsc-1.0:160 ntsc-1.1:160 ntsc-1.2:160 pal-1.0:160 pal-1.1:160 hiratsu3:160"
 
-RegEditor* gRegEditor;
+RegEditor* debug_mode;
 
-DebugCamTextBufferEntry sDebugCamTextBuffer[22];
+DebugCamTextBufferEntry debug_print2_buffer[22];
 
-s16 sDebugCamTextEntryCount = 0;
+s16 debug_print2_count = 0;
 
-Color_RGBA8 sDebugCamTextColors[] = {
+Color_RGBA8 print_color[] = {
     { 255, 255, 32, 192 },  // DEBUG_CAM_TEXT_YELLOW
     { 255, 150, 128, 192 }, // DEBUG_CAM_TEXT_PEACH
     { 128, 96, 0, 64 },     // DEBUG_CAM_TEXT_BROWN
@@ -99,30 +99,30 @@ char sRegGroupChars[REG_GROUPS] = {
 };
 #endif
 
-void Regs_Init(void) {
+void new_Debug_mode(void) {
     s32 i;
 
-    gRegEditor = SYSTEM_ARENA_MALLOC(sizeof(RegEditor), "../z_debug.c", 260);
-    gRegEditor->regPage = 0;
-    gRegEditor->regGroup = 0;
-    gRegEditor->regCur = 0;
-    gRegEditor->dPadInputPrev = 0;
-    gRegEditor->inputRepeatTimer = 0;
-    for (i = 0; i < ARRAY_COUNT(gRegEditor->data); i++) {
-        gRegEditor->data[i] = 0;
+    debug_mode = SYSTEM_ARENA_MALLOC(sizeof(RegEditor), "../z_debug.c", 260);
+    debug_mode->regPage = 0;
+    debug_mode->regGroup = 0;
+    debug_mode->regCur = 0;
+    debug_mode->dPadInputPrev = 0;
+    debug_mode->inputRepeatTimer = 0;
+    for (i = 0; i < ARRAY_COUNT(debug_mode->data); i++) {
+        debug_mode->data[i] = 0;
     }
 }
 
-// Function is stubbed. Name is assumed by similarities in signature to `DebugCamera_ScreenTextColored` and usage.
-void DebugCamera_ScreenText(u8 x, u8 y, const char* text) {
+// Function is stubbed. Name is assumed by similarities in signature to `Debug_Print2_write` and usage.
+void Debug_Print_write(u8 x, u8 y, const char* text) {
 }
 
-void DebugCamera_ScreenTextColored(u8 x, u8 y, u8 colorIndex, const char* text) {
-    DebugCamTextBufferEntry* entry = &sDebugCamTextBuffer[sDebugCamTextEntryCount];
+void Debug_Print2_write(u8 x, u8 y, u8 colorIndex, const char* text) {
+    DebugCamTextBufferEntry* entry = &debug_print2_buffer[debug_print2_count];
     char* textDest;
     s16 charCount;
 
-    if (sDebugCamTextEntryCount < ARRAY_COUNT(sDebugCamTextBuffer)) {
+    if (debug_print2_count < ARRAY_COUNT(debug_print2_buffer)) {
         entry->x = x;
         entry->y = y;
         entry->colorIndex = colorIndex;
@@ -139,22 +139,22 @@ void DebugCamera_ScreenTextColored(u8 x, u8 y, u8 colorIndex, const char* text) 
 
         *textDest = '\0';
 
-        sDebugCamTextEntryCount++;
+        debug_print2_count++;
     }
 }
 
-void DebugCamera_DrawScreenText(GfxPrint* printer) {
+void Debug_Print2_output(GfxPrint* printer) {
     s32 i;
     Color_RGBA8* color;
     DebugCamTextBufferEntry* entry;
 
-    for (i = 0; i < sDebugCamTextEntryCount; i++) {
-        entry = &sDebugCamTextBuffer[i];
-        color = &sDebugCamTextColors[entry->colorIndex];
+    for (i = 0; i < debug_print2_count; i++) {
+        entry = &debug_print2_buffer[i];
+        color = &print_color[entry->colorIndex];
 
-        GfxPrint_SetColor(printer, color->r, color->g, color->b, color->a);
-        GfxPrint_SetPos(printer, entry->x, entry->y);
-        GfxPrint_Printf(printer, "%s", entry->text);
+        gfxprint_color(printer, color->r, color->g, color->b, color->a);
+        gfxprint_locate8x8(printer, entry->x, entry->y);
+        gfxprint_printf(printer, "%s", entry->text);
     }
 }
 
@@ -165,7 +165,7 @@ void DebugCamera_DrawScreenText(GfxPrint* printer) {
  */
 void Regs_UpdateEditor(Input* input) {
     s32 dPadInputCur;
-    s32 pageDataStart = ((gRegEditor->regGroup * REG_PAGES) + gRegEditor->regPage - 1) * REGS_PER_PAGE;
+    s32 pageDataStart = ((debug_mode->regGroup * REG_PAGES) + debug_mode->regPage - 1) * REGS_PER_PAGE;
     s32 increment;
     s32 i;
 
@@ -183,32 +183,32 @@ void Regs_UpdateEditor(Input* input) {
 
         // If a combo corresponding to a reg group was found
         if (i < REG_GROUPS) {
-            if (i == gRegEditor->regGroup) {
+            if (i == debug_mode->regGroup) {
                 // Same reg group as current, advance page index
-                gRegEditor->regPage = (gRegEditor->regPage + 1) % (REG_PAGES + 1);
+                debug_mode->regPage = (debug_mode->regPage + 1) % (REG_PAGES + 1);
             } else {
-                gRegEditor->regGroup = i; // Switch current reg group
-                gRegEditor->regPage = 0;  // Disable reg editor
+                debug_mode->regGroup = i; // Switch current reg group
+                debug_mode->regPage = 0;  // Disable reg editor
             }
         }
     } else {
-        switch (gRegEditor->regPage) {
+        switch (debug_mode->regPage) {
             case 1:
             case 2:
             case 3:
             case 4:
             case 5:
             case 6:
-                if (dPadInputCur == gRegEditor->dPadInputPrev) {
-                    gRegEditor->inputRepeatTimer--;
-                    if (gRegEditor->inputRepeatTimer < 0) {
-                        gRegEditor->inputRepeatTimer = 1;
+                if (dPadInputCur == debug_mode->dPadInputPrev) {
+                    debug_mode->inputRepeatTimer--;
+                    if (debug_mode->inputRepeatTimer < 0) {
+                        debug_mode->inputRepeatTimer = 1;
                     } else {
-                        dPadInputCur ^= gRegEditor->dPadInputPrev;
+                        dPadInputCur ^= debug_mode->dPadInputPrev;
                     }
                 } else {
-                    gRegEditor->inputRepeatTimer = 16;
-                    gRegEditor->dPadInputPrev = dPadInputCur;
+                    debug_mode->inputRepeatTimer = 16;
+                    debug_mode->dPadInputPrev = dPadInputCur;
                 }
 
                 increment =
@@ -222,23 +222,23 @@ void Regs_UpdateEditor(Input* input) {
                                                                                                                 : -1)
                                                              : 0;
 
-                gRegEditor->data[gRegEditor->regCur + pageDataStart] += increment;
+                debug_mode->data[debug_mode->regCur + pageDataStart] += increment;
 
                 if (CHECK_BTN_ANY(dPadInputCur, BTN_DUP)) {
-                    gRegEditor->regCur--;
-                    if (gRegEditor->regCur < 0) {
-                        gRegEditor->regCur = REGS_PER_PAGE - 1;
+                    debug_mode->regCur--;
+                    if (debug_mode->regCur < 0) {
+                        debug_mode->regCur = REGS_PER_PAGE - 1;
                     }
                 } else if (CHECK_BTN_ANY(dPadInputCur, BTN_DDOWN)) {
-                    gRegEditor->regCur++;
-                    if (gRegEditor->regCur >= REGS_PER_PAGE) {
-                        gRegEditor->regCur = 0;
+                    debug_mode->regCur++;
+                    if (debug_mode->regCur >= REGS_PER_PAGE) {
+                        debug_mode->regCur = 0;
                     }
                 }
 
                 if (iREG(0)) {
                     iREG(0) = 0;
-                    Rumble_Request(0.0f, iREG(1), iREG(2), iREG(3));
+                    z_vibctl2_vib_setQ(0.0f, iREG(1), iREG(2), iREG(3));
                 }
 
                 break;
@@ -251,27 +251,27 @@ void Regs_UpdateEditor(Input* input) {
 
 void Regs_DrawEditor(GfxPrint* printer) {
     s32 i;
-    s32 pageStart = (gRegEditor->regPage - 1) * REGS_PER_PAGE;
-    s32 pageDataStart = ((gRegEditor->regGroup * REG_PAGES) + gRegEditor->regPage - 1) * REGS_PER_PAGE;
+    s32 pageStart = (debug_mode->regPage - 1) * REGS_PER_PAGE;
+    s32 pageDataStart = ((debug_mode->regGroup * REG_PAGES) + debug_mode->regPage - 1) * REGS_PER_PAGE;
     s32 pad;
     char regGroupName[3];
 
     regGroupName[0] = 'R';
-    regGroupName[1] = sRegGroupChars[gRegEditor->regGroup];
+    regGroupName[1] = sRegGroupChars[debug_mode->regGroup];
     regGroupName[2] = '\0';
 
-    GfxPrint_SetColor(printer, 0, 128, 128, 128);
+    gfxprint_color(printer, 0, 128, 128, 128);
 
     for (i = 0; i < REGS_PER_PAGE; i++) {
-        if (i == gRegEditor->regCur) {
-            GfxPrint_SetColor(printer, 0, 255, 255, 255);
+        if (i == debug_mode->regCur) {
+            gfxprint_color(printer, 0, 255, 255, 255);
         }
 
-        GfxPrint_SetPos(printer, 3, i + 5);
-        GfxPrint_Printf(printer, "%s%02d%6d", regGroupName, pageStart + i, gRegEditor->data[i + pageDataStart]);
+        gfxprint_locate8x8(printer, 3, i + 5);
+        gfxprint_printf(printer, "%s%02d%6d", regGroupName, pageStart + i, debug_mode->data[i + pageDataStart]);
 
-        if (i == gRegEditor->regCur) {
-            GfxPrint_SetColor(printer, 0, 128, 128, 128);
+        if (i == debug_mode->regCur) {
+            gfxprint_color(printer, 0, 128, 128, 128);
         }
     }
 }
@@ -280,7 +280,7 @@ void Regs_DrawEditor(GfxPrint* printer) {
 /**
  * Draws the Reg Editor and Debug Camera text on screen
  */
-void Debug_DrawText(GraphicsContext* gfxCtx) {
+void Debug_mode_output(GraphicsContext* gfxCtx) {
     Gfx* gfx;
     Gfx* opaStart;
     GfxPrint printer;
@@ -288,30 +288,30 @@ void Debug_DrawText(GraphicsContext* gfxCtx) {
 
     OPEN_DISPS(gfxCtx, "../z_debug.c", 628);
 
-    GfxPrint_Init(&printer);
+    gfxprint_init(&printer);
     opaStart = POLY_OPA_DISP;
-    gfx = Gfx_Open(POLY_OPA_DISP);
+    gfx = gfxopen(POLY_OPA_DISP);
     gSPDisplayList(OVERLAY_DISP++, gfx);
-    GfxPrint_Open(&printer, gfx);
+    gfxprint_open(&printer, gfx);
 
     if ((OREG(0) == 1) || (OREG(0) == 8)) {
-        DebugCamera_DrawScreenText(&printer);
+        Debug_Print2_output(&printer);
     }
 
 #if DEBUG_FEATURES
-    if (gRegEditor->regPage != 0) {
+    if (debug_mode->regPage != 0) {
         Regs_DrawEditor(&printer);
     }
 #endif
 
-    sDebugCamTextEntryCount = 0;
+    debug_print2_count = 0;
 
-    gfx = GfxPrint_Close(&printer);
+    gfx = gfxprint_close(&printer);
     gSPEndDisplayList(gfx++);
-    Gfx_Close(opaStart, gfx);
+    gfxclose(opaStart, gfx);
     POLY_OPA_DISP = gfx;
 
     CLOSE_DISPS(gfxCtx, "../z_debug.c", 664);
 
-    GfxPrint_Destroy(&printer);
+    gfxprint_cleanup(&printer);
 }

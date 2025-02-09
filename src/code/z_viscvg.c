@@ -25,7 +25,7 @@
 /**
  * Draws only coverage: does not retain any of the original pixel RGB, primColor is used as background color.
  */
-Gfx sCoverageOnlyDL[] = {
+Gfx viscvg_dl[] = {
     gsDPSetOtherMode(G_AD_PATTERN | G_CD_MAGICSQ | G_CK_NONE | G_TC_CONV | G_TF_POINT | G_TT_NONE | G_TL_TILE |
                          G_TD_CLAMP | G_TP_NONE | G_CYC_1CYCLE | G_PM_NPRIMITIVE,
                      G_AC_NONE | G_ZS_PRIM | G_RM_VISCVG | G_RM_VISCVG2),
@@ -41,7 +41,7 @@ Gfx sCoverageOnlyDL[] = {
  *
  * @bug This easily overflows the blender because the fog value is added to the coverage value.
  */
-Gfx sCoverageRGBFogDL[] = {
+Gfx viscvg2_dl[] = {
     gsDPSetOtherMode(G_AD_PATTERN | G_CD_MAGICSQ | G_CK_NONE | G_TC_CONV | G_TF_POINT | G_TT_NONE | G_TL_TILE |
                          G_TD_CLAMP | G_TP_NONE | G_CYC_1CYCLE | G_PM_NPRIMITIVE,
                      G_AC_NONE | G_ZS_PRIM | IM_RD | CVG_DST_CLAMP | ZMODE_OPA | FORCE_BL |
@@ -55,7 +55,7 @@ Gfx sCoverageRGBFogDL[] = {
 /**
  * Draws coverage and RGB of pixels
  */
-Gfx sCoverageRGBDL[] = {
+Gfx viscvg3_dl[] = {
     gsDPSetOtherMode(G_AD_PATTERN | G_CD_MAGICSQ | G_CK_NONE | G_TC_CONV | G_TF_POINT | G_TT_NONE | G_TL_TILE |
                          G_TD_CLAMP | G_TP_NONE | G_CYC_1CYCLE | G_PM_NPRIMITIVE,
                      G_AC_NONE | G_ZS_PRIM | IM_RD | CVG_DST_CLAMP | ZMODE_OPA | FORCE_BL |
@@ -71,9 +71,9 @@ Gfx sCoverageRGBDL[] = {
  *
  * 1. Apply a uniform color filter by transparently blending primColor with original frame. The "cloud surface"
  * RenderMode is used to preserve the coverage for the second stage.
- * 2. Second half is the same as `sCoverageRGBDL`'s, i.e. (RGB from stage 1) * cvg
+ * 2. Second half is the same as `viscvg3_dl`'s, i.e. (RGB from stage 1) * cvg
  */
-Gfx sCoverageRGBUniformDL[] = {
+Gfx viscvg4_dl[] = {
     gsDPSetCombineMode(G_CC_PRIMITIVE, G_CC_PRIMITIVE),
     gsDPSetOtherMode(G_AD_NOTPATTERN | G_CD_DISABLE | G_CK_NONE | G_TC_CONV | G_TF_POINT | G_TT_NONE | G_TL_TILE |
                          G_TD_CLAMP | G_TP_NONE | G_CYC_1CYCLE | G_PM_NPRIMITIVE,
@@ -91,7 +91,7 @@ Gfx sCoverageRGBUniformDL[] = {
     gsSPEndDisplayList(),
 };
 
-void VisCvg_Init(VisCvg* this) {
+void z_viscvg_init(VisCvg* this) {
     this->vis.type = FB_FILTER_NONE;
     this->vis.scissorType = VIS_NO_SETSCISSOR;
     this->vis.primColor.r = 255;
@@ -100,10 +100,10 @@ void VisCvg_Init(VisCvg* this) {
     this->vis.primColor.a = 255;
 }
 
-void VisCvg_Destroy(VisCvg* this) {
+void z_viscvg_cleanup(VisCvg* this) {
 }
 
-void VisCvg_Draw(VisCvg* this, Gfx** gfxP) {
+void z_viscvg_draw(VisCvg* this, Gfx** gfxP) {
     Gfx* gfx = *gfxP;
 
     gDPPipeSync(gfx++);
@@ -115,25 +115,25 @@ void VisCvg_Draw(VisCvg* this, Gfx** gfxP) {
 
     switch (this->vis.type) {
         case FB_FILTER_CVG_RGB:
-            gSPDisplayList(gfx++, sCoverageRGBDL);
+            gSPDisplayList(gfx++, viscvg3_dl);
             break;
 
         case FB_FILTER_CVG_RGB_UNIFORM:
             // Set primitive color for uniform color filter in custom RenderMode
             gDPSetColor(gfx++, G_SETPRIMCOLOR, this->vis.primColor.rgba);
-            gSPDisplayList(gfx++, sCoverageRGBUniformDL);
+            gSPDisplayList(gfx++, viscvg4_dl);
             break;
 
         case FB_FILTER_CVG_ONLY:
             // Set background color for G_RM_VISCVG
             gDPSetColor(gfx++, G_SETBLENDCOLOR, this->vis.primColor.rgba);
-            gSPDisplayList(gfx++, sCoverageOnlyDL);
+            gSPDisplayList(gfx++, viscvg_dl);
             break;
 
         case FB_FILTER_CVG_RGB_FOG:
             // Set fog color for custom RenderMode, needs to be close to 0 to not overflow
             gDPSetColor(gfx++, G_SETFOGCOLOR, this->vis.primColor.rgba);
-            gSPDisplayList(gfx++, sCoverageRGBFogDL);
+            gSPDisplayList(gfx++, viscvg2_dl);
             break;
 
         default:

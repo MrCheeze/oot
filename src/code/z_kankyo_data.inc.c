@@ -5,7 +5,7 @@ typedef struct TimeBasedLightEntry {
     /* 0x05 */ u8 nextLightSetting;
 } TimeBasedLightEntry; // size = 0x6
 
-TimeBasedLightEntry sTimeBasedLightConfigs[][7] = {
+TimeBasedLightEntry klight_chg[][7] = {
     {
         { CLOCK_TIME(0, 0), CLOCK_TIME(4, 0) + 1, 3, 3 },
         { CLOCK_TIME(4, 0) + 1, CLOCK_TIME(6, 0), 3, 0 },
@@ -53,7 +53,7 @@ TimeBasedLightEntry sTimeBasedLightConfigs[][7] = {
     },
 };
 
-TimeBasedSkyboxEntry gTimeBasedSkyboxConfigs[][9] = {
+TimeBasedSkyboxEntry vrbox_chg[][9] = {
     {
         { CLOCK_TIME(0, 0), CLOCK_TIME(4, 0) + 1, false, 3, 3 },
         { CLOCK_TIME(4, 0) + 1, CLOCK_TIME(5, 0) + 1, true, 3, 0 },
@@ -100,7 +100,7 @@ TimeBasedSkyboxEntry gTimeBasedSkyboxConfigs[][9] = {
     },
 };
 
-SkyboxFile gNormalSkyFiles[] = {
+SkyboxFile vrbox_tenso[] = {
     {
         ROM_FILE(vr_fine0_static),
         ROM_FILE(vr_fine0_pal_static),

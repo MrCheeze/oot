@@ -64,7 +64,7 @@ void func_801C6EA0(Gfx** gfxP) {
 
 void func_801C6EAC(void) {
     if (D_80121214 == 0) {
-        func_800F6BDC();
+        Na_ForceStopSound();
         D_80121214 = 1;
     }
 }
@@ -83,14 +83,14 @@ s32 func_801C6F08(void) {
 void func_801C6F30(void) {
     func_801C6EAC();
     while (func_801C6F08() == 0) {
-        Sleep_Usec(16666); // 100000 / 6
+        usleep(16666); // 100000 / 6
     }
 }
 
 void func_801C6F78(void) {
     if (D_80121214 != 0) {
         D_80121214 = 0;
-        func_800F6B3C();
+        Na_RecoverSe();
     }
 }
 
@@ -106,14 +106,14 @@ s32 func_801C6FAC(void) {
 
 void func_801C6FD8(void) {
     while (!func_801C6FAC()) {
-        Sleep_Usec(16666); // 100000 / 6
+        usleep(16666); // 100000 / 6
     }
 }
 
 // Adds a HungupAndCrash
 void func_801C7018(void) {
     if (D_80121213 != 0) {
-        Fault_AddHungupAndCrash("../z_n64dd.c", LN2(503, 551, 573));
+        fault_HungUp("../z_n64dd.c", LN2(503, 551, 573));
     }
 
     D_80121213 = 1;
@@ -134,7 +134,7 @@ s32 func_801C7098(void) {
     B_801D9D50.unk_00 = 10;
     phi_v1 = (&func_801C8000)(&B_801D9D50);
     if (phi_v1 < 0) {
-        func_800D31A0();
+        Freeze();
     }
     return phi_v1;
 }
@@ -156,9 +156,9 @@ void func_801C711C(void* arg) {
     void* temp_v0;
 
     sp58 = NULL;
-    arg0->unk_98 = &gIrqMgr;
+    arg0->unk_98 = &_irqmgr;
     osCreateMesgQueue(&arg0->unk_78, arg0->unk_00, ARRAY_COUNT(arg0->unk_00));
-    IrqMgr_AddClient(arg0->unk_98, &arg0->unk_90, &arg0->unk_78);
+    irqmgr_AddClient(arg0->unk_98, &arg0->unk_90, &arg0->unk_78);
     var_s0 = 0;
     do {
         osRecvMesg(&arg0->unk_78, (OSMesg*)&sp58, OS_MESG_BLOCK);
@@ -179,7 +179,7 @@ void func_801C711C(void* arg) {
                 break;
         }
     } while (var_s0 == 0);
-    IrqMgr_RemoveClient(arg0->unk_98, &arg0->unk_90);
+    irqmgr_RemoveClient(arg0->unk_98, &arg0->unk_90);
 }
 
 #if OOT_VERSION >= NTSC_1_1
@@ -189,7 +189,7 @@ void func_801C7B28_ne2(void) {
     if (B_801D9DC0 != 0) {
         temp = (osGetTime() - B_801D9DC0) * 64 / 3000;
         if (1000000 - temp > 0) {
-            Sleep_Usec(1000000 - temp);
+            usleep(1000000 - temp);
         }
     }
 }
@@ -221,7 +221,7 @@ void func_801C7268(void) {
         (void)((osGetTime() - B_801D9DC0) * 64 / 3000);
 
         if (1000000 - sp1C > 0) {
-            Sleep_Usec(1000000 - sp1C);
+            usleep(1000000 - sp1C);
         }
     }
 #else
@@ -293,7 +293,7 @@ void func_801C75BC(void* arg0, void* arg1, void* arg2) {
 }
 
 void func_801C761C(void) {
-    Sleep_Msec(100);
+    msleep(100);
     func_801C746C(B_801D9DCC, B_801D9DD0, B_801D9DD4);
 }
 
@@ -303,7 +303,7 @@ s32 func_801C7658(void) {
     }
 
 #if OOT_VERSION < PAL_1_0
-    StackCheck_Init(&B_801DAF88, B_801D9F88, STACK_TOP(B_801D9F88), 0, 0x100, "ddmsg");
+    stackcheck_init(&B_801DAF88, B_801D9F88, STACK_TOP(B_801D9F88), 0, 0x100, "ddmsg");
     osCreateThread(&B_801D9DD8, THREAD_ID_DDMSG, &func_801C711C, &B_801D9B90, STACK_TOP(B_801D9F88), THREAD_PRI_DDMSG);
     osStartThread(&B_801D9DD8);
 #endif
@@ -311,7 +311,7 @@ s32 func_801C7658(void) {
     osCreateMesgQueue(&B_801D9D80, B_801D9DB0, ARRAY_COUNT(B_801D9DB0));
     osCreateMesgQueue(&B_801D9D98, B_801D9DB4, ARRAY_COUNT(B_801D9DB4));
 
-    StackCheck_Init(&B_801DBFA8, B_801DAFA8, STACK_TOP(B_801DAFA8), 0, 0x100, "n64dd");
+    stackcheck_init(&B_801DBFA8, B_801DAFA8, STACK_TOP(B_801DAFA8), 0, 0x100, "n64dd");
 
     B_801D9D50.unk_1C = &B_801D9D80;
     B_801D9D50.unk_20 = &B_801D9D98;
@@ -327,7 +327,7 @@ s32 func_801C7658(void) {
 
     B_801D9D50.unk_00 = 2;
     B_801D9D50.unk_10 = 6;
-    B_801D9D50.unk_14 = &DmaMgr_DmaFromDriveRom;
+    B_801D9D50.unk_14 = &dmacopy_ddrom_fg;
     B_801D9D50.unk_0C = &func_801C75BC;
     (&func_801C8000)(&B_801D9D50);
 
@@ -335,7 +335,7 @@ s32 func_801C7658(void) {
     (&func_801C8000)(&B_801D9D50);
 
 #if OOT_VERSION >= PAL_1_0
-    StackCheck_Init(&B_801DAF88, B_801D9F88, STACK_TOP(B_801D9F88), 0, 0x100, "ddmsg");
+    stackcheck_init(&B_801DAF88, B_801D9F88, STACK_TOP(B_801D9F88), 0, 0x100, "ddmsg");
     osCreateThread(&B_801D9DD8, THREAD_ID_DDMSG, &func_801C711C, &B_801D9B90, STACK_TOP(B_801D9F88), THREAD_PRI_DDMSG);
     osStartThread(&B_801D9DD8);
 #endif
@@ -354,7 +354,7 @@ s32 func_801C7818(void) {
 
     while (func_801C81C4() == 0) {
         // the number 16666 sounds like it could be 1 frame (at 60 frames per second)
-        Sleep_Usec(1000000 * 1 / 60);
+        usleep(1000000 * 1 / 60);
     }
 
 #if OOT_VERSION >= NTSC_1_1
@@ -366,7 +366,7 @@ s32 func_801C7818(void) {
 
     if (func_801C81C4() != 2) {
         func_801C761C();
-        func_800D31A0();
+        Freeze();
         return -3;
     }
 
@@ -398,11 +398,11 @@ void func_801C7920(s32 arg0, void* arg1, s32 arg2) {
     osGetTime();
     B_801D9D50.unk_00 = 6;
     while ((&func_801C8000)(&B_801D9D50) != 0) {
-        Sleep_Usec(16666); // 100000 / 6
+        usleep(16666); // 100000 / 6
     }
     B_801D9D50.unk_00 = 7;
     if ((&func_801C8000)(&B_801D9D50) != 0) {
-        func_800D31A0();
+        Freeze();
     }
 }
 
@@ -519,7 +519,7 @@ void func_801C7C1C(void* dest, s32 offset, s32 size) {
     if (B_801D9DC0 != 0) {
         temp_v1_2 = (osGetTime() - B_801D9DC0) * 64 / 3000;
         if (1000000 - temp_v1_2 > 0) {
-            Sleep_Usec(1000000 - temp_v1_2);
+            usleep(1000000 - temp_v1_2);
         }
     }
 #else

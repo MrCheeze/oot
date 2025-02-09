@@ -29,45 +29,45 @@ typedef enum EnGeldBAction {
     /* 16 */ GELDB_SPIN_DODGE
 } EnGeldBAction;
 
-void EnGeldB_Init(Actor* thisx, PlayState* play);
-void EnGeldB_Destroy(Actor* thisx, PlayState* play);
-void EnGeldB_Update(Actor* thisx, PlayState* play);
-void EnGeldB_Draw(Actor* thisx, PlayState* play);
+void En_GeldB_Actor_ct(Actor* thisx, PlayState* play);
+void En_GeldB_Actor_dt(Actor* thisx, PlayState* play);
+void En_GeldB_move(Actor* thisx, PlayState* play);
+void En_GeldB_display(Actor* thisx, PlayState* play);
 
-s32 EnGeldB_DodgeRanged(PlayState* play, EnGeldB* this);
+static s32 Shot_def(PlayState* play, EnGeldB* this);
 
-void EnGeldB_SetupWait(EnGeldB* this);
-void EnGeldB_SetupReady(EnGeldB* this);
-void EnGeldB_SetupAdvance(EnGeldB* this, PlayState* play);
-void EnGeldB_SetupPivot(EnGeldB* this);
-void EnGeldB_SetupRollForward(EnGeldB* this);
-void EnGeldB_SetupCircle(EnGeldB* this);
-void EnGeldB_SetupSpinDodge(EnGeldB* this, PlayState* play);
-void EnGeldB_SetupSlash(EnGeldB* this);
-void EnGeldB_SetupSpinAttack(EnGeldB* this);
-void EnGeldB_SetupRollBack(EnGeldB* this);
-void EnGeldB_SetupJump(EnGeldB* this);
-void EnGeldB_SetupBlock(EnGeldB* this);
-void EnGeldB_SetupSidestep(EnGeldB* this, PlayState* play);
-void EnGeldB_SetupDefeated(EnGeldB* this);
+static void mode_before_drop_init(EnGeldB* this);
+static void mode_wait_init(EnGeldB* this);
+static void mode_forward_init(EnGeldB* this, PlayState* play);
+static void mode_search_rot_init(EnGeldB* this);
+void mode_oi_jump_init(EnGeldB* this);
+static void mode_move_to_player_front_init(EnGeldB* this);
+void mode_esc_init(EnGeldB* this, PlayState* play);
+static void mode_kiru_init(EnGeldB* this);
+void mode_jump_attack_init(EnGeldB* this);
+static void mode_back_jump_init(EnGeldB* this);
+static void mode_jump_move_init(EnGeldB* this);
+static void mode_defense_init(EnGeldB* this);
+static void mode_side_step_init(EnGeldB* this, PlayState* play);
+static void mode_down_init(EnGeldB* this);
 
-void EnGeldB_Wait(EnGeldB* this, PlayState* play);
-void EnGeldB_Flee(EnGeldB* this, PlayState* play);
-void EnGeldB_Ready(EnGeldB* this, PlayState* play);
-void EnGeldB_Advance(EnGeldB* this, PlayState* play);
-void EnGeldB_RollForward(EnGeldB* this, PlayState* play);
-void EnGeldB_Pivot(EnGeldB* this, PlayState* play);
-void EnGeldB_Circle(EnGeldB* this, PlayState* play);
-void EnGeldB_SpinDodge(EnGeldB* this, PlayState* play);
-void EnGeldB_Slash(EnGeldB* this, PlayState* play);
-void EnGeldB_SpinAttack(EnGeldB* this, PlayState* play);
-void EnGeldB_RollBack(EnGeldB* this, PlayState* play);
-void EnGeldB_Stunned(EnGeldB* this, PlayState* play);
-void EnGeldB_Damaged(EnGeldB* this, PlayState* play);
-void EnGeldB_Jump(EnGeldB* this, PlayState* play);
-void EnGeldB_Block(EnGeldB* this, PlayState* play);
-void EnGeldB_Sidestep(EnGeldB* this, PlayState* play);
-void EnGeldB_Defeated(EnGeldB* this, PlayState* play);
+static void mode_before_drop(EnGeldB* this, PlayState* play);
+void mode_ret_jump(EnGeldB* this, PlayState* play);
+static void mode_wait(EnGeldB* this, PlayState* play);
+static void mode_forward(EnGeldB* this, PlayState* play);
+void mode_oi_jump(EnGeldB* this, PlayState* play);
+static void mode_search_rot(EnGeldB* this, PlayState* play);
+static void mode_move_to_player_front(EnGeldB* this, PlayState* play);
+void mode_esc(EnGeldB* this, PlayState* play);
+static void mode_kiru(EnGeldB* this, PlayState* play);
+void mode_jump_attack(EnGeldB* this, PlayState* play);
+static void mode_back_jump(EnGeldB* this, PlayState* play);
+static void mode_paralyze(EnGeldB* this, PlayState* play);
+static void mode_damage(EnGeldB* this, PlayState* play);
+static void mode_jump_move(EnGeldB* this, PlayState* play);
+static void mode_defense(EnGeldB* this, PlayState* play);
+static void mode_side_step(EnGeldB* this, PlayState* play);
+static void mode_down(EnGeldB* this, PlayState* play);
 
 ActorProfile En_GeldB_Profile = {
     /**/ ACTOR_EN_GELDB,
@@ -75,13 +75,13 @@ ActorProfile En_GeldB_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GELDB,
     /**/ sizeof(EnGeldB),
-    /**/ EnGeldB_Init,
-    /**/ EnGeldB_Destroy,
-    /**/ EnGeldB_Update,
-    /**/ EnGeldB_Draw,
+    /**/ En_GeldB_Actor_ct,
+    /**/ En_GeldB_Actor_dt,
+    /**/ En_GeldB_move,
+    /**/ En_GeldB_display,
 };
 
-static ColliderCylinderInit sBodyCylInit = {
+static ColliderCylinderInit OcInfoData = {
     {
         COL_MATERIAL_HIT5,
         AT_NONE,
@@ -101,7 +101,7 @@ static ColliderCylinderInit sBodyCylInit = {
     { 20, 50, 0, { 0, 0, 0 } },
 };
 
-static ColliderTrisElementInit sBlockTrisElementsInit[2] = {
+static ColliderTrisElementInit AcInfoShieldDataElem[2] = {
     {
         {
             ELEM_MATERIAL_UNK2,
@@ -126,7 +126,7 @@ static ColliderTrisElementInit sBlockTrisElementsInit[2] = {
     },
 };
 
-static ColliderTrisInit sBlockTrisInit = {
+static ColliderTrisInit AcInfoShieldData = {
     {
         COL_MATERIAL_METAL,
         AT_NONE,
@@ -136,10 +136,10 @@ static ColliderTrisInit sBlockTrisInit = {
         COLSHAPE_TRIS,
     },
     2,
-    sBlockTrisElementsInit,
+    AcInfoShieldDataElem,
 };
 
-static ColliderQuadInit sSwordQuadInit = {
+static ColliderQuadInit AtInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_ON | AT_TYPE_ENEMY,
@@ -168,7 +168,7 @@ typedef enum EnGeldBDamageEffects {
     /* 0xF */ GELDB_DMG_FREEZE
 } EnGeldBDamageEffects;
 
-static DamageTable sDamageTable = {
+static DamageTable btl_data = {
     /* Deku nut      */ DMG_ENTRY(0, GELDB_DMG_STUN),
     /* Deku stick    */ DMG_ENTRY(2, GELDB_DMG_NORMAL),
     /* Slingshot     */ DMG_ENTRY(1, GELDB_DMG_NORMAL),
@@ -203,26 +203,26 @@ static DamageTable sDamageTable = {
     /* Unknown 2     */ DMG_ENTRY(0, GELDB_DMG_NORMAL),
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_F32(lockOnArrowOffset, 2000, ICHAIN_CONTINUE),
     ICHAIN_VEC3F_DIV1000(scale, 10, ICHAIN_CONTINUE),
     ICHAIN_F32_DIV1000(gravity, -3000, ICHAIN_STOP),
 };
 
-static Vec3f sUnusedOffset = { 1100.0f, -700.0f, 0.0f };
+static Vec3f local_eye = { 1100.0f, -700.0f, 0.0f };
 
-void EnGeldB_SetupAction(EnGeldB* this, EnGeldBActionFunc actionFunc) {
+void En_GeldB_Actor_set_process(EnGeldB* this, EnGeldBActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
 
-void EnGeldB_Init(Actor* thisx, PlayState* play) {
+void En_GeldB_Actor_ct(Actor* thisx, PlayState* play) {
     s32 pad;
     EffectBlureInit1 blureInit;
     EnGeldB* this = (EnGeldB*)thisx;
 
-    Actor_ProcessInitChain(thisx, sInitChain);
-    thisx->colChkInfo.damageTable = &sDamageTable;
-    ActorShape_Init(&thisx->shape, 0.0f, ActorShadow_DrawFeet, 0.0f);
+    ValueSet_process(thisx, value_init);
+    thisx->colChkInfo.damageTable = &btl_data;
+    Shape_Info_init(&thisx->shape, 0.0f, Actor_shadow_foot, 0.0f);
     this->actor.colChkInfo.mass = MASS_HEAVY;
     thisx->colChkInfo.health = 20;
     thisx->colChkInfo.cylRadius = 50;
@@ -232,14 +232,14 @@ void EnGeldB_Init(Actor* thisx, PlayState* play) {
     thisx->params &= 0xFF;
     this->blinkState = 0;
     this->unkFloat = 10.0f;
-    SkelAnime_InitFlex(play, &this->skelAnime, &gGerudoRedSkel, &gGerudoRedNeutralAnim, this->jointTable,
+    Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &gGerudoRedSkel, &gGerudoRedNeutralAnim, this->jointTable,
                        this->morphTable, GELDB_LIMB_MAX);
-    Collider_InitCylinder(play, &this->bodyCollider);
-    Collider_SetCylinder(play, &this->bodyCollider, thisx, &sBodyCylInit);
-    Collider_InitTris(play, &this->blockCollider);
-    Collider_SetTris(play, &this->blockCollider, thisx, &sBlockTrisInit, this->blockElements);
-    Collider_InitQuad(play, &this->swordCollider);
-    Collider_SetQuad(play, &this->swordCollider, thisx, &sSwordQuadInit);
+    ClObjPipe_ct(play, &this->bodyCollider);
+    ClObjPipe_set5(play, &this->bodyCollider, thisx, &OcInfoData);
+    ClObjTris_ct(play, &this->blockCollider);
+    ClObjTris_set5_nzm(play, &this->blockCollider, thisx, &AcInfoShieldData, this->blockElements);
+    ClObjSwrd_ct(play, &this->swordCollider);
+    ClObjSwrd_set5(play, &this->swordCollider, thisx, &AtInfoData);
     blureInit.p1StartColor[0] = blureInit.p1StartColor[1] = blureInit.p1StartColor[2] = blureInit.p1StartColor[3] =
         blureInit.p2StartColor[0] = blureInit.p2StartColor[1] = blureInit.p2StartColor[2] = blureInit.p1EndColor[0] =
             blureInit.p1EndColor[1] = blureInit.p1EndColor[2] = blureInit.p2EndColor[0] = blureInit.p2EndColor[1] =
@@ -250,26 +250,26 @@ void EnGeldB_Init(Actor* thisx, PlayState* play) {
     blureInit.unkFlag = 0;
     blureInit.calcMode = 2;
 
-    Effect_Add(play, &this->blureIndex, EFFECT_BLURE1, 0, 0, &blureInit);
-    Actor_SetScale(thisx, 0.012499999f);
-    EnGeldB_SetupWait(this);
-    if ((this->keyFlag != 0) && Flags_GetCollectible(play, this->keyFlag >> 8)) {
-        Actor_Kill(thisx);
+    EffectAdd(play, &this->blureIndex, EFFECT_BLURE1, 0, 0, &blureInit);
+    Actor_set_scale(thisx, 0.012499999f);
+    mode_before_drop_init(this);
+    if ((this->keyFlag != 0) && Actor_Environment_item_Check(play, this->keyFlag >> 8)) {
+        Actor_delete(thisx);
     }
 }
 
-void EnGeldB_Destroy(Actor* thisx, PlayState* play) {
+void En_GeldB_Actor_dt(Actor* thisx, PlayState* play) {
     s32 pad;
     EnGeldB* this = (EnGeldB*)thisx;
 
-    func_800F5B58();
-    Effect_Delete(play, this->blureIndex);
-    Collider_DestroyTris(play, &this->blockCollider);
-    Collider_DestroyCylinder(play, &this->bodyCollider);
-    Collider_DestroyQuad(play, &this->swordCollider);
+    Na_StopMiddleBossBgm();
+    EffectFreeIndex(play, this->blureIndex);
+    ClObjTris_dt_nzf(play, &this->blockCollider);
+    ClObjPipe_dt(play, &this->bodyCollider);
+    ClObjSwrd_dt(play, &this->swordCollider);
 }
 
-s32 EnGeldB_ReactToPlayer(PlayState* play, EnGeldB* this, s16 arg2) {
+static s32 zf_br2(PlayState* play, EnGeldB* this, s16 arg2) {
     Player* player = GET_PLAYER(play);
     Actor* thisx = &this->actor;
     s16 angleToWall;
@@ -280,48 +280,48 @@ s32 EnGeldB_ReactToPlayer(PlayState* play, EnGeldB* this, s16 arg2) {
     angleToLink = thisx->yawTowardsPlayer - thisx->shape.rot.y;
     angleToLink = ABS(angleToLink);
 
-    if (func_800354B4(play, thisx, 100.0f, 0x2710, 0x3E80, thisx->shape.rot.y)) {
+    if (PlayerSwingCheck(play, thisx, 100.0f, 0x2710, 0x3E80, thisx->shape.rot.y)) {
         if (player->meleeWeaponAnimation == PLAYER_MWA_JUMPSLASH_START) {
-            EnGeldB_SetupSpinDodge(this, play);
+            mode_esc_init(this, play);
             return true;
         } else if (play->gameplayFrames & 1) {
-            EnGeldB_SetupBlock(this);
+            mode_defense_init(this);
             return true;
         }
     }
-    if (func_800354B4(play, thisx, 100.0f, 0x5DC0, 0x2AA8, thisx->shape.rot.y)) {
+    if (PlayerSwingCheck(play, thisx, 100.0f, 0x5DC0, 0x2AA8, thisx->shape.rot.y)) {
         thisx->shape.rot.y = thisx->world.rot.y = thisx->yawTowardsPlayer;
         if ((thisx->bgCheckFlags & BGCHECKFLAG_WALL) && (ABS(angleToWall) < 0x2EE0) &&
             (thisx->xzDistToPlayer < 90.0f)) {
-            EnGeldB_SetupJump(this);
+            mode_jump_move_init(this);
             return true;
         } else if (player->meleeWeaponAnimation == PLAYER_MWA_JUMPSLASH_START) {
-            EnGeldB_SetupSpinDodge(this, play);
+            mode_esc_init(this, play);
             return true;
         } else if ((thisx->xzDistToPlayer < 90.0f) && (play->gameplayFrames & 1)) {
-            EnGeldB_SetupBlock(this);
+            mode_defense_init(this);
             return true;
         } else {
-            EnGeldB_SetupRollBack(this);
+            mode_back_jump_init(this);
             return true;
         }
     } else {
-        Actor* bomb = Actor_FindNearby(play, thisx, -1, ACTORCAT_EXPLOSIVE, 80.0f);
+        Actor* bomb = ActorSearch(play, thisx, -1, ACTORCAT_EXPLOSIVE, 80.0f);
 
         if (bomb != NULL) {
             thisx->shape.rot.y = thisx->world.rot.y = thisx->yawTowardsPlayer;
             if (((thisx->bgCheckFlags & BGCHECKFLAG_WALL) && (angleToWall < 0x2EE0)) ||
                 (bomb->id == ACTOR_EN_BOM_CHU)) {
-                if ((bomb->id == ACTOR_EN_BOM_CHU) && (Actor_WorldDistXYZToActor(thisx, bomb) < 80.0f) &&
+                if ((bomb->id == ACTOR_EN_BOM_CHU) && (Actor_search_actor_distance(thisx, bomb) < 80.0f) &&
                     ((s16)(thisx->shape.rot.y - (bomb->world.rot.y - 0x8000)) < 0x3E80)) {
-                    EnGeldB_SetupJump(this);
+                    mode_jump_move_init(this);
                     return true;
                 } else {
-                    EnGeldB_SetupSidestep(this, play);
+                    mode_side_step_init(this, play);
                     return true;
                 }
             } else {
-                EnGeldB_SetupRollBack(this);
+                mode_back_jump_init(this);
                 return true;
             }
         }
@@ -329,17 +329,17 @@ s32 EnGeldB_ReactToPlayer(PlayState* play, EnGeldB* this, s16 arg2) {
 
     if (arg2) {
         if (angleToLink >= 0x1B58) {
-            EnGeldB_SetupSidestep(this, play);
+            mode_side_step_init(this, play);
             return true;
         } else {
             s16 angleToFacingLink = player->actor.shape.rot.y - thisx->shape.rot.y;
 
-            if ((thisx->xzDistToPlayer <= 45.0f) && !Actor_OtherIsLockedOn(play, thisx) &&
+            if ((thisx->xzDistToPlayer <= 45.0f) && !Anc_Fight_ham_Check(play, thisx) &&
                 ((play->gameplayFrames & 7) || (ABS(angleToFacingLink) < 0x38E0))) {
-                EnGeldB_SetupSlash(this);
+                mode_kiru_init(this);
                 return true;
             } else {
-                EnGeldB_SetupCircle(this);
+                mode_move_to_player_front_init(this);
                 return true;
             }
         }
@@ -347,8 +347,8 @@ s32 EnGeldB_ReactToPlayer(PlayState* play, EnGeldB* this, s16 arg2) {
     return false;
 }
 
-void EnGeldB_SetupWait(EnGeldB* this) {
-    Animation_PlayOnceSetSpeed(&this->skelAnime, &gGerudoRedJumpAnim, 0.0f);
+static void mode_before_drop_init(EnGeldB* this) {
+    Skeleton_Info2_init_standard_speedset_stop(&this->skelAnime, &gGerudoRedJumpAnim, 0.0f);
     this->actor.world.pos.y = this->actor.home.pos.y + 120.0f;
     this->timer = 10;
     this->invisible = true;
@@ -356,78 +356,78 @@ void EnGeldB_SetupWait(EnGeldB* this) {
     this->actor.bgCheckFlags &= ~(BGCHECKFLAG_GROUND | BGCHECKFLAG_GROUND_TOUCH);
     this->actor.gravity = -2.0f;
     this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
-    EnGeldB_SetupAction(this, EnGeldB_Wait);
+    En_GeldB_Actor_set_process(this, mode_before_drop);
 }
 
-void EnGeldB_Wait(EnGeldB* this, PlayState* play) {
-    if ((this->invisible && !Flags_GetSwitch(play, this->actor.home.rot.z)) || this->actor.xzDistToPlayer > 300.0f) {
+static void mode_before_drop(EnGeldB* this, PlayState* play) {
+    if ((this->invisible && !Actor_Environment_sw_Check(play, this->actor.home.rot.z)) || this->actor.xzDistToPlayer > 300.0f) {
         this->actor.shape.rot.y = this->actor.world.rot.y = this->actor.yawTowardsPlayer;
         this->actor.world.pos.y = this->actor.floorHeight + 120.0f;
     } else {
         this->invisible = false;
         this->actor.shape.shadowScale = 90.0f;
-        func_800F5ACC(NA_BGM_MINI_BOSS);
+        Na_StartMiddleBossBgm(NA_BGM_MINI_BOSS);
     }
     if (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND_TOUCH) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_RIZA_DOWN);
+        Actor_SE_set(&this->actor, NA_SE_EN_RIZA_DOWN);
         this->skelAnime.playSpeed = 1.0f;
         this->actor.world.pos.y = this->actor.floorHeight;
         this->actor.flags |= ACTOR_FLAG_ATTENTION_ENABLED;
         this->actor.focus.pos = this->actor.world.pos;
         this->actor.bgCheckFlags &= ~BGCHECKFLAG_GROUND_TOUCH;
         this->actor.velocity.y = 0.0f;
-        Actor_SpawnFloorDustRing(play, &this->actor, &this->leftFootPos, 3.0f, 2, 2.0f, 0, 0, false);
-        Actor_SpawnFloorDustRing(play, &this->actor, &this->rightFootPos, 3.0f, 2, 2.0f, 0, 0, false);
+        _dust_ground_set(play, &this->actor, &this->leftFootPos, 3.0f, 2, 2.0f, 0, 0, false);
+        _dust_ground_set(play, &this->actor, &this->rightFootPos, 3.0f, 2, 2.0f, 0, 0, false);
     }
-    if (SkelAnime_Update(&this->skelAnime)) {
-        EnGeldB_SetupReady(this);
+    if (Skeleton_Info2_anime_play(&this->skelAnime)) {
+        mode_wait_init(this);
     }
 }
 
-void EnGeldB_SetupFlee(EnGeldB* this) {
-    f32 lastFrame = Animation_GetLastFrame(&gGerudoRedJumpAnim);
+void mode_ret_jump_init(EnGeldB* this) {
+    f32 lastFrame = Si2_anime_end_frame(&gGerudoRedJumpAnim);
 
-    Animation_Change(&this->skelAnime, &gGerudoRedJumpAnim, -2.0f, lastFrame, 0.0f, ANIMMODE_ONCE_INTERP, -4.0f);
+    Skeleton_Info2_init(&this->skelAnime, &gGerudoRedJumpAnim, -2.0f, lastFrame, 0.0f, ANIMMODE_ONCE_INTERP, -4.0f);
     this->timer = 20;
     this->invisible = false;
     this->action = GELDB_WAIT;
     this->actor.shape.rot.y = this->actor.world.rot.y = this->actor.yawTowardsPlayer;
-    EnGeldB_SetupAction(this, EnGeldB_Flee);
+    En_GeldB_Actor_set_process(this, mode_ret_jump);
 }
 
-void EnGeldB_Flee(EnGeldB* this, PlayState* play) {
+void mode_ret_jump(EnGeldB* this, PlayState* play) {
     if (this->skelAnime.curFrame == 10.0f) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_STAL_JUMP);
+        Actor_SE_set(&this->actor, NA_SE_EN_STAL_JUMP);
     }
     if (this->skelAnime.curFrame == 2.0f) {
         this->actor.gravity = 0.0f;
-        Actor_SpawnFloorDustRing(play, &this->actor, &this->leftFootPos, 3.0f, 2, 2.0f, 0, 0, false);
-        Actor_SpawnFloorDustRing(play, &this->actor, &this->rightFootPos, 3.0f, 2, 2.0f, 0, 0, false);
+        _dust_ground_set(play, &this->actor, &this->leftFootPos, 3.0f, 2, 2.0f, 0, 0, false);
+        _dust_ground_set(play, &this->actor, &this->rightFootPos, 3.0f, 2, 2.0f, 0, 0, false);
     }
-    if (SkelAnime_Update(&this->skelAnime)) {
-        Math_SmoothStepToF(&this->actor.world.pos.y, this->actor.floorHeight + 300.0f, 1.0f, 20.5f, 0.0f);
+    if (Skeleton_Info2_anime_play(&this->skelAnime)) {
+        add_calc(&this->actor.world.pos.y, this->actor.floorHeight + 300.0f, 1.0f, 20.5f, 0.0f);
         this->timer--;
         if (this->timer == 0) {
-            Actor_Kill(&this->actor);
+            Actor_delete(&this->actor);
         }
     }
 }
 
-void EnGeldB_SetupReady(EnGeldB* this) {
-    Animation_MorphToLoop(&this->skelAnime, &gGerudoRedNeutralAnim, -4.0f);
+static void mode_wait_init(EnGeldB* this) {
+    Skeleton_Info2_init_standard_repeat_morf(&this->skelAnime, &gGerudoRedNeutralAnim, -4.0f);
     this->action = GELDB_READY;
-    this->timer = Rand_ZeroOne() * 10.0f + 5.0f;
+    this->timer = fqrand() * 10.0f + 5.0f;
     this->actor.speed = 0.0f;
     this->actor.world.rot.y = this->actor.shape.rot.y;
-    EnGeldB_SetupAction(this, EnGeldB_Ready);
+    En_GeldB_Actor_set_process(this, mode_wait);
 }
 
-void EnGeldB_Ready(EnGeldB* this, PlayState* play) {
+static void mode_wait(EnGeldB* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     s32 pad;
     s16 angleToLink;
 
-    SkelAnime_Update(&this->skelAnime);
+    Skeleton_Info2_anime_play(&this->skelAnime);
     if (this->lookTimer != 0) {
         angleToLink = this->actor.yawTowardsPlayer - this->actor.shape.rot.y - this->headRot.y;
         if (ABS(angleToLink) > 0x2000) {
@@ -437,7 +437,7 @@ void EnGeldB_Ready(EnGeldB* this, PlayState* play) {
         this->lookTimer = 0;
     }
     angleToLink = this->actor.yawTowardsPlayer - this->actor.shape.rot.y;
-    if (!EnGeldB_DodgeRanged(play, this)) {
+    if (!Shot_def(play, this)) {
         if (this->unkTimer != 0) {
             this->unkTimer--;
 
@@ -445,173 +445,173 @@ void EnGeldB_Ready(EnGeldB* this, PlayState* play) {
                 return;
             }
             this->unkTimer = 0;
-        } else if (EnGeldB_ReactToPlayer(play, this, 0)) {
+        } else if (zf_br2(play, this, 0)) {
             return;
         }
         angleToLink = player->actor.shape.rot.y - this->actor.shape.rot.y;
         if ((this->actor.xzDistToPlayer < 100.0f) && (player->meleeWeaponState != 0) && (ABS(angleToLink) >= 0x1F40)) {
             this->actor.shape.rot.y = this->actor.world.rot.y = this->actor.yawTowardsPlayer;
-            EnGeldB_SetupCircle(this);
+            mode_move_to_player_front_init(this);
         } else if (--this->timer == 0) {
-            if (Actor_IsFacingPlayer(&this->actor, 30 * 0x10000 / 360)) {
+            if (Actor_player_direction_check(&this->actor, 30 * 0x10000 / 360)) {
                 if ((210.0f > this->actor.xzDistToPlayer) && (this->actor.xzDistToPlayer > 150.0f) &&
-                    (Rand_ZeroOne() < 0.3f)) {
-                    if (Actor_OtherIsLockedOn(play, &this->actor) || (Rand_ZeroOne() > 0.5f) ||
+                    (fqrand() < 0.3f)) {
+                    if (Anc_Fight_ham_Check(play, &this->actor) || (fqrand() > 0.5f) ||
                         (ABS(angleToLink) < 0x38E0)) {
-                        EnGeldB_SetupRollForward(this);
+                        mode_oi_jump_init(this);
                     } else {
-                        EnGeldB_SetupSpinAttack(this);
+                        mode_jump_attack_init(this);
                     }
-                } else if (Rand_ZeroOne() > 0.3f) {
-                    EnGeldB_SetupAdvance(this, play);
+                } else if (fqrand() > 0.3f) {
+                    mode_forward_init(this, play);
                 } else {
-                    EnGeldB_SetupCircle(this);
+                    mode_move_to_player_front_init(this);
                 }
             } else {
-                EnGeldB_SetupPivot(this);
+                mode_search_rot_init(this);
             }
             if ((play->gameplayFrames & 0x5F) == 0) {
-                Actor_PlaySfx(&this->actor, NA_SE_EN_GERUDOFT_BREATH);
+                Actor_SE_set(&this->actor, NA_SE_EN_GERUDOFT_BREATH);
             }
         }
     }
 }
 
-void EnGeldB_SetupAdvance(EnGeldB* this, PlayState* play) {
-    f32 lastFrame = Animation_GetLastFrame(&gGerudoRedWalkAnim);
+static void mode_forward_init(EnGeldB* this, PlayState* play) {
+    f32 lastFrame = Si2_anime_end_frame(&gGerudoRedWalkAnim);
 
-    Animation_Change(&this->skelAnime, &gGerudoRedWalkAnim, 1.0f, 0.0f, lastFrame, ANIMMODE_LOOP_INTERP, -4.0f);
+    Skeleton_Info2_init(&this->skelAnime, &gGerudoRedWalkAnim, 1.0f, 0.0f, lastFrame, ANIMMODE_LOOP_INTERP, -4.0f);
     this->action = GELDB_ADVANCE;
-    EnGeldB_SetupAction(this, EnGeldB_Advance);
+    En_GeldB_Actor_set_process(this, mode_forward);
 }
 
-void EnGeldB_Advance(EnGeldB* this, PlayState* play) {
+static void mode_forward(EnGeldB* this, PlayState* play) {
     s32 prevFrame;
     s32 beforeCurFrame;
     s32 absPlaySpeed;
     s16 facingAngletoLink;
     Player* player = GET_PLAYER(play);
 
-    if (!EnGeldB_DodgeRanged(play, this)) {
-        Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 1, 0x2EE, 0);
+    if (!Shot_def(play, this)) {
+        add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 1, 0x2EE, 0);
         this->actor.world.rot.y = this->actor.shape.rot.y;
         if (this->actor.xzDistToPlayer <= 40.0f) {
-            Math_SmoothStepToF(&this->actor.speed, -8.0f, 1.0f, 1.5f, 0.0f);
+            add_calc(&this->actor.speed, -8.0f, 1.0f, 1.5f, 0.0f);
         } else if (this->actor.xzDistToPlayer > 55.0f) {
-            Math_SmoothStepToF(&this->actor.speed, 8.0f, 1.0f, 1.5f, 0.0f);
+            add_calc(&this->actor.speed, 8.0f, 1.0f, 1.5f, 0.0f);
         } else {
-            Math_SmoothStepToF(&this->actor.speed, 0.0f, 1.0f, 6.65f, 0.0f);
+            add_calc(&this->actor.speed, 0.0f, 1.0f, 6.65f, 0.0f);
         }
         this->skelAnime.playSpeed = this->actor.speed / 8.0f;
         facingAngletoLink = player->actor.shape.rot.y - this->actor.shape.rot.y;
         facingAngletoLink = ABS(facingAngletoLink);
         if ((this->actor.xzDistToPlayer < 150.0f) && (player->meleeWeaponState != 0) && (facingAngletoLink >= 0x1F40)) {
             this->actor.shape.rot.y = this->actor.world.rot.y = this->actor.yawTowardsPlayer;
-            if (Rand_ZeroOne() > 0.7f) {
-                EnGeldB_SetupCircle(this);
+            if (fqrand() > 0.7f) {
+                mode_move_to_player_front_init(this);
                 return;
             }
         }
 
         prevFrame = (s32)this->skelAnime.curFrame;
-        SkelAnime_Update(&this->skelAnime);
+        Skeleton_Info2_anime_play(&this->skelAnime);
         beforeCurFrame = (s32)(this->skelAnime.curFrame - ABS(this->skelAnime.playSpeed));
         absPlaySpeed = (s32)(f32)ABS(this->skelAnime.playSpeed);
 
-        if (!Actor_IsFacingPlayer(&this->actor, 0x11C7)) {
-            if (Rand_ZeroOne() > 0.5f) {
-                EnGeldB_SetupCircle(this);
+        if (!Actor_player_direction_check(&this->actor, 0x11C7)) {
+            if (fqrand() > 0.5f) {
+                mode_move_to_player_front_init(this);
             } else {
-                EnGeldB_SetupReady(this);
+                mode_wait_init(this);
             }
         } else if (this->actor.xzDistToPlayer < 90.0f) {
-            if (!Actor_OtherIsLockedOn(play, &this->actor) &&
-                (Rand_ZeroOne() > 0.03f || (this->actor.xzDistToPlayer <= 45.0f && facingAngletoLink < 0x38E0))) {
-                EnGeldB_SetupSlash(this);
-            } else if (Actor_OtherIsLockedOn(play, &this->actor) && (Rand_ZeroOne() > 0.5f)) {
-                EnGeldB_SetupRollBack(this);
+            if (!Anc_Fight_ham_Check(play, &this->actor) &&
+                (fqrand() > 0.03f || (this->actor.xzDistToPlayer <= 45.0f && facingAngletoLink < 0x38E0))) {
+                mode_kiru_init(this);
+            } else if (Anc_Fight_ham_Check(play, &this->actor) && (fqrand() > 0.5f)) {
+                mode_back_jump_init(this);
             } else {
-                EnGeldB_SetupCircle(this);
+                mode_move_to_player_front_init(this);
             }
         }
-        if (!EnGeldB_ReactToPlayer(play, this, 0)) {
+        if (!zf_br2(play, this, 0)) {
             if ((this->actor.xzDistToPlayer < 210.0f) && (this->actor.xzDistToPlayer > 150.0f) &&
-                Actor_IsFacingPlayer(&this->actor, 0x71C)) {
-                if (Actor_IsLockedOn(play, &this->actor)) {
-                    if (Rand_ZeroOne() > 0.5f) {
-                        EnGeldB_SetupRollForward(this);
+                Actor_player_direction_check(&this->actor, 0x71C)) {
+                if (Anc_Fight_My_Check(play, &this->actor)) {
+                    if (fqrand() > 0.5f) {
+                        mode_oi_jump_init(this);
                     } else {
-                        EnGeldB_SetupSpinAttack(this);
+                        mode_jump_attack_init(this);
                     }
                 } else {
-                    EnGeldB_SetupCircle(this);
+                    mode_move_to_player_front_init(this);
                     return;
                 }
             }
             if ((play->gameplayFrames & 0x5F) == 0) {
-                Actor_PlaySfx(&this->actor, NA_SE_EN_GERUDOFT_BREATH);
+                Actor_SE_set(&this->actor, NA_SE_EN_GERUDOFT_BREATH);
             }
             if (prevFrame != (s32)this->skelAnime.curFrame) {
                 s32 afterPrevFrame = absPlaySpeed + prevFrame;
 
                 if (((beforeCurFrame < 0) && (afterPrevFrame > 0)) || ((beforeCurFrame < 4) && (afterPrevFrame > 4))) {
-                    Actor_PlaySfx(&this->actor, NA_SE_EN_MUSI_LAND);
+                    Actor_SE_set(&this->actor, NA_SE_EN_MUSI_LAND);
                 }
             }
         }
     }
 }
 
-void EnGeldB_SetupRollForward(EnGeldB* this) {
-    f32 lastFrame = Animation_GetLastFrame(&gGerudoRedFlipAnim);
+void mode_oi_jump_init(EnGeldB* this) {
+    f32 lastFrame = Si2_anime_end_frame(&gGerudoRedFlipAnim);
 
-    Animation_Change(&this->skelAnime, &gGerudoRedFlipAnim, -1.0f, lastFrame, 0.0f, ANIMMODE_ONCE, -3.0f);
+    Skeleton_Info2_init(&this->skelAnime, &gGerudoRedFlipAnim, -1.0f, lastFrame, 0.0f, ANIMMODE_ONCE, -3.0f);
     this->timer = 0;
     this->invisible = true;
     this->action = GELDB_ROLL_FORWARD;
     this->actor.world.rot.y = this->actor.shape.rot.y = this->actor.yawTowardsPlayer;
     this->actor.speed = 10.0f;
-    Actor_PlaySfx(&this->actor, NA_SE_EN_STAL_JUMP);
-    EnGeldB_SetupAction(this, EnGeldB_RollForward);
+    Actor_SE_set(&this->actor, NA_SE_EN_STAL_JUMP);
+    En_GeldB_Actor_set_process(this, mode_oi_jump);
 }
 
-void EnGeldB_RollForward(EnGeldB* this, PlayState* play) {
+void mode_oi_jump(EnGeldB* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     s16 facingAngleToLink = player->actor.shape.rot.y - this->actor.shape.rot.y;
 
-    if (SkelAnime_Update(&this->skelAnime)) {
+    if (Skeleton_Info2_anime_play(&this->skelAnime)) {
         this->invisible = false;
         this->actor.speed = 0.0f;
-        if (!Actor_IsFacingPlayer(&this->actor, 0x1554)) {
-            EnGeldB_SetupReady(this);
-            this->timer = (Rand_ZeroOne() * 5.0f) + 5.0f;
+        if (!Actor_player_direction_check(&this->actor, 0x1554)) {
+            mode_wait_init(this);
+            this->timer = (fqrand() * 5.0f) + 5.0f;
             if (ABS(facingAngleToLink) < 0x38E0) {
                 this->lookTimer = 20;
             }
-        } else if (!Actor_OtherIsLockedOn(play, &this->actor) &&
-                   (Rand_ZeroOne() > 0.5f || (ABS(facingAngleToLink) < 0x3FFC))) {
-            EnGeldB_SetupSlash(this);
+        } else if (!Anc_Fight_ham_Check(play, &this->actor) &&
+                   (fqrand() > 0.5f || (ABS(facingAngleToLink) < 0x3FFC))) {
+            mode_kiru_init(this);
         } else {
-            EnGeldB_SetupAdvance(this, play);
+            mode_forward_init(this, play);
         }
     }
     if ((play->gameplayFrames & 0x5F) == 0) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_GERUDOFT_BREATH);
+        Actor_SE_set(&this->actor, NA_SE_EN_GERUDOFT_BREATH);
     }
 }
 
-void EnGeldB_SetupPivot(EnGeldB* this) {
-    Animation_MorphToLoop(&this->skelAnime, &gGerudoRedSidestepAnim, -4.0f);
+static void mode_search_rot_init(EnGeldB* this) {
+    Skeleton_Info2_init_standard_repeat_morf(&this->skelAnime, &gGerudoRedSidestepAnim, -4.0f);
     this->action = GELDB_PIVOT;
-    EnGeldB_SetupAction(this, EnGeldB_Pivot);
+    En_GeldB_Actor_set_process(this, mode_search_rot);
 }
 
-void EnGeldB_Pivot(EnGeldB* this, PlayState* play) {
+static void mode_search_rot(EnGeldB* this, PlayState* play) {
     s16 angleToLink;
     s16 turnRate;
     f32 playSpeed;
 
-    if (!EnGeldB_DodgeRanged(play, this) && !EnGeldB_ReactToPlayer(play, this, 0)) {
+    if (!Shot_def(play, this) && !zf_br2(play, this, 0)) {
         angleToLink = this->actor.yawTowardsPlayer - this->actor.shape.rot.y;
         turnRate = (angleToLink > 0) ? ((angleToLink * 0.25f) + 2000.0f) : ((angleToLink * 0.25f) - 2000.0f);
         this->actor.world.rot.y = this->actor.shape.rot.y += turnRate;
@@ -623,34 +623,34 @@ void EnGeldB_Pivot(EnGeldB* this, PlayState* play) {
             playSpeed = CLAMP_MIN(playSpeed, -1.0f);
         }
         this->skelAnime.playSpeed = -playSpeed;
-        SkelAnime_Update(&this->skelAnime);
-        if (Actor_IsFacingPlayer(&this->actor, 30 * 0x10000 / 360)) {
-            if (Rand_ZeroOne() > 0.8f) {
-                EnGeldB_SetupCircle(this);
+        Skeleton_Info2_anime_play(&this->skelAnime);
+        if (Actor_player_direction_check(&this->actor, 30 * 0x10000 / 360)) {
+            if (fqrand() > 0.8f) {
+                mode_move_to_player_front_init(this);
             } else {
-                EnGeldB_SetupAdvance(this, play);
+                mode_forward_init(this, play);
             }
         }
         if ((play->gameplayFrames & 0x5F) == 0) {
-            Actor_PlaySfx(&this->actor, NA_SE_EN_GERUDOFT_BREATH);
+            Actor_SE_set(&this->actor, NA_SE_EN_GERUDOFT_BREATH);
         }
     }
 }
 
-void EnGeldB_SetupCircle(EnGeldB* this) {
-    f32 lastFrame = Animation_GetLastFrame(&gGerudoRedSidestepAnim);
+static void mode_move_to_player_front_init(EnGeldB* this) {
+    f32 lastFrame = Si2_anime_end_frame(&gGerudoRedSidestepAnim);
 
-    Animation_Change(&this->skelAnime, &gGerudoRedSidestepAnim, 1.0f, 0.0f, lastFrame, ANIMMODE_LOOP_INTERP, 0.0f);
-    this->actor.speed = Rand_CenteredFloat(12.0f);
+    Skeleton_Info2_init(&this->skelAnime, &gGerudoRedSidestepAnim, 1.0f, 0.0f, lastFrame, ANIMMODE_LOOP_INTERP, 0.0f);
+    this->actor.speed = rnd_fx(12.0f);
     this->actor.world.rot.y = this->actor.shape.rot.y;
     this->skelAnime.playSpeed = -this->actor.speed * 0.5f;
-    this->timer = Rand_ZeroOne() * 30.0f + 30.0f;
+    this->timer = fqrand() * 30.0f + 30.0f;
     this->action = GELDB_CIRCLE;
     this->approachRate = 0.0f;
-    EnGeldB_SetupAction(this, EnGeldB_Circle);
+    En_GeldB_Actor_set_process(this, mode_move_to_player_front);
 }
 
-void EnGeldB_Circle(EnGeldB* this, PlayState* play) {
+static void mode_move_to_player_front(EnGeldB* this, PlayState* play) {
     s16 angleBehindLink;
     s16 phi_v1;
     s32 afterPrevFrame;
@@ -659,23 +659,23 @@ void EnGeldB_Circle(EnGeldB* this, PlayState* play) {
     s32 beforeCurFrame;
     Player* player = GET_PLAYER(play);
 
-    Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 1, 0xFA0, 1);
-    if (!EnGeldB_DodgeRanged(play, this) && !EnGeldB_ReactToPlayer(play, this, 0)) {
+    add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 1, 0xFA0, 1);
+    if (!Shot_def(play, this) && !zf_br2(play, this, 0)) {
         this->actor.world.rot.y = this->actor.shape.rot.y + 0x3A98;
         angleBehindLink = player->actor.shape.rot.y + 0x8000;
-        if (Math_SinS(angleBehindLink - this->actor.shape.rot.y) >= 0.0f) {
+        if (sin_s(angleBehindLink - this->actor.shape.rot.y) >= 0.0f) {
             this->actor.speed -= 0.25f;
             if (this->actor.speed < -8.0f) {
                 this->actor.speed = -8.0f;
             }
-        } else if (Math_SinS(angleBehindLink - this->actor.shape.rot.y) < 0.0f) {
+        } else if (sin_s(angleBehindLink - this->actor.shape.rot.y) < 0.0f) {
             this->actor.speed += 0.25f;
             if (this->actor.speed > 8.0f) {
                 this->actor.speed = 8.0f;
             }
         }
         if ((this->actor.bgCheckFlags & BGCHECKFLAG_WALL) ||
-            !Actor_TestFloorInDirection(&this->actor, play, this->actor.speed, this->actor.shape.rot.y + 0x3E80)) {
+            !BG_point_check(&this->actor, play, this->actor.speed, this->actor.shape.rot.y + 0x3E80)) {
             if (this->actor.bgCheckFlags & BGCHECKFLAG_WALL) {
                 if (this->actor.speed >= 0.0f) {
                     phi_v1 = this->actor.shape.rot.y + 0x3E80;
@@ -697,15 +697,15 @@ void EnGeldB_Circle(EnGeldB* this, PlayState* play) {
             }
         }
         if (this->actor.xzDistToPlayer <= 45.0f) {
-            Math_SmoothStepToF(&this->approachRate, -4.0f, 1.0f, 1.5f, 0.0f);
+            add_calc(&this->approachRate, -4.0f, 1.0f, 1.5f, 0.0f);
         } else if (this->actor.xzDistToPlayer > 40.0f) {
-            Math_SmoothStepToF(&this->approachRate, 4.0f, 1.0f, 1.5f, 0.0f);
+            add_calc(&this->approachRate, 4.0f, 1.0f, 1.5f, 0.0f);
         } else {
-            Math_SmoothStepToF(&this->approachRate, 0.0f, 1.0f, 6.65f, 0.0f);
+            add_calc(&this->approachRate, 0.0f, 1.0f, 6.65f, 0.0f);
         }
         if (this->approachRate != 0.0f) {
-            this->actor.world.pos.x += Math_SinS(this->actor.shape.rot.y) * this->approachRate;
-            this->actor.world.pos.z += Math_CosS(this->actor.shape.rot.y) * this->approachRate;
+            this->actor.world.pos.x += sin_s(this->actor.shape.rot.y) * this->approachRate;
+            this->actor.world.pos.z += cos_s(this->actor.shape.rot.y) * this->approachRate;
         }
         if (ABS(this->approachRate) < ABS(this->actor.speed)) {
             this->skelAnime.playSpeed = -this->actor.speed * 0.5f;
@@ -715,43 +715,43 @@ void EnGeldB_Circle(EnGeldB* this, PlayState* play) {
         this->skelAnime.playSpeed = CLAMP(this->skelAnime.playSpeed, -3.0f, 3.0f);
 
         prevFrame = (s32)this->skelAnime.curFrame;
-        SkelAnime_Update(&this->skelAnime);
+        Skeleton_Info2_anime_play(&this->skelAnime);
         beforeCurFrame = (s32)(this->skelAnime.curFrame - ABS(this->skelAnime.playSpeed));
         afterPrevFrame = (s32)ABS(this->skelAnime.playSpeed) + prevFrame;
 
         if ((prevFrame != (s32)this->skelAnime.curFrame) &&
             (((beforeCurFrame < 0) && (afterPrevFrame > 0)) || ((beforeCurFrame < 5) && (afterPrevFrame > 5)))) {
-            Actor_PlaySfx(&this->actor, NA_SE_EN_MUSI_LAND);
+            Actor_SE_set(&this->actor, NA_SE_EN_MUSI_LAND);
         }
 
         if ((play->gameplayFrames & 0x5F) == 0) {
-            Actor_PlaySfx(&this->actor, NA_SE_EN_GERUDOFT_BREATH);
+            Actor_SE_set(&this->actor, NA_SE_EN_GERUDOFT_BREATH);
         }
-        if ((Math_CosS(angleBehindLink - this->actor.shape.rot.y) < -0.85f) &&
-            !Actor_OtherIsLockedOn(play, &this->actor) && (this->actor.xzDistToPlayer <= 45.0f)) {
-            EnGeldB_SetupSlash(this);
+        if ((cos_s(angleBehindLink - this->actor.shape.rot.y) < -0.85f) &&
+            !Anc_Fight_ham_Check(play, &this->actor) && (this->actor.xzDistToPlayer <= 45.0f)) {
+            mode_kiru_init(this);
         } else if (--this->timer == 0) {
-            if (Actor_OtherIsLockedOn(play, &this->actor) && (Rand_ZeroOne() > 0.5f)) {
-                EnGeldB_SetupRollBack(this);
+            if (Anc_Fight_ham_Check(play, &this->actor) && (fqrand() > 0.5f)) {
+                mode_back_jump_init(this);
             } else {
-                EnGeldB_SetupReady(this);
+                mode_wait_init(this);
             }
         }
     }
 }
 
-void EnGeldB_SetupSpinDodge(EnGeldB* this, PlayState* play) {
+void mode_esc_init(EnGeldB* this, PlayState* play) {
     s16 sp3E;
     Player* player = GET_PLAYER(play);
-    f32 lastFrame = Animation_GetLastFrame(&gGerudoRedSidestepAnim);
+    f32 lastFrame = Si2_anime_end_frame(&gGerudoRedSidestepAnim);
 
-    Animation_Change(&this->skelAnime, &gGerudoRedSidestepAnim, 1.0f, 0.0f, lastFrame, ANIMMODE_LOOP_INTERP, 0.0f);
+    Skeleton_Info2_init(&this->skelAnime, &gGerudoRedSidestepAnim, 1.0f, 0.0f, lastFrame, ANIMMODE_LOOP_INTERP, 0.0f);
     sp3E = player->actor.shape.rot.y;
-    if (Math_SinS(sp3E - this->actor.shape.rot.y) > 0.0f) {
+    if (sin_s(sp3E - this->actor.shape.rot.y) > 0.0f) {
         this->actor.speed = -10.0f;
-    } else if (Math_SinS(sp3E - this->actor.shape.rot.y) < 0.0f) {
+    } else if (sin_s(sp3E - this->actor.shape.rot.y) < 0.0f) {
         this->actor.speed = 10.0f;
-    } else if (Rand_ZeroOne() > 0.5f) {
+    } else if (fqrand() > 0.5f) {
         this->actor.speed = 10.0f;
     } else {
         this->actor.speed = -10.0f;
@@ -763,10 +763,10 @@ void EnGeldB_SetupSpinDodge(EnGeldB* this, PlayState* play) {
     this->unkFloat = 0.0f;
     this->action = GELDB_SPIN_DODGE;
 
-    EnGeldB_SetupAction(this, EnGeldB_SpinDodge);
+    En_GeldB_Actor_set_process(this, mode_esc);
 }
 
-void EnGeldB_SpinDodge(EnGeldB* this, PlayState* play) {
+void mode_esc(EnGeldB* this, PlayState* play) {
     s16 phi_v1;
     s32 prevFrame;
     s32 pad;
@@ -775,7 +775,7 @@ void EnGeldB_SpinDodge(EnGeldB* this, PlayState* play) {
 
     this->actor.world.rot.y = this->actor.yawTowardsPlayer + 0x3A98;
     if ((this->actor.bgCheckFlags & BGCHECKFLAG_WALL) ||
-        !Actor_TestFloorInDirection(&this->actor, play, this->actor.speed, this->actor.shape.rot.y + 0x3E80)) {
+        !BG_point_check(&this->actor, play, this->actor.speed, this->actor.shape.rot.y + 0x3E80)) {
         if (this->actor.bgCheckFlags & BGCHECKFLAG_WALL) {
             if (this->actor.speed >= 0.0f) {
                 phi_v1 = this->actor.shape.rot.y + 0x3E80;
@@ -788,20 +788,20 @@ void EnGeldB_SpinDodge(EnGeldB* this, PlayState* play) {
             phi_v1 = 0;
         }
         if (ABS(phi_v1) > 0x4000) {
-            EnGeldB_SetupJump(this);
+            mode_jump_move_init(this);
             return;
         }
     }
     if (this->actor.xzDistToPlayer <= 45.0f) {
-        Math_SmoothStepToF(&this->approachRate, -4.0f, 1.0f, 1.5f, 0.0f);
+        add_calc(&this->approachRate, -4.0f, 1.0f, 1.5f, 0.0f);
     } else if (this->actor.xzDistToPlayer > 40.0f) {
-        Math_SmoothStepToF(&this->approachRate, 4.0f, 1.0f, 1.5f, 0.0f);
+        add_calc(&this->approachRate, 4.0f, 1.0f, 1.5f, 0.0f);
     } else {
-        Math_SmoothStepToF(&this->approachRate, 0.0f, 1.0f, 6.65f, 0.0f);
+        add_calc(&this->approachRate, 0.0f, 1.0f, 6.65f, 0.0f);
     }
     if (this->approachRate != 0.0f) {
-        this->actor.world.pos.x += Math_SinS(this->actor.yawTowardsPlayer) * this->approachRate;
-        this->actor.world.pos.z += Math_CosS(this->actor.yawTowardsPlayer) * this->approachRate;
+        this->actor.world.pos.x += sin_s(this->actor.yawTowardsPlayer) * this->approachRate;
+        this->actor.world.pos.z += cos_s(this->actor.yawTowardsPlayer) * this->approachRate;
     }
     if (ABS(this->approachRate) < ABS(this->actor.speed)) {
         this->skelAnime.playSpeed = -this->actor.speed * 0.5f;
@@ -811,26 +811,26 @@ void EnGeldB_SpinDodge(EnGeldB* this, PlayState* play) {
     this->skelAnime.playSpeed = CLAMP(this->skelAnime.playSpeed, -3.0f, 3.0f);
 
     prevFrame = (s32)this->skelAnime.curFrame;
-    SkelAnime_Update(&this->skelAnime);
+    Skeleton_Info2_anime_play(&this->skelAnime);
     beforeCurFrame = (s32)(this->skelAnime.curFrame - ABS(this->skelAnime.playSpeed));
     afterPrevFrame = (s32)ABS(this->skelAnime.playSpeed) + prevFrame;
 
     if ((prevFrame != (s32)this->skelAnime.curFrame) &&
         (((beforeCurFrame < 0) && (afterPrevFrame > 0)) || ((beforeCurFrame < 5) && (afterPrevFrame > 5)))) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_MUSI_LAND);
+        Actor_SE_set(&this->actor, NA_SE_EN_MUSI_LAND);
     }
 
     if ((play->gameplayFrames & 0x5F) == 0) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_GERUDOFT_BREATH);
+        Actor_SE_set(&this->actor, NA_SE_EN_GERUDOFT_BREATH);
     }
     this->timer--;
     if (this->timer == 0) {
         this->actor.shape.rot.y = this->actor.yawTowardsPlayer;
-        if (!EnGeldB_DodgeRanged(play, this)) {
-            if (!Actor_OtherIsLockedOn(play, &this->actor) && (this->actor.xzDistToPlayer <= 70.0f)) {
-                EnGeldB_SetupSlash(this);
+        if (!Shot_def(play, this)) {
+            if (!Anc_Fight_ham_Check(play, &this->actor) && (this->actor.xzDistToPlayer <= 70.0f)) {
+                mode_kiru_init(this);
             } else {
-                EnGeldB_SetupRollBack(this);
+                mode_back_jump_init(this);
             }
         }
     } else {
@@ -842,17 +842,17 @@ void EnGeldB_SpinDodge(EnGeldB* this, PlayState* play) {
     }
 }
 
-void EnGeldB_SetupSlash(EnGeldB* this) {
-    Animation_PlayOnce(&this->skelAnime, &gGerudoRedSlashAnim);
+static void mode_kiru_init(EnGeldB* this) {
+    Skeleton_Info2_init_standard_stop(&this->skelAnime, &gGerudoRedSlashAnim);
     this->swordCollider.base.atFlags &= ~AT_BOUNCED;
     this->action = GELDB_SLASH;
     this->spinAttackState = 0;
     this->actor.speed = 0.0f;
-    Audio_StopSfxByPosAndId(&this->actor.projectedPos, NA_SE_EN_GERUDOFT_BREATH);
-    EnGeldB_SetupAction(this, EnGeldB_Slash);
+    Nai_StopObjFlagFx(&this->actor.projectedPos, NA_SE_EN_GERUDOFT_BREATH);
+    En_GeldB_Actor_set_process(this, mode_kiru);
 }
 
-void EnGeldB_Slash(EnGeldB* this, PlayState* play) {
+static void mode_kiru(EnGeldB* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     s16 angleFacingLink = player->actor.shape.rot.y - this->actor.shape.rot.y;
     s16 angleToLink = this->actor.yawTowardsPlayer - this->actor.shape.rot.y;
@@ -862,7 +862,7 @@ void EnGeldB_Slash(EnGeldB* this, PlayState* play) {
 
     this->actor.speed = 0.0f;
     if ((s32)this->skelAnime.curFrame == 1) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_GERUDOFT_ATTACK);
+        Actor_SE_set(&this->actor, NA_SE_EN_GERUDOFT_ATTACK);
         this->swordState = 1;
     } else if ((s32)this->skelAnime.curFrame == 6) {
         this->swordState = -1;
@@ -870,47 +870,47 @@ void EnGeldB_Slash(EnGeldB* this, PlayState* play) {
     if (this->swordCollider.base.atFlags & AT_BOUNCED) {
         this->swordState = -1;
         this->swordCollider.base.atFlags &= ~(AT_HIT | AT_BOUNCED);
-        EnGeldB_SetupRollBack(this);
-    } else if (SkelAnime_Update(&this->skelAnime)) {
-        if (!Actor_IsFacingPlayer(&this->actor, 0x1554)) {
-            EnGeldB_SetupReady(this);
-            this->timer = (Rand_ZeroOne() * 5.0f) + 5.0f;
+        mode_back_jump_init(this);
+    } else if (Skeleton_Info2_anime_play(&this->skelAnime)) {
+        if (!Actor_player_direction_check(&this->actor, 0x1554)) {
+            mode_wait_init(this);
+            this->timer = (fqrand() * 5.0f) + 5.0f;
             if (angleToLink > 0x4000) {
                 this->lookTimer = 20;
             }
-        } else if (Rand_ZeroOne() > 0.7f || (this->actor.xzDistToPlayer >= 120.0f)) {
-            EnGeldB_SetupReady(this);
-            this->timer = (Rand_ZeroOne() * 5.0f) + 5.0f;
+        } else if (fqrand() > 0.7f || (this->actor.xzDistToPlayer >= 120.0f)) {
+            mode_wait_init(this);
+            this->timer = (fqrand() * 5.0f) + 5.0f;
         } else {
             this->actor.world.rot.y = this->actor.yawTowardsPlayer;
-            if (Rand_ZeroOne() > 0.7f) {
-                EnGeldB_SetupSidestep(this, play);
+            if (fqrand() > 0.7f) {
+                mode_side_step_init(this, play);
             } else if (angleFacingLink <= 0x2710) {
                 if (angleToLink > 0x3E80) {
                     this->actor.world.rot.y = this->actor.yawTowardsPlayer;
-                    EnGeldB_SetupCircle(this);
+                    mode_move_to_player_front_init(this);
                 } else {
-                    EnGeldB_ReactToPlayer(play, this, 1);
+                    zf_br2(play, this, 1);
                 }
             } else {
-                EnGeldB_SetupCircle(this);
+                mode_move_to_player_front_init(this);
             }
         }
     }
 }
 
-void EnGeldB_SetupSpinAttack(EnGeldB* this) {
-    f32 lastFrame = Animation_GetLastFrame(&gGerudoRedSpinAttackAnim);
+void mode_jump_attack_init(EnGeldB* this) {
+    f32 lastFrame = Si2_anime_end_frame(&gGerudoRedSpinAttackAnim);
 
-    Animation_Change(&this->skelAnime, &gGerudoRedSpinAttackAnim, 1.0f, 0.0f, lastFrame, ANIMMODE_ONCE_INTERP, 0.0f);
+    Skeleton_Info2_init(&this->skelAnime, &gGerudoRedSpinAttackAnim, 1.0f, 0.0f, lastFrame, ANIMMODE_ONCE_INTERP, 0.0f);
     this->swordCollider.base.atFlags &= ~(AT_HIT | AT_BOUNCED);
     this->action = GELDB_SPIN_ATTACK;
     this->spinAttackState = 0;
     this->actor.speed = 0.0f;
-    EnGeldB_SetupAction(this, EnGeldB_SpinAttack);
+    En_GeldB_Actor_set_process(this, mode_jump_attack);
 }
 
-void EnGeldB_SpinAttack(EnGeldB* this, PlayState* play) {
+void mode_jump_attack(EnGeldB* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     s16 angleFacingLink;
     s16 angleToLink;
@@ -923,13 +923,13 @@ void EnGeldB_SpinAttack(EnGeldB* this, PlayState* play) {
         } else if (this->swordCollider.base.atFlags & AT_HIT) {
             this->swordCollider.base.atFlags &= ~AT_HIT;
             if (&player->actor == this->swordCollider.base.at) {
-                Actor_SetPlayerKnockbackLargeNoDamage(play, &this->actor, 6.0f, this->actor.yawTowardsPlayer, 6.0f);
+                Actor_player_power_damage_set(play, &this->actor, 6.0f, this->actor.yawTowardsPlayer, 6.0f);
                 this->spinAttackState = 2;
-                Player_SetCsActionWithHaltedActors(play, &this->actor, PLAYER_CSACTION_24);
-                Message_StartTextbox(play, 0x6003, &this->actor);
+                player_demo_mode_set(play, &this->actor, PLAYER_CSACTION_24);
+                message_set(play, 0x6003, &this->actor);
                 this->timer = 30;
                 this->actor.speed = 0.0f;
-                Actor_PlaySfx(&this->actor, NA_SE_EN_TWINROBA_YOUNG_LAUGH);
+                Actor_SE_set(&this->actor, NA_SE_EN_TWINROBA_YOUNG_LAUGH);
                 return;
             }
         }
@@ -937,30 +937,30 @@ void EnGeldB_SpinAttack(EnGeldB* this, PlayState* play) {
     if ((s32)this->skelAnime.curFrame < 9) {
         this->actor.shape.rot.y = this->actor.world.rot.y = this->actor.yawTowardsPlayer;
     } else if ((s32)this->skelAnime.curFrame == 13) {
-        Actor_SpawnFloorDustRing(play, &this->actor, &this->leftFootPos, 3.0f, 2, 2.0f, 0, 0, false);
-        Actor_SpawnFloorDustRing(play, &this->actor, &this->rightFootPos, 3.0f, 2, 2.0f, 0, 0, false);
+        _dust_ground_set(play, &this->actor, &this->leftFootPos, 3.0f, 2, 2.0f, 0, 0, false);
+        _dust_ground_set(play, &this->actor, &this->rightFootPos, 3.0f, 2, 2.0f, 0, 0, false);
         this->swordState = 1;
         this->actor.speed = 10.0f;
-        Actor_PlaySfx(&this->actor, NA_SE_EN_GERUDOFT_ATTACK);
+        Actor_SE_set(&this->actor, NA_SE_EN_GERUDOFT_ATTACK);
     } else if ((s32)this->skelAnime.curFrame == 21) {
         this->actor.speed = 0.0f;
     } else if ((s32)this->skelAnime.curFrame == 24) {
         this->swordState = -1;
     }
-    if (SkelAnime_Update(&this->skelAnime) && (this->spinAttackState < 2)) {
-        if (!Actor_IsFacingPlayer(&this->actor, 0x1554)) {
-            EnGeldB_SetupReady(this);
-            this->timer = (Rand_ZeroOne() * 5.0f) + 5.0f;
+    if (Skeleton_Info2_anime_play(&this->skelAnime) && (this->spinAttackState < 2)) {
+        if (!Actor_player_direction_check(&this->actor, 0x1554)) {
+            mode_wait_init(this);
+            this->timer = (fqrand() * 5.0f) + 5.0f;
             this->lookTimer = 46;
         } else if (this->spinAttackState != 0) {
-            EnGeldB_SetupRollBack(this);
-        } else if (Rand_ZeroOne() > 0.7f || (this->actor.xzDistToPlayer >= 120.0f)) {
-            EnGeldB_SetupReady(this);
-            this->timer = (Rand_ZeroOne() * 5.0f) + 5.0f;
+            mode_back_jump_init(this);
+        } else if (fqrand() > 0.7f || (this->actor.xzDistToPlayer >= 120.0f)) {
+            mode_wait_init(this);
+            this->timer = (fqrand() * 5.0f) + 5.0f;
         } else {
             this->actor.world.rot.y = this->actor.yawTowardsPlayer;
-            if (Rand_ZeroOne() > 0.7f) {
-                EnGeldB_SetupSidestep(this, play);
+            if (fqrand() > 0.7f) {
+                mode_side_step_init(this, play);
             } else {
                 angleFacingLink = player->actor.shape.rot.y - this->actor.shape.rot.y;
                 angleFacingLink = ABS(angleFacingLink);
@@ -969,61 +969,61 @@ void EnGeldB_SpinAttack(EnGeldB* this, PlayState* play) {
                     angleToLink = ABS(angleToLink);
                     if (angleToLink > 0x3E80) {
                         this->actor.world.rot.y = this->actor.yawTowardsPlayer;
-                        EnGeldB_SetupCircle(this);
+                        mode_move_to_player_front_init(this);
                     } else {
-                        EnGeldB_ReactToPlayer(play, this, 1);
+                        zf_br2(play, this, 1);
                     }
                 } else {
-                    EnGeldB_SetupCircle(this);
+                    mode_move_to_player_front_init(this);
                 }
             }
         }
     }
 }
 
-void EnGeldB_SetupRollBack(EnGeldB* this) {
-    Animation_MorphToPlayOnce(&this->skelAnime, &gGerudoRedFlipAnim, -3.0f);
+static void mode_back_jump_init(EnGeldB* this) {
+    Skeleton_Info2_init_standard_stop_morf(&this->skelAnime, &gGerudoRedFlipAnim, -3.0f);
     this->timer = 0;
     this->invisible = true;
     this->action = GELDB_ROLL_BACK;
     this->actor.speed = -8.0f;
-    Actor_PlaySfx(&this->actor, NA_SE_EN_STAL_JUMP);
+    Actor_SE_set(&this->actor, NA_SE_EN_STAL_JUMP);
     this->actor.shape.rot.y = this->actor.world.rot.y = this->actor.yawTowardsPlayer;
-    EnGeldB_SetupAction(this, EnGeldB_RollBack);
+    En_GeldB_Actor_set_process(this, mode_back_jump);
 }
 
-void EnGeldB_RollBack(EnGeldB* this, PlayState* play) {
-    if (SkelAnime_Update(&this->skelAnime)) {
-        if (!Actor_OtherIsLockedOn(play, &this->actor) && (this->actor.xzDistToPlayer < 170.0f) &&
-            (this->actor.xzDistToPlayer > 140.0f) && (Rand_ZeroOne() < 0.2f)) {
-            EnGeldB_SetupSpinAttack(this);
+static void mode_back_jump(EnGeldB* this, PlayState* play) {
+    if (Skeleton_Info2_anime_play(&this->skelAnime)) {
+        if (!Anc_Fight_ham_Check(play, &this->actor) && (this->actor.xzDistToPlayer < 170.0f) &&
+            (this->actor.xzDistToPlayer > 140.0f) && (fqrand() < 0.2f)) {
+            mode_jump_attack_init(this);
         } else if (play->gameplayFrames & 1) {
-            EnGeldB_SetupSidestep(this, play);
+            mode_side_step_init(this, play);
         } else {
-            EnGeldB_SetupReady(this);
+            mode_wait_init(this);
         }
     }
     if ((play->state.frames & 0x5F) == 0) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_GERUDOFT_BREATH);
+        Actor_SE_set(&this->actor, NA_SE_EN_GERUDOFT_BREATH);
     }
 }
 
-void EnGeldB_SetupStunned(EnGeldB* this) {
+static void mode_paralyze_init(EnGeldB* this) {
     if (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) {
         this->actor.speed = 0.0f;
     }
     if ((this->damageEffect != GELDB_DMG_FREEZE) || (this->action == GELDB_SPIN_ATTACK)) {
-        Animation_PlayOnceSetSpeed(&this->skelAnime, &gGerudoRedDamageAnim, 0.0f);
+        Skeleton_Info2_init_standard_speedset_stop(&this->skelAnime, &gGerudoRedDamageAnim, 0.0f);
     }
     if (this->damageEffect == GELDB_DMG_FREEZE) {
         this->iceTimer = 36;
     }
-    Actor_PlaySfx(&this->actor, NA_SE_EN_GOMA_JR_FREEZE);
+    Actor_SE_set(&this->actor, NA_SE_EN_GOMA_JR_FREEZE);
     this->action = GELDB_STUNNED;
-    EnGeldB_SetupAction(this, EnGeldB_Stunned);
+    En_GeldB_Actor_set_process(this, mode_paralyze);
 }
 
-void EnGeldB_Stunned(EnGeldB* this, PlayState* play) {
+static void mode_paralyze(EnGeldB* this, PlayState* play) {
     if (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND_TOUCH) {
         this->actor.speed = 0.0f;
     }
@@ -1035,15 +1035,15 @@ void EnGeldB_Stunned(EnGeldB* this, PlayState* play) {
     }
     if ((this->actor.colorFilterTimer == 0) && (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND)) {
         if (this->actor.colChkInfo.health == 0) {
-            EnGeldB_SetupDefeated(this);
+            mode_down_init(this);
         } else {
-            EnGeldB_ReactToPlayer(play, this, 1);
+            zf_br2(play, this, 1);
         }
     }
 }
 
-void EnGeldB_SetupDamaged(EnGeldB* this) {
-    Animation_MorphToPlayOnce(&this->skelAnime, &gGerudoRedDamageAnim, -4.0f);
+static void mode_damage_init(EnGeldB* this) {
+    Skeleton_Info2_init_standard_stop_morf(&this->skelAnime, &gGerudoRedDamageAnim, -4.0f);
     if (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) {
         this->invisible = false;
         this->actor.speed = -4.0f;
@@ -1052,12 +1052,12 @@ void EnGeldB_SetupDamaged(EnGeldB* this) {
     }
     this->lookTimer = 0;
     this->actor.world.rot.y = this->actor.yawTowardsPlayer;
-    Actor_PlaySfx(&this->actor, NA_SE_EN_GERUDOFT_DAMAGE);
+    Actor_SE_set(&this->actor, NA_SE_EN_GERUDOFT_DAMAGE);
     this->action = GELDB_DAMAGED;
-    EnGeldB_SetupAction(this, EnGeldB_Damaged);
+    En_GeldB_Actor_set_process(this, mode_damage);
 }
 
-void EnGeldB_Damaged(EnGeldB* this, PlayState* play) {
+static void mode_damage(EnGeldB* this, PlayState* play) {
     s16 angleToWall;
 
     if (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND_TOUCH) {
@@ -1069,73 +1069,73 @@ void EnGeldB_Damaged(EnGeldB* this, PlayState* play) {
         }
         this->invisible = false;
     }
-    Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 1, 0x1194, 0);
-    if (!EnGeldB_DodgeRanged(play, this) && !EnGeldB_ReactToPlayer(play, this, 0) &&
-        SkelAnime_Update(&this->skelAnime) && (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND)) {
+    add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 1, 0x1194, 0);
+    if (!Shot_def(play, this) && !zf_br2(play, this, 0) &&
+        Skeleton_Info2_anime_play(&this->skelAnime) && (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND)) {
         angleToWall = this->actor.wallYaw - this->actor.shape.rot.y;
         if ((this->actor.bgCheckFlags & BGCHECKFLAG_WALL) && (ABS(angleToWall) < 0x2EE0) &&
             (this->actor.xzDistToPlayer < 90.0f)) {
-            EnGeldB_SetupJump(this);
-        } else if (!EnGeldB_DodgeRanged(play, this)) {
-            if ((this->actor.xzDistToPlayer <= 45.0f) && !Actor_OtherIsLockedOn(play, &this->actor) &&
+            mode_jump_move_init(this);
+        } else if (!Shot_def(play, this)) {
+            if ((this->actor.xzDistToPlayer <= 45.0f) && !Anc_Fight_ham_Check(play, &this->actor) &&
                 (play->gameplayFrames & 7)) {
-                EnGeldB_SetupSlash(this);
+                mode_kiru_init(this);
             } else {
-                EnGeldB_SetupRollBack(this);
+                mode_back_jump_init(this);
             }
         }
     }
 }
 
-void EnGeldB_SetupJump(EnGeldB* this) {
-    f32 lastFrame = Animation_GetLastFrame(&gGerudoRedFlipAnim);
+static void mode_jump_move_init(EnGeldB* this) {
+    f32 lastFrame = Si2_anime_end_frame(&gGerudoRedFlipAnim);
 
-    Animation_Change(&this->skelAnime, &gGerudoRedFlipAnim, -1.0f, lastFrame, 0.0f, ANIMMODE_ONCE, -3.0f);
+    Skeleton_Info2_init(&this->skelAnime, &gGerudoRedFlipAnim, -1.0f, lastFrame, 0.0f, ANIMMODE_ONCE, -3.0f);
     this->timer = 0;
     this->invisible = false;
     this->action = GELDB_JUMP;
     this->actor.speed = 6.5f;
     this->actor.velocity.y = 15.0f;
-    Actor_PlaySfx(&this->actor, NA_SE_EN_STAL_JUMP);
+    Actor_SE_set(&this->actor, NA_SE_EN_STAL_JUMP);
     this->actor.world.rot.y = this->actor.shape.rot.y;
-    EnGeldB_SetupAction(this, EnGeldB_Jump);
+    En_GeldB_Actor_set_process(this, mode_jump_move);
 }
 
-void EnGeldB_Jump(EnGeldB* this, PlayState* play) {
-    Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 1, 0xFA0, 1);
+static void mode_jump_move(EnGeldB* this, PlayState* play) {
+    add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 1, 0xFA0, 1);
     if (this->actor.velocity.y >= 5.0f) {
-        func_800355B8(play, &this->leftFootPos);
-        func_800355B8(play, &this->rightFootPos);
+        suna_set(play, &this->leftFootPos);
+        suna_set(play, &this->rightFootPos);
     }
-    if (SkelAnime_Update(&this->skelAnime) &&
+    if (Skeleton_Info2_anime_play(&this->skelAnime) &&
         (this->actor.bgCheckFlags & (BGCHECKFLAG_GROUND | BGCHECKFLAG_GROUND_TOUCH))) {
         this->actor.world.rot.y = this->actor.shape.rot.y = this->actor.yawTowardsPlayer;
         this->actor.shape.rot.x = 0;
         this->actor.speed = 0.0f;
         this->actor.velocity.y = 0.0f;
         this->actor.world.pos.y = this->actor.floorHeight;
-        if (!Actor_OtherIsLockedOn(play, &this->actor)) {
-            EnGeldB_SetupSlash(this);
+        if (!Anc_Fight_ham_Check(play, &this->actor)) {
+            mode_kiru_init(this);
         } else {
-            EnGeldB_SetupReady(this);
+            mode_wait_init(this);
         }
     }
 }
 
-void EnGeldB_SetupBlock(EnGeldB* this) {
-    f32 lastFrame = Animation_GetLastFrame(&gGerudoRedBlockAnim);
+static void mode_defense_init(EnGeldB* this) {
+    f32 lastFrame = Si2_anime_end_frame(&gGerudoRedBlockAnim);
 
     if (this->swordState != 0) {
         this->swordState = -1;
     }
     this->actor.speed = 0.0f;
     this->action = GELDB_BLOCK;
-    this->timer = (s32)Rand_CenteredFloat(10.0f) + 10;
-    Animation_Change(&this->skelAnime, &gGerudoRedBlockAnim, 0.0f, 0.0f, lastFrame, ANIMMODE_ONCE, 0.0f);
-    EnGeldB_SetupAction(this, EnGeldB_Block);
+    this->timer = (s32)rnd_fx(10.0f) + 10;
+    Skeleton_Info2_init(&this->skelAnime, &gGerudoRedBlockAnim, 0.0f, 0.0f, lastFrame, ANIMMODE_ONCE, 0.0f);
+    En_GeldB_Actor_set_process(this, mode_defense);
 }
 
-void EnGeldB_Block(EnGeldB* this, PlayState* play) {
+static void mode_defense(EnGeldB* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     s32 pad;
     s16 angleToLink;
@@ -1146,73 +1146,73 @@ void EnGeldB_Block(EnGeldB* this, PlayState* play) {
     } else {
         this->skelAnime.playSpeed = 1.0f;
     }
-    if (SkelAnime_Update(&this->skelAnime)) {
+    if (Skeleton_Info2_anime_play(&this->skelAnime)) {
         angleToLink = this->actor.yawTowardsPlayer - this->actor.shape.rot.y;
         if ((ABS(angleToLink) <= 0x4000) && (this->actor.xzDistToPlayer < 40.0f) &&
             (ABS(this->actor.yDistToPlayer) < 50.0f)) {
-            if (func_800354B4(play, &this->actor, 100.0f, 0x2710, 0x4000, this->actor.shape.rot.y)) {
+            if (PlayerSwingCheck(play, &this->actor, 100.0f, 0x2710, 0x4000, this->actor.shape.rot.y)) {
                 if (player->meleeWeaponAnimation == PLAYER_MWA_JUMPSLASH_START) {
-                    EnGeldB_SetupSpinDodge(this, play);
+                    mode_esc_init(this, play);
                 } else if (play->gameplayFrames & 1) {
-                    EnGeldB_SetupBlock(this);
+                    mode_defense_init(this);
                 } else {
-                    EnGeldB_SetupRollBack(this);
+                    mode_back_jump_init(this);
                 }
             } else {
                 angleFacingLink = player->actor.shape.rot.y - this->actor.shape.rot.y;
-                if (!Actor_OtherIsLockedOn(play, &this->actor) &&
+                if (!Anc_Fight_ham_Check(play, &this->actor) &&
                     ((play->gameplayFrames & 1) || (ABS(angleFacingLink) < 0x38E0))) {
-                    EnGeldB_SetupSlash(this);
+                    mode_kiru_init(this);
                 } else {
-                    EnGeldB_SetupCircle(this);
+                    mode_move_to_player_front_init(this);
                 }
             }
         } else {
-            EnGeldB_SetupCircle(this);
+            mode_move_to_player_front_init(this);
         }
     } else if ((this->timer == 0) &&
-               func_800354B4(play, &this->actor, 100.0f, 0x2710, 0x4000, this->actor.shape.rot.y)) {
+               PlayerSwingCheck(play, &this->actor, 100.0f, 0x2710, 0x4000, this->actor.shape.rot.y)) {
         if (player->meleeWeaponAnimation == PLAYER_MWA_JUMPSLASH_START) {
-            EnGeldB_SetupSpinDodge(this, play);
-        } else if (!EnGeldB_DodgeRanged(play, this)) {
+            mode_esc_init(this, play);
+        } else if (!Shot_def(play, this)) {
             if (play->gameplayFrames & 1) {
-                if ((this->actor.xzDistToPlayer < 100.0f) && (Rand_ZeroOne() > 0.7f)) {
-                    EnGeldB_SetupJump(this);
+                if ((this->actor.xzDistToPlayer < 100.0f) && (fqrand() > 0.7f)) {
+                    mode_jump_move_init(this);
                 } else {
-                    EnGeldB_SetupRollBack(this);
+                    mode_back_jump_init(this);
                 }
             } else {
-                EnGeldB_SetupBlock(this);
+                mode_defense_init(this);
             }
         }
     }
 }
 
-void EnGeldB_SetupSidestep(EnGeldB* this, PlayState* play) {
+static void mode_side_step_init(EnGeldB* this, PlayState* play) {
     s16 playerRotY;
     Player* player;
-    f32 lastFrame = Animation_GetLastFrame(&gGerudoRedSidestepAnim);
+    f32 lastFrame = Si2_anime_end_frame(&gGerudoRedSidestepAnim);
 
-    Animation_Change(&this->skelAnime, &gGerudoRedSidestepAnim, 1.0f, 0.0f, lastFrame, ANIMMODE_LOOP_INTERP, 0.0f);
+    Skeleton_Info2_init(&this->skelAnime, &gGerudoRedSidestepAnim, 1.0f, 0.0f, lastFrame, ANIMMODE_LOOP_INTERP, 0.0f);
     player = GET_PLAYER(play);
-    Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 1, 0xFA0, 1);
+    add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 1, 0xFA0, 1);
     playerRotY = player->actor.shape.rot.y;
-    if (Math_SinS(playerRotY - this->actor.shape.rot.y) > 0.0f) {
+    if (sin_s(playerRotY - this->actor.shape.rot.y) > 0.0f) {
         this->actor.speed = -6.0f;
-    } else if (Math_SinS(playerRotY - this->actor.shape.rot.y) < 0.0f) {
+    } else if (sin_s(playerRotY - this->actor.shape.rot.y) < 0.0f) {
         this->actor.speed = 6.0f;
     } else {
-        this->actor.speed = Rand_CenteredFloat(12.0f);
+        this->actor.speed = rnd_fx(12.0f);
     }
     this->skelAnime.playSpeed = -this->actor.speed * 0.5f;
     this->approachRate = 0.0f;
     this->actor.world.rot.y = this->actor.shape.rot.y + 0x3FFF;
-    this->timer = Rand_ZeroOne() * 10.0f + 5.0f;
+    this->timer = fqrand() * 10.0f + 5.0f;
     this->action = GELDB_SIDESTEP;
-    EnGeldB_SetupAction(this, EnGeldB_Sidestep);
+    En_GeldB_Actor_set_process(this, mode_side_step);
 }
 
-void EnGeldB_Sidestep(EnGeldB* this, PlayState* play) {
+static void mode_side_step(EnGeldB* this, PlayState* play) {
     s16 behindLinkAngle;
     s16 phi_v1;
     Player* player = GET_PLAYER(play);
@@ -1220,16 +1220,16 @@ void EnGeldB_Sidestep(EnGeldB* this, PlayState* play) {
     s32 beforeCurFrame;
     f32 absPlaySpeed;
 
-    Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 1, 0xBB8, 1);
+    add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 1, 0xBB8, 1);
     behindLinkAngle = player->actor.shape.rot.y + 0x8000;
-    if (Math_SinS(behindLinkAngle - this->actor.shape.rot.y) > 0.0f) {
+    if (sin_s(behindLinkAngle - this->actor.shape.rot.y) > 0.0f) {
         this->actor.speed += 0.125f;
-    } else if (Math_SinS(behindLinkAngle - this->actor.shape.rot.y) <= 0.0f) {
+    } else if (sin_s(behindLinkAngle - this->actor.shape.rot.y) <= 0.0f) {
         this->actor.speed -= 0.125f;
     }
 
     if ((this->actor.bgCheckFlags & BGCHECKFLAG_WALL) ||
-        !Actor_TestFloorInDirection(&this->actor, play, this->actor.speed, this->actor.shape.rot.y + 0x3E80)) {
+        !BG_point_check(&this->actor, play, this->actor.speed, this->actor.shape.rot.y + 0x3E80)) {
         if (this->actor.bgCheckFlags & BGCHECKFLAG_WALL) {
             if (this->actor.speed >= 0.0f) {
                 phi_v1 = this->actor.shape.rot.y + 0x3E80;
@@ -1256,15 +1256,15 @@ void EnGeldB_Sidestep(EnGeldB* this, PlayState* play) {
         this->actor.world.rot.y = this->actor.shape.rot.y - 0x3E80;
     }
     if (this->actor.xzDistToPlayer <= 45.0f) {
-        Math_SmoothStepToF(&this->approachRate, -4.0f, 1.0f, 1.5f, 0.0f);
+        add_calc(&this->approachRate, -4.0f, 1.0f, 1.5f, 0.0f);
     } else if (this->actor.xzDistToPlayer > 40.0f) {
-        Math_SmoothStepToF(&this->approachRate, 4.0f, 1.0f, 1.5f, 0.0f);
+        add_calc(&this->approachRate, 4.0f, 1.0f, 1.5f, 0.0f);
     } else {
-        Math_SmoothStepToF(&this->approachRate, 0.0f, 1.0f, 6.65f, 0.0f);
+        add_calc(&this->approachRate, 0.0f, 1.0f, 6.65f, 0.0f);
     }
     if (this->approachRate != 0.0f) {
-        this->actor.world.pos.x += Math_SinS(this->actor.shape.rot.y) * this->approachRate;
-        this->actor.world.pos.z += Math_CosS(this->actor.shape.rot.y) * this->approachRate;
+        this->actor.world.pos.x += sin_s(this->actor.shape.rot.y) * this->approachRate;
+        this->actor.world.pos.z += cos_s(this->actor.shape.rot.y) * this->approachRate;
     }
     if (ABS(this->approachRate) < ABS(this->actor.speed)) {
         this->skelAnime.playSpeed = -this->actor.speed * 0.5f;
@@ -1274,52 +1274,52 @@ void EnGeldB_Sidestep(EnGeldB* this, PlayState* play) {
     this->skelAnime.playSpeed = CLAMP(this->skelAnime.playSpeed, -3.0f, 3.0f);
 
     prevFrame = (s32)this->skelAnime.curFrame;
-    SkelAnime_Update(&this->skelAnime);
+    Skeleton_Info2_anime_play(&this->skelAnime);
     beforeCurFrame = (s32)(this->skelAnime.curFrame - ABS(this->skelAnime.playSpeed));
     absPlaySpeed = ((void)0, ABS(this->skelAnime.playSpeed)); // Needed to match for some reason
 
-    if (!EnGeldB_DodgeRanged(play, this) && !EnGeldB_ReactToPlayer(play, this, 0)) {
+    if (!Shot_def(play, this) && !zf_br2(play, this, 0)) {
         if (--this->timer == 0) {
             s16 angleFacingPlayer = player->actor.shape.rot.y - this->actor.shape.rot.y;
 
             angleFacingPlayer = ABS(angleFacingPlayer);
             if (angleFacingPlayer >= 0x3A98) {
-                EnGeldB_SetupReady(this);
-                this->timer = (Rand_ZeroOne() * 5.0f) + 1.0f;
+                mode_wait_init(this);
+                this->timer = (fqrand() * 5.0f) + 1.0f;
             } else {
                 Player* player2 = GET_PLAYER(play);
                 s16 angleFacingPlayer2 = player2->actor.shape.rot.y - this->actor.shape.rot.y;
 
                 this->actor.world.rot.y = this->actor.shape.rot.y;
-                if ((this->actor.xzDistToPlayer <= 45.0f) && !Actor_OtherIsLockedOn(play, &this->actor) &&
+                if ((this->actor.xzDistToPlayer <= 45.0f) && !Anc_Fight_ham_Check(play, &this->actor) &&
                     (!(play->gameplayFrames & 3) || (ABS(angleFacingPlayer2) < 0x38E0))) {
-                    EnGeldB_SetupSlash(this);
+                    mode_kiru_init(this);
                 } else if ((210.0f > this->actor.xzDistToPlayer) && (this->actor.xzDistToPlayer > 150.0f) &&
                            !(play->gameplayFrames & 1)) {
-                    if (Actor_OtherIsLockedOn(play, &this->actor) || (Rand_ZeroOne() > 0.5f) ||
+                    if (Anc_Fight_ham_Check(play, &this->actor) || (fqrand() > 0.5f) ||
                         (ABS(angleFacingPlayer2) < 0x38E0)) {
-                        EnGeldB_SetupRollForward(this);
+                        mode_oi_jump_init(this);
                     } else {
-                        EnGeldB_SetupSpinAttack(this);
+                        mode_jump_attack_init(this);
                     }
                 } else {
-                    EnGeldB_SetupAdvance(this, play);
+                    mode_forward_init(this, play);
                 }
             }
         }
         if ((prevFrame != (s32)this->skelAnime.curFrame) &&
             (((beforeCurFrame < 0) && (((s32)absPlaySpeed + prevFrame) > 0)) ||
              ((beforeCurFrame < 5) && (((s32)absPlaySpeed + prevFrame) > 5)))) {
-            Actor_PlaySfx(&this->actor, NA_SE_EN_MUSI_LAND);
+            Actor_SE_set(&this->actor, NA_SE_EN_MUSI_LAND);
         }
         if ((play->gameplayFrames & 0x5F) == 0) {
-            Actor_PlaySfx(&this->actor, NA_SE_EN_GERUDOFT_BREATH);
+            Actor_SE_set(&this->actor, NA_SE_EN_GERUDOFT_BREATH);
         }
     }
 }
 
-void EnGeldB_SetupDefeated(EnGeldB* this) {
-    Animation_MorphToPlayOnce(&this->skelAnime, &gGerudoRedDefeatAnim, -4.0f);
+static void mode_down_init(EnGeldB* this) {
+    Skeleton_Info2_init_standard_stop_morf(&this->skelAnime, &gGerudoRedDefeatAnim, -4.0f);
     this->actor.world.rot.y = this->actor.shape.rot.y = this->actor.yawTowardsPlayer;
     if (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) {
         this->invisible = false;
@@ -1329,32 +1329,32 @@ void EnGeldB_SetupDefeated(EnGeldB* this) {
     }
     this->action = GELDB_DEFEAT;
     this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
-    Actor_PlaySfx(&this->actor, NA_SE_EN_GERUDOFT_DEAD);
-    EnGeldB_SetupAction(this, EnGeldB_Defeated);
+    Actor_SE_set(&this->actor, NA_SE_EN_GERUDOFT_DEAD);
+    En_GeldB_Actor_set_process(this, mode_down);
 }
 
-void EnGeldB_Defeated(EnGeldB* this, PlayState* play) {
+static void mode_down(EnGeldB* this, PlayState* play) {
     if (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND_TOUCH) {
         this->actor.speed = 0.0f;
     }
     if (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) {
-        Math_SmoothStepToF(&this->actor.speed, 0.0f, 1.0f, 0.5f, 0.0f);
+        add_calc(&this->actor.speed, 0.0f, 1.0f, 0.5f, 0.0f);
         this->invisible = false;
     }
-    if (SkelAnime_Update(&this->skelAnime)) {
-        EnGeldB_SetupFlee(this);
+    if (Skeleton_Info2_anime_play(&this->skelAnime)) {
+        mode_ret_jump_init(this);
     } else if ((s32)this->skelAnime.curFrame == 10) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_RIZA_DOWN);
-        func_800F5B58();
+        Actor_SE_set(&this->actor, NA_SE_EN_RIZA_DOWN);
+        Na_StopMiddleBossBgm();
     }
 }
 
-void EnGeldB_TurnHead(EnGeldB* this, PlayState* play) {
+static void Face_To_Player(EnGeldB* this, PlayState* play) {
     if ((this->action == GELDB_READY) && (this->lookTimer != 0)) {
-        this->headRot.y = Math_SinS(this->lookTimer * 0x1068) * 8920.0f;
+        this->headRot.y = sin_s(this->lookTimer * 0x1068) * 8920.0f;
     } else if (this->action != GELDB_STUNNED) {
         if ((this->action != GELDB_SLASH) && (this->action != GELDB_SPIN_ATTACK)) {
-            Math_SmoothStepToS(&this->headRot.y, this->actor.yawTowardsPlayer - this->actor.shape.rot.y, 1, 0x1F4, 0);
+            add_calc_short_angle2(&this->headRot.y, this->actor.yawTowardsPlayer - this->actor.shape.rot.y, 1, 0x1F4, 0);
             this->headRot.y = CLAMP(this->headRot.y, -0x256F, 0x256F);
         } else {
             this->headRot.y = 0;
@@ -1362,7 +1362,7 @@ void EnGeldB_TurnHead(EnGeldB* this, PlayState* play) {
     }
 }
 
-void EnGeldB_CollisionCheck(EnGeldB* this, PlayState* play) {
+static void damage_proc(EnGeldB* this, PlayState* play) {
     s32 pad;
     EnItem00* key;
 
@@ -1374,67 +1374,67 @@ void EnGeldB_CollisionCheck(EnGeldB* this, PlayState* play) {
         this->bodyCollider.base.acFlags &= ~AC_HIT;
         if (this->actor.colChkInfo.damageEffect != GELDB_DMG_UNK_6) {
             this->damageEffect = this->actor.colChkInfo.damageEffect;
-            Actor_SetDropFlag(&this->actor, &this->bodyCollider.elem, true);
-            Audio_StopSfxByPosAndId(&this->actor.projectedPos, NA_SE_EN_GERUDOFT_BREATH);
+            Hit_bit_set(&this->actor, &this->bodyCollider.elem, true);
+            Nai_StopObjFlagFx(&this->actor.projectedPos, NA_SE_EN_GERUDOFT_BREATH);
             if ((this->actor.colChkInfo.damageEffect == GELDB_DMG_STUN) ||
                 (this->actor.colChkInfo.damageEffect == GELDB_DMG_FREEZE)) {
                 if (this->action != GELDB_STUNNED) {
-                    Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_BLUE, 120, COLORFILTER_BUFFLAG_OPA, 80);
-                    Actor_ApplyDamage(&this->actor);
-                    EnGeldB_SetupStunned(this);
+                    Set_Fog(&this->actor, COLORFILTER_COLORFLAG_BLUE, 120, COLORFILTER_BUFFLAG_OPA, 80);
+                    hp_down(&this->actor);
+                    mode_paralyze_init(this);
                 }
             } else {
-                Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_OPA, 8);
-                if (Actor_ApplyDamage(&this->actor) == 0) {
+                Set_Fog(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_OPA, 8);
+                if (hp_down(&this->actor) == 0) {
                     if (this->keyFlag != 0) {
-                        key = Item_DropCollectible(play, &this->actor.world.pos, this->keyFlag | ITEM00_SMALL_KEY);
+                        key = Item_set0(play, &this->actor.world.pos, this->keyFlag | ITEM00_SMALL_KEY);
                         if (key != NULL) {
-                            key->actor.world.rot.y = Math_Vec3f_Yaw(&key->actor.world.pos, &this->actor.home.pos);
+                            key->actor.world.rot.y = search_position_angleY(&key->actor.world.pos, &this->actor.home.pos);
                             key->actor.speed = 6.0f;
-                            Audio_PlaySfxGeneral(NA_SE_SY_TRE_BOX_APPEAR, &gSfxDefaultPos, 4,
-                                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
-                                                 &gSfxDefaultReverb);
+                            Nai_FxFlagEntry(NA_SE_SY_TRE_BOX_APPEAR, &_dummy_zero_f, 4,
+                                                 &_dummy_one, &_dummy_one,
+                                                 &_dummy_zero_s8);
                         }
                     }
-                    EnGeldB_SetupDefeated(this);
-                    Enemy_StartFinishingBlow(play, &this->actor);
+                    mode_down_init(this);
+                    Actor_info_finish(play, &this->actor);
                 } else {
-                    EnGeldB_SetupDamaged(this);
+                    mode_damage_init(this);
                 }
             }
         }
     }
 }
 
-void EnGeldB_Update(Actor* thisx, PlayState* play) {
+void En_GeldB_move(Actor* thisx, PlayState* play) {
     s32 pad;
     EnGeldB* this = (EnGeldB*)thisx;
 
-    EnGeldB_CollisionCheck(this, play);
+    damage_proc(this, play);
     if (this->actor.colChkInfo.damageEffect != GELDB_DMG_UNK_6) {
-        Actor_MoveXZGravity(&this->actor);
-        Actor_UpdateBgCheckInfo(play, &this->actor, 15.0f, 30.0f, 60.0f,
+        Actor_position_moveF(&this->actor);
+        Actor_BGcheck2(play, &this->actor, 15.0f, 30.0f, 60.0f,
                                 UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2 | UPDBGCHECKINFO_FLAG_3 |
                                     UPDBGCHECKINFO_FLAG_4);
         this->actionFunc(this, play);
         this->actor.focus.pos = this->actor.world.pos;
         this->actor.focus.pos.y += 40.0f;
-        EnGeldB_TurnHead(this, play);
+        Face_To_Player(this, play);
     }
-    Collider_UpdateCylinder(&this->actor, &this->bodyCollider);
-    CollisionCheck_SetOC(play, &play->colChkCtx, &this->bodyCollider.base);
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->bodyCollider);
+    CollisionCheck_setOC(play, &play->colChkCtx, &this->bodyCollider.base);
     if ((this->action >= GELDB_READY) && (this->spinAttackState < 2) &&
         ((this->actor.colorFilterTimer == 0) || !(this->actor.colorFilterParams & 0x4000))) {
-        CollisionCheck_SetAC(play, &play->colChkCtx, &this->bodyCollider.base);
+        CollisionCheck_setAC(play, &play->colChkCtx, &this->bodyCollider.base);
     }
     if ((this->action == GELDB_BLOCK) && (this->skelAnime.curFrame == 0.0f)) {
-        CollisionCheck_SetAC(play, &play->colChkCtx, &this->blockCollider.base);
+        CollisionCheck_setAC(play, &play->colChkCtx, &this->blockCollider.base);
     }
     if (this->swordState > 0) {
-        CollisionCheck_SetAT(play, &play->colChkCtx, &this->swordCollider.base);
+        CollisionCheck_setAT(play, &play->colChkCtx, &this->swordCollider.base);
     }
     if (this->blinkState == 0) {
-        if ((Rand_ZeroOne() < 0.1f) && ((play->gameplayFrames % 4) == 0)) {
+        if ((fqrand() < 0.1f) && ((play->gameplayFrames % 4) == 0)) {
             this->blinkState++;
         }
     } else {
@@ -1442,7 +1442,7 @@ void EnGeldB_Update(Actor* thisx, PlayState* play) {
     }
 }
 
-s32 EnGeldB_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+s32 gelb_display1(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     EnGeldB* this = (EnGeldB*)thisx;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_geldB.c", 2507);
@@ -1465,45 +1465,45 @@ s32 EnGeldB_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f*
     return false;
 }
 
-void EnGeldB_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
-    static Vec3f footOffset = { 300.0f, 0.0f, 0.0f };
-    static Vec3f swordTipOffset = { 0.0f, -3000.0f, 0.0f };
-    static Vec3f swordHiltOffset = { 400.0f, 0.0f, 0.0f };
-    static Vec3f swordQuadOffset1 = { 1600.0f, -4000.0f, 0.0f };
-    static Vec3f swordQuadOffset0 = { -3000.0f, -2000.0f, 1300.0f };
-    static Vec3f swordQuadOffset3 = { -3000.0f, -2000.0f, -1300.0f };
-    static Vec3f swordQuadOffset2 = { 1000.0f, 1000.0f, 0.0f };
-    static Vec3f zeroVec = { 0.0f, 0.0f, 0.0f };
+void gelb_display2(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
+    static Vec3f local_foot = { 300.0f, 0.0f, 0.0f };
+    static Vec3f sword_top = { 0.0f, -3000.0f, 0.0f };
+    static Vec3f sword_root = { 400.0f, 0.0f, 0.0f };
+    static Vec3f sword_top2 = { 1600.0f, -4000.0f, 0.0f };
+    static Vec3f sword_root2 = { -3000.0f, -2000.0f, 1300.0f };
+    static Vec3f sword_top3 = { -3000.0f, -2000.0f, -1300.0f };
+    static Vec3f sword_root3 = { 1000.0f, 1000.0f, 0.0f };
+    static Vec3f dam_root = { 0.0f, 0.0f, 0.0f };
     Vec3f swordTip;
     Vec3f swordHilt;
     EnGeldB* this = (EnGeldB*)thisx;
     s32 bodyPart = -1;
 
     if (limbIndex == GELDB_LIMB_R_SWORD) {
-        Matrix_MultVec3f(&swordQuadOffset1, &this->swordCollider.dim.quad[1]);
-        Matrix_MultVec3f(&swordQuadOffset0, &this->swordCollider.dim.quad[0]);
-        Matrix_MultVec3f(&swordQuadOffset3, &this->swordCollider.dim.quad[3]);
-        Matrix_MultVec3f(&swordQuadOffset2, &this->swordCollider.dim.quad[2]);
-        Collider_SetQuadVertices(&this->swordCollider, &this->swordCollider.dim.quad[0],
+        Matrix_Position(&sword_top2, &this->swordCollider.dim.quad[1]);
+        Matrix_Position(&sword_root2, &this->swordCollider.dim.quad[0]);
+        Matrix_Position(&sword_top3, &this->swordCollider.dim.quad[3]);
+        Matrix_Position(&sword_root3, &this->swordCollider.dim.quad[2]);
+        CollisionCheck_Uty_setSword4Pos(&this->swordCollider, &this->swordCollider.dim.quad[0],
                                  &this->swordCollider.dim.quad[1], &this->swordCollider.dim.quad[2],
                                  &this->swordCollider.dim.quad[3]);
-        Matrix_MultVec3f(&swordTipOffset, &swordTip);
-        Matrix_MultVec3f(&swordHiltOffset, &swordHilt);
+        Matrix_Position(&sword_top, &swordTip);
+        Matrix_Position(&sword_root, &swordHilt);
 
         if ((this->swordState < 0) || ((this->action != GELDB_SLASH) && (this->action != GELDB_SPIN_ATTACK))) {
-            EffectBlure_AddSpace(Effect_GetByIndex(this->blureIndex));
+            EffectBlure_space_add(Effect_GetEffectMemoryPointer(this->blureIndex));
             this->swordState = 0;
         } else if (this->swordState > 0) {
-            EffectBlure_AddVertex(Effect_GetByIndex(this->blureIndex), &swordTip, &swordHilt);
+            EffectBlure_edge_add(Effect_GetEffectMemoryPointer(this->blureIndex), &swordTip, &swordHilt);
         }
     } else {
-        Actor_SetFeetPos(&this->actor, limbIndex, GELDB_LIMB_L_FOOT, &footOffset, GELDB_LIMB_R_FOOT, &footOffset);
+        Actor_foot_shadow_pos_set(&this->actor, limbIndex, GELDB_LIMB_L_FOOT, &local_foot, GELDB_LIMB_R_FOOT, &local_foot);
     }
 
     if (limbIndex == GELDB_LIMB_L_FOOT) {
-        Matrix_MultVec3f(&footOffset, &this->leftFootPos);
+        Matrix_Position(&local_foot, &this->leftFootPos);
     } else if (limbIndex == GELDB_LIMB_R_FOOT) {
-        Matrix_MultVec3f(&footOffset, &this->rightFootPos);
+        Matrix_Position(&local_foot, &this->rightFootPos);
     }
 
     if (this->iceTimer != 0) {
@@ -1542,7 +1542,7 @@ void EnGeldB_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* ro
         if (bodyPart >= 0) {
             Vec3f limbPos;
 
-            Matrix_MultVec3f(&zeroVec, &limbPos);
+            Matrix_Position(&dam_root, &limbPos);
             this->bodyPartsPos[bodyPart].x = limbPos.x;
             this->bodyPartsPos[bodyPart].y = limbPos.y;
             this->bodyPartsPos[bodyPart].z = limbPos.z;
@@ -1550,27 +1550,27 @@ void EnGeldB_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* ro
     }
 }
 
-void EnGeldB_Draw(Actor* thisx, PlayState* play) {
-    static Vec3f blockTrisOffsets0[3] = {
+void En_GeldB_display(Actor* thisx, PlayState* play) {
+    static Vec3f shield_data[3] = {
         { -3000.0f, 6000.0f, 1600.0f },
         { -3000.0f, 0.0f, 1600.0f },
         { 3000.0f, 6000.0f, 1600.0f },
     };
-    static Vec3f blockTrisOffsets1[3] = {
+    static Vec3f shield_data2[3] = {
         { -3000.0f, 0.0f, 1600.0f },
         { 3000.0f, 0.0f, 1600.0f },
         { 3000.0f, 6000.0f, 1600.0f },
     };
-    static void* eyeTextures[] = { gGerudoRedEyeOpenTex, gGerudoRedEyeHalfTex, gGerudoRedEyeShutTex,
+    static void* eye_txt[] = { gGerudoRedEyeOpenTex, gGerudoRedEyeHalfTex, gGerudoRedEyeShutTex,
                                    gGerudoRedEyeHalfTex };
     s32 pad;
     EnGeldB* this = (EnGeldB*)thisx;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_geldB.c", 2672);
 
-    if ((this->spinAttackState >= 2) && SkelAnime_Update(&this->skelAnime)) {
+    if ((this->spinAttackState >= 2) && Skeleton_Info2_anime_play(&this->skelAnime)) {
         if (this->spinAttackState == 2) {
-            Animation_Change(&this->skelAnime, &gGerudoRedSpinAttackAnim, 0.5f, 0.0f, 12.0f, ANIMMODE_ONCE_INTERP,
+            Skeleton_Info2_init(&this->skelAnime, &gGerudoRedSpinAttackAnim, 0.5f, 0.0f, 12.0f, ANIMMODE_ONCE_INTERP,
                              4.0f);
             this->spinAttackState++;
             thisx->world.rot.y = thisx->shape.rot.y = thisx->yawTowardsPlayer;
@@ -1591,21 +1591,21 @@ void EnGeldB_Draw(Actor* thisx, PlayState* play) {
     }
 
     if ((this->action != GELDB_WAIT) || !this->invisible) {
-        Gfx_SetupDL_25Opa(play->state.gfxCtx);
-        gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(eyeTextures[this->blinkState]));
-        SkelAnime_DrawFlexOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
-                              EnGeldB_OverrideLimbDraw, EnGeldB_PostLimbDraw, this);
+        _texture_z_light_fog_prim(play->state.gfxCtx);
+        gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(eye_txt[this->blinkState]));
+        Si2_draw_SV(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
+                              gelb_display1, gelb_display2, this);
         if (this->action == GELDB_BLOCK) {
             s32 i;
             Vec3f blockTrisVtx0[3];
             Vec3f blockTrisVtx1[3];
 
             for (i = 0; i < 3; i++) {
-                Matrix_MultVec3f(&blockTrisOffsets0[i], &blockTrisVtx0[i]);
-                Matrix_MultVec3f(&blockTrisOffsets1[i], &blockTrisVtx1[i]);
+                Matrix_Position(&shield_data[i], &blockTrisVtx0[i]);
+                Matrix_Position(&shield_data2[i], &blockTrisVtx1[i]);
             }
-            Collider_SetTrisVertices(&this->blockCollider, 0, &blockTrisVtx0[0], &blockTrisVtx0[1], &blockTrisVtx0[2]);
-            Collider_SetTrisVertices(&this->blockCollider, 1, &blockTrisVtx1[0], &blockTrisVtx1[1], &blockTrisVtx1[2]);
+            CollisionCheck_Uty_setTrisPos(&this->blockCollider, 0, &blockTrisVtx0[0], &blockTrisVtx0[1], &blockTrisVtx0[2]);
+            CollisionCheck_Uty_setTrisPos(&this->blockCollider, 1, &blockTrisVtx1[0], &blockTrisVtx1[1], &blockTrisVtx1[2]);
         }
 
         if (this->iceTimer != 0) {
@@ -1614,7 +1614,7 @@ void EnGeldB_Draw(Actor* thisx, PlayState* play) {
             if ((this->iceTimer % 4) == 0) {
                 s32 iceIndex = this->iceTimer >> 2;
 
-                EffectSsEnIce_SpawnFlyingVec3s(play, thisx, &this->bodyPartsPos[iceIndex], 150, 150, 150, 250, 235, 245,
+                Effect_En_Ice_ct1(play, thisx, &this->bodyPartsPos[iceIndex], 150, 150, 150, 250, 235, 245,
                                                255, 1.5f);
             }
         }
@@ -1622,32 +1622,32 @@ void EnGeldB_Draw(Actor* thisx, PlayState* play) {
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_geldB.c", 2744);
 }
 
-s32 EnGeldB_DodgeRanged(PlayState* play, EnGeldB* this) {
-    Actor* actor = Actor_GetProjectileActor(play, &this->actor, 800.0f);
+static s32 Shot_def(PlayState* play, EnGeldB* this) {
+    Actor* actor = ShotVsMyCheck(play, &this->actor, 800.0f);
 
     if (actor != NULL) {
         s16 angleToFacing;
         f32 dist;
 
-        angleToFacing = Actor_WorldYawTowardActor(&this->actor, actor) - this->actor.shape.rot.y;
+        angleToFacing = Actor_search_actor_angleY(&this->actor, actor) - this->actor.shape.rot.y;
         this->actor.world.rot.y = (u16)this->actor.shape.rot.y & 0xFFFF;
-        dist = Actor_WorldDistXYZToPoint(&this->actor, &actor->world.pos);
+        dist = Actor_search_position_distance(&this->actor, &actor->world.pos);
         //! @bug
-        // Actor_WorldDistXYZToPoint already sqrtfs the distance, so this actually checks for a
+        // Actor_search_position_distance already sqrtfs the distance, so this actually checks for a
         // distance of 360000. Also it's a double calculation because no f on sqrt.
         if ((ABS(angleToFacing) < 0x2EE0) && (sqrt(dist) < 600.0)) {
             if (actor->id == ACTOR_ARMS_HOOK) {
-                EnGeldB_SetupJump(this);
+                mode_jump_move_init(this);
             } else {
-                EnGeldB_SetupBlock(this);
+                mode_defense_init(this);
             }
         } else {
             this->actor.world.rot.y = this->actor.shape.rot.y + 0x3FFF;
             if ((ABS(angleToFacing) < 0x2000) || (ABS(angleToFacing) > 0x5FFF)) {
-                EnGeldB_SetupSidestep(this, play);
+                mode_side_step_init(this, play);
                 this->actor.speed *= 3.0f;
             } else if (ABS(angleToFacing) < 0x5FFF) {
-                EnGeldB_SetupRollBack(this);
+                mode_back_jump_init(this);
             }
         }
         return true;

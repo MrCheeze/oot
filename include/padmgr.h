@@ -41,27 +41,27 @@ typedef struct PadMgr {
 
 // Initialization
 
-void PadMgr_Init(PadMgr* padMgr, OSMesgQueue* serialEventQueue, IrqMgr* irqMgr, OSId id, OSPri priority, void* stack);
+void padmgr_Create(PadMgr* padMgr, OSMesgQueue* serialEventQueue, IrqMgr* irqMgr, OSId id, OSPri priority, void* stack);
 
 // Fetching inputs
 
 // This function cannot be prototyped here in all configurations because it is called incorrectly in fault_gc.c
-// (see bug in `Fault_PadCallback`)
+// (see bug in `callback_get_pads_default`)
 #if PLATFORM_N64 || defined(AVOID_UB)
-void PadMgr_RequestPadData(PadMgr* padmgr, Input* inputs, s32 gameRequest);
+void padmgr_RequestPadData(PadMgr* padmgr, Input* inputs, s32 gameRequest);
 #endif
 
 // For internal use by Controller Pak systems
 
-OSMesgQueue* PadMgr_AcquireSerialEventQueue(PadMgr* padMgr);
-void PadMgr_ReleaseSerialEventQueue(PadMgr* padMgr, OSMesgQueue* serialEventQueue);
+OSMesgQueue* padmgr_LockSerialMesgQ(PadMgr* padMgr);
+void padmgr_UnlockSerialMesgQ(PadMgr* padMgr, OSMesgQueue* serialEventQueue);
 
 // Rumble
 
-void PadMgr_RumbleStop(PadMgr* padMgr);
-void PadMgr_RumbleReset(PadMgr* padMgr);
-void PadMgr_RumbleSetSingle(PadMgr* padMgr, u32 port, u32 rumble);
-void PadMgr_RumbleSet(PadMgr* padMgr, u8* enable);
+void padmgr_RumbleStop(PadMgr* padMgr);
+void padmgr_RumbleReset(PadMgr* padMgr);
+void padmgr_RumbleSet(PadMgr* padMgr, u32 port, u32 rumble);
+void padmgr_RumbleSetTbl(PadMgr* padMgr, u8* enable);
 
 // Retrace callback
 
@@ -95,6 +95,6 @@ void PadMgr_RumbleSet(PadMgr* padMgr, u8* enable);
     }                                                                                       \
     (void)0
 
-extern PadMgr gPadMgr;
+extern PadMgr padmgr;
 
 #endif

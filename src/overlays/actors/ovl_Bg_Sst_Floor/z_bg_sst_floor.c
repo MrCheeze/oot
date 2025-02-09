@@ -9,12 +9,12 @@
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED)
 
-void BgSstFloor_Init(Actor* thisx, PlayState* play);
-void BgSstFloor_Destroy(Actor* thisx, PlayState* play);
-void BgSstFloor_Update(Actor* thisx, PlayState* play);
-void BgSstFloor_Draw(Actor* thisx, PlayState* play);
+void Bg_Sst_Floor_actor_ct(Actor* thisx, PlayState* play);
+void Bg_Sst_Floor_actor_dt(Actor* thisx, PlayState* play);
+void Bg_Sst_Floor_actor_move(Actor* thisx, PlayState* play);
+void Bg_Sst_Floor_actor_draw(Actor* thisx, PlayState* play);
 
-static s32 sUnkValues[] = { 0, 0, 0 }; // Unused, probably a zero vector
+static s32 map_center_pos[] = { 0, 0, 0 }; // Unused, probably a zero vector
 
 ActorProfile Bg_Sst_Floor_Profile = {
     /**/ ACTOR_BG_SST_FLOOR,
@@ -22,35 +22,35 @@ ActorProfile Bg_Sst_Floor_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_SST,
     /**/ sizeof(BgSstFloor),
-    /**/ BgSstFloor_Init,
-    /**/ BgSstFloor_Destroy,
-    /**/ BgSstFloor_Update,
-    /**/ BgSstFloor_Draw,
+    /**/ Bg_Sst_Floor_actor_ct,
+    /**/ Bg_Sst_Floor_actor_dt,
+    /**/ Bg_Sst_Floor_actor_move,
+    /**/ Bg_Sst_Floor_actor_draw,
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F_DIV1000(scale.x, 100, ICHAIN_STOP),
 };
 
-void BgSstFloor_Init(Actor* thisx, PlayState* play) {
+void Bg_Sst_Floor_actor_ct(Actor* thisx, PlayState* play) {
     s32 pad;
     BgSstFloor* this = (BgSstFloor*)thisx;
     CollisionHeader* colHeader = NULL;
 
-    Actor_ProcessInitChain(&this->dyna.actor, sInitChain);
-    DynaPolyActor_Init(&this->dyna, DYNA_TRANSFORM_POS);
-    CollisionHeader_GetVirtual(&gBongoDrumCol, &colHeader);
-    this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
+    ValueSet_process(&this->dyna.actor, value_init);
+    MoveBG_ct(&this->dyna, DYNA_TRANSFORM_POS);
+    DynaPolyUty_bgdi_SG2KSG(&gBongoDrumCol, &colHeader);
+    this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
 }
 
-void BgSstFloor_Destroy(Actor* thisx, PlayState* play) {
+void Bg_Sst_Floor_actor_dt(Actor* thisx, PlayState* play) {
     s32 pad;
     BgSstFloor* this = (BgSstFloor*)thisx;
 
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
 }
 
-void BgSstFloor_Update(Actor* thisx, PlayState* play) {
+void Bg_Sst_Floor_actor_move(Actor* thisx, PlayState* play) {
     s32 pad;
     BgSstFloor* this = (BgSstFloor*)thisx;
     Player* player = GET_PLAYER(play);
@@ -60,15 +60,15 @@ void BgSstFloor_Update(Actor* thisx, PlayState* play) {
 
     if (1) {}
 
-    if (DynaPolyActor_IsPlayerAbove(&this->dyna) && (this->dyna.actor.yDistToPlayer < 1000.0f)) {
-        Camera_RequestSetting(play->cameraPtrs[CAM_ID_MAIN], CAM_SET_BOSS_BONGO);
+    if (MoveBG_checkOverPlayerStatus(&this->dyna) && (this->dyna.actor.yDistToPlayer < 1000.0f)) {
+        changeCameraSet(play->cameraPtrs[CAM_ID_MAIN], CAM_SET_BOSS_BONGO);
     } else {
-        Camera_RequestSetting(play->cameraPtrs[CAM_ID_MAIN], CAM_SET_DUNGEON0);
+        changeCameraSet(play->cameraPtrs[CAM_ID_MAIN], CAM_SET_DUNGEON0);
     }
 
-    if (DynaPolyActor_IsPlayerOnTop(&this->dyna) && (player->fallDistance > 1000.0f)) {
+    if (MoveBG_checkRidePlayerStatus(&this->dyna) && (player->fallDistance > 1000.0f)) {
         this->dyna.actor.params = 1;
-        Actor_PlaySfx(&this->dyna.actor, NA_SE_EN_SHADEST_TAIKO_HIGH);
+        Actor_SE_set(&this->dyna.actor, NA_SE_EN_SHADEST_TAIKO_HIGH);
     }
 
     if (this->dyna.actor.params == BONGOFLOOR_HIT) {
@@ -80,7 +80,7 @@ void BgSstFloor_Update(Actor* thisx, PlayState* play) {
         this->dyna.actor.params = BONGOFLOOR_REST;
         this->drumPhase = 28;
 
-        if (DynaPolyActor_IsPlayerOnTop(&this->dyna) &&
+        if (MoveBG_checkRidePlayerStatus(&this->dyna) &&
             !(player->stateFlags1 & (PLAYER_STATE1_13 | PLAYER_STATE1_14))) {
             distFromRim = 600.0f - this->dyna.actor.xzDistToPlayer;
             if (distFromRim > 0.0f) {
@@ -94,7 +94,7 @@ void BgSstFloor_Update(Actor* thisx, PlayState* play) {
 
         while (item00 != NULL) {
             if ((item00->id == ACTOR_EN_ITEM00) && (item00->world.pos.y == 0.0f)) {
-                xzDist = Actor_WorldDistXZToActor(&this->dyna.actor, item00);
+                xzDist = Actor_search_actor_distanceXZ(&this->dyna.actor, item00);
                 distFromRim = 600.0f - xzDist;
                 if (xzDist < 600.0f) {
                     if (distFromRim > 350.0f) {
@@ -108,7 +108,7 @@ void BgSstFloor_Update(Actor* thisx, PlayState* play) {
         }
     }
     this->drumHeight = sinf(this->drumPhase * (M_PI / 2)) * (-this->drumAmp);
-    Math_StepToS(&this->drumAmp, 0, 5);
+    chase_s(&this->drumAmp, 0, 5);
 
     colHeader->vtxList[1].y = colHeader->vtxList[0].y = colHeader->vtxList[2].y = colHeader->vtxList[3].y =
         colHeader->vtxList[4].y = colHeader->vtxList[7].y = colHeader->vtxList[9].y = colHeader->vtxList[11].y =
@@ -118,15 +118,15 @@ void BgSstFloor_Update(Actor* thisx, PlayState* play) {
         this->drumPhase--;
     }
     if (1) {}
-    DynaPoly_InvalidateLookup(play, &play->colCtx.dyna);
+    DynaPolygonInfo_setExpand(play, &play->colCtx.dyna);
 }
 
-void BgSstFloor_Draw(Actor* thisx, PlayState* play) {
+void Bg_Sst_Floor_actor_draw(Actor* thisx, PlayState* play) {
     BgSstFloor* this = (BgSstFloor*)thisx;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_bg_sst_floor.c", 277);
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
-    Matrix_Scale(1.0f, this->drumHeight * -0.0025f, 1.0f, MTXMODE_APPLY);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
+    Matrix_scale(1.0f, this->drumHeight * -0.0025f, 1.0f, MTXMODE_APPLY);
 
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_bg_sst_floor.c", 283);
 

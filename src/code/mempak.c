@@ -42,14 +42,14 @@ s32 Mempak_Init(s32 controllerNum) {
     s32 pad;
     s32 ret = false;
 
-    serialEventQueue = PadMgr_AcquireSerialEventQueue(&gPadMgr);
+    serialEventQueue = padmgr_LockSerialMesgQ(&padmgr);
 
     if (osPfsInitPak(serialEventQueue, &sMempakPfsHandle, controllerNum) == 0) {
         ret = true;
     }
 
     osPfsFreeBlocks(&sMempakPfsHandle, &sMempakFreeBytes);
-    PadMgr_ReleaseSerialEventQueue(&gPadMgr, serialEventQueue);
+    padmgr_UnlockSerialMesgQ(&padmgr, serialEventQueue);
     return ret;
 }
 
@@ -74,7 +74,7 @@ s32 Mempak_FindFiles(s32 controllerNum, char start, char end) {
     u32 bit = 1;
     s32 bits = 0;
 
-    serialEventQueue = PadMgr_AcquireSerialEventQueue(&gPadMgr);
+    serialEventQueue = padmgr_LockSerialMesgQ(&padmgr);
 
     for (letter = start; letter <= end; letter++) {
         sMempakExtName[0] = NCH(letter);
@@ -91,7 +91,7 @@ s32 Mempak_FindFiles(s32 controllerNum, char start, char end) {
         PRINTF("mempak: find '%c' (%d)\n", letter, error);
     }
 
-    PadMgr_ReleaseSerialEventQueue(&gPadMgr, serialEventQueue);
+    padmgr_UnlockSerialMesgQ(&padmgr, serialEventQueue);
     PRINTF("mempak: find '%c' - '%c' %02x\n", start, end, bits);
     return bits;
 }
@@ -112,7 +112,7 @@ s32 Mempak_Write(s32 controllerNum, char letter, void* buffer, s32 offset, s32 s
     s32 ret = false;
     s32 pad;
 
-    serialEventQueue = PadMgr_AcquireSerialEventQueue(&gPadMgr);
+    serialEventQueue = padmgr_LockSerialMesgQ(&padmgr);
 
     if (size < sMempakFreeBytes) {
         error = osPfsReadWriteFile(&sMempakPfsHandle, sMempakFiles[MEMPAK_LETTER_TO_INDEX(letter)], PFS_WRITE, offset,
@@ -123,7 +123,7 @@ s32 Mempak_Write(s32 controllerNum, char letter, void* buffer, s32 offset, s32 s
         PRINTF("mempak: write %d byte '%c' (%d)->%d\n", size, letter, sMempakFiles[MEMPAK_LETTER_TO_INDEX(letter)],
                error);
     }
-    PadMgr_ReleaseSerialEventQueue(&gPadMgr, serialEventQueue);
+    padmgr_UnlockSerialMesgQ(&padmgr, serialEventQueue);
     return ret;
 }
 
@@ -143,7 +143,7 @@ s32 Mempak_Read(s32 controllerNum, char letter, void* buffer, s32 offset, s32 si
     s32 ret = false;
     s32 pad;
 
-    serialEventQueue = PadMgr_AcquireSerialEventQueue(&gPadMgr);
+    serialEventQueue = padmgr_LockSerialMesgQ(&padmgr);
 
     if (size < sMempakFreeBytes) {
         error = osPfsReadWriteFile(&sMempakPfsHandle, sMempakFiles[MEMPAK_LETTER_TO_INDEX(letter)], PFS_READ, offset,
@@ -154,7 +154,7 @@ s32 Mempak_Read(s32 controllerNum, char letter, void* buffer, s32 offset, s32 si
         PRINTF("mempak: read %d byte '%c' (%d)<-%d\n", size, letter, sMempakFiles[MEMPAK_LETTER_TO_INDEX(letter)],
                error);
     }
-    PadMgr_ReleaseSerialEventQueue(&gPadMgr, serialEventQueue);
+    padmgr_UnlockSerialMesgQ(&padmgr, serialEventQueue);
     return ret;
 }
 
@@ -176,7 +176,7 @@ s32 Mempak_CreateFile(s32 controllerNum, char* letter, s32 size) {
     s32 i;
     s32 pad;
 
-    serialEventQueue = PadMgr_AcquireSerialEventQueue(&gPadMgr);
+    serialEventQueue = padmgr_LockSerialMesgQ(&padmgr);
 
     if (*letter >= MEMPAK_INDEX_TO_LETTER(0) && *letter < MEMPAK_INDEX_TO_LETTER(MEMPAK_MAX_FILES)) {
         // Create file with specific letter
@@ -223,7 +223,7 @@ s32 Mempak_CreateFile(s32 controllerNum, char* letter, s32 size) {
             ret = true;
         }
     }
-    PadMgr_ReleaseSerialEventQueue(&gPadMgr, serialEventQueue);
+    padmgr_UnlockSerialMesgQ(&padmgr, serialEventQueue);
     return ret;
 }
 
@@ -239,7 +239,7 @@ s32 Mempak_DeleteFile(s32 controllerNum, char letter) {
     s32 error;
     s32 ret = false;
 
-    serialEventQueue = PadMgr_AcquireSerialEventQueue(&gPadMgr);
+    serialEventQueue = padmgr_LockSerialMesgQ(&padmgr);
 
     sMempakExtName[0] = NCH(letter);
     error = osPfsDeleteFile(&sMempakPfsHandle, sMempakCompanyCode, sMempakGameCode, sMempakGameName, sMempakExtName);
@@ -248,7 +248,7 @@ s32 Mempak_DeleteFile(s32 controllerNum, char letter) {
     }
     PRINTF("mempak: delete '%c' (%d)\n", letter, error);
 
-    PadMgr_ReleaseSerialEventQueue(&gPadMgr, serialEventQueue);
+    padmgr_UnlockSerialMesgQ(&padmgr, serialEventQueue);
     return ret;
 }
 
@@ -260,12 +260,12 @@ s32 Mempak_DeleteFile(s32 controllerNum, char letter) {
  * @return the size of the file, or 0 if the operation failed for any reason
  */
 s32 Mempak_GetFileSize(s32 controllerNum, char letter) {
-    OSMesgQueue* serialEventQueue = PadMgr_AcquireSerialEventQueue(&gPadMgr);
+    OSMesgQueue* serialEventQueue = padmgr_LockSerialMesgQ(&padmgr);
     OSPfsState state;
     s32 error = osPfsFileState(&sMempakPfsHandle, sMempakFiles[MEMPAK_LETTER_TO_INDEX(letter)], &state);
     s32 pad;
 
-    PadMgr_ReleaseSerialEventQueue(&gPadMgr, serialEventQueue);
+    padmgr_UnlockSerialMesgQ(&padmgr, serialEventQueue);
 
     if (error != 0) {
         return 0;

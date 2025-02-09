@@ -1,13 +1,13 @@
-void func_80AEC320(EnRu1* this, PlayState* play) {
+void En_Ru1_Actor_Ban00_Init(EnRu1* this, PlayState* play) {
     if (!GET_INFTABLE(INFTABLE_141)) {
-        func_80AEB264(this, &gRutoChildWait2Anim, 0, 0, 0);
+        En_Ru1_Change_Anime(this, &gRutoChildWait2Anim, 0, 0, 0);
         this->action = 7;
-        EnRu1_SetMouthIndex(this, 1);
+        En_Ru1_set_mouth_Num(this, 1);
     } else if (GET_INFTABLE(INFTABLE_147) && !GET_INFTABLE(INFTABLE_140) && !GET_INFTABLE(INFTABLE_145)) {
-        if (!func_80AEB020(this, play)) {
+        if (!En_Ru1_Search_Ru1(this, play)) {
             s8 actorRoom;
 
-            func_80AEB264(this, &gRutoChildWait2Anim, 0, 0, 0);
+            En_Ru1_Change_Anime(this, &gRutoChildWait2Anim, 0, 0, 0);
             actorRoom = this->actor.room;
             this->action = 22;
             this->actor.room = -1;
@@ -16,14 +16,14 @@ void func_80AEC320(EnRu1* this, PlayState* play) {
             this->roomNum3 = actorRoom;
             this->roomNum2 = actorRoom;
         } else {
-            Actor_Kill(&this->actor);
+            Actor_delete(&this->actor);
         }
     } else {
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     }
 }
 
-void func_80AEC40C(EnRu1* this) {
+void En_Ru1_Bdan00_Movement_Run_accel(EnRu1* this) {
     f32 unk_26C = this->unk_26C;
 
     if (unk_26C < 8.0f) {
@@ -32,15 +32,15 @@ void func_80AEC40C(EnRu1* this) {
         this->actor.speed = (kREG(3) * 0.01f) + 2.7f;
     }
     this->actor.velocity.y = -1.0f;
-    Actor_MoveXZGravity(&this->actor);
+    Actor_position_moveF(&this->actor);
 }
 
-void func_80AEC4CC(EnRu1* this) {
+void En_Ru1_Bdan00_Movement_Rum_move(EnRu1* this) {
     this->actor.velocity.y = -1.0f;
-    Actor_MoveXZGravity(&this->actor);
+    Actor_position_moveF(&this->actor);
 }
 
-void func_80AEC4F4(EnRu1* this) {
+void En_Ru1_Bdan00_Movement_Fall_move(EnRu1* this) {
     f32* speedXZ = &this->actor.speed;
     f32* unk_26C = &this->unk_26C;
 
@@ -52,10 +52,10 @@ void func_80AEC4F4(EnRu1* this) {
         *speedXZ = 0.0f;
         this->actor.velocity.y = -((kREG(4) * 0.01f) + 13.0f);
     }
-    Actor_MoveXZGravity(&this->actor);
+    Actor_position_moveF(&this->actor);
 }
 
-s32 func_80AEC5FC(EnRu1* this, PlayState* play) {
+s32 En_Ru1_Bdan00_check_distance(EnRu1* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     f32 thisPosZ = this->actor.world.pos.z;
     f32 playerPosZ = player->actor.world.pos.z;
@@ -66,50 +66,50 @@ s32 func_80AEC5FC(EnRu1* this, PlayState* play) {
     return false;
 }
 
-void func_80AEC650(EnRu1* this) {
+void En_Ru1_Bdan00_Set_WalkSound(EnRu1* this) {
     s32 pad[2];
 
     if (this->unk_280 == 0) {
-        if (Animation_OnFrame(&this->skelAnime, 2.0f) || Animation_OnFrame(&this->skelAnime, 7.0f)) {
-            Sfx_PlaySfxAtPos(&this->actor.projectedPos, NA_SE_PL_WALK_GROUND + SURFACE_SFX_OFFSET_JABU);
+        if (Skeleton_Info_frame_check(&this->skelAnime, 2.0f) || Skeleton_Info_frame_check(&this->skelAnime, 7.0f)) {
+            Na_StartObjectSe_F(&this->actor.projectedPos, NA_SE_PL_WALK_GROUND + SURFACE_SFX_OFFSET_JABU);
         }
     }
 }
 
-void func_80AEC6B0(EnRu1* this) {
-    Sfx_PlaySfxAtPos(&this->actor.projectedPos, NA_SE_EV_FALL_DOWN_DIRT);
-    Sfx_PlaySfxAtPos(&this->actor.projectedPos, NA_SE_VO_RT_FALL);
+void En_Ru1_Bdan00_Set_FallSound(EnRu1* this) {
+    Na_StartObjectSe_F(&this->actor.projectedPos, NA_SE_EV_FALL_DOWN_DIRT);
+    Na_StartObjectSe_F(&this->actor.projectedPos, NA_SE_VO_RT_FALL);
 }
 
-void func_80AEC6E4(EnRu1* this, PlayState* play) {
-    if ((func_80AEAFA0(play, 4, 3)) && (this->unk_280 == 0)) {
-        Animation_Change(&this->skelAnime, &gRutoChildBringArmsUpAnim, 1.0f, 0,
-                         Animation_GetLastFrame(&gRutoChildBringArmsUpAnim), ANIMMODE_ONCE, -8.0f);
+void En_Ru1_Bdan00_check_fallAnimation(EnRu1* this, PlayState* play) {
+    if ((En_Ru1_Check_npcdemopnt(play, 4, 3)) && (this->unk_280 == 0)) {
+        Skeleton_Info2_init(&this->skelAnime, &gRutoChildBringArmsUpAnim, 1.0f, 0,
+                         Si2_anime_end_frame(&gRutoChildBringArmsUpAnim), ANIMMODE_ONCE, -8.0f);
         this->unk_280 = 1;
-        func_80AEC6B0(this);
+        En_Ru1_Bdan00_Set_FallSound(this);
     }
 }
 
-void func_80AEC780(EnRu1* this, PlayState* play) {
+void En_Ru1_Bdan00_check_WaitToHide(EnRu1* this, PlayState* play) {
     s32 pad;
     Player* player = GET_PLAYER(play);
 
-    if ((func_80AEC5FC(this, play)) && (!Play_InCsMode(play)) &&
+    if ((En_Ru1_Bdan00_check_distance(this, play)) && (!Game_play_demo_mode_check(play)) &&
         (!(player->stateFlags1 & (PLAYER_STATE1_13 | PLAYER_STATE1_14 | PLAYER_STATE1_21))) &&
         (player->actor.bgCheckFlags & BGCHECKFLAG_GROUND)) {
 
-        play->csCtx.script = gRutoFirstMeetingCs;
-        gSaveContext.cutsceneTrigger = 1;
+        play->csCtx.script = En_Ru1_Data1_In_BdanDemo00;
+        z_common_data.cutsceneTrigger = 1;
         player->speedXZ = 0.0f;
         this->action = 8;
     }
 }
 
-void func_80AEC81C(EnRu1* this, PlayState* play) {
+void En_Ru1_Bdan00_check_HideToRefuse(EnRu1* this, PlayState* play) {
     CsCmdActorCue* cue;
     s16 newRotY;
 
-    if (func_80AEAFE0(play, 1, 3)) {
+    if (En_Ru1_Check2_npcdemopnt(play, 1, 3)) {
         cue = play->csCtx.actorCues[3];
         this->actor.world.pos.x = cue->startPos.x;
         this->actor.world.pos.y = cue->startPos.y;
@@ -122,17 +122,17 @@ void func_80AEC81C(EnRu1* this, PlayState* play) {
     }
 }
 
-void func_80AEC8B8(EnRu1* this, PlayState* play) {
-    if (func_80AEAFA0(play, 3, 3)) {
-        Animation_Change(&this->skelAnime, &gRutoChildTurnAroundAnim, 1.0f, 0,
-                         Animation_GetLastFrame(&gRutoChildTurnAroundAnim), ANIMMODE_ONCE, -8.0f);
+void En_Ru1_Bdan00_check_RefuseToTurn(EnRu1* this, PlayState* play) {
+    if (En_Ru1_Check_npcdemopnt(play, 3, 3)) {
+        Skeleton_Info2_init(&this->skelAnime, &gRutoChildTurnAroundAnim, 1.0f, 0,
+                         Si2_anime_end_frame(&gRutoChildTurnAroundAnim), ANIMMODE_ONCE, -8.0f);
         this->action = 10;
     }
 }
 
-void func_80AEC93C(EnRu1* this, UNK_TYPE arg1) {
+void En_Ru1_Bdan00_check_TurnToRun_accel(EnRu1* this, UNK_TYPE arg1) {
     if (arg1 != 0) {
-        Animation_Change(&this->skelAnime, &gRutoChildWalkAnim, 1.0f, 0, Animation_GetLastFrame(&gRutoChildWalkAnim),
+        Skeleton_Info2_init(&this->skelAnime, &gRutoChildWalkAnim, 1.0f, 0, Si2_anime_end_frame(&gRutoChildWalkAnim),
                          ANIMMODE_LOOP, -8.0f);
         this->actor.world.rot.y += 0x8000;
         this->action = 0xB;
@@ -140,7 +140,7 @@ void func_80AEC93C(EnRu1* this, UNK_TYPE arg1) {
     }
 }
 
-void func_80AEC9C4(EnRu1* this) {
+void En_Ru1_Bdan00_check_Run_accelToRun_move(EnRu1* this) {
     this->unk_26C += 1.0f;
     if (this->unk_26C >= 8.0f) {
         this->action = 12;
@@ -149,7 +149,7 @@ void func_80AEC9C4(EnRu1* this) {
     }
 }
 
-void func_80AECA18(EnRu1* this) {
+void En_Ru1_Bdan00_check_Run_moveToStep(EnRu1* this) {
     if (!(this->actor.bgCheckFlags & BGCHECKFLAG_GROUND)) {
         s32 pad;
 
@@ -159,68 +159,68 @@ void func_80AECA18(EnRu1* this) {
     }
 }
 
-void func_80AECA44(EnRu1* this, PlayState* play) {
-    if (func_80AEAFA0(play, 5, 3)) {
+void En_Ru1_Bdan00_check_StepToDisappear(EnRu1* this, PlayState* play) {
+    if (En_Ru1_Check_npcdemopnt(play, 5, 3)) {
         SET_INFTABLE(INFTABLE_141);
         this->action = 14;
     }
 }
 
-void func_80AECA94(EnRu1* this, PlayState* play) {
-    func_80AEC780(this, play);
+void En_Ru1_Bdan00_Actor_main_wait(EnRu1* this, PlayState* play) {
+    En_Ru1_Bdan00_check_WaitToHide(this, play);
 }
 
-void func_80AECAB4(EnRu1* this, PlayState* play) {
-    func_80AEC81C(this, play);
+void En_Ru1_Bdan00_Actor_main_hide(EnRu1* this, PlayState* play) {
+    En_Ru1_Bdan00_check_HideToRefuse(this, play);
 }
 
-void func_80AECAD4(EnRu1* this, PlayState* play) {
-    EnRu1_UpdateSkelAnime(this);
-    EnRu1_UpdateEyes(this);
-    func_80AEAECC(this, play);
-    func_80AEC8B8(this, play);
+void En_Ru1_Bdan00_Actor_main_refuse(EnRu1* this, PlayState* play) {
+    En_Ru1_Animation_Base(this);
+    En_Ru1_set_eye_pattern(this);
+    En_Ru1_BGcheck(this, play);
+    En_Ru1_Bdan00_check_RefuseToTurn(this, play);
 }
 
-void func_80AECB18(EnRu1* this, PlayState* play) {
+void En_Ru1_Bdan00_Actor_main_turn(EnRu1* this, PlayState* play) {
     s32 something;
 
-    something = EnRu1_UpdateSkelAnime(this);
-    EnRu1_UpdateEyes(this);
-    func_80AEAECC(this, play);
-    func_80AEC93C(this, something);
+    something = En_Ru1_Animation_Base(this);
+    En_Ru1_set_eye_pattern(this);
+    En_Ru1_BGcheck(this, play);
+    En_Ru1_Bdan00_check_TurnToRun_accel(this, something);
 }
 
-void func_80AECB60(EnRu1* this, PlayState* play) {
-    func_80AEC40C(this);
-    EnRu1_UpdateSkelAnime(this);
-    EnRu1_UpdateEyes(this);
-    func_80AEAECC(this, play);
-    func_80AEC650(this);
-    func_80AEC9C4(this);
+void En_Ru1_Bdan00_Actor_main_run_accel(EnRu1* this, PlayState* play) {
+    En_Ru1_Bdan00_Movement_Run_accel(this);
+    En_Ru1_Animation_Base(this);
+    En_Ru1_set_eye_pattern(this);
+    En_Ru1_BGcheck(this, play);
+    En_Ru1_Bdan00_Set_WalkSound(this);
+    En_Ru1_Bdan00_check_Run_accelToRun_move(this);
 }
 
-void func_80AECBB8(EnRu1* this, PlayState* play) {
-    func_80AEC4CC(this);
-    func_80AEC6E4(this, play);
-    EnRu1_UpdateSkelAnime(this);
-    EnRu1_UpdateEyes(this);
-    func_80AEAECC(this, play);
-    func_80AEC650(this);
-    func_80AECA18(this);
+void En_Ru1_Bdan00_Actor_main_run_move(EnRu1* this, PlayState* play) {
+    En_Ru1_Bdan00_Movement_Rum_move(this);
+    En_Ru1_Bdan00_check_fallAnimation(this, play);
+    En_Ru1_Animation_Base(this);
+    En_Ru1_set_eye_pattern(this);
+    En_Ru1_BGcheck(this, play);
+    En_Ru1_Bdan00_Set_WalkSound(this);
+    En_Ru1_Bdan00_check_Run_moveToStep(this);
 }
 
-void func_80AECC1C(EnRu1* this, PlayState* play) {
-    func_80AEC4F4(this);
-    func_80AEC6E4(this, play);
-    EnRu1_UpdateSkelAnime(this);
-    EnRu1_UpdateEyes(this);
-    func_80AEAECC(this, play);
-    func_80AEC650(this);
-    func_80AECA44(this, play);
+void En_Ru1_Bdan00_Actor_main_step(EnRu1* this, PlayState* play) {
+    En_Ru1_Bdan00_Movement_Fall_move(this);
+    En_Ru1_Bdan00_check_fallAnimation(this, play);
+    En_Ru1_Animation_Base(this);
+    En_Ru1_set_eye_pattern(this);
+    En_Ru1_BGcheck(this, play);
+    En_Ru1_Bdan00_Set_WalkSound(this);
+    En_Ru1_Bdan00_check_StepToDisappear(this, play);
 }
 
-void func_80AECC84(EnRu1* this, PlayState* play) {
+void En_Ru1_Bdan00_Actor_main_disappear(EnRu1* this, PlayState* play) {
     if (play->csCtx.state == CS_STATE_IDLE) {
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     }
 }

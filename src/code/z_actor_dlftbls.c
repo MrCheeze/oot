@@ -67,7 +67,7 @@
 
 #define DEFINE_ACTOR_UNSET(_0) { 0 },
 
-ActorOverlay gActorOverlayTable[] = {
+ActorOverlay actor_dlftbls[] = {
 #include "tables/actor_table.h"
 };
 
@@ -75,19 +75,19 @@ ActorOverlay gActorOverlayTable[] = {
 #undef DEFINE_ACTOR_INTERNAL
 #undef DEFINE_ACTOR_UNSET
 
-s32 gMaxActorId = 0;
+s32 actor_dlftbls_num = 0;
 
-static FaultClient sFaultClient;
+static FaultClient fault_client;
 
-void ActorOverlayTable_LogPrint(void) {
+void actor_dlftbls_show_info(void) {
 #if DEBUG_FEATURES
     ActorOverlay* overlayEntry;
     u32 i;
 
-    PRINTF("actor_dlftbls %u\n", gMaxActorId);
+    PRINTF("actor_dlftbls %u\n", actor_dlftbls_num);
     PRINTF("RomStart RomEnd   SegStart SegEnd   allocp   profile  segname\n");
 
-    for (i = 0, overlayEntry = &gActorOverlayTable[0]; i < (u32)gMaxActorId; i++, overlayEntry++) {
+    for (i = 0, overlayEntry = &actor_dlftbls[0]; i < (u32)actor_dlftbls_num; i++, overlayEntry++) {
         PRINTF("%08x %08x %08x %08x %08x %08x %s\n", overlayEntry->file.vromStart, overlayEntry->file.vromEnd,
                overlayEntry->vramStart, overlayEntry->vramEnd, overlayEntry->loadedRamAddr, &overlayEntry->profile->id,
                overlayEntry->name != NULL ? overlayEntry->name : "?");
@@ -95,7 +95,7 @@ void ActorOverlayTable_LogPrint(void) {
 #endif
 }
 
-void ActorOverlayTable_FaultPrint(void* arg0, void* arg1) {
+void actor_dlftbls_fault_callback(void* arg0, void* arg1) {
     ActorOverlay* overlayEntry;
     u32 overlaySize;
     uintptr_t ramStart;
@@ -112,16 +112,16 @@ void ActorOverlayTable_FaultPrint(void* arg0, void* arg1) {
 #if PLATFORM_N64
     func_800AE1F8();
 
-    Fault_Printf("actor_dlftbls %u\n", gMaxActorId);
-    Fault_Printf("No.  RamStart-RamEnd   Offset\n");
+    faultprint_Printf("actor_dlftbls %u\n", actor_dlftbls_num);
+    faultprint_Printf("No.  RamStart-RamEnd   Offset\n");
 #else
-    Fault_SetCharPad(-2, 0);
+    faultprint_SetMargin(-2, 0);
 
-    Fault_Printf("actor_dlftbls %u\n", gMaxActorId);
-    Fault_Printf("No. RamStart- RamEnd cn  Name\n");
+    faultprint_Printf("actor_dlftbls %u\n", actor_dlftbls_num);
+    faultprint_Printf("No. RamStart- RamEnd cn  Name\n");
 #endif
 
-    for (i = 0, overlayEntry = &gActorOverlayTable[0]; i < gMaxActorId; i++, overlayEntry++) {
+    for (i = 0, overlayEntry = &actor_dlftbls[0]; i < actor_dlftbls_num; i++, overlayEntry++) {
         overlaySize = (uintptr_t)overlayEntry->vramEnd - (uintptr_t)overlayEntry->vramStart;
         ramStart = (uintptr_t)overlayEntry->loadedRamAddr;
         ramEnd = ramStart + overlaySize;
@@ -130,27 +130,27 @@ void ActorOverlayTable_FaultPrint(void* arg0, void* arg1) {
 #endif
         if (ramStart != 0) {
 #if PLATFORM_N64
-            Fault_Printf("%3d %08x-%08x %08x", i, ramStart, ramEnd, offset);
+            faultprint_Printf("%3d %08x-%08x %08x", i, ramStart, ramEnd, offset);
             if (ramStart <= pc && pc < ramEnd) {
-                Fault_Printf(" PC:%08x", pc + offset);
+                faultprint_Printf(" PC:%08x", pc + offset);
             } else if (ramStart <= ra && ra < ramEnd) {
-                Fault_Printf(" RA:%08x", ra + offset);
+                faultprint_Printf(" RA:%08x", ra + offset);
             }
-            Fault_Printf("\n");
+            faultprint_Printf("\n");
 #else
-            Fault_Printf("%3d %08x-%08x %3d %s\n", i, ramStart, ramEnd, overlayEntry->numLoaded,
+            faultprint_Printf("%3d %08x-%08x %3d %s\n", i, ramStart, ramEnd, overlayEntry->numLoaded,
                          (DEBUG_FEATURES && overlayEntry->name != NULL) ? overlayEntry->name : "");
 #endif
         }
     }
 }
 
-void ActorOverlayTable_Init(void) {
-    gMaxActorId = ACTOR_ID_MAX;
-    Fault_AddClient(&sFaultClient, ActorOverlayTable_FaultPrint, NULL, NULL);
+void actor_dlftbls_init(void) {
+    actor_dlftbls_num = ACTOR_ID_MAX;
+    fault_AddClient(&fault_client, actor_dlftbls_fault_callback, NULL, NULL);
 }
 
-void ActorOverlayTable_Cleanup(void) {
-    Fault_RemoveClient(&sFaultClient);
-    gMaxActorId = 0;
+void actor_dlftbls_cleanup(void) {
+    fault_RemoveClient(&fault_client);
+    actor_dlftbls_num = 0;
 }

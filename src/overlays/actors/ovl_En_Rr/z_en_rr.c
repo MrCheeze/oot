@@ -49,23 +49,23 @@ typedef enum EnRrDropType {
     /* 5 */ RR_DROP_RUPEE_RED
 } EnRrDropType;
 
-void EnRr_Init(Actor* thisx, PlayState* play2);
-void EnRr_Destroy(Actor* thisx, PlayState* play);
-void EnRr_Update(Actor* thisx, PlayState* play);
-void EnRr_Draw(Actor* thisx, PlayState* play);
+void En_Rr_Actor_ct(Actor* thisx, PlayState* play2);
+void En_Rr_Actor_dt(Actor* thisx, PlayState* play);
+void En_Rr_Actor_move(Actor* thisx, PlayState* play);
+void En_Rr_Actor_draw(Actor* thisx, PlayState* play);
 
-void EnRr_InitBodySegments(EnRr* this, PlayState* play);
+void Rr_Uneune_init(EnRr* this, PlayState* play);
 
-void EnRr_SetupDamage(EnRr* this);
-void EnRr_SetupDeath(EnRr* this);
+void Rr_Damage_Set(EnRr* this);
+void Rr_Death_Set(EnRr* this);
 
-void EnRr_Approach(EnRr* this, PlayState* play);
-void EnRr_Reach(EnRr* this, PlayState* play);
-void EnRr_GrabPlayer(EnRr* this, PlayState* play);
-void EnRr_Damage(EnRr* this, PlayState* play);
-void EnRr_Death(EnRr* this, PlayState* play);
-void EnRr_Retreat(EnRr* this, PlayState* play);
-void EnRr_Stunned(EnRr* this, PlayState* play);
+void Rr_Normal(EnRr* this, PlayState* play);
+void Rr_Search(EnRr* this, PlayState* play);
+void Rr_Catch(EnRr* this, PlayState* play);
+void Rr_Damage(EnRr* this, PlayState* play);
+void Rr_Death(EnRr* this, PlayState* play);
+void Rr_Escape(EnRr* this, PlayState* play);
+void Rr_Stop(EnRr* this, PlayState* play);
 
 ActorProfile En_Rr_Profile = {
     /**/ ACTOR_EN_RR,
@@ -73,10 +73,10 @@ ActorProfile En_Rr_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_RR,
     /**/ sizeof(EnRr),
-    /**/ EnRr_Init,
-    /**/ EnRr_Destroy,
-    /**/ EnRr_Update,
-    /**/ EnRr_Draw,
+    /**/ En_Rr_Actor_ct,
+    /**/ En_Rr_Actor_dt,
+    /**/ En_Rr_Actor_move,
+    /**/ En_Rr_Actor_draw,
 };
 
 #if DEBUG_FEATURES
@@ -86,7 +86,7 @@ static char* sDropNames[] = {
 };
 #endif
 
-static ColliderCylinderInitType1 sCylinderInit1 = {
+static ColliderCylinderInitType1 EnRrOcInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -105,7 +105,7 @@ static ColliderCylinderInitType1 sCylinderInit1 = {
     { 30, 55, 0, { 0, 0, 0 } },
 };
 
-static ColliderCylinderInitType1 sCylinderInit2 = {
+static ColliderCylinderInitType1 EnRrMouthOcInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -124,7 +124,7 @@ static ColliderCylinderInitType1 sCylinderInit2 = {
     { 20, 20, -10, { 0, 0, 0 } },
 };
 
-static DamageTable sDamageTable = {
+static DamageTable btl_data = {
     /* Deku nut      */ DMG_ENTRY(0, RR_DMG_NONE),
     /* Deku stick    */ DMG_ENTRY(2, RR_DMG_NORMAL),
     /* Slingshot     */ DMG_ENTRY(1, RR_DMG_NORMAL),
@@ -159,25 +159,25 @@ static DamageTable sDamageTable = {
     /* Unknown 2     */ DMG_ENTRY(0, RR_DMG_NONE),
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_S8(naviEnemyId, NAVI_ENEMY_LIKE_LIKE, ICHAIN_CONTINUE),
     ICHAIN_U8(attentionRangeType, ATTENTION_RANGE_2, ICHAIN_CONTINUE),
     ICHAIN_F32(lockOnArrowOffset, 30, ICHAIN_STOP),
 };
 
-void EnRr_Init(Actor* thisx, PlayState* play2) {
+void En_Rr_Actor_ct(Actor* thisx, PlayState* play2) {
     PlayState* play = play2;
     EnRr* this = (EnRr*)thisx;
     s32 i;
 
-    Actor_ProcessInitChain(&this->actor, sInitChain);
-    this->actor.colChkInfo.damageTable = &sDamageTable;
+    ValueSet_process(&this->actor, value_init);
+    this->actor.colChkInfo.damageTable = &btl_data;
     this->actor.colChkInfo.health = 4;
-    Collider_InitCylinder(play, &this->collider1);
-    Collider_SetCylinderType1(play, &this->collider1, &this->actor, &sCylinderInit1);
-    Collider_InitCylinder(play, &this->collider2);
-    Collider_SetCylinderType1(play, &this->collider2, &this->actor, &sCylinderInit2);
-    Actor_SetFocus(&this->actor, 30.0f);
+    ClObjPipe_ct(play, &this->collider1);
+    ClObjPipe_set3(play, &this->collider1, &this->actor, &EnRrOcInfoData);
+    ClObjPipe_ct(play, &this->collider2);
+    ClObjPipe_set3(play, &this->collider2, &this->actor, &EnRrMouthOcInfoData);
+    Actor_world_to_eye(&this->actor, 30.0f);
     this->actor.scale.y = 0.013f;
     this->actor.scale.x = this->actor.scale.z = 0.014f;
     this->actor.colChkInfo.mass = MASS_IMMOVABLE;
@@ -194,29 +194,29 @@ void EnRr_Init(Actor* thisx, PlayState* play2) {
     this->stopScroll = false;
     this->ocTimer = 0;
     this->reachState = this->isDead = false;
-    this->actionFunc = EnRr_Approach;
+    this->actionFunc = Rr_Normal;
     for (i = 0; i < 5; i++) {
         this->bodySegs[i].height = this->bodySegs[i].heightTarget = this->bodySegs[i].scaleMod.x =
             this->bodySegs[i].scaleMod.y = this->bodySegs[i].scaleMod.z = 0.0f;
     }
-    EnRr_InitBodySegments(this, play);
+    Rr_Uneune_init(this, play);
 }
 
-void EnRr_Destroy(Actor* thisx, PlayState* play) {
+void En_Rr_Actor_dt(Actor* thisx, PlayState* play) {
     s32 pad;
     EnRr* this = (EnRr*)thisx;
 
-    Collider_DestroyCylinder(play, &this->collider1);
-    Collider_DestroyCylinder(play, &this->collider2);
+    ClObjPipe_dt(play, &this->collider1);
+    ClObjPipe_dt(play, &this->collider2);
 }
 
-void EnRr_Move(EnRr* this, f32 speedXZ) {
+void Rr_Speed_Set(EnRr* this, f32 speedXZ) {
     this->actor.speed = speedXZ;
-    Actor_PlaySfx(&this->actor, NA_SE_EN_LIKE_WALK);
+    Actor_SE_set(&this->actor, NA_SE_EN_LIKE_WALK);
 }
 
-void EnRr_SetupReach(EnRr* this) {
-    static f32 segmentHeights[] = { 0.0f, 500.0f, 750.0f, 1000.0f, 1000.0f };
+void Rr_Search_Set(EnRr* this) {
+    static f32 trans_y[] = { 0.0f, 500.0f, 750.0f, 1000.0f, 1000.0f };
     s32 i;
 
     this->reachState = 1;
@@ -224,16 +224,16 @@ void EnRr_SetupReach(EnRr* this) {
     this->segPhaseVelTarget = 2500.0f;
     this->segMoveRate = 0.0f;
     for (i = 0; i < 5; i++) {
-        this->bodySegs[i].heightTarget = segmentHeights[i];
+        this->bodySegs[i].heightTarget = trans_y[i];
         this->bodySegs[i].scaleTarget.x = this->bodySegs[i].scaleTarget.z = 0.8f;
         this->bodySegs[i].rotTarget.x = 6000.0f;
         this->bodySegs[i].rotTarget.z = 0.0f;
     }
-    this->actionFunc = EnRr_Reach;
-    Actor_PlaySfx(&this->actor, NA_SE_EN_LIKE_UNARI);
+    this->actionFunc = Rr_Search;
+    Actor_SE_set(&this->actor, NA_SE_EN_LIKE_UNARI);
 }
 
-void EnRr_SetupNeutral(EnRr* this) {
+void Rr_Search_Cancel(EnRr* this) {
     s32 i;
 
     this->reachState = 0;
@@ -246,14 +246,14 @@ void EnRr_SetupNeutral(EnRr* this) {
     }
     if (this->retreat) {
         this->actionTimer = 100;
-        this->actionFunc = EnRr_Retreat;
+        this->actionFunc = Rr_Escape;
     } else {
         this->actionTimer = 60;
-        this->actionFunc = EnRr_Approach;
+        this->actionFunc = Rr_Normal;
     }
 }
 
-void EnRr_SetupGrabPlayer(EnRr* this, Player* player) {
+void Rr_Catch_Set(EnRr* this, Player* player) {
     s32 i;
 
     this->grabTimer = 100;
@@ -270,11 +270,11 @@ void EnRr_SetupGrabPlayer(EnRr* this, Player* player) {
         this->bodySegs[i].rotTarget.x = this->bodySegs[i].rotTarget.z = 0.0f;
         this->bodySegs[i].scaleTarget.x = this->bodySegs[i].scaleTarget.z = 1.0f;
     }
-    this->actionFunc = EnRr_GrabPlayer;
-    Actor_PlaySfx(&this->actor, NA_SE_EN_LIKE_DRINK);
+    this->actionFunc = Rr_Catch;
+    Actor_SE_set(&this->actor, NA_SE_EN_LIKE_DRINK);
 }
 
-u8 EnRr_GetMessage(u8 shield, u8 tunic) {
+u8 Rr_Catch_EQUIPMENT(u8 shield, u8 tunic) {
     u8 messageIndex = 0;
 
     if ((shield == 1 /* Deku shield */) || (shield == 2 /* Hylian shield */)) {
@@ -287,7 +287,7 @@ u8 EnRr_GetMessage(u8 shield, u8 tunic) {
     return messageIndex;
 }
 
-void EnRr_SetupReleasePlayer(EnRr* this, PlayState* play) {
+void Rr_Catch_Cancel(EnRr* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     u8 shield;
     u8 tunic;
@@ -301,44 +301,44 @@ void EnRr_SetupReleasePlayer(EnRr* this, PlayState* play) {
     tunic = 0;
     shield = 0;
     if (CUR_EQUIP_VALUE(EQUIP_TYPE_SHIELD) != EQUIP_VALUE_SHIELD_MIRROR) {
-        shield = Inventory_DeleteEquipment(play, EQUIP_TYPE_SHIELD);
+        shield = ClearEquip_Item(play, EQUIP_TYPE_SHIELD);
         if (shield != 0) {
             this->eatenShield = shield;
             this->retreat = true;
         }
     }
     if (CUR_EQUIP_VALUE(EQUIP_TYPE_TUNIC) != EQUIP_VALUE_TUNIC_KOKIRI) {
-        tunic = Inventory_DeleteEquipment(play, EQUIP_TYPE_TUNIC);
+        tunic = ClearEquip_Item(play, EQUIP_TYPE_TUNIC);
         if (tunic != 0) {
             this->eatenTunic = tunic;
             this->retreat = true;
         }
     }
     player->actor.parent = NULL;
-    switch (EnRr_GetMessage(shield, tunic)) {
+    switch (Rr_Catch_EQUIPMENT(shield, tunic)) {
         case RR_MESSAGE_SHIELD:
-            Message_StartTextbox(play, 0x305F, NULL);
+            message_set(play, 0x305F, NULL);
             break;
         case RR_MESSAGE_TUNIC:
-            Message_StartTextbox(play, 0x3060, NULL);
+            message_set(play, 0x3060, NULL);
             break;
         case RR_MESSAGE_TUNIC | RR_MESSAGE_SHIELD:
-            Message_StartTextbox(play, 0x3061, NULL);
+            message_set(play, 0x3061, NULL);
             break;
     }
     PRINTF(VT_FGCOL(YELLOW) "%s[%d] : Rr_Catch_Cancel" VT_RST "\n", "../z_en_rr.c", 650);
-    Actor_SetPlayerKnockbackLarge(play, &this->actor, 4.0f, this->actor.shape.rot.y, 12.0f, 8);
+    Actor_player_power_damage_AT_set(play, &this->actor, 4.0f, this->actor.shape.rot.y, 12.0f, 8);
     if (this->actor.colorFilterTimer == 0) {
-        this->actionFunc = EnRr_Approach;
-        Actor_PlaySfx(&this->actor, NA_SE_EN_LIKE_THROW);
+        this->actionFunc = Rr_Normal;
+        Actor_SE_set(&this->actor, NA_SE_EN_LIKE_THROW);
     } else if (this->actor.colChkInfo.health != 0) {
-        EnRr_SetupDamage(this);
+        Rr_Damage_Set(this);
     } else {
-        EnRr_SetupDeath(this);
+        Rr_Death_Set(this);
     }
 }
 
-void EnRr_SetupDamage(EnRr* this) {
+void Rr_Damage_Set(EnRr* this) {
     s32 i;
 
     this->reachState = 0;
@@ -352,11 +352,11 @@ void EnRr_SetupDamage(EnRr* this) {
         this->bodySegs[i].rotTarget.x = this->bodySegs[i].rotTarget.z = 0.0f;
         this->bodySegs[i].scaleTarget.x = this->bodySegs[i].scaleTarget.z = 1.0f;
     }
-    this->actionFunc = EnRr_Damage;
-    Actor_PlaySfx(&this->actor, NA_SE_EN_LIKE_DAMAGE);
+    this->actionFunc = Rr_Damage;
+    Actor_SE_set(&this->actor, NA_SE_EN_LIKE_DAMAGE);
 }
 
-void EnRr_SetupApproach(EnRr* this) {
+void Rr_Damage_Cancel(EnRr* this) {
     s32 i;
 
     this->segMoveRate = 0.0f;
@@ -368,10 +368,10 @@ void EnRr_SetupApproach(EnRr* this) {
         this->bodySegs[i].rotTarget.x = this->bodySegs[i].rotTarget.z = 0.0f;
         this->bodySegs[i].scaleTarget.x = this->bodySegs[i].scaleTarget.z = 1.0f;
     }
-    this->actionFunc = EnRr_Approach;
+    this->actionFunc = Rr_Normal;
 }
 
-void EnRr_SetupDeath(EnRr* this) {
+void Rr_Death_Set(EnRr* this) {
     s32 i;
 
     this->isDead = true;
@@ -382,12 +382,12 @@ void EnRr_SetupDeath(EnRr* this) {
         this->bodySegs[i].heightTarget = 0.0f;
         this->bodySegs[i].rotTarget.x = this->bodySegs[i].rotTarget.z = 0.0f;
     }
-    this->actionFunc = EnRr_Death;
-    Actor_PlaySfx(&this->actor, NA_SE_EN_LIKE_DEAD);
+    this->actionFunc = Rr_Death;
+    Actor_SE_set(&this->actor, NA_SE_EN_LIKE_DEAD);
     this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
 }
 
-void EnRr_SetupStunned(EnRr* this) {
+void Rr_Stop_Set(EnRr* this) {
     s32 i;
 
     this->stopScroll = true;
@@ -411,10 +411,10 @@ void EnRr_SetupStunned(EnRr* this) {
         this->bodySegs[i].scale.x = this->bodySegs[i].scale.y = this->bodySegs[i].scale.z =
             this->bodySegs[i].scaleTarget.x = this->bodySegs[i].scaleTarget.y = this->bodySegs[i].scaleTarget.z = 1.0f;
     }
-    this->actionFunc = EnRr_Stunned;
+    this->actionFunc = Rr_Stop;
 }
 
-void EnRr_CollisionCheck(EnRr* this, PlayState* play) {
+void Rr_CrossCheck(EnRr* this, PlayState* play) {
     Vec3f hitPos;
     Player* player = GET_PLAYER(play);
 
@@ -425,7 +425,7 @@ void EnRr_CollisionCheck(EnRr* this, PlayState* play) {
         hitPos.x = this->collider2.elem.acDmgInfo.hitPos.x;
         hitPos.y = this->collider2.elem.acDmgInfo.hitPos.y;
         hitPos.z = this->collider2.elem.acDmgInfo.hitPos.z;
-        CollisionCheck_SpawnShieldParticlesMetal2(play, &hitPos);
+        CollisionCheckSetSparkFlash(play, &hitPos);
     } else {
         if (this->collider1.base.acFlags & AC_HIT) {
             u8 dropType = RR_DROP_RANDOM_RUPEE;
@@ -435,7 +435,7 @@ void EnRr_CollisionCheck(EnRr* this, PlayState* play) {
                 hitPos.x = this->collider1.elem.acDmgInfo.hitPos.x;
                 hitPos.y = this->collider1.elem.acDmgInfo.hitPos.y;
                 hitPos.z = this->collider1.elem.acDmgInfo.hitPos.z;
-                CollisionCheck_BlueBlood(play, NULL, &hitPos);
+                CollisionCheck_setBlueBlood(play, NULL, &hitPos);
             }
             switch (this->actor.colChkInfo.damageEffect) {
                 case RR_DMG_LIGHT_ARROW:
@@ -456,57 +456,57 @@ void EnRr_CollisionCheck(EnRr* this, PlayState* play) {
                            this->actor.colChkInfo.health, this->actor.colChkInfo.damage,
                            this->actor.colChkInfo.damageEffect);
                     this->stopScroll = false;
-                    Actor_ApplyDamage(&this->actor);
+                    hp_down(&this->actor);
                     this->invincibilityTimer = 40;
-                    Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_XLU,
+                    Set_Fog(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_XLU,
                                          this->invincibilityTimer);
                     if (this->hasPlayer) {
-                        EnRr_SetupReleasePlayer(this, play);
+                        Rr_Catch_Cancel(this, play);
                     } else if (this->actor.colChkInfo.health != 0) {
-                        EnRr_SetupDamage(this);
+                        Rr_Damage_Set(this);
                     } else {
                         this->dropType = dropType;
-                        EnRr_SetupDeath(this);
+                        Rr_Death_Set(this);
                     }
                     return;
                 case RR_DMG_FIRE: // Fire Arrow and Din's Fire
-                    Actor_ApplyDamage(&this->actor);
+                    hp_down(&this->actor);
                     if (this->actor.colChkInfo.health == 0) {
                         this->dropType = RR_DROP_RANDOM_RUPEE;
                     }
-                    Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_XLU, 80);
+                    Set_Fog(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_XLU, 80);
                     this->effectTimer = 20;
-                    EnRr_SetupStunned(this);
+                    Rr_Stop_Set(this);
                     return;
                 case RR_DMG_ICE: // Ice Arrow and unused ice magic
-                    Actor_ApplyDamage(&this->actor);
+                    hp_down(&this->actor);
                     if (this->actor.colChkInfo.health == 0) {
                         this->dropType = RR_DROP_RANDOM_RUPEE;
                     }
 #if OOT_VERSION < NTSC_1_1
                     this->effectTimer = 20;
-                    Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_BLUE, 255, COLORFILTER_BUFFLAG_XLU, 80);
+                    Set_Fog(&this->actor, COLORFILTER_COLORFLAG_BLUE, 255, COLORFILTER_BUFFLAG_XLU, 80);
 #else
                     if (this->actor.colorFilterTimer == 0) {
                         this->effectTimer = 20;
-                        Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_BLUE, 255, COLORFILTER_BUFFLAG_XLU,
+                        Set_Fog(&this->actor, COLORFILTER_COLORFLAG_BLUE, 255, COLORFILTER_BUFFLAG_XLU,
                                              80);
                     }
 #endif
-                    EnRr_SetupStunned(this);
+                    Rr_Stop_Set(this);
                     return;
                 case RR_DMG_LIGHT_MAGIC: // Unused light magic
-                    Actor_ApplyDamage(&this->actor);
+                    hp_down(&this->actor);
                     if (this->actor.colChkInfo.health == 0) {
                         this->dropType = RR_DROP_RUPEE_RED;
                     }
-                    Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_GRAY, 255, COLORFILTER_BUFFLAG_XLU, 80);
-                    EnRr_SetupStunned(this);
+                    Set_Fog(&this->actor, COLORFILTER_COLORFLAG_GRAY, 255, COLORFILTER_BUFFLAG_XLU, 80);
+                    Rr_Stop_Set(this);
                     return;
                 case RR_DMG_STUN: // Boomerang and Hookshot
-                    Actor_PlaySfx(&this->actor, NA_SE_EN_GOMA_JR_FREEZE);
-                    Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_BLUE, 255, COLORFILTER_BUFFLAG_XLU, 80);
-                    EnRr_SetupStunned(this);
+                    Actor_SE_set(&this->actor, NA_SE_EN_GOMA_JR_FREEZE);
+                    Set_Fog(&this->actor, COLORFILTER_COLORFLAG_BLUE, 255, COLORFILTER_BUFFLAG_XLU, 80);
+                    Rr_Stop_Set(this);
                     return;
             }
         }
@@ -520,13 +520,13 @@ void EnRr_CollisionCheck(EnRr* this, PlayState* play) {
             if (play->grabPlayer(play, player)) {
                 player->actor.parent = &this->actor;
                 this->stopScroll = false;
-                EnRr_SetupGrabPlayer(this, player);
+                Rr_Catch_Set(this, player);
             }
         }
     }
 }
 
-void EnRr_InitBodySegments(EnRr* this, PlayState* play) {
+void Rr_Uneune_init(EnRr* this, PlayState* play) {
     s32 i;
 
     this->segMovePhase = 0;
@@ -551,30 +551,30 @@ void EnRr_InitBodySegments(EnRr* this, PlayState* play) {
     }
     for (i = 0; i < 5; i++) {
         this->bodySegs[i].scaleMod.x = this->bodySegs[i].scaleMod.z =
-            Math_CosS(i * (u32)(s16)this->segPulsePhaseDiff * 0x1000) * this->pulseSize;
+            cos_s(i * (u32)(s16)this->segPulsePhaseDiff * 0x1000) * this->pulseSize;
     }
     for (i = 1; i < 5; i++) {
-        this->bodySegs[i].rotTarget.x = Math_CosS(i * (u32)(s16)this->segWobblePhaseDiffX * 0x1000) * this->wobbleSize;
-        this->bodySegs[i].rotTarget.z = Math_SinS(i * (u32)(s16)this->segWobblePhaseDiffZ * 0x1000) * this->wobbleSize;
+        this->bodySegs[i].rotTarget.x = cos_s(i * (u32)(s16)this->segWobblePhaseDiffX * 0x1000) * this->wobbleSize;
+        this->bodySegs[i].rotTarget.z = sin_s(i * (u32)(s16)this->segWobblePhaseDiffZ * 0x1000) * this->wobbleSize;
     }
 }
 
-void EnRr_UpdateBodySegments(EnRr* this, PlayState* play) {
+void Rr_Uneune(EnRr* this, PlayState* play) {
     s32 i;
     s16 phase = this->segMovePhase;
 
     if (!this->isDead) {
         for (i = 0; i < 5; i++) {
             this->bodySegs[i].scaleMod.x = this->bodySegs[i].scaleMod.z =
-                Math_CosS(phase + i * (s16)this->segPulsePhaseDiff * 0x1000) * this->pulseSize;
+                cos_s(phase + i * (s16)this->segPulsePhaseDiff * 0x1000) * this->pulseSize;
         }
         phase = this->segMovePhase;
         if (!this->isDead && (this->reachState == 0)) {
             for (i = 1; i < 5; i++) {
                 this->bodySegs[i].rotTarget.x =
-                    Math_CosS(phase + i * (s16)this->segWobblePhaseDiffX * 0x1000) * this->wobbleSize;
+                    cos_s(phase + i * (s16)this->segWobblePhaseDiffX * 0x1000) * this->wobbleSize;
                 this->bodySegs[i].rotTarget.z =
-                    Math_SinS(phase + i * (s16)this->segWobblePhaseDiffZ * 0x1000) * this->wobbleSize;
+                    sin_s(phase + i * (s16)this->segWobblePhaseDiffZ * 0x1000) * this->wobbleSize;
             }
         }
     }
@@ -583,18 +583,18 @@ void EnRr_UpdateBodySegments(EnRr* this, PlayState* play) {
     }
 }
 
-void EnRr_Approach(EnRr* this, PlayState* play) {
-    Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 0xA, 0x1F4, 0);
+void Rr_Normal(EnRr* this, PlayState* play) {
+    add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 0xA, 0x1F4, 0);
     this->actor.world.rot.y = this->actor.shape.rot.y;
     if ((this->actionTimer == 0) && (this->actor.xzDistToPlayer < 160.0f)) {
-        EnRr_SetupReach(this);
+        Rr_Search_Set(this);
     } else if ((this->actor.xzDistToPlayer < 400.0f) && (this->actor.speed == 0.0f)) {
-        EnRr_Move(this, 2.0f);
+        Rr_Speed_Set(this, 2.0f);
     }
 }
 
-void EnRr_Reach(EnRr* this, PlayState* play) {
-    Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 0xA, 0x1F4, 0);
+void Rr_Search(EnRr* this, PlayState* play) {
+    add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 0xA, 0x1F4, 0);
     this->actor.world.rot.y = this->actor.shape.rot.y;
     switch (this->reachState) {
         case REACH_EXTEND:
@@ -625,35 +625,35 @@ void EnRr_Reach(EnRr* this, PlayState* play) {
             break;
         case REACH_CLOSE:
             if (this->actionTimer == 0) {
-                EnRr_SetupNeutral(this);
+                Rr_Search_Cancel(this);
             }
             break;
     }
 }
 
-void EnRr_GrabPlayer(EnRr* this, PlayState* play) {
+void Rr_Catch(EnRr* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    Rumble_Request(this->actor.xyzDistToPlayerSq, 120, 2, 120);
+    z_vibctl2_vib_setQ(this->actor.xyzDistToPlayerSq, 120, 2, 120);
     if ((this->frameCount % 8) == 0) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_LIKE_EAT);
+        Actor_SE_set(&this->actor, NA_SE_EN_LIKE_EAT);
     }
     this->ocTimer = 8;
     if ((this->grabTimer == 0) || !(player->stateFlags2 & PLAYER_STATE2_7)) {
-        EnRr_SetupReleasePlayer(this, play);
+        Rr_Catch_Cancel(this, play);
     } else {
-        Math_ApproachF(&player->actor.world.pos.x, this->mouthPos.x, 1.0f, 30.0f);
-        Math_ApproachF(&player->actor.world.pos.y, this->mouthPos.y + this->swallowOffset, 1.0f, 30.0f);
-        Math_ApproachF(&player->actor.world.pos.z, this->mouthPos.z, 1.0f, 30.0f);
-        Math_ApproachF(&this->swallowOffset, -55.0f, 1.0f, 5.0f);
+        add_calc2(&player->actor.world.pos.x, this->mouthPos.x, 1.0f, 30.0f);
+        add_calc2(&player->actor.world.pos.y, this->mouthPos.y + this->swallowOffset, 1.0f, 30.0f);
+        add_calc2(&player->actor.world.pos.z, this->mouthPos.z, 1.0f, 30.0f);
+        add_calc2(&this->swallowOffset, -55.0f, 1.0f, 5.0f);
     }
 }
 
-void EnRr_Damage(EnRr* this, PlayState* play) {
+void Rr_Damage(EnRr* this, PlayState* play) {
     s32 i;
 
     if (this->actor.colorFilterTimer == 0) {
-        EnRr_SetupApproach(this);
+        Rr_Damage_Cancel(this);
     } else if ((this->actor.colorFilterTimer & 8) != 0) {
         for (i = 1; i < 5; i++) {
             this->bodySegs[i].rotTarget.z = 5000.0f;
@@ -665,13 +665,13 @@ void EnRr_Damage(EnRr* this, PlayState* play) {
     }
 }
 
-void EnRr_Death(EnRr* this, PlayState* play) {
+void Rr_Death(EnRr* this, PlayState* play) {
     s32 pad;
     s32 i;
 
     if (this->frameCount < 40) {
         for (i = 0; i < 5; i++) {
-            Math_ApproachF(&this->bodySegs[i].heightTarget, i + 59 - (this->frameCount * 25.0f), 1.0f, 50.0f);
+            add_calc2(&this->bodySegs[i].heightTarget, i + 59 - (this->frameCount * 25.0f), 1.0f, 50.0f);
             this->bodySegs[i].scaleTarget.x = this->bodySegs[i].scaleTarget.z =
                 (SQ(4 - i) * (f32)this->frameCount * 0.003f) + 1.0f;
         }
@@ -683,44 +683,44 @@ void EnRr_Death(EnRr* this, PlayState* play) {
         dropPos.z = this->actor.world.pos.z;
         switch (this->eatenShield) {
             case 1:
-                Item_DropCollectible(play, &dropPos, ITEM00_SHIELD_DEKU);
+                Item_set0(play, &dropPos, ITEM00_SHIELD_DEKU);
                 break;
             case 2:
-                Item_DropCollectible(play, &dropPos, ITEM00_SHIELD_HYLIAN);
+                Item_set0(play, &dropPos, ITEM00_SHIELD_HYLIAN);
                 break;
         }
         switch (this->eatenTunic) {
             case 2:
-                Item_DropCollectible(play, &dropPos, ITEM00_TUNIC_GORON);
+                Item_set0(play, &dropPos, ITEM00_TUNIC_GORON);
                 break;
             case 3:
-                Item_DropCollectible(play, &dropPos, ITEM00_TUNIC_ZORA);
+                Item_set0(play, &dropPos, ITEM00_TUNIC_ZORA);
                 break;
         }
         // "dropped"
         PRINTF(VT_FGCOL(GREEN) "「%s」が出た！！" VT_RST "\n", sDropNames[this->dropType]);
         switch (this->dropType) {
             case RR_DROP_MAGIC:
-                Item_DropCollectible(play, &dropPos, ITEM00_MAGIC_SMALL);
+                Item_set0(play, &dropPos, ITEM00_MAGIC_SMALL);
                 break;
             case RR_DROP_ARROW:
-                Item_DropCollectible(play, &dropPos, ITEM00_ARROWS_SINGLE);
+                Item_set0(play, &dropPos, ITEM00_ARROWS_SINGLE);
                 break;
             case RR_DROP_FLEXIBLE:
-                Item_DropCollectible(play, &dropPos, ITEM00_FLEXIBLE);
+                Item_set0(play, &dropPos, ITEM00_FLEXIBLE);
                 break;
             case RR_DROP_RUPEE_PURPLE:
-                Item_DropCollectible(play, &dropPos, ITEM00_RUPEE_PURPLE);
+                Item_set0(play, &dropPos, ITEM00_RUPEE_PURPLE);
                 break;
             case RR_DROP_RUPEE_RED:
-                Item_DropCollectible(play, &dropPos, ITEM00_RUPEE_RED);
+                Item_set0(play, &dropPos, ITEM00_RUPEE_RED);
                 break;
             case RR_DROP_RANDOM_RUPEE:
             default:
-                Item_DropCollectibleRandom(play, &this->actor, &dropPos, 12 << 4);
+                Item_Set_Std(play, &this->actor, &dropPos, 12 << 4);
                 break;
         }
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     } else if (this->frameCount == 88) {
         Vec3f pos;
         Vec3f vel;
@@ -736,41 +736,41 @@ void EnRr_Death(EnRr* this, PlayState* play) {
         accel.y = 0.0f;
         accel.z = 0.0f;
 
-        EffectSsDeadDb_Spawn(play, &pos, &vel, &accel, 100, 0, 255, 255, 255, 255, 255, 0, 0, 1, 9, true);
+        _Effect_SS_Db_ct(play, &pos, &vel, &accel, 100, 0, 255, 255, 255, 255, 255, 0, 0, 1, 9, true);
     } else {
-        Math_ApproachF(&this->actor.scale.x, 0.0f, 1.0f, this->shrinkRate);
-        Math_ApproachF(&this->shrinkRate, 0.001f, 1.0f, 0.00001f);
+        add_calc2(&this->actor.scale.x, 0.0f, 1.0f, this->shrinkRate);
+        add_calc2(&this->shrinkRate, 0.001f, 1.0f, 0.00001f);
         this->actor.scale.z = this->actor.scale.x;
     }
 }
 
-void EnRr_Retreat(EnRr* this, PlayState* play) {
+void Rr_Escape(EnRr* this, PlayState* play) {
     if (this->actionTimer == 0) {
         this->retreat = false;
-        this->actionFunc = EnRr_Approach;
+        this->actionFunc = Rr_Normal;
     } else {
-        Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer + 0x8000, 0xA, 0x3E8, 0);
+        add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer + 0x8000, 0xA, 0x3E8, 0);
         this->actor.world.rot.y = this->actor.shape.rot.y;
         if (this->actor.speed == 0.0f) {
-            EnRr_Move(this, 2.0f);
+            Rr_Speed_Set(this, 2.0f);
         }
     }
 }
 
-void EnRr_Stunned(EnRr* this, PlayState* play) {
+void Rr_Stop(EnRr* this, PlayState* play) {
     if (this->actor.colorFilterTimer == 0) {
         this->stopScroll = false;
         if (this->hasPlayer) {
-            EnRr_SetupReleasePlayer(this, play);
+            Rr_Catch_Cancel(this, play);
         } else if (this->actor.colChkInfo.health != 0) {
-            this->actionFunc = EnRr_Approach;
+            this->actionFunc = Rr_Normal;
         } else {
-            EnRr_SetupDeath(this);
+            Rr_Death_Set(this);
         }
     }
 }
 
-void EnRr_Update(Actor* thisx, PlayState* play) {
+void En_Rr_Actor_move(Actor* thisx, PlayState* play) {
     s32 pad;
     EnRr* this = (EnRr*)thisx;
     s32 i;
@@ -795,10 +795,10 @@ void EnRr_Update(Actor* thisx, PlayState* play) {
         this->effectTimer--;
     }
 
-    Actor_SetFocus(&this->actor, 30.0f);
-    EnRr_UpdateBodySegments(this, play);
+    Actor_world_to_eye(&this->actor, 30.0f);
+    Rr_Uneune(this, play);
     if (!this->isDead && ((this->actor.colorFilterTimer == 0) || !(this->actor.colorFilterParams & 0x4000))) {
-        EnRr_CollisionCheck(this, play);
+        Rr_CrossCheck(this, play);
     }
 
     this->actionFunc(this, play);
@@ -806,55 +806,55 @@ void EnRr_Update(Actor* thisx, PlayState* play) {
         ASSERT(0, "0", "../z_en_rr.c", 1355);
     }
 
-    Math_StepToF(&this->actor.speed, 0.0f, 0.1f);
-    Actor_MoveXZGravity(&this->actor);
-    Collider_UpdateCylinder(&this->actor, &this->collider1);
+    chase_f(&this->actor.speed, 0.0f, 0.1f);
+    Actor_position_moveF(&this->actor);
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider1);
     this->collider2.dim.pos.x = this->mouthPos.x;
     this->collider2.dim.pos.y = this->mouthPos.y;
     this->collider2.dim.pos.z = this->mouthPos.z;
     if (!this->isDead && (this->invincibilityTimer == 0)) {
-        CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider1.base);
-        CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider2.base);
+        CollisionCheck_setAC(play, &play->colChkCtx, &this->collider1.base);
+        CollisionCheck_setAC(play, &play->colChkCtx, &this->collider2.base);
         if (this->ocTimer == 0) {
-            CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider1.base);
+            CollisionCheck_setOC(play, &play->colChkCtx, &this->collider1.base);
         }
-        CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider2.base);
+        CollisionCheck_setOC(play, &play->colChkCtx, &this->collider2.base);
     } else {
         this->collider2.base.ocFlags1 &= ~OC1_HIT;
         this->collider2.base.acFlags &= ~AC_HIT;
         this->collider1.base.ocFlags1 &= ~OC1_HIT;
         this->collider1.base.acFlags &= ~AC_HIT;
     }
-    Actor_UpdateBgCheckInfo(play, &this->actor, 20.0f, 30.0f, 20.0f,
+    Actor_BGcheck2(play, &this->actor, 20.0f, 30.0f, 20.0f,
                             UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_1 | UPDBGCHECKINFO_FLAG_2);
     if (!this->stopScroll) {
-        Math_ApproachF(&this->segPhaseVel, this->segPhaseVelTarget, 1.0f, 50.0f);
-        Math_ApproachF(&this->segPulsePhaseDiff, 4.0f, 1.0f, 5.0f);
-        Math_ApproachF(&this->segWobblePhaseDiffX, this->segWobbleXTarget, 1.0f, 0.04f);
-        Math_ApproachF(&this->segWobblePhaseDiffZ, this->segWobbleZTarget, 1.0f, 0.01f);
-        Math_ApproachF(&this->pulseSize, this->pulseSizeTarget, 1.0f, 0.0015f);
-        Math_ApproachF(&this->wobbleSize, this->wobbleSizeTarget, 1.0f, 20.0f);
+        add_calc2(&this->segPhaseVel, this->segPhaseVelTarget, 1.0f, 50.0f);
+        add_calc2(&this->segPulsePhaseDiff, 4.0f, 1.0f, 5.0f);
+        add_calc2(&this->segWobblePhaseDiffX, this->segWobbleXTarget, 1.0f, 0.04f);
+        add_calc2(&this->segWobblePhaseDiffZ, this->segWobbleZTarget, 1.0f, 0.01f);
+        add_calc2(&this->pulseSize, this->pulseSizeTarget, 1.0f, 0.0015f);
+        add_calc2(&this->wobbleSize, this->wobbleSizeTarget, 1.0f, 20.0f);
         for (i = 0; i < 5; i++) {
-            Math_SmoothStepToS(&this->bodySegs[i].rot.x, this->bodySegs[i].rotTarget.x, 5, this->segMoveRate * 1000.0f,
+            add_calc_short_angle2(&this->bodySegs[i].rot.x, this->bodySegs[i].rotTarget.x, 5, this->segMoveRate * 1000.0f,
                                0);
-            Math_SmoothStepToS(&this->bodySegs[i].rot.z, this->bodySegs[i].rotTarget.z, 5, this->segMoveRate * 1000.0f,
+            add_calc_short_angle2(&this->bodySegs[i].rot.z, this->bodySegs[i].rotTarget.z, 5, this->segMoveRate * 1000.0f,
                                0);
-            Math_ApproachF(&this->bodySegs[i].scale.x, this->bodySegs[i].scaleTarget.x, 1.0f, this->segMoveRate * 0.2f);
+            add_calc2(&this->bodySegs[i].scale.x, this->bodySegs[i].scaleTarget.x, 1.0f, this->segMoveRate * 0.2f);
             this->bodySegs[i].scale.z = this->bodySegs[i].scale.x;
-            Math_ApproachF(&this->bodySegs[i].height, this->bodySegs[i].heightTarget, 1.0f, this->segMoveRate * 300.0f);
+            add_calc2(&this->bodySegs[i].height, this->bodySegs[i].heightTarget, 1.0f, this->segMoveRate * 300.0f);
         }
-        Math_ApproachF(&this->segMoveRate, 1.0f, 1.0f, 0.2f);
+        add_calc2(&this->segMoveRate, 1.0f, 1.0f, 0.2f);
     }
 }
 
-static Vec3f sEffectOffsets[] = {
+static Vec3f ice_pos[] = {
     { 25.0f, 0.0f, 0.0f },
     { -25.0f, 0.0f, 0.0f },
     { 0.0f, 0.0f, 25.0f },
     { 0.0f, 0.0f, -25.0f },
 };
 
-void EnRr_Draw(Actor* thisx, PlayState* play) {
+void En_Rr_Actor_draw(Actor* thisx, PlayState* play) {
     s32 pad;
     Vec3f zeroVec;
     EnRr* this = (EnRr*)thisx;
@@ -863,40 +863,40 @@ void EnRr_Draw(Actor* thisx, PlayState* play) {
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_rr.c", 1478);
 
-    Gfx_SetupDL_25Xlu(play->state.gfxCtx);
+    _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
     gSPSegment(POLY_XLU_DISP++, 0x0C, segMtx);
     gSPSegment(POLY_XLU_DISP++, 0x08,
-               Gfx_TwoTexScroll(play->state.gfxCtx, G_TX_RENDERTILE, (this->scrollTimer * 0) & 0x7F,
+               two_tex_scroll(play->state.gfxCtx, G_TX_RENDERTILE, (this->scrollTimer * 0) & 0x7F,
                                 (this->scrollTimer * 0) & 0x3F, 32, 16, 1, (this->scrollTimer * 0) & 0x3F,
                                 (this->scrollTimer * -6) & 0x7F, 32, 16));
-    Matrix_Push();
+    Matrix_push();
 
-    Matrix_Scale((1.0f + this->bodySegs[RR_BASE].scaleMod.x) * this->bodySegs[RR_BASE].scale.x,
+    Matrix_scale((1.0f + this->bodySegs[RR_BASE].scaleMod.x) * this->bodySegs[RR_BASE].scale.x,
                  (1.0f + this->bodySegs[RR_BASE].scaleMod.y) * this->bodySegs[RR_BASE].scale.y,
                  (1.0f + this->bodySegs[RR_BASE].scaleMod.z) * this->bodySegs[RR_BASE].scale.z, MTXMODE_APPLY);
     MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx, "../z_en_rr.c", 1501);
-    Matrix_Pop();
+    Matrix_pull();
 
     zeroVec.x = 0.0f;
     zeroVec.y = 0.0f;
     zeroVec.z = 0.0f;
 
     for (i = 1; i < 5; i++) {
-        Matrix_Translate(0.0f, this->bodySegs[i].height + 1000.0f, 0.0f, MTXMODE_APPLY);
+        Matrix_translate(0.0f, this->bodySegs[i].height + 1000.0f, 0.0f, MTXMODE_APPLY);
 
-        Matrix_RotateZYX(this->bodySegs[i].rot.x, this->bodySegs[i].rot.y, this->bodySegs[i].rot.z, MTXMODE_APPLY);
-        Matrix_Push();
-        Matrix_Scale((1.0f + this->bodySegs[i].scaleMod.x) * this->bodySegs[i].scale.x,
+        Matrix_rotateXYZ(this->bodySegs[i].rot.x, this->bodySegs[i].rot.y, this->bodySegs[i].rot.z, MTXMODE_APPLY);
+        Matrix_push();
+        Matrix_scale((1.0f + this->bodySegs[i].scaleMod.x) * this->bodySegs[i].scale.x,
                      (1.0f + this->bodySegs[i].scaleMod.y) * this->bodySegs[i].scale.y,
                      (1.0f + this->bodySegs[i].scaleMod.z) * this->bodySegs[i].scale.z, MTXMODE_APPLY);
         MATRIX_TO_MTX(segMtx, "../z_en_rr.c", 1527);
-        Matrix_Pop();
+        Matrix_pull();
         segMtx++;
-        Matrix_MultVec3f(&zeroVec, &this->effectPos[i]);
+        Matrix_Position(&zeroVec, &this->effectPos[i]);
     }
 
     this->effectPos[0] = this->actor.world.pos;
-    Matrix_MultVec3f(&zeroVec, &this->mouthPos);
+    Matrix_Position(&zeroVec, &this->mouthPos);
     gSPDisplayList(POLY_XLU_DISP++, gLikeLikeDL);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_rr.c", 1551);
@@ -912,13 +912,13 @@ void EnRr_Draw(Actor* thisx, PlayState* play) {
             segIndex = 4 - (effectTimer >> 2);
             offIndex = (effectTimer >> 1) & 3;
 
-            effectPos.x = this->effectPos[segIndex].x + sEffectOffsets[offIndex].x + Rand_CenteredFloat(10.0f);
-            effectPos.y = this->effectPos[segIndex].y + sEffectOffsets[offIndex].y + Rand_CenteredFloat(10.0f);
-            effectPos.z = this->effectPos[segIndex].z + sEffectOffsets[offIndex].z + Rand_CenteredFloat(10.0f);
+            effectPos.x = this->effectPos[segIndex].x + ice_pos[offIndex].x + rnd_fx(10.0f);
+            effectPos.y = this->effectPos[segIndex].y + ice_pos[offIndex].y + rnd_fx(10.0f);
+            effectPos.z = this->effectPos[segIndex].z + ice_pos[offIndex].z + rnd_fx(10.0f);
             if (this->actor.colorFilterParams & 0x4000) {
-                EffectSsEnFire_SpawnVec3f(play, &this->actor, &effectPos, 100, 0, 0, -1);
+                Effect_En_Fire_ct(play, &this->actor, &effectPos, 100, 0, 0, -1);
             } else {
-                EffectSsEnIce_SpawnFlyingVec3f(play, &this->actor, &effectPos, 150, 150, 150, 250, 235, 245, 255, 3.0f);
+                Effect_En_Ice_ct0(play, &this->actor, &effectPos, 150, 150, 150, 250, 235, 245, 255, 3.0f);
             }
         }
     }

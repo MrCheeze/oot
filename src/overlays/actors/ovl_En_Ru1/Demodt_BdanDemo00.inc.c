@@ -1,10 +1,10 @@
 #include "z_en_ru1.h"
 #include "z64cutscene_commands.h"
 
-static s32 sUnused = 0;
+static s32 En_Ru1_In_BdanDemo00_Dummy = 0;
 
 // clang-format off
-static CutsceneData gRutoFirstMeetingCs[] = {
+static CutsceneData En_Ru1_Data1_In_BdanDemo00[] = {
     CS_HEADER(15, 1306),
     CS_PLAYER_CUE_LIST(10),
         CS_PLAYER_CUE(PLAYER_CUEID_39, 0, 50, 0x0000, 0x6C16, 0x0000, 12, -340, -2810, 12, -340, -2810, CS_FLOAT(0xF671408, 1.1393037e-29f), CS_FLOAT(0x0, 0.0f), CS_FLOAT(0x1, 1e-45f)),

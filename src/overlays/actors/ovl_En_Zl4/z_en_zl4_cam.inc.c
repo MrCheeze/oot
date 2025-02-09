@@ -1,6 +1,6 @@
 #include "z_en_zl4.h"
 
-static CutsceneCameraDirection sCamDirections[] = {
+static CutsceneCameraDirection meetdemo_fixed_data[] = {
     { { -490.0f, 120.0f, 0.0f }, { -440.0f, 117.0f, 0.0f }, 0, 45 },
     { { -484.0f, 122.0f, -29.0f }, { -480.0f, 116.0f, 18.0f }, 0, 80 },
     { { -413.0f, 136.0f, -72.0f }, { -403.0f, 141.0f, -89.0f }, 0, 25 },
@@ -19,29 +19,29 @@ static CutsceneCameraDirection sCamDirections[] = {
 
 #include "../ovl_En_Zl1/z_en_girlB_demo.inc.c"
 
-static CutsceneCameraMove sCamMove[] = {
-    { D_80B4D72C, D_80B4D7AC, 0 }, { D_80B4D82C, D_80B4D8CC, 0 }, { D_80B4D96C, D_80B4DA4C, 0 },
-    { D_80B4DB2C, D_80B4DBBC, 0 }, { D_80B4DC4C, D_80B4DD3C, 0 }, { D_80B4DE2C, D_80B4DF0C, 0 },
-    { D_80B4DFEC, D_80B4E08C, 0 }, { D_80B4E12C, D_80B4E1BC, 0 }, { D_80B4E24C, D_80B4E2CC, 0 },
-    { D_80B4E34C, D_80B4E3CC, 0 }, { D_80B4E44C, D_80B4E4CC, 0 },
+static CutsceneCameraMove meetdemo_spline_data[] = {
+    { ABLookat, ABPosition, 0 }, { ACLookat, ACPosition, 0 }, { AGLookat, AGPosition, 0 },
+    { AJLookat, AJPosition, 0 }, { AKLookat, AKPosition, 0 }, { BALookat, BAPosition, 0 },
+    { BBLookat, BBPosition, 0 }, { BCLookat, BCPosition, 0 }, { BGLookat, BGPosition, 0 },
+    { BHLookat, BHPosition, 0 }, { BJLookat, BJPosition, 0 },
 };
 
-void EnZl4_SetActiveCamDir(PlayState* play, s16 index) {
+static void start_fixed_demo_camera(PlayState* play, s16 index) {
     Camera* activeCam = GET_ACTIVE_CAM(play);
 
-    Camera_RequestSetting(activeCam, CAM_SET_FREE0);
-    activeCam->at = sCamDirections[index].at;
-    activeCam->eye = activeCam->eyeNext = sCamDirections[index].eye;
-    activeCam->roll = sCamDirections[index].roll;
-    activeCam->fov = sCamDirections[index].fov;
+    changeCameraSet(activeCam, CAM_SET_FREE0);
+    activeCam->at = meetdemo_fixed_data[index].at;
+    activeCam->eye = activeCam->eyeNext = meetdemo_fixed_data[index].eye;
+    activeCam->roll = meetdemo_fixed_data[index].roll;
+    activeCam->fov = meetdemo_fixed_data[index].fov;
 }
 
-void EnZl4_SetActiveCamMove(PlayState* play, s16 index) {
+static void start_spline_demo_camera(PlayState* play, s16 index) {
     Camera* activeCam = GET_ACTIVE_CAM(play);
     Player* player = GET_PLAYER(play);
 
-    Camera_RequestSetting(activeCam, CAM_SET_CS_0);
-    Camera_ResetAnim(activeCam);
-    Camera_SetCSParams(activeCam, sCamMove[index].atPoints, sCamMove[index].eyePoints, player,
-                       sCamMove[index].relativeToPlayer);
+    changeCameraSet(activeCam, CAM_SET_CS_0);
+    setCameraResetSpline(activeCam);
+    setCameraDemoSplineInfo(activeCam, meetdemo_spline_data[index].atPoints, meetdemo_spline_data[index].eyePoints, player,
+                       meetdemo_spline_data[index].relativeToPlayer);
 }

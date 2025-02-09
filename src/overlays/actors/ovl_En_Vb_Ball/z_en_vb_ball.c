@@ -11,10 +11,10 @@
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED)
 
-void EnVbBall_Init(Actor* thisx, PlayState* play);
-void EnVbBall_Destroy(Actor* thisx, PlayState* play);
-void EnVbBall_Update(Actor* thisx, PlayState* play2);
-void EnVbBall_Draw(Actor* thisx, PlayState* play);
+void En_Vb_Ball_actor_ct(Actor* thisx, PlayState* play);
+void En_Vb_Ball_actor_dt(Actor* thisx, PlayState* play);
+void En_Vb_Ball_actor_move(Actor* thisx, PlayState* play2);
+void En_Vb_Ball_actor_draw(Actor* thisx, PlayState* play);
 
 ActorProfile En_Vb_Ball_Profile = {
     /**/ 0,
@@ -22,13 +22,13 @@ ActorProfile En_Vb_Ball_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_FD,
     /**/ sizeof(EnVbBall),
-    /**/ EnVbBall_Init,
-    /**/ EnVbBall_Destroy,
-    /**/ EnVbBall_Update,
-    /**/ EnVbBall_Draw,
+    /**/ En_Vb_Ball_actor_ct,
+    /**/ En_Vb_Ball_actor_dt,
+    /**/ En_Vb_Ball_actor_move,
+    /**/ En_Vb_Ball_actor_draw,
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit Vb_BallOcInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_ON | AT_TYPE_ENEMY,
@@ -48,43 +48,43 @@ static ColliderCylinderInit sCylinderInit = {
     { 20, 30, 10, { 0, 0, 0 } },
 };
 
-void EnVbBall_Init(Actor* thisx, PlayState* play) {
+void En_Vb_Ball_actor_ct(Actor* thisx, PlayState* play) {
     s32 pad;
     EnVbBall* this = (EnVbBall*)thisx;
     s32 pad2;
     f32 angle;
 
     if (this->actor.params >= 200) { // Volvagia's bones
-        this->yRotVel = Rand_CenteredFloat(0x300);
-        this->xRotVel = Rand_CenteredFloat(0x300);
-        angle = Math_FAtan2F(this->actor.world.pos.x, this->actor.world.pos.z);
-        this->actor.velocity.y = Rand_ZeroFloat(3.0f);
+        this->yRotVel = rnd_fx(0x300);
+        this->xRotVel = rnd_fx(0x300);
+        angle = fatan2(this->actor.world.pos.x, this->actor.world.pos.z);
+        this->actor.velocity.y = rnd_f(3.0f);
         this->actor.velocity.x = 2.0f * sinf(angle);
         this->actor.velocity.z = 2.0f * cosf(angle);
         this->actor.gravity = -0.8f;
     } else { // Volvagia's rocks
-        Collider_InitCylinder(play, &this->collider);
-        Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
-        Actor_SetScale(&this->actor, this->actor.world.rot.z / 10000.0f);
+        ClObjPipe_ct(play, &this->collider);
+        ClObjPipe_set5(play, &this->collider, &this->actor, &Vb_BallOcInfoData);
+        Actor_set_scale(&this->actor, this->actor.world.rot.z / 10000.0f);
         this->collider.dim.radius = this->actor.scale.y * 3000.0f;
         this->collider.dim.height = this->actor.scale.y * 5000.0f;
         this->collider.dim.yShift = this->actor.scale.y * -2500.0f;
-        this->xRotVel = Rand_CenteredFloat(0x2000);
-        this->yRotVel = Rand_CenteredFloat(0x2000);
+        this->xRotVel = rnd_fx(0x2000);
+        this->yRotVel = rnd_fx(0x2000);
         this->shadowSize = this->actor.scale.y * 68.0f;
     }
 }
 
-void EnVbBall_Destroy(Actor* thisx, PlayState* play) {
+void En_Vb_Ball_actor_dt(Actor* thisx, PlayState* play) {
     s32 pad;
     EnVbBall* this = (EnVbBall*)thisx;
 
     if (this->actor.params < 200) {
-        Collider_DestroyCylinder(play, &this->collider);
+        ClObjPipe_dt(play, &this->collider);
     }
 }
 
-void EnVbBall_SpawnDebris(PlayState* play, BossFdEffect* effect, Vec3f* position, Vec3f* velocity, Vec3f* acceleration,
+void Effect_Hahen_ct_IN_ball(PlayState* play, BossFdEffect* effect, Vec3f* position, Vec3f* velocity, Vec3f* acceleration,
                           f32 scale) {
     s16 i;
 
@@ -95,14 +95,14 @@ void EnVbBall_SpawnDebris(PlayState* play, BossFdEffect* effect, Vec3f* position
             effect->velocity = *velocity;
             effect->accel = *acceleration;
             effect->scale = scale / 1000.0f;
-            effect->vFdFxRotX = Rand_ZeroFloat(100.0f);
-            effect->vFdFxRotY = Rand_ZeroFloat(100.0f);
+            effect->vFdFxRotX = rnd_f(100.0f);
+            effect->vFdFxRotY = rnd_f(100.0f);
             break;
         }
     }
 }
 
-void EnVbBall_SpawnDust(PlayState* play, BossFdEffect* effect, Vec3f* position, Vec3f* velocity, Vec3f* acceleration,
+void Effect_vb_smoke_ct_IN_ball(PlayState* play, BossFdEffect* effect, Vec3f* position, Vec3f* velocity, Vec3f* acceleration,
                         f32 scale) {
     s16 i;
 
@@ -119,49 +119,49 @@ void EnVbBall_SpawnDust(PlayState* play, BossFdEffect* effect, Vec3f* position, 
     }
 }
 
-void EnVbBall_UpdateBones(EnVbBall* this, PlayState* play) {
+void En_Vb_Hone_move(EnVbBall* this, PlayState* play) {
     BossFd* bossFd = (BossFd*)this->actor.parent;
     f32 pad2;
     f32 pad1;
     f32 angle;
     s16 i;
 
-    Actor_UpdateBgCheckInfo(play, &this->actor, 50.0f, 50.0f, 100.0f, UPDBGCHECKINFO_FLAG_2);
+    Actor_BGcheck2(play, &this->actor, 50.0f, 50.0f, 100.0f, UPDBGCHECKINFO_FLAG_2);
     if ((this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) && (this->actor.velocity.y <= 0.0f)) {
-        this->xRotVel = Rand_CenteredFloat((f32)0x4000);
-        this->yRotVel = Rand_CenteredFloat((f32)0x4000);
-        angle = Math_FAtan2F(this->actor.world.pos.x, this->actor.world.pos.z);
+        this->xRotVel = rnd_fx((f32)0x4000);
+        this->yRotVel = rnd_fx((f32)0x4000);
+        angle = fatan2(this->actor.world.pos.x, this->actor.world.pos.z);
         this->actor.velocity.x = sinf(angle) * 10.0f;
         this->actor.velocity.z = cosf(angle) * 10.0f;
         this->actor.velocity.y *= -0.5f;
         if (PARAMS_GET_U(this->actor.params, 0, 1)) {
-            Audio_PlaySfxGeneral(NA_SE_EN_VALVAISA_LAND, &this->actor.projectedPos, 4, &gSfxDefaultFreqAndVolScale,
-                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+            Nai_FxFlagEntry(NA_SE_EN_VALVAISA_LAND, &this->actor.projectedPos, 4, &_dummy_one,
+                                 &_dummy_one, &_dummy_zero_s8);
         }
         for (i = 0; i < 10; i++) {
             Vec3f dustVel = { 0.0f, 0.0f, 0.0f };
             Vec3f dustAcc = { 0.0f, 0.0f, 0.0f };
             Vec3f dustPos;
 
-            dustVel.x = Rand_CenteredFloat(8.0f);
-            dustVel.y = Rand_ZeroFloat(1.0f);
-            dustVel.z = Rand_CenteredFloat(8.0f);
+            dustVel.x = rnd_fx(8.0f);
+            dustVel.y = rnd_f(1.0f);
+            dustVel.z = rnd_fx(8.0f);
 
             dustAcc.y = 0.3f;
 
-            dustPos.x = Rand_CenteredFloat(20.0f) + this->actor.world.pos.x;
+            dustPos.x = rnd_fx(20.0f) + this->actor.world.pos.x;
             dustPos.y = this->actor.floorHeight + 10.0f;
-            dustPos.z = Rand_CenteredFloat(20.0f) + this->actor.world.pos.z;
+            dustPos.z = rnd_fx(20.0f) + this->actor.world.pos.z;
 
-            EnVbBall_SpawnDust(play, bossFd->effects, &dustPos, &dustVel, &dustAcc, Rand_ZeroFloat(80.0f) + 200.0f);
+            Effect_vb_smoke_ct_IN_ball(play, bossFd->effects, &dustPos, &dustVel, &dustAcc, rnd_f(80.0f) + 200.0f);
         }
     }
     if (this->actor.world.pos.y < 50.0f) {
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     }
 }
 
-void EnVbBall_Update(Actor* thisx, PlayState* play2) {
+void En_Vb_Ball_actor_move(Actor* thisx, PlayState* play2) {
     PlayState* play = play2;
     EnVbBall* this = (EnVbBall*)thisx;
     BossFd* bossFd = (BossFd*)this->actor.parent;
@@ -178,20 +178,20 @@ void EnVbBall_Update(Actor* thisx, PlayState* play2) {
     this->actor.shape.rot.y += (s16)this->yRotVel;
     this->actor.velocity.y += -1.0f;
     this->actor.gravity = -1.0f;
-    Actor_UpdatePos(&this->actor);
+    Actor_position_move(&this->actor);
     if (this->actor.params >= 200) {
-        EnVbBall_UpdateBones(this, play);
+        En_Vb_Hone_move(this, play);
     } else {
-        Math_ApproachF(&this->shadowOpacity, 175.0f, 1.0f, 40.0f);
+        add_calc2(&this->shadowOpacity, 175.0f, 1.0f, 40.0f);
         radius = this->actor.scale.y * 1700.0f;
         this->actor.world.pos.y -= radius;
-        Actor_UpdateBgCheckInfo(play, &this->actor, 50.0f, 50.0f, 100.0f, UPDBGCHECKINFO_FLAG_2);
+        Actor_BGcheck2(play, &this->actor, 50.0f, 50.0f, 100.0f, UPDBGCHECKINFO_FLAG_2);
         this->actor.world.pos.y += radius;
         if ((this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) && (this->actor.velocity.y <= 0.0f)) {
             if ((this->actor.params == 100) || (this->actor.params == 101)) {
-                Actor_Kill(&this->actor);
+                Actor_delete(&this->actor);
                 if (this->actor.params == 100) {
-                    Actor_RequestQuakeAndRumble(&this->actor, play, 5, 10);
+                    ActorQuakeRumbleSet(&this->actor, play, 5, 10);
                 }
                 if (this->actor.params == 100) {
                     spawnNum = 2;
@@ -204,30 +204,30 @@ void EnVbBall_Update(Actor* thisx, PlayState* play2) {
                     f32 xRotVel;
 
                     if (this->actor.params == 100) {
-                        spawnOffset.x = Rand_CenteredFloat(13.0f);
-                        spawnOffset.y = Rand_ZeroFloat(5.0f) + 6.0f;
-                        spawnOffset.z = Rand_CenteredFloat(13);
+                        spawnOffset.x = rnd_fx(13.0f);
+                        spawnOffset.y = rnd_f(5.0f) + 6.0f;
+                        spawnOffset.z = rnd_fx(13);
                     } else {
-                        spawnOffset.x = Rand_CenteredFloat(10.0f);
-                        spawnOffset.y = Rand_ZeroFloat(3.0f) + 4.0f;
-                        spawnOffset.z = Rand_CenteredFloat(10.0f);
+                        spawnOffset.x = rnd_fx(10.0f);
+                        spawnOffset.y = rnd_f(3.0f) + 4.0f;
+                        spawnOffset.z = rnd_fx(10.0f);
                     }
-                    newActor = (EnVbBall*)Actor_SpawnAsChild(
+                    newActor = (EnVbBall*)Actor_info_make_child_actor(
                         &play->actorCtx, &this->actor, play, ACTOR_EN_VB_BALL, this->actor.world.pos.x + spawnOffset.x,
                         this->actor.world.pos.y + spawnOffset.y, this->actor.world.pos.z + spawnOffset.z, 0, 0,
                         this->actor.world.rot.z * 0.5f, this->actor.params + 1);
                     if (newActor != NULL) {
                         if ((i == 0) && (this->actor.params == 100)) {
-                            Audio_PlaySfxGeneral(NA_SE_EN_VALVAISA_ROCK, &newActor->actor.projectedPos, 4,
-                                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
-                                                 &gSfxDefaultReverb);
+                            Nai_FxFlagEntry(NA_SE_EN_VALVAISA_ROCK, &newActor->actor.projectedPos, 4,
+                                                 &_dummy_one, &_dummy_one,
+                                                 &_dummy_zero_s8);
                         }
                         newActor->actor.parent = this->actor.parent;
                         newActor->actor.velocity = spawnOffset;
                         newActor->yRotVel = 0.0f;
                         xRotVel = sqrtf(SQ(spawnOffset.x) + SQ(spawnOffset.z));
                         newActor->xRotVel = 0x1000 / 10.0f * xRotVel;
-                        newActor->actor.shape.rot.y = RAD_TO_BINANG(Math_FAtan2F(spawnOffset.x, spawnOffset.z));
+                        newActor->actor.shape.rot.y = RAD_TO_BINANG(fatan2(spawnOffset.x, spawnOffset.z));
                         newActor->shadowOpacity = 200.0f;
                     }
                 }
@@ -236,34 +236,34 @@ void EnVbBall_Update(Actor* thisx, PlayState* play2) {
                     Vec3f debrisAcc1 = { 0.0f, -1.0f, 0.0f };
                     Vec3f debrisPos1;
 
-                    debrisVel1.x = Rand_CenteredFloat(25.0f);
-                    debrisVel1.y = Rand_ZeroFloat(5.0f) + 8;
-                    debrisVel1.z = Rand_CenteredFloat(25.0f);
+                    debrisVel1.x = rnd_fx(25.0f);
+                    debrisVel1.y = rnd_f(5.0f) + 8;
+                    debrisVel1.z = rnd_fx(25.0f);
 
-                    debrisPos1.x = Rand_CenteredFloat(10.0f) + this->actor.world.pos.x;
-                    debrisPos1.y = Rand_CenteredFloat(10.0f) + this->actor.world.pos.y;
-                    debrisPos1.z = Rand_CenteredFloat(10.0f) + this->actor.world.pos.z;
+                    debrisPos1.x = rnd_fx(10.0f) + this->actor.world.pos.x;
+                    debrisPos1.y = rnd_fx(10.0f) + this->actor.world.pos.y;
+                    debrisPos1.z = rnd_fx(10.0f) + this->actor.world.pos.z;
 
-                    EnVbBall_SpawnDebris(play, bossFd->effects, &debrisPos1, &debrisVel1, &debrisAcc1,
-                                         (s16)Rand_ZeroFloat(12.0f) + 15);
+                    Effect_Hahen_ct_IN_ball(play, bossFd->effects, &debrisPos1, &debrisVel1, &debrisAcc1,
+                                         (s16)rnd_f(12.0f) + 15);
                 }
                 for (i = 0; i < 10; i++) {
                     Vec3f dustVel = { 0.0f, 0.0f, 0.0f };
                     Vec3f dustAcc = { 0.0f, 0.0f, 0.0f };
                     Vec3f dustPos;
 
-                    dustVel.x = Rand_CenteredFloat(8.0f);
-                    dustVel.y = Rand_ZeroFloat(1.0f);
-                    dustVel.z = Rand_CenteredFloat(8.0f);
+                    dustVel.x = rnd_fx(8.0f);
+                    dustVel.y = rnd_f(1.0f);
+                    dustVel.z = rnd_fx(8.0f);
 
                     dustAcc.y = 1.0f / 2;
 
-                    dustPos.x = Rand_CenteredFloat(30.0f) + this->actor.world.pos.x;
-                    dustPos.y = Rand_CenteredFloat(30.0f) + this->actor.world.pos.y;
-                    dustPos.z = Rand_CenteredFloat(30.0f) + this->actor.world.pos.z;
+                    dustPos.x = rnd_fx(30.0f) + this->actor.world.pos.x;
+                    dustPos.y = rnd_fx(30.0f) + this->actor.world.pos.y;
+                    dustPos.z = rnd_fx(30.0f) + this->actor.world.pos.z;
 
-                    EnVbBall_SpawnDust(play, bossFd->effects, &dustPos, &dustVel, &dustAcc,
-                                       Rand_ZeroFloat(100.0f) + 350.0f);
+                    Effect_vb_smoke_ct_IN_ball(play, bossFd->effects, &dustPos, &dustVel, &dustAcc,
+                                       rnd_f(100.0f) + 350.0f);
                 }
             } else {
                 for (i = 0; i < 5; i++) {
@@ -271,49 +271,49 @@ void EnVbBall_Update(Actor* thisx, PlayState* play2) {
                     Vec3f debrisAcc2 = { 0.0f, -1.0f, 0.0f };
                     Vec3f debrisPos2;
 
-                    debrisVel2.x = Rand_CenteredFloat(10.0f);
-                    debrisVel2.y = Rand_ZeroFloat(3.0f) + 3.0f;
-                    debrisVel2.z = Rand_CenteredFloat(10.0f);
+                    debrisVel2.x = rnd_fx(10.0f);
+                    debrisVel2.y = rnd_f(3.0f) + 3.0f;
+                    debrisVel2.z = rnd_fx(10.0f);
 
-                    debrisPos2.x = Rand_CenteredFloat(5.0f) + this->actor.world.pos.x;
-                    debrisPos2.y = Rand_CenteredFloat(5.0f) + this->actor.world.pos.y;
-                    debrisPos2.z = Rand_CenteredFloat(5.0f) + this->actor.world.pos.z;
+                    debrisPos2.x = rnd_fx(5.0f) + this->actor.world.pos.x;
+                    debrisPos2.y = rnd_fx(5.0f) + this->actor.world.pos.y;
+                    debrisPos2.z = rnd_fx(5.0f) + this->actor.world.pos.z;
 
-                    EnVbBall_SpawnDebris(play, bossFd->effects, &debrisPos2, &debrisVel2, &debrisAcc2,
-                                         (s16)Rand_ZeroFloat(12.0f) + 15);
+                    Effect_Hahen_ct_IN_ball(play, bossFd->effects, &debrisPos2, &debrisVel2, &debrisAcc2,
+                                         (s16)rnd_f(12.0f) + 15);
                 }
-                Actor_Kill(&this->actor);
+                Actor_delete(&this->actor);
             }
         }
         if (this->collider.base.atFlags & AT_HIT) {
             Player* player = GET_PLAYER(play);
 
             this->collider.base.atFlags &= ~AT_HIT;
-            Actor_PlaySfx(&player->actor, NA_SE_PL_BODY_HIT);
+            Actor_SE_set(&player->actor, NA_SE_PL_BODY_HIT);
         }
-        Collider_UpdateCylinder(&this->actor, &this->collider);
-        CollisionCheck_SetAT(play, &play->colChkCtx, &this->collider.base);
+        CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
+        CollisionCheck_setAT(play, &play->colChkCtx, &this->collider.base);
     }
 }
 
-void EnVbBall_Draw(Actor* thisx, PlayState* play) {
+void En_Vb_Ball_actor_draw(Actor* thisx, PlayState* play) {
     s32 pad;
     EnVbBall* this = (EnVbBall*)thisx;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_vb_ball.c", 604);
     if (1) {} // needed for match
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_en_vb_ball.c", 607);
 
     if (this->actor.params >= 200) {
         gSPDisplayList(POLY_OPA_DISP++, SEGMENTED_TO_VIRTUAL(gVolvagiaRibsDL));
     } else {
         gSPDisplayList(POLY_OPA_DISP++, SEGMENTED_TO_VIRTUAL(gVolvagiaRockDL));
-        Gfx_SetupDL_44Xlu(play->state.gfxCtx);
+        _texture_decal_shadow(play->state.gfxCtx);
 
         gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, 0, 0, 0, (s8)this->shadowOpacity);
-        Matrix_Translate(this->actor.world.pos.x, 100.0f, this->actor.world.pos.z, MTXMODE_NEW);
-        Matrix_Scale(this->shadowSize, 1.0f, this->shadowSize, MTXMODE_APPLY);
+        Matrix_translate(this->actor.world.pos.x, 100.0f, this->actor.world.pos.z, MTXMODE_NEW);
+        Matrix_scale(this->shadowSize, 1.0f, this->shadowSize, MTXMODE_APPLY);
         MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx, "../z_en_vb_ball.c", 626);
         gSPDisplayList(POLY_XLU_DISP++, SEGMENTED_TO_VIRTUAL(gCircleShadowDL));
     }

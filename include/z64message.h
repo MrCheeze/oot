@@ -26,7 +26,7 @@ typedef enum TextBoxIcon {
 #define MESSAGE_TEXTURE_STATIC_TEX_SIZE 0x900
 
 // Macros for generating characters in the filename encoding (specified by message 0xFFFC
-// and loaded by Font_LoadOrderedFont). For example, FILENAME_UPPERCASE('A') will encode
+// and loaded by kscope_kanfont_get). For example, FILENAME_UPPERCASE('A') will encode
 // the character 'A'.
 #if OOT_NTSC
 #define FILENAME_DIGIT(c)                   ((c) - '0')
@@ -280,17 +280,17 @@ typedef struct MessageContext {
     /* 0xE410 */ u8 lastOcarinaButtonIndex;
 } MessageContext; // size = 0xE418
 
-void Message_UpdateOcarinaMemoryGame(struct PlayState* play);
-u8 Message_ShouldAdvance(struct PlayState* play);
-void Message_CloseTextbox(struct PlayState*);
-void Message_StartTextbox(struct PlayState* play, u16 textId, struct Actor* actor);
-void Message_ContinueTextbox(struct PlayState* play, u16 textId);
-void Message_StartOcarina(struct PlayState* play, u16 ocarinaActionId);
-void Message_StartOcarinaSunsSongDisabled(struct PlayState* play, u16 ocarinaActionId);
-u8 Message_GetState(MessageContext* msgCtx);
-void Message_Draw(struct PlayState* play);
-void Message_Update(struct PlayState* play);
-void Message_SetTables(void);
-void Message_Init(struct PlayState* play);
+void ocarina_round_next(struct PlayState* play);
+u8 pad_on_check(struct PlayState* play);
+void message_close(struct PlayState*);
+void message_set(struct PlayState* play, u16 textId, struct Actor* actor);
+void message_set2(struct PlayState* play, u16 textId);
+void ocarina_set(struct PlayState* play, u16 ocarinaActionId);
+void ocarina_set_111(struct PlayState* play, u16 ocarinaActionId);
+u8 message_check(MessageContext* msgCtx);
+void message_draw(struct PlayState* play);
+void message_move(struct PlayState* play);
+void message_tbl_p_init(void);
+void message_ct(struct PlayState* play);
 
 #endif

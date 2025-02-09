@@ -9,17 +9,17 @@
 
 #define FLAGS 0
 
-void ObjHsblock_Init(Actor* thisx, PlayState* play);
-void ObjHsblock_Destroy(Actor* thisx, PlayState* play);
-void ObjHsblock_Update(Actor* thisx, PlayState* play);
-void ObjHsblock_Draw(Actor* thisx, PlayState* play);
+void Obj_Hsblock_actor_ct(Actor* thisx, PlayState* play);
+void Obj_Hsblock_actor_dt(Actor* thisx, PlayState* play);
+void Obj_Hsblock_actor_move(Actor* thisx, PlayState* play);
+void Obj_Hsblock_actor_draw(Actor* thisx, PlayState* play);
 
-void func_80B93DF4(ObjHsblock* this, PlayState* play);
-void func_80B93E5C(ObjHsblock* this, PlayState* play);
+static void mv_wait(ObjHsblock* this, PlayState* play);
+void mv_appear(ObjHsblock* this, PlayState* play);
 
-void func_80B93D90(ObjHsblock* this);
-void func_80B93DB0(ObjHsblock* this);
-void func_80B93E38(ObjHsblock* this);
+static void mv_stop_init(ObjHsblock* this);
+static void mv_wait_init(ObjHsblock* this);
+void mv_appear_init(ObjHsblock* this);
 
 ActorProfile Obj_Hsblock_Profile = {
     /**/ ACTOR_OBJ_HSBLOCK,
@@ -27,38 +27,38 @@ ActorProfile Obj_Hsblock_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_D_HSBLOCK,
     /**/ sizeof(ObjHsblock),
-    /**/ ObjHsblock_Init,
-    /**/ ObjHsblock_Destroy,
-    /**/ ObjHsblock_Update,
-    /**/ ObjHsblock_Draw,
+    /**/ Obj_Hsblock_actor_ct,
+    /**/ Obj_Hsblock_actor_dt,
+    /**/ Obj_Hsblock_actor_move,
+    /**/ Obj_Hsblock_actor_draw,
 };
 
-static f32 D_80B940C0[] = { 85.0f, 85.0f, 0.0f };
+static f32 EyeOffset[] = { 85.0f, 85.0f, 0.0f };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDistance, 2000, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeScale, 400, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDownward, 2000, ICHAIN_STOP),
 };
 
-static CollisionHeader* sCollisionHeaders[] = { &gHookshotPostCol, &gHookshotPostCol, &gHookshotTargetCol };
+static CollisionHeader* BGDT_info[] = { &gHookshotPostCol, &gHookshotPostCol, &gHookshotTargetCol };
 
-static Color_RGB8 sFireTempleColor = { 165, 125, 55 };
+static Color_RGB8 col_dt_HIDAN = { 165, 125, 55 };
 
-static Gfx* sDLists[] = { gHookshotPostDL, gHookshotPostDL, gHookshotTargetDL };
+static Gfx* model[] = { gHookshotPostDL, gHookshotPostDL, gHookshotTargetDL };
 
-void ObjHsblock_SetupAction(ObjHsblock* this, ObjHsblockActionFunc actionFunc) {
+static void set_moveProc(ObjHsblock* this, ObjHsblockActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
 
-void func_80B93B68(ObjHsblock* this, PlayState* play, CollisionHeader* collision, s32 transformFlags) {
+static void set_dynaPoly(ObjHsblock* this, PlayState* play, CollisionHeader* collision, s32 transformFlags) {
     s32 pad;
     CollisionHeader* colHeader = NULL;
 
-    DynaPolyActor_Init(&this->dyna, transformFlags);
-    CollisionHeader_GetVirtual(collision, &colHeader);
-    this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
+    MoveBG_ct(&this->dyna, transformFlags);
+    DynaPolyUty_bgdi_SG2KSG(collision, &colHeader);
+    this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
 
 #if DEBUG_FEATURES
     if (this->dyna.bgId == BG_ACTOR_MAX) {
@@ -70,31 +70,31 @@ void func_80B93B68(ObjHsblock* this, PlayState* play, CollisionHeader* collision
 #endif
 }
 
-void func_80B93BF0(ObjHsblock* this, PlayState* play) {
+void set_ice_poly(ObjHsblock* this, PlayState* play) {
     if (PARAMS_GET_U(this->dyna.actor.params, 5, 1)) {
-        Actor_SpawnAsChild(&play->actorCtx, &this->dyna.actor, play, ACTOR_OBJ_ICE_POLY, this->dyna.actor.world.pos.x,
+        Actor_info_make_child_actor(&play->actorCtx, &this->dyna.actor, play, ACTOR_OBJ_ICE_POLY, this->dyna.actor.world.pos.x,
                            this->dyna.actor.world.pos.y, this->dyna.actor.world.pos.z, this->dyna.actor.world.rot.x,
                            this->dyna.actor.world.rot.y, this->dyna.actor.world.rot.z, 1);
     }
 }
 
-void ObjHsblock_Init(Actor* thisx, PlayState* play) {
+void Obj_Hsblock_actor_ct(Actor* thisx, PlayState* play) {
     ObjHsblock* this = (ObjHsblock*)thisx;
 
-    func_80B93B68(this, play, sCollisionHeaders[PARAMS_GET_U(thisx->params, 0, 2)], 0);
-    Actor_ProcessInitChain(thisx, sInitChain);
-    func_80B93BF0(this, play);
+    set_dynaPoly(this, play, BGDT_info[PARAMS_GET_U(thisx->params, 0, 2)], 0);
+    ValueSet_process(thisx, value_init);
+    set_ice_poly(this, play);
 
     switch (PARAMS_GET_U(thisx->params, 0, 2)) {
         case 0:
         case 2:
-            func_80B93D90(this);
+            mv_stop_init(this);
             break;
         case 1:
-            if (Flags_GetSwitch(play, PARAMS_GET_U(thisx->params, 8, 6))) {
-                func_80B93D90(this);
+            if (Actor_Environment_sw_Check(play, PARAMS_GET_U(thisx->params, 8, 6))) {
+                mv_stop_init(this);
             } else {
-                func_80B93DB0(this);
+                mv_wait_init(this);
             }
     }
 
@@ -105,63 +105,63 @@ void ObjHsblock_Init(Actor* thisx, PlayState* play) {
 #endif
 }
 
-void ObjHsblock_Destroy(Actor* thisx, PlayState* play) {
+void Obj_Hsblock_actor_dt(Actor* thisx, PlayState* play) {
     ObjHsblock* this = (ObjHsblock*)thisx;
 
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
 }
 
-void func_80B93D90(ObjHsblock* this) {
-    ObjHsblock_SetupAction(this, NULL);
+static void mv_stop_init(ObjHsblock* this) {
+    set_moveProc(this, NULL);
 }
 
-void func_80B93DB0(ObjHsblock* this) {
+static void mv_wait_init(ObjHsblock* this) {
     this->dyna.actor.flags |= ACTOR_FLAG_UPDATE_CULLING_DISABLED;
     this->dyna.actor.world.pos.y = this->dyna.actor.home.pos.y - 105.0f;
-    ObjHsblock_SetupAction(this, func_80B93DF4);
+    set_moveProc(this, mv_wait);
 }
 
-void func_80B93DF4(ObjHsblock* this, PlayState* play) {
-    if (Flags_GetSwitch(play, PARAMS_GET_U(this->dyna.actor.params, 8, 6))) {
-        func_80B93E38(this);
+static void mv_wait(ObjHsblock* this, PlayState* play) {
+    if (Actor_Environment_sw_Check(play, PARAMS_GET_U(this->dyna.actor.params, 8, 6))) {
+        mv_appear_init(this);
     }
 }
 
-void func_80B93E38(ObjHsblock* this) {
-    ObjHsblock_SetupAction(this, func_80B93E5C);
+void mv_appear_init(ObjHsblock* this) {
+    set_moveProc(this, mv_appear);
 }
 
-void func_80B93E5C(ObjHsblock* this, PlayState* play) {
-    Math_SmoothStepToF(&this->dyna.actor.velocity.y, 16.0f, 0.1f, 0.8f, 0.0f);
-    if (fabsf(Math_SmoothStepToF(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y, 0.3f,
+void mv_appear(ObjHsblock* this, PlayState* play) {
+    add_calc(&this->dyna.actor.velocity.y, 16.0f, 0.1f, 0.8f, 0.0f);
+    if (fabsf(add_calc(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y, 0.3f,
                                  this->dyna.actor.velocity.y, 0.3f)) < 0.001f) {
         this->dyna.actor.world.pos.y = this->dyna.actor.home.pos.y;
-        func_80B93D90(this);
+        mv_stop_init(this);
         this->dyna.actor.flags &= ~ACTOR_FLAG_UPDATE_CULLING_DISABLED;
     }
 }
 
-void ObjHsblock_Update(Actor* thisx, PlayState* play) {
+void Obj_Hsblock_actor_move(Actor* thisx, PlayState* play) {
     ObjHsblock* this = (ObjHsblock*)thisx;
 
     if (this->actionFunc != NULL) {
         this->actionFunc(this, play);
     }
-    Actor_SetFocus(thisx, D_80B940C0[PARAMS_GET_U(thisx->params, 0, 2)]);
+    Actor_world_to_eye(thisx, EyeOffset[PARAMS_GET_U(thisx->params, 0, 2)]);
 }
 
-void ObjHsblock_Draw(Actor* thisx, PlayState* play) {
+void Obj_Hsblock_actor_draw(Actor* thisx, PlayState* play) {
     Color_RGB8* color;
     Color_RGB8 defaultColor;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_obj_hsblock.c", 365);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
 
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_obj_hsblock.c", 369);
 
     if (play->sceneId == SCENE_FIRE_TEMPLE) {
-        color = &sFireTempleColor;
+        color = &col_dt_HIDAN;
     } else {
 #if DEBUG_FEATURES
         defaultColor.r = mREG(13);
@@ -177,7 +177,7 @@ void ObjHsblock_Draw(Actor* thisx, PlayState* play) {
     }
 
     gDPSetEnvColor(POLY_OPA_DISP++, color->r, color->g, color->b, 255);
-    gSPDisplayList(POLY_OPA_DISP++, sDLists[PARAMS_GET_U(thisx->params, 0, 2)]);
+    gSPDisplayList(POLY_OPA_DISP++, model[PARAMS_GET_U(thisx->params, 0, 2)]);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_obj_hsblock.c", 399);
 }

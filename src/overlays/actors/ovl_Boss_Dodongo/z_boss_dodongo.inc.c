@@ -1,6 +1,6 @@
 #include "z_boss_dodongo.h"
 
-static u8 D_808C7000[] = {
+static u8 mesh_data_KD[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1,
     1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0,
     1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0,
@@ -10,7 +10,7 @@ static u8 D_808C7000[] = {
     1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0,
 };
 
-static ColliderJntSphElementInit sJntSphElementsInit[19] = {
+static ColliderJntSphElementInit KdAcOcInfoJntSphElemData[19] = {
     {
         {
             ELEM_MATERIAL_UNK3,
@@ -222,7 +222,7 @@ static ColliderJntSphElementInit sJntSphElementsInit[19] = {
     },
 };
 
-static ColliderJntSphInit sJntSphInit = {
+static ColliderJntSphInit KdAcOcInfoJntSphData = {
     {
         COL_MATERIAL_HIT3,
         AT_ON | AT_TYPE_ENEMY,
@@ -232,7 +232,7 @@ static ColliderJntSphInit sJntSphInit = {
         COLSHAPE_JNTSPH,
     },
     19,
-    sJntSphElementsInit,
+    KdAcOcInfoJntSphElemData,
 };
 
 static Vec3f sUnkZeroVec = { 0.0f, 0.0f, 0.0f };

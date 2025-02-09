@@ -9,19 +9,19 @@
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void ItemEtcetera_Init(Actor* thisx, PlayState* play);
-void ItemEtcetera_Destroy(Actor* thisx, PlayState* play);
-void ItemEtcetera_Update(Actor* thisx, PlayState* play);
-void ItemEtcetera_DrawThroughLens(Actor* thisx, PlayState* play);
-void ItemEtcetera_Draw(Actor* thisx, PlayState* play);
+void item_etcetera_Actor_ct(Actor* thisx, PlayState* play);
+void item_etcetera_Actor_dt(Actor* thisx, PlayState* play);
+void item_etcetera_Actor_move(Actor* thisx, PlayState* play);
+void draw_inbox(Actor* thisx, PlayState* play);
+void draw_normal(Actor* thisx, PlayState* play);
 
-void ItemEtcetera_WaitForObject(ItemEtcetera* this, PlayState* play);
-void func_80B85824(ItemEtcetera* this, PlayState* play);
-void func_80B858B4(ItemEtcetera* this, PlayState* play);
-void ItemEtcetera_SpawnSparkles(ItemEtcetera* this, PlayState* play);
-void ItemEtcetera_MoveFireArrowDown(ItemEtcetera* this, PlayState* play);
-void func_80B85B28(ItemEtcetera* this, PlayState* play);
-void ItemEtcetera_UpdateFireArrow(ItemEtcetera* this, PlayState* play);
+static void move_wait(ItemEtcetera* this, PlayState* play);
+static void move_normal(ItemEtcetera* this, PlayState* play);
+void move_awaawa(ItemEtcetera* this, PlayState* play);
+void item_etcetera_kirakira(ItemEtcetera* this, PlayState* play);
+static void move_fall(ItemEtcetera* this, PlayState* play);
+void move_inbox(ItemEtcetera* this, PlayState* play);
+static void move_demo(ItemEtcetera* this, PlayState* play);
 
 ActorProfile Item_Etcetera_Profile = {
     /**/ ACTOR_ITEM_ETCETERA,
@@ -29,13 +29,13 @@ ActorProfile Item_Etcetera_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(ItemEtcetera),
-    /**/ ItemEtcetera_Init,
-    /**/ ItemEtcetera_Destroy,
-    /**/ ItemEtcetera_Update,
+    /**/ item_etcetera_Actor_ct,
+    /**/ item_etcetera_Actor_dt,
+    /**/ item_etcetera_Actor_move,
     /**/ NULL,
 };
 
-static s16 sObjectIds[] = {
+static s16 demo_effect_shape_data[] = {
     OBJECT_GI_BOTTLE,        // ITEM_ETC_BOTTLE
     OBJECT_GI_BOTTLE_LETTER, // ITEM_ETC_LETTER
     OBJECT_GI_SHIELD_2,      // ITEM_ETC_SHIELD_HYLIAN
@@ -53,7 +53,7 @@ static s16 sObjectIds[] = {
 };
 
 // Indices passed to the item table in z_draw.c
-static s16 sDrawItemIndices[] = {
+static s16 demo_effect_gi_code[] = {
     GID_BOTTLE_EMPTY,        // ITEM_ETC_BOTTLE
     GID_BOTTLE_RUTOS_LETTER, // ITEM_ETC_LETTER
     GID_SHIELD_HYLIAN,       // ITEM_ETC_SHIELD_HYLIAN
@@ -70,7 +70,7 @@ static s16 sDrawItemIndices[] = {
     GID_SMALL_KEY,           // ITEM_ETC_KEY_SMALL_CHEST_GAME
 };
 
-static s16 sGetItemIds[] = {
+static s16 demo_effect_rq_code[] = {
     GI_BOTTLE_EMPTY,        // ITEM_ETC_BOTTLE
     GI_BOTTLE_RUTOS_LETTER, // ITEM_ETC_LETTER
     GI_SHIELD_HYLIAN,       // ITEM_ETC_SHIELD_HYLIAN
@@ -87,11 +87,11 @@ static s16 sGetItemIds[] = {
     GI_NONE,                // ITEM_ETC_KEY_SMALL_CHEST_GAME
 };
 
-void ItemEtcetera_SetupAction(ItemEtcetera* this, ItemEtceteraActionFunc actionFunc) {
+void item_etcetera_actor_set_process(ItemEtcetera* this, ItemEtceteraActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
 
-void ItemEtcetera_Init(Actor* thisx, PlayState* play) {
+void item_etcetera_Actor_ct(Actor* thisx, PlayState* play) {
     ItemEtcetera* this = (ItemEtcetera*)thisx;
     s32 pad;
     s32 type;
@@ -99,30 +99,30 @@ void ItemEtcetera_Init(Actor* thisx, PlayState* play) {
 
     type = PARAMS_GET_U(this->actor.params, 0, 8);
     PRINTF("no = %d\n", type);
-    objectSlot = Object_GetSlot(&play->objectCtx, sObjectIds[type]);
+    objectSlot = Object_Exchange_bank_check(&play->objectCtx, demo_effect_shape_data[type]);
     PRINTF("bank_ID = %d\n", objectSlot);
     if (objectSlot < 0) {
         ASSERT(0, "0", "../z_item_etcetera.c", 241);
     } else {
         this->requiredObjectSlot = objectSlot;
     }
-    this->giDrawId = sDrawItemIndices[type];
-    this->getItemId = sGetItemIds[type];
-    this->futureActionFunc = func_80B85824;
-    this->drawFunc = ItemEtcetera_Draw;
-    Actor_SetScale(&this->actor, 0.25f);
-    ItemEtcetera_SetupAction(this, ItemEtcetera_WaitForObject);
+    this->giDrawId = demo_effect_gi_code[type];
+    this->getItemId = demo_effect_rq_code[type];
+    this->futureActionFunc = move_normal;
+    this->drawFunc = draw_normal;
+    Actor_set_scale(&this->actor, 0.25f);
+    item_etcetera_actor_set_process(this, move_wait);
     switch (type) {
         case ITEM_ETC_LETTER:
-            Actor_SetScale(&this->actor, 0.5f);
-            this->futureActionFunc = func_80B858B4;
+            Actor_set_scale(&this->actor, 0.5f);
+            this->futureActionFunc = move_awaawa;
             if (GET_EVENTCHKINF(EVENTCHKINF_31)) {
-                Actor_Kill(&this->actor);
+                Actor_delete(&this->actor);
             }
             break;
         case ITEM_ETC_ARROW_FIRE:
-            this->futureActionFunc = ItemEtcetera_UpdateFireArrow;
-            Actor_SetScale(&this->actor, 0.5f);
+            this->futureActionFunc = move_demo;
+            Actor_set_scale(&this->actor, 0.5f);
             this->actor.draw = NULL;
             this->actor.shape.yOffset = 50.0f;
             break;
@@ -132,121 +132,121 @@ void ItemEtcetera_Init(Actor* thisx, PlayState* play) {
         case ITEM_ETC_RUPEE_PURPLE_CHEST_GAME:
         case ITEM_ETC_HEART_PIECE_CHEST_GAME:
         case ITEM_ETC_KEY_SMALL_CHEST_GAME:
-            Actor_SetScale(&this->actor, 0.5f);
-            this->futureActionFunc = func_80B85B28;
-            this->drawFunc = ItemEtcetera_DrawThroughLens;
+            Actor_set_scale(&this->actor, 0.5f);
+            this->futureActionFunc = move_inbox;
+            this->drawFunc = draw_inbox;
             this->actor.world.pos.y += 15.0f;
             break;
     }
 }
 
-void ItemEtcetera_Destroy(Actor* thisx, PlayState* play) {
+void item_etcetera_Actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void ItemEtcetera_WaitForObject(ItemEtcetera* this, PlayState* play) {
-    if (Object_IsLoaded(&play->objectCtx, this->requiredObjectSlot)) {
+static void move_wait(ItemEtcetera* this, PlayState* play) {
+    if (Object_Exchange_bank_dma_check(&play->objectCtx, this->requiredObjectSlot)) {
         this->actor.objectSlot = this->requiredObjectSlot;
         this->actor.draw = this->drawFunc;
         this->actionFunc = this->futureActionFunc;
     }
 }
 
-void func_80B85824(ItemEtcetera* this, PlayState* play) {
-    if (Actor_HasParent(&this->actor, play)) {
+static void move_normal(ItemEtcetera* this, PlayState* play) {
+    if (Actor_carry_check(&this->actor, play)) {
         if (PARAMS_GET_U(this->actor.params, 0, 8) == 1) {
             SET_EVENTCHKINF(EVENTCHKINF_31);
-            Flags_SetSwitch(play, 0xB);
+            Actor_Environment_sw_On(play, 0xB);
         }
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     } else {
-        Actor_OfferGetItem(&this->actor, play, this->getItemId, 30.0f, 50.0f);
+        Actor_carry_request_set2(&this->actor, play, this->getItemId, 30.0f, 50.0f);
     }
 }
 
-void func_80B858B4(ItemEtcetera* this, PlayState* play) {
-    if (Actor_HasParent(&this->actor, play)) {
+void move_awaawa(ItemEtcetera* this, PlayState* play) {
+    if (Actor_carry_check(&this->actor, play)) {
         if (PARAMS_GET_U(this->actor.params, 0, 8) == 1) {
             SET_EVENTCHKINF(EVENTCHKINF_31);
-            Flags_SetSwitch(play, 0xB);
+            Actor_Environment_sw_On(play, 0xB);
         }
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     } else {
         if (0) {} // Necessary to match
-        Actor_OfferGetItem(&this->actor, play, this->getItemId, 30.0f, 50.0f);
+        Actor_carry_request_set2(&this->actor, play, this->getItemId, 30.0f, 50.0f);
         if ((play->gameplayFrames & 0xD) == 0) {
-            EffectSsBubble_Spawn(play, &this->actor.world.pos, 0.0f, 0.0f, 10.0f, 0.13f);
+            Effect_SS_Bubble_ct(play, &this->actor.world.pos, 0.0f, 0.0f, 10.0f, 0.13f);
         }
     }
 }
 
-void ItemEtcetera_SpawnSparkles(ItemEtcetera* this, PlayState* play) {
-    static Vec3f velocity = { 0.0f, 0.2f, 0.0f };
-    static Vec3f accel = { 0.0f, 0.05f, 0.0f };
-    static Color_RGBA8 primColor = { 255, 255, 255, 0 };
-    static Color_RGBA8 envColor = { 255, 50, 50, 0 };
+void item_etcetera_kirakira(ItemEtcetera* this, PlayState* play) {
+    static Vec3f kirakira_vec = { 0.0f, 0.2f, 0.0f };
+    static Vec3f kirakira_acc = { 0.0f, 0.05f, 0.0f };
+    static Color_RGBA8 kirakira_prim = { 255, 255, 255, 0 };
+    static Color_RGBA8 kirakira_env = { 255, 50, 50, 0 };
     Vec3f pos;
 
-    velocity.x = Rand_CenteredFloat(3.0f);
-    velocity.z = Rand_CenteredFloat(3.0f);
-    velocity.y = -0.05f;
-    accel.y = -0.025f;
-    pos.x = Rand_CenteredFloat(12.0f) + this->actor.world.pos.x;
-    pos.y = (Rand_ZeroOne() * 6.0f) + this->actor.world.pos.y;
-    pos.z = Rand_CenteredFloat(12.0f) + this->actor.world.pos.z;
-    EffectSsKiraKira_SpawnDispersed(play, &pos, &velocity, &accel, &primColor, &envColor, 5000, 16);
+    kirakira_vec.x = rnd_fx(3.0f);
+    kirakira_vec.z = rnd_fx(3.0f);
+    kirakira_vec.y = -0.05f;
+    kirakira_acc.y = -0.025f;
+    pos.x = rnd_fx(12.0f) + this->actor.world.pos.x;
+    pos.y = (fqrand() * 6.0f) + this->actor.world.pos.y;
+    pos.z = rnd_fx(12.0f) + this->actor.world.pos.z;
+    Effect_SS_KiraKira_sc_ct_ct(play, &pos, &kirakira_vec, &kirakira_acc, &kirakira_prim, &kirakira_env, 5000, 16);
 }
 
-void ItemEtcetera_MoveFireArrowDown(ItemEtcetera* this, PlayState* play) {
-    Actor_UpdateBgCheckInfo(play, &this->actor, 10.0f, 10.0f, 0.0f, UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
-    Actor_MoveXZGravity(&this->actor);
+static void move_fall(ItemEtcetera* this, PlayState* play) {
+    Actor_BGcheck2(play, &this->actor, 10.0f, 10.0f, 0.0f, UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
+    Actor_position_moveF(&this->actor);
     if (!(this->actor.bgCheckFlags & BGCHECKFLAG_GROUND)) {
-        ItemEtcetera_SpawnSparkles(this, play);
+        item_etcetera_kirakira(this, play);
     }
     this->actor.shape.rot.y += 0x400;
-    func_80B85824(this, play);
+    move_normal(this, play);
 }
 
-void func_80B85B28(ItemEtcetera* this, PlayState* play) {
-    if (Flags_GetTreasure(play, PARAMS_GET_U(this->actor.params, 8, 5))) {
-        Actor_Kill(&this->actor);
+void move_inbox(ItemEtcetera* this, PlayState* play) {
+    if (Actor_Environment_Tbox_Check(play, PARAMS_GET_U(this->actor.params, 8, 5))) {
+        Actor_delete(&this->actor);
     }
 }
 
-void ItemEtcetera_UpdateFireArrow(ItemEtcetera* this, PlayState* play) {
+static void move_demo(ItemEtcetera* this, PlayState* play) {
     if ((play->csCtx.state != CS_STATE_IDLE) && (play->csCtx.actorCues[0] != NULL)) {
         LOG_NUM("(game_play->demo_play.npcdemopnt[0]->dousa)", play->csCtx.actorCues[0]->id, "../z_item_etcetera.c",
                 441);
         if (play->csCtx.actorCues[0]->id == 2) {
-            this->actor.draw = ItemEtcetera_Draw;
+            this->actor.draw = draw_normal;
             this->actor.gravity = -0.1f;
             this->actor.minVelocityY = -4.0f;
-            this->actionFunc = ItemEtcetera_MoveFireArrowDown;
+            this->actionFunc = move_fall;
         }
     } else {
         this->actor.gravity = -0.1f;
         this->actor.minVelocityY = -4.0f;
-        this->actionFunc = ItemEtcetera_MoveFireArrowDown;
+        this->actionFunc = move_fall;
     }
 }
 
-void ItemEtcetera_Update(Actor* thisx, PlayState* play) {
+void item_etcetera_Actor_move(Actor* thisx, PlayState* play) {
     ItemEtcetera* this = (ItemEtcetera*)thisx;
     this->actionFunc(this, play);
 }
 
-void ItemEtcetera_DrawThroughLens(Actor* thisx, PlayState* play) {
+void draw_inbox(Actor* thisx, PlayState* play) {
     ItemEtcetera* this = (ItemEtcetera*)thisx;
     if (play->actorCtx.lensActive) {
-        func_8002EBCC(&this->actor, play, 0);
-        func_8002ED80(&this->actor, play, 0);
-        GetItem_Draw(play, this->giDrawId);
+        Actor_HiliteReflect_set_init(&this->actor, play, 0);
+        Actor_HiliteReflect_xlu_set_init(&this->actor, play, 0);
+        Draw_GetItemType(play, this->giDrawId);
     }
 }
 
-void ItemEtcetera_Draw(Actor* thisx, PlayState* play) {
+void draw_normal(Actor* thisx, PlayState* play) {
     ItemEtcetera* this = (ItemEtcetera*)thisx;
 
-    func_8002EBCC(&this->actor, play, 0);
-    func_8002ED80(&this->actor, play, 0);
-    GetItem_Draw(play, this->giDrawId);
+    Actor_HiliteReflect_set_init(&this->actor, play, 0);
+    Actor_HiliteReflect_xlu_set_init(&this->actor, play, 0);
+    Draw_GetItemType(play, this->giDrawId);
 }

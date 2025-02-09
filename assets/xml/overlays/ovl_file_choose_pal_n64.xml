@@ -1,12 +1,12 @@
 <Root>
     <File Name="ovl_file_choose">
-        <Array Name="gNameEntryVtx" Count="24" Offset="0x0" Static="Off">
+        <Array Name="menu_select_titlevtx" Count="24" Offset="0x0" Static="Off">
             <Vtx/>
         </Array>
-        <Array Name="gOptionsMenuHeadersVtx" Count="24" Offset="0x180" Static="Off">
+        <Array Name="menu_option_titlevtx" Count="24" Offset="0x180" Static="Off">
             <Vtx/>
         </Array>
-        <Array Name="gOptionsMenuSettingsVtx" Count="32" Offset="0x300" Static="Off">
+        <Array Name="menu_option_plate" Count="32" Offset="0x300" Static="Off">
             <Vtx/>
         </Array>
         <Array Name="gOptionsMenuBrightnessVtx" Count="8" Offset="0x500" Static="Off">
@@ -15,7 +15,7 @@
         <Array Name="gOptionsMenuLanguageVtx" Count="12" Offset="0x580" Static="Off">
             <Vtx/>
         </Array>
-        <Array Name="gOptionsDividerSoundVtx" Count="4" Offset="0x780" Static="Off">
+        <Array Name="menu_option_line" Count="4" Offset="0x780" Static="Off">
             <Vtx/>
         </Array>
         <Array Name="gOptionsDividerZTargetVtx" Count="4" Offset="0x7C0" Static="Off">
@@ -27,7 +27,7 @@
         <Array Name="gOptionsDividerLanguageVtx" Count="4" Offset="0x840" Static="Off">
             <Vtx/>
         </Array>
-        <Array Name="gCharPageEng" Count="65" Offset="0x880" Static="Off">
+        <Array Name="title_name_eisu" Count="65" Offset="0x880" Static="Off">
             <Scalar Type="s16"/>
         </Array>
     </File>

@@ -1,15 +1,15 @@
 <Root>
     <File Name="ovl_En_Sth" OutName="z_en_sth">
-        <Texture Name="sNoseTex" OutName="nose" Format="rgba16" Width="8" Height="8" Offset="0x0"/>
-        <Texture Name="sHair1Tex" OutName="hair_1" Format="rgba16" Width="8" Height="16" Offset="0x80"/>
-        <Texture Name="sEar1Tex" OutName="ear_1" Format="rgba16" Width="8" Height="8" Offset="0x180"/>
-        <Texture Name="sEyeTex" OutName="eye" Format="rgba16" Width="32" Height="32" Offset="0x200"/>
-        <Texture Name="sMouthTex" OutName="mouth" Format="rgba16" Width="32" Height="16" Offset="0xA00"/>
-        <Texture Name="sEar2Tex" OutName="ear_2" Format="rgba16" Width="8" Height="8" Offset="0xE00"/>
-        <Texture Name="sHair2Tex" OutName="hair_2" Format="rgba16" Width="8" Height="16" Offset="0xE80"/>
-        <DList Name="D_80B0A050" Offset="0x1C20"/>
-        <DList Name="D_80B0A3C0" Offset="0x1F90"/>
-        <Animation Name="sChildDanceAnim" Offset="0x2730"/>
-        <Animation Name="sParentDanceAnim" Offset="0x2FC4"/>
+        <Texture Name="sth_01_txt" OutName="nose" Format="rgba16" Width="8" Height="8" Offset="0x0"/>
+        <Texture Name="sth_02_txt" OutName="hair_1" Format="rgba16" Width="8" Height="16" Offset="0x80"/>
+        <Texture Name="sth_03_txt" OutName="ear_1" Format="rgba16" Width="8" Height="8" Offset="0x180"/>
+        <Texture Name="sth_eye01_txt" OutName="eye" Format="rgba16" Width="32" Height="32" Offset="0x200"/>
+        <Texture Name="sth_mouth01_txt" OutName="mouth" Format="rgba16" Width="32" Height="16" Offset="0xA00"/>
+        <Texture Name="sth_04_txt" OutName="ear_2" Format="rgba16" Width="8" Height="8" Offset="0xE00"/>
+        <Texture Name="sth_05_txt" OutName="hair_2" Format="rgba16" Width="8" Height="16" Offset="0xE80"/>
+        <DList Name="sth_atama_model" Offset="0x1C20"/>
+        <DList Name="sth_zura_model" Offset="0x1F90"/>
+        <Animation Name="sth_ko_matsu_soft_anim_tbl_info" Offset="0x2730"/>
+        <Animation Name="sth_oya_matsu_soft_anim_tbl_info" Offset="0x2FC4"/>
     </File>
 </Root>

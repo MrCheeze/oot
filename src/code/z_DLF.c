@@ -1,7 +1,7 @@
 #include "global.h"
 #include "terminal.h"
 
-void Overlay_LoadGameState(GameStateOverlay* overlayEntry) {
+void DLFTBL_link(GameStateOverlay* overlayEntry) {
     if (overlayEntry->loadedRamAddr != NULL) {
         PRINTF(T("既にリンクされています\n", "Already linked\n"));
         return;
@@ -10,7 +10,7 @@ void Overlay_LoadGameState(GameStateOverlay* overlayEntry) {
     if (overlayEntry->vramStart == NULL) {
         overlayEntry->unk_28 = 0;
     } else {
-        overlayEntry->loadedRamAddr = Overlay_AllocateAndLoad(overlayEntry->file.vromStart, overlayEntry->file.vromEnd,
+        overlayEntry->loadedRamAddr = LoadFragment2(overlayEntry->file.vromStart, overlayEntry->file.vromEnd,
                                                               overlayEntry->vramStart, overlayEntry->vramEnd);
 
         if (overlayEntry->loadedRamAddr == NULL) {
@@ -64,7 +64,7 @@ void Overlay_LoadGameState(GameStateOverlay* overlayEntry) {
     }
 }
 
-void Overlay_FreeGameState(GameStateOverlay* overlayEntry) {
+void DLFTBL_unlink(GameStateOverlay* overlayEntry) {
     if (overlayEntry->loadedRamAddr != NULL) {
         s32 temp = overlayEntry->unk_28 != 0 ? -1 : 0;
 

@@ -11,24 +11,24 @@
 #define FLAGS \
     (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE | ACTOR_FLAG_IGNORE_QUAKE | ACTOR_FLAG_CAN_ATTACH_TO_ARROW)
 
-void EnBili_Init(Actor* thisx, PlayState* play);
-void EnBili_Destroy(Actor* thisx, PlayState* play);
-void EnBili_Update(Actor* thisx, PlayState* play2);
-void EnBili_Draw(Actor* thisx, PlayState* play);
+void En_Bili_actor_ct(Actor* thisx, PlayState* play);
+void En_Bili_actor_dt(Actor* thisx, PlayState* play);
+void En_Bili_actor_move(Actor* thisx, PlayState* play2);
+void En_Bili_actor_draw(Actor* thisx, PlayState* play);
 
-void EnBili_SetupFloatIdle(EnBili* this);
-void EnBili_SetupSpawnedFlyApart(EnBili* this);
-void EnBili_FloatIdle(EnBili* this, PlayState* play);
-void EnBili_SpawnedFlyApart(EnBili* this, PlayState* play);
-void EnBili_DischargeLightning(EnBili* this, PlayState* play);
-void EnBili_Climb(EnBili* this, PlayState* play);
-void EnBili_ApproachPlayer(EnBili* this, PlayState* play);
-void EnBili_SetNewHomeHeight(EnBili* this, PlayState* play);
-void EnBili_Recoil(EnBili* this, PlayState* play);
-void EnBili_Burnt(EnBili* this, PlayState* play);
-void EnBili_Die(EnBili* this, PlayState* play);
-void EnBili_Stunned(EnBili* this, PlayState* play);
-void EnBili_Frozen(EnBili* this, PlayState* play);
+static void mode_move_init(EnBili* this);
+static void mode_appear_init(EnBili* this);
+static void mode_move(EnBili* this, PlayState* play);
+static void mode_appear(EnBili* this, PlayState* play);
+static void mode_elect(EnBili* this, PlayState* play);
+static void mode_jump(EnBili* this, PlayState* play);
+static void mode_chase(EnBili* this, PlayState* play);
+static void mode_escape(EnBili* this, PlayState* play);
+static void mode_reverse(EnBili* this, PlayState* play);
+static void mode_damage(EnBili* this, PlayState* play);
+static void mode_down(EnBili* this, PlayState* play);
+static void mode_stop(EnBili* this, PlayState* play);
+static void mode_drop(EnBili* this, PlayState* play);
 
 ActorProfile En_Bili_Profile = {
     /**/ ACTOR_EN_BILI,
@@ -36,13 +36,13 @@ ActorProfile En_Bili_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_BL,
     /**/ sizeof(EnBili),
-    /**/ EnBili_Init,
-    /**/ EnBili_Destroy,
-    /**/ EnBili_Update,
-    /**/ EnBili_Draw,
+    /**/ En_Bili_actor_ct,
+    /**/ En_Bili_actor_dt,
+    /**/ En_Bili_actor_move,
+    /**/ En_Bili_actor_draw,
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit BiliAllPipeData = {
     {
         COL_MATERIAL_HIT8,
         AT_ON | AT_TYPE_ENEMY,
@@ -62,7 +62,7 @@ static ColliderCylinderInit sCylinderInit = {
     { 9, 28, -20, { 0, 0, 0 } },
 };
 
-static CollisionCheckInfoInit2 sColChkInfoInit = { 1, 9, 28, -20, 30 };
+static CollisionCheckInfoInit2 BiliStatusData = { 1, 9, 28, -20, 30 };
 
 typedef enum BiriDamageEffect {
     /* 0x0 */ BIRI_DMGEFF_NONE,
@@ -73,7 +73,7 @@ typedef enum BiriDamageEffect {
     /* 0xF */ BIRI_DMGEFF_SWORD
 } BiriDamageEffect;
 
-static DamageTable sDamageTable = {
+static DamageTable BiliBtlData = {
     /* Deku nut      */ DMG_ENTRY(0, BIRI_DMGEFF_DEKUNUT),
     /* Deku stick    */ DMG_ENTRY(2, BIRI_DMGEFF_NONE),
     /* Slingshot     */ DMG_ENTRY(0, BIRI_DMGEFF_SLINGSHOT),
@@ -108,40 +108,40 @@ static DamageTable sDamageTable = {
     /* Unknown 2     */ DMG_ENTRY(0, BIRI_DMGEFF_NONE),
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_S8(naviEnemyId, NAVI_ENEMY_BIRI, ICHAIN_CONTINUE),
     ICHAIN_F32(lockOnArrowOffset, 2000, ICHAIN_STOP),
 };
 
-void EnBili_Init(Actor* thisx, PlayState* play) {
+void En_Bili_actor_ct(Actor* thisx, PlayState* play) {
     EnBili* this = (EnBili*)thisx;
 
-    Actor_ProcessInitChain(&this->actor, sInitChain);
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 17.0f);
+    ValueSet_process(&this->actor, value_init);
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 17.0f);
     this->actor.shape.shadowAlpha = 155;
-    SkelAnime_Init(play, &this->skelAnime, &gBiriSkel, &gBiriDefaultAnim, this->jointTable, this->morphTable,
+    Skeleton_Info2_M_ct(play, &this->skelAnime, &gBiriSkel, &gBiriDefaultAnim, this->jointTable, this->morphTable,
                    EN_BILI_LIMB_MAX);
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
-    CollisionCheck_SetInfo2(&this->actor.colChkInfo, &sDamageTable, &sColChkInfoInit);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set5(play, &this->collider, &this->actor, &BiliAllPipeData);
+    CollisionCheck_Status_set3(&this->actor.colChkInfo, &BiliBtlData, &BiliStatusData);
     this->playFlySfx = false;
 
     if (this->actor.params == EN_BILI_TYPE_NORMAL) {
-        EnBili_SetupFloatIdle(this);
+        mode_move_init(this);
     } else {
-        EnBili_SetupSpawnedFlyApart(this);
+        mode_appear_init(this);
     }
 }
 
-void EnBili_Destroy(Actor* thisx, PlayState* play) {
+void En_Bili_actor_dt(Actor* thisx, PlayState* play) {
     EnBili* this = (EnBili*)thisx;
 
-    Collider_DestroyCylinder(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider);
 }
 
 // Setup Action Functions
 
-void EnBili_SetupFloatIdle(EnBili* this) {
+static void mode_move_init(EnBili* this) {
     this->actor.speed = 0.7f;
     this->collider.elem.acDmgInfo.effect = 1; // Shock?
     this->timer = 32;
@@ -150,72 +150,72 @@ void EnBili_SetupFloatIdle(EnBili* this) {
     this->actor.velocity.y = 0.0f;
     this->collider.base.atFlags |= AT_ON;
     this->collider.base.acFlags |= AC_ON;
-    this->actionFunc = EnBili_FloatIdle;
+    this->actionFunc = mode_move;
 }
 
 /**
  * Separates the Biri spawned by a dying EnVali.
  */
-void EnBili_SetupSpawnedFlyApart(EnBili* this) {
-    Animation_PlayLoop(&this->skelAnime, &gBiriDefaultAnim);
+static void mode_appear_init(EnBili* this) {
+    Skeleton_Info2_init_standard_repeat(&this->skelAnime, &gBiriDefaultAnim);
     this->timer = 25;
     this->actor.velocity.y = 6.0f;
     this->actor.gravity = -0.3f;
     this->collider.base.atFlags &= ~AT_ON;
-    this->actionFunc = EnBili_SpawnedFlyApart;
+    this->actionFunc = mode_appear;
     this->actor.speed = 3.0f;
 }
 
 /**
  * Used for both touching player/player's shield and being hit with sword. What to do next is determined by params.
  */
-void EnBili_SetupDischargeLightning(EnBili* this) {
-    Animation_PlayLoop(&this->skelAnime, &gBiriDischargeLightningAnim);
+static void mode_elect_init(EnBili* this) {
+    Skeleton_Info2_init_standard_repeat(&this->skelAnime, &gBiriDischargeLightningAnim);
     this->timer = 10;
-    this->actionFunc = EnBili_DischargeLightning;
+    this->actionFunc = mode_elect;
     this->actor.speed = 0.0f;
     this->actor.velocity.y = -1.0f;
 }
 
-void EnBili_SetupClimb(EnBili* this) {
-    Animation_PlayOnce(&this->skelAnime, &gBiriClimbAnim);
+static void mode_jump_init(EnBili* this) {
+    Skeleton_Info2_init_standard_stop(&this->skelAnime, &gBiriClimbAnim);
     this->collider.base.atFlags &= ~AT_ON;
-    this->actionFunc = EnBili_Climb;
+    this->actionFunc = mode_jump;
     this->actor.speed = 0.0f;
     this->actor.velocity.y = 0.0f;
 }
 
-void EnBili_SetupApproachPlayer(EnBili* this) {
+static void mode_chase_init(EnBili* this) {
     this->actor.speed = 1.2f;
-    this->actionFunc = EnBili_ApproachPlayer;
+    this->actionFunc = mode_chase;
 }
 
-void EnBili_SetupSetNewHomeHeight(EnBili* this) {
-    Animation_PlayLoop(&this->skelAnime, &gBiriDefaultAnim);
+static void mode_escape_init(EnBili* this) {
+    Skeleton_Info2_init_standard_repeat(&this->skelAnime, &gBiriDefaultAnim);
     this->timer = 96;
     this->actor.speed = 0.9f;
     this->collider.base.atFlags |= AT_ON;
-    this->actionFunc = EnBili_SetNewHomeHeight;
+    this->actionFunc = mode_escape;
     this->actor.home.pos.y = this->actor.world.pos.y;
 }
 
-void EnBili_SetupRecoil(EnBili* this) {
+static void mode_reverse_init(EnBili* this) {
     if (this->skelAnime.animation != &gBiriDefaultAnim) {
-        Animation_PlayLoop(&this->skelAnime, &gBiriDefaultAnim);
+        Skeleton_Info2_init_standard_repeat(&this->skelAnime, &gBiriDefaultAnim);
     }
 
-    this->actor.world.rot.y = Actor_WorldYawTowardPoint(&this->actor, &this->collider.base.ac->prevPos) + 0x8000;
-    this->actor.world.rot.x = Actor_WorldPitchTowardPoint(&this->actor, &this->collider.base.ac->prevPos);
-    this->actionFunc = EnBili_Recoil;
+    this->actor.world.rot.y = Actor_search_position_angleY(&this->actor, &this->collider.base.ac->prevPos) + 0x8000;
+    this->actor.world.rot.x = Actor_search_position_angleX(&this->actor, &this->collider.base.ac->prevPos);
+    this->actionFunc = mode_reverse;
     this->actor.speed = 5.0f;
 }
 
 /**
  * Used for both fire damage and generic damage
  */
-void EnBili_SetupBurnt(EnBili* this) {
-    if (this->actionFunc == EnBili_Climb) {
-        Animation_PlayLoop(&this->skelAnime, &gBiriDefaultAnim);
+static void mode_damage_init(EnBili* this) {
+    if (this->actionFunc == mode_jump) {
+        Skeleton_Info2_init_standard_repeat(&this->skelAnime, &gBiriDefaultAnim);
     }
 
     this->timer = 20;
@@ -223,32 +223,32 @@ void EnBili_SetupBurnt(EnBili* this) {
     this->collider.base.acFlags &= ~AC_ON;
     this->actor.flags |= ACTOR_FLAG_UPDATE_CULLING_DISABLED;
     this->actor.speed = 0.0f;
-    Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_RED, 200, COLORFILTER_BUFFLAG_XLU, 20);
-    this->actionFunc = EnBili_Burnt;
+    Set_Fog(&this->actor, COLORFILTER_COLORFLAG_RED, 200, COLORFILTER_BUFFLAG_XLU, 20);
+    this->actionFunc = mode_damage;
 }
 
-void EnBili_SetupDie(EnBili* this) {
+static void mode_down_init(EnBili* this) {
     this->timer = 18;
     this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
-    this->actionFunc = EnBili_Die;
+    this->actionFunc = mode_down;
     this->actor.speed = 0.0f;
 }
 
 /**
  * Falls to ground
  */
-void EnBili_SetupStunned(EnBili* this) {
+static void mode_stop_init(EnBili* this) {
     this->timer = 80;
     this->collider.elem.acDmgInfo.effect = 0;
     this->actor.gravity = -1.0f;
     this->actor.speed = 0.0f;
-    Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_BLUE, 150, COLORFILTER_BUFFLAG_XLU, 80);
-    Actor_PlaySfx(&this->actor, NA_SE_EN_GOMA_JR_FREEZE);
+    Set_Fog(&this->actor, COLORFILTER_COLORFLAG_BLUE, 150, COLORFILTER_BUFFLAG_XLU, 80);
+    Actor_SE_set(&this->actor, NA_SE_EN_GOMA_JR_FREEZE);
     this->collider.base.atFlags &= ~AT_ON;
-    this->actionFunc = EnBili_Stunned;
+    this->actionFunc = mode_stop;
 }
 
-void EnBili_SetupFrozen(EnBili* this, PlayState* play) {
+static void mode_drop_init(EnBili* this, PlayState* play) {
     s32 i;
     Vec3f effectPos;
 
@@ -265,16 +265,16 @@ void EnBili_SetupFrozen(EnBili* this, PlayState* play) {
         effectPos.y += 2.5f;
         effectPos.z = this->actor.world.pos.z + ((i & 4) ? 7.0f : -7.0f);
 
-        EffectSsEnIce_SpawnFlyingVec3f(play, &this->actor, &effectPos, 150, 150, 150, 250, 235, 245, 255,
-                                       (Rand_ZeroOne() * 0.2f) + 0.7f);
+        Effect_En_Ice_ct0(play, &this->actor, &effectPos, 150, 150, 150, 250, 235, 245, 255,
+                                       (fqrand() * 0.2f) + 0.7f);
     }
 
     this->actor.speed = 0.0f;
-    Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_BLUE, 150, COLORFILTER_BUFFLAG_XLU, 10);
+    Set_Fog(&this->actor, COLORFILTER_COLORFLAG_BLUE, 150, COLORFILTER_BUFFLAG_XLU, 10);
     this->collider.base.atFlags &= ~AT_ON;
     this->collider.base.acFlags &= ~AC_ON;
     this->timer = 300;
-    this->actionFunc = EnBili_Frozen;
+    this->actionFunc = mode_drop;
 }
 
 // Miscellaneous
@@ -282,14 +282,14 @@ void EnBili_SetupFrozen(EnBili* this, PlayState* play) {
 /**
  * Changes the texture displayed on the oral arms limb using the current frame.
  */
-void EnBili_UpdateTentaclesIndex(EnBili* this) {
+void set_bili_txt_num(EnBili* this) {
     s16 curFrame = this->skelAnime.curFrame;
     s16 temp; // Not strictly necessary, but avoids a few s16 casts
 
-    if (this->actionFunc == EnBili_DischargeLightning) {
+    if (this->actionFunc == mode_elect) {
         temp = 3 - curFrame;
         this->tentaclesTexIndex = (ABS(temp) + 5) % 8;
-    } else if (this->actionFunc == EnBili_Climb) {
+    } else if (this->actionFunc == mode_jump) {
         if (curFrame <= 9) {
             temp = curFrame >> 1;
             this->tentaclesTexIndex = CLAMP_MAX(temp, 3);
@@ -309,12 +309,12 @@ void EnBili_UpdateTentaclesIndex(EnBili* this) {
 /**
  * Tracks Player height, with oscillation, and moves away from walls
  */
-void EnBili_UpdateFloating(EnBili* this) {
+void bili_check_move_pos_angle(EnBili* this) {
     f32 playerHeight = this->actor.world.pos.y + this->actor.yDistToPlayer;
-    f32 heightOffset = ((this->actionFunc == EnBili_SetNewHomeHeight) ? 100.0f : 40.0f);
+    f32 heightOffset = ((this->actionFunc == mode_escape) ? 100.0f : 40.0f);
     f32 baseHeight = CLAMP_MIN(this->actor.floorHeight, playerHeight);
 
-    Math_StepToF(&this->actor.home.pos.y, baseHeight + heightOffset, 1.0f);
+    chase_f(&this->actor.home.pos.y, baseHeight + heightOffset, 1.0f);
     this->actor.world.pos.y = this->actor.home.pos.y + (sinf(this->timer * (M_PI / 16)) * 3.0f);
 
     // Turn around if touching wall
@@ -325,58 +325,58 @@ void EnBili_UpdateFloating(EnBili* this) {
 
 // Action functions
 
-void EnBili_FloatIdle(EnBili* this, PlayState* play) {
-    SkelAnime_Update(&this->skelAnime);
+static void mode_move(EnBili* this, PlayState* play) {
+    Skeleton_Info2_anime_play(&this->skelAnime);
 
     if (this->timer != 0) {
         this->timer--;
     }
 
     if (!(this->timer % 4)) {
-        this->actor.world.rot.y += Rand_CenteredFloat(1820.0f);
+        this->actor.world.rot.y += rnd_fx(1820.0f);
     }
 
-    EnBili_UpdateFloating(this);
+    bili_check_move_pos_angle(this);
 
     if (this->timer == 0) {
         this->timer = 32;
     }
 
     if ((this->actor.xzDistToPlayer < 160.0f) && (fabsf(this->actor.yDistToPlayer) < 45.0f)) {
-        EnBili_SetupApproachPlayer(this);
+        mode_chase_init(this);
     }
 }
 
-void EnBili_SpawnedFlyApart(EnBili* this, PlayState* play) {
-    SkelAnime_Update(&this->skelAnime);
+static void mode_appear(EnBili* this, PlayState* play) {
+    Skeleton_Info2_anime_play(&this->skelAnime);
     if (this->timer != 0) {
         this->timer--;
     }
 
     if (this->timer == 0) {
-        EnBili_SetupFloatIdle(this);
+        mode_move_init(this);
     }
 }
 
-void EnBili_DischargeLightning(EnBili* this, PlayState* play) {
-    static Color_RGBA8 primColor = { 255, 255, 255, 255 };
-    static Color_RGBA8 envColor = { 200, 255, 255, 255 };
+static void mode_elect(EnBili* this, PlayState* play) {
+    static Color_RGBA8 lightning_prim = { 255, 255, 255, 255 };
+    static Color_RGBA8 lightning_env = { 200, 255, 255, 255 };
     s32 i;
     Vec3f effectPos;
     s16 effectYaw;
 
     for (i = 0; i < 4; i++) {
         if (!((this->timer + (i << 1)) % 4)) {
-            effectYaw = (s16)Rand_CenteredFloat(12288.0f) + (i * 0x4000) + 0x2000;
-            effectPos.x = Rand_CenteredFloat(5.0f) + this->actor.world.pos.x;
-            effectPos.y = (Rand_ZeroOne() * 5.0f) + this->actor.world.pos.y + 2.5f;
-            effectPos.z = Rand_CenteredFloat(5.0f) + this->actor.world.pos.z;
-            EffectSsLightning_Spawn(play, &effectPos, &primColor, &envColor, 15, effectYaw, 6, 2);
+            effectYaw = (s16)rnd_fx(12288.0f) + (i * 0x4000) + 0x2000;
+            effectPos.x = rnd_fx(5.0f) + this->actor.world.pos.x;
+            effectPos.y = (fqrand() * 5.0f) + this->actor.world.pos.y + 2.5f;
+            effectPos.z = rnd_fx(5.0f) + this->actor.world.pos.z;
+            Effect_SS_Lightning_sc_cl_co_ct(play, &effectPos, &lightning_prim, &lightning_env, 15, effectYaw, 6, 2);
         }
     }
 
-    SkelAnime_Update(&this->skelAnime);
-    Actor_PlaySfx_Flagged(&this->actor, NA_SE_EN_BIRI_SPARK - SFX_FLAG);
+    Skeleton_Info2_anime_play(&this->skelAnime);
+    Actor_level_SE_set(&this->actor, NA_SE_EN_BIRI_SPARK - SFX_FLAG);
 
     if (this->timer != 0) {
         this->timer--;
@@ -384,78 +384,78 @@ void EnBili_DischargeLightning(EnBili* this, PlayState* play) {
 
     this->actor.velocity.y *= -1.0f;
 
-    if ((this->timer == 0) && Animation_OnFrame(&this->skelAnime, 0.0f)) {
+    if ((this->timer == 0) && Skeleton_Info_frame_check(&this->skelAnime, 0.0f)) {
         if (this->actor.params == EN_BILI_TYPE_DYING) {
-            EnBili_SetupDie(this);
+            mode_down_init(this);
         } else {
-            EnBili_SetupClimb(this);
+            mode_jump_init(this);
         }
     }
 }
 
-void EnBili_Climb(EnBili* this, PlayState* play) {
-    s32 skelAnimeUpdate = SkelAnime_Update(&this->skelAnime);
+static void mode_jump(EnBili* this, PlayState* play) {
+    s32 skelAnimeUpdate = Skeleton_Info2_anime_play(&this->skelAnime);
     f32 curFrame = this->skelAnime.curFrame;
 
-    if (Animation_OnFrame(&this->skelAnime, 9.0f)) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_BIRI_JUMP);
+    if (Skeleton_Info_frame_check(&this->skelAnime, 9.0f)) {
+        Actor_SE_set(&this->actor, NA_SE_EN_BIRI_JUMP);
     }
 
     if (curFrame > 9.0f) {
-        Math_ApproachF(&this->actor.world.pos.y, this->actor.world.pos.y + this->actor.yDistToPlayer + 100.0f, 0.5f,
+        add_calc2(&this->actor.world.pos.y, this->actor.world.pos.y + this->actor.yDistToPlayer + 100.0f, 0.5f,
                        5.0f);
     }
 
     if (skelAnimeUpdate) {
-        EnBili_SetupSetNewHomeHeight(this);
+        mode_escape_init(this);
     }
 }
 
-void EnBili_ApproachPlayer(EnBili* this, PlayState* play) {
-    SkelAnime_Update(&this->skelAnime);
-    Math_ApproachS(&this->actor.world.rot.y, this->actor.yawTowardsPlayer, 2, 1820);
+static void mode_chase(EnBili* this, PlayState* play) {
+    Skeleton_Info2_anime_play(&this->skelAnime);
+    adds(&this->actor.world.rot.y, this->actor.yawTowardsPlayer, 2, 1820);
 
     if (this->timer != 0) {
         this->timer--;
     }
 
-    EnBili_UpdateFloating(this);
+    bili_check_move_pos_angle(this);
 
     if (this->timer == 0) {
         this->timer = 32;
     }
 
     if (this->actor.xzDistToPlayer > 200.0f) {
-        EnBili_SetupFloatIdle(this);
+        mode_move_init(this);
     }
 }
 
-void EnBili_SetNewHomeHeight(EnBili* this, PlayState* play) {
-    SkelAnime_Update(&this->skelAnime);
+static void mode_escape(EnBili* this, PlayState* play) {
+    Skeleton_Info2_anime_play(&this->skelAnime);
 
     if (this->timer != 0) {
         this->timer--;
     }
 
-    Math_ScaledStepToS(&this->actor.world.rot.y, (s16)(this->actor.yawTowardsPlayer + 0x8000), 910);
-    EnBili_UpdateFloating(this);
+    chase_angle(&this->actor.world.rot.y, (s16)(this->actor.yawTowardsPlayer + 0x8000), 910);
+    bili_check_move_pos_angle(this);
 
     if (this->timer == 0) {
-        EnBili_SetupFloatIdle(this);
+        mode_move_init(this);
     }
 }
 
-void EnBili_Recoil(EnBili* this, PlayState* play) {
-    SkelAnime_Update(&this->skelAnime);
+static void mode_reverse(EnBili* this, PlayState* play) {
+    Skeleton_Info2_anime_play(&this->skelAnime);
 
-    if (Math_StepToF(&this->actor.speed, 0.0f, 0.3f)) {
+    if (chase_f(&this->actor.speed, 0.0f, 0.3f)) {
         this->actor.world.rot.y += 0x8000;
-        EnBili_SetupFloatIdle(this);
+        mode_move_init(this);
     }
 }
 
-void EnBili_Burnt(EnBili* this, PlayState* play) {
-    SkelAnime_Update(&this->skelAnime);
+static void mode_damage(EnBili* this, PlayState* play) {
+    Skeleton_Info2_anime_play(&this->skelAnime);
 
     if (this->actor.flags & ACTOR_FLAG_ATTACHED_TO_ARROW) {
         this->actor.colorFilterTimer = 20;
@@ -465,14 +465,14 @@ void EnBili_Burnt(EnBili* this, PlayState* play) {
         }
 
         if (this->timer == 0) {
-            EnBili_SetupDie(this);
+            mode_down_init(this);
         }
     }
 }
 
-void EnBili_Die(EnBili* this, PlayState* play) {
-    static Vec3f effectVelocity = { 0.0f, 0.0f, 0.0f };
-    static Vec3f effectAccel = { 0.0f, 0.0f, 0.0f };
+static void mode_down(EnBili* this, PlayState* play) {
+    static Vec3f pvec = { 0.0f, 0.0f, 0.0f };
+    static Vec3f pacc = { 0.0f, 0.0f, 0.0f };
     s16 effectScale;
     Vec3f effectPos;
     s32 i;
@@ -482,7 +482,7 @@ void EnBili_Die(EnBili* this, PlayState* play) {
             return;
         }
         this->actor.draw = NULL;
-        Item_DropCollectibleRandom(play, &this->actor, &this->actor.world.pos, 0x50);
+        Item_Set_Std(play, &this->actor, &this->actor.world.pos, 0x50);
     }
 
     if (this->timer != 0) {
@@ -491,45 +491,45 @@ void EnBili_Die(EnBili* this, PlayState* play) {
 
     if (this->timer != 0) {
         for (i = 0; i < 2; i++) {
-            effectPos.x = ((Rand_ZeroOne() * 10.0f) + this->actor.world.pos.x) - 5.0f;
-            effectPos.y = ((Rand_ZeroOne() * 5.0f) + this->actor.world.pos.y) - 2.5f;
-            effectPos.z = ((Rand_ZeroOne() * 10.0f) + this->actor.world.pos.z) - 5.0f;
+            effectPos.x = ((fqrand() * 10.0f) + this->actor.world.pos.x) - 5.0f;
+            effectPos.y = ((fqrand() * 5.0f) + this->actor.world.pos.y) - 2.5f;
+            effectPos.z = ((fqrand() * 10.0f) + this->actor.world.pos.z) - 5.0f;
 
-            effectVelocity.y = Rand_ZeroOne() + 1.0f;
-            effectScale = Rand_S16Offset(40, 40);
+            pvec.y = fqrand() + 1.0f;
+            effectScale = get_random_timer(40, 40);
 
-            if (Rand_ZeroOne() < 0.7f) {
-                EffectSsDtBubble_SpawnColorProfile(play, &effectPos, &effectVelocity, &effectAccel, effectScale, 25, 2,
+            if (fqrand() < 0.7f) {
+                Effect_SS_Dt_Bubble_sc_co_ct(play, &effectPos, &pvec, &pacc, effectScale, 25, 2,
                                                    1);
             } else {
-                EffectSsDtBubble_SpawnColorProfile(play, &effectPos, &effectVelocity, &effectAccel, effectScale, 25, 0,
+                Effect_SS_Dt_Bubble_sc_co_ct(play, &effectPos, &pvec, &pacc, effectScale, 25, 0,
                                                    1);
             }
         }
     } else {
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     }
 
     if (this->timer == 14) {
-        SfxSource_PlaySfxAtFixedWorldPos(play, &this->actor.world.pos, 40, NA_SE_EN_BIRI_BUBLE);
+        Effect_SE_Info_new(play, &this->actor.world.pos, 40, NA_SE_EN_BIRI_BUBLE);
     }
 }
 
-void EnBili_Stunned(EnBili* this, PlayState* play) {
+static void mode_stop(EnBili* this, PlayState* play) {
     if (this->timer != 0) {
         this->timer--;
     }
 
     if (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND_TOUCH) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_DODO_M_GND);
+        Actor_SE_set(&this->actor, NA_SE_EN_DODO_M_GND);
     }
 
     if (this->timer == 0) {
-        EnBili_SetupFloatIdle(this);
+        mode_move_init(this);
     }
 }
 
-void EnBili_Frozen(EnBili* this, PlayState* play) {
+static void mode_drop(EnBili* this, PlayState* play) {
     if (this->timer != 0) {
         this->timer--;
     }
@@ -545,52 +545,52 @@ void EnBili_Frozen(EnBili* this, PlayState* play) {
 #endif
     {
         this->actor.colorFilterTimer = 0;
-        EnBili_SetupDie(this);
+        mode_down_init(this);
     } else {
         this->actor.colorFilterTimer = 10;
     }
 }
 
-void EnBili_UpdateDamage(EnBili* this, PlayState* play) {
+void En_Bili_damage_proc(EnBili* this, PlayState* play) {
     u8 damageEffect;
 
     if ((this->actor.colChkInfo.health != 0) && (this->collider.base.acFlags & AC_HIT)) {
         this->collider.base.acFlags &= ~AC_HIT;
-        Actor_SetDropFlag(&this->actor, &this->collider.elem, true);
+        Hit_bit_set(&this->actor, &this->collider.elem, true);
 
         if ((this->actor.colChkInfo.damageEffect != 0) || (this->actor.colChkInfo.damage != 0)) {
-            if (Actor_ApplyDamage(&this->actor) == 0) {
-                Actor_PlaySfx(&this->actor, NA_SE_EN_BIRI_DEAD);
-                Enemy_StartFinishingBlow(play, &this->actor);
+            if (hp_down(&this->actor) == 0) {
+                Actor_SE_set(&this->actor, NA_SE_EN_BIRI_DEAD);
+                Actor_info_finish(play, &this->actor);
                 this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
             }
 
             damageEffect = this->actor.colChkInfo.damageEffect;
 
             if (damageEffect == BIRI_DMGEFF_DEKUNUT) {
-                if (this->actionFunc != EnBili_Stunned) {
-                    EnBili_SetupStunned(this);
+                if (this->actionFunc != mode_stop) {
+                    mode_stop_init(this);
                 }
             } else if (damageEffect == BIRI_DMGEFF_SWORD) {
-                if (this->actionFunc != EnBili_Stunned) {
-                    Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_RED, 200, COLORFILTER_BUFFLAG_XLU, 10);
+                if (this->actionFunc != mode_stop) {
+                    Set_Fog(&this->actor, COLORFILTER_COLORFLAG_RED, 200, COLORFILTER_BUFFLAG_XLU, 10);
 
                     if (this->actor.colChkInfo.health == 0) {
                         this->actor.params = EN_BILI_TYPE_DYING;
                     }
-                    EnBili_SetupDischargeLightning(this);
+                    mode_elect_init(this);
                 } else {
-                    EnBili_SetupBurnt(this);
+                    mode_damage_init(this);
                 }
             } else if (damageEffect == BIRI_DMGEFF_FIRE) {
-                EnBili_SetupBurnt(this);
+                mode_damage_init(this);
                 this->timer = 2;
             } else if (damageEffect == BIRI_DMGEFF_ICE) {
-                EnBili_SetupFrozen(this, play);
+                mode_drop_init(this, play);
             } else if (damageEffect == BIRI_DMGEFF_SLINGSHOT) {
-                EnBili_SetupRecoil(this);
+                mode_reverse_init(this);
             } else {
-                EnBili_SetupBurnt(this);
+                mode_damage_init(this);
             }
 
             if (this->collider.elem.acHitElem->atDmgInfo.dmgFlags & DMG_ARROW) {
@@ -600,62 +600,62 @@ void EnBili_UpdateDamage(EnBili* this, PlayState* play) {
     }
 }
 
-void EnBili_Update(Actor* thisx, PlayState* play2) {
+void En_Bili_actor_move(Actor* thisx, PlayState* play2) {
     PlayState* play = play2;
     EnBili* this = (EnBili*)thisx;
 
     if (this->collider.base.atFlags & AT_HIT) {
         this->collider.base.atFlags &= ~AT_HIT;
-        EnBili_SetupDischargeLightning(this);
+        mode_elect_init(this);
     }
 
-    EnBili_UpdateDamage(this, play);
+    En_Bili_damage_proc(this, play);
     this->actionFunc(this, play);
 
-    if (this->actionFunc != EnBili_Die) {
-        EnBili_UpdateTentaclesIndex(this);
-        if (Animation_OnFrame(&this->skelAnime, 9.0f)) {
-            if ((this->actionFunc == EnBili_FloatIdle) || (this->actionFunc == EnBili_SetNewHomeHeight) ||
-                (this->actionFunc == EnBili_ApproachPlayer) || (this->actionFunc == EnBili_Recoil)) {
+    if (this->actionFunc != mode_down) {
+        set_bili_txt_num(this);
+        if (Skeleton_Info_frame_check(&this->skelAnime, 9.0f)) {
+            if ((this->actionFunc == mode_move) || (this->actionFunc == mode_escape) ||
+                (this->actionFunc == mode_chase) || (this->actionFunc == mode_reverse)) {
                 if (this->playFlySfx) {
-                    Actor_PlaySfx(&this->actor, NA_SE_EN_BIRI_FLY);
+                    Actor_SE_set(&this->actor, NA_SE_EN_BIRI_FLY);
                     this->playFlySfx = false;
                 } else {
                     this->playFlySfx = true;
                 }
             }
         }
-        if (this->actionFunc == EnBili_Recoil) {
-            Actor_MoveXYZ(&this->actor);
+        if (this->actionFunc == mode_reverse) {
+            Actor_position_moveF_XY(&this->actor);
         } else {
-            Actor_MoveXZGravity(&this->actor);
+            Actor_position_moveF(&this->actor);
         }
 
-        Actor_UpdateBgCheckInfo(play, &this->actor, 5.0f, this->collider.dim.radius, this->collider.dim.height,
+        Actor_BGcheck2(play, &this->actor, 5.0f, this->collider.dim.radius, this->collider.dim.height,
                                 UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_1 | UPDBGCHECKINFO_FLAG_2);
-        Collider_UpdateCylinder(&this->actor, &this->collider);
+        CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
 
         if (this->collider.base.atFlags & AT_ON) {
-            CollisionCheck_SetAT(play, &play->colChkCtx, &this->collider.base);
+            CollisionCheck_setAT(play, &play->colChkCtx, &this->collider.base);
         }
         if (this->collider.base.acFlags & AC_ON) {
-            CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
+            CollisionCheck_setAC(play, &play->colChkCtx, &this->collider.base);
         }
 
-        CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
-        Actor_SetFocus(&this->actor, 0.0f);
+        CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
+        Actor_world_to_eye(&this->actor, 0.0f);
     }
 }
 
 // Draw and associated functions
 
-void EnBili_PulseLimb3(EnBili* this, f32 frame, Vec3f* arg2) {
+void bili_outside_scale_anm(EnBili* this, f32 frame, Vec3f* arg2) {
     f32 cos;
     f32 sin;
 
-    if (this->actionFunc == EnBili_DischargeLightning) {
+    if (this->actionFunc == mode_elect) {
         arg2->y = 1.0f - (sinf((M_PI * 0.16667f) * frame) * 0.26f);
-    } else if (this->actionFunc == EnBili_Climb) {
+    } else if (this->actionFunc == mode_jump) {
         if (frame <= 8.0f) {
             arg2->y = (cosf((M_PI * 0.125f) * frame) * 0.15f) + 0.85f;
         } else if (frame <= 18.0f) {
@@ -669,7 +669,7 @@ void EnBili_PulseLimb3(EnBili* this, f32 frame, Vec3f* arg2) {
         }
 
         arg2->z = arg2->x;
-    } else if (this->actionFunc == EnBili_Stunned) {
+    } else if (this->actionFunc == mode_stop) {
         sin = sinf((M_PI * 0.1f) * this->timer) * 0.08f;
         arg2->x -= sin;
         arg2->y += sin;
@@ -679,13 +679,13 @@ void EnBili_PulseLimb3(EnBili* this, f32 frame, Vec3f* arg2) {
     }
 }
 
-void EnBili_PulseLimb2(EnBili* this, f32 frame, Vec3f* arg2) {
+void bili_inside_scale_anm(EnBili* this, f32 frame, Vec3f* arg2) {
     f32 cos;
     f32 sin;
 
-    if (this->actionFunc == EnBili_DischargeLightning) {
+    if (this->actionFunc == mode_elect) {
         arg2->y = (sinf((M_PI * 0.16667f) * frame) * 0.2f) + 1.0f;
-    } else if (this->actionFunc == EnBili_Climb) {
+    } else if (this->actionFunc == mode_jump) {
         if (frame <= 8.0f) {
             arg2->x = 1.125f - (cosf((M_PI * 0.125f) * frame) * 0.125f);
         } else if (frame <= 18.0f) {
@@ -698,7 +698,7 @@ void EnBili_PulseLimb2(EnBili* this, f32 frame, Vec3f* arg2) {
             arg2->y = (0.48f * cos) + 1.0f;
         }
         arg2->z = arg2->x;
-    } else if (this->actionFunc == EnBili_Stunned) {
+    } else if (this->actionFunc == mode_stop) {
         sin = sinf((M_PI * 0.1f) * this->timer) * 0.08f;
         arg2->x += sin;
         arg2->y -= sin;
@@ -708,10 +708,10 @@ void EnBili_PulseLimb2(EnBili* this, f32 frame, Vec3f* arg2) {
     }
 }
 
-void EnBili_PulseLimb4(EnBili* this, f32 frame, Vec3f* arg2) {
+void bili_hair_scale_anm(EnBili* this, f32 frame, Vec3f* arg2) {
     f32 cos;
 
-    if (this->actionFunc == EnBili_Climb) {
+    if (this->actionFunc == mode_jump) {
         if (frame <= 8.0f) {
             cos = cosf((M_PI * 0.125f) * frame);
             arg2->x = 1.125f - (0.125f * cos);
@@ -729,49 +729,49 @@ void EnBili_PulseLimb4(EnBili* this, f32 frame, Vec3f* arg2) {
     }
 }
 
-s32 EnBili_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx,
+s32 en_bili_display1(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx,
                             Gfx** gfx) {
     EnBili* this = (EnBili*)thisx;
     Vec3f limbScale = { 1.0f, 1.0f, 1.0f };
     f32 curFrame = this->skelAnime.curFrame;
 
     if (limbIndex == EN_BILI_LIMB_OUTER_HOOD) {
-        EnBili_PulseLimb3(this, curFrame, &limbScale);
+        bili_outside_scale_anm(this, curFrame, &limbScale);
     } else if (limbIndex == EN_BILI_LIMB_INNER_HOOD) {
-        EnBili_PulseLimb2(this, curFrame, &limbScale);
+        bili_inside_scale_anm(this, curFrame, &limbScale);
     } else if (limbIndex == EN_BILI_LIMB_TENTACLES) {
-        EnBili_PulseLimb4(this, curFrame, &limbScale);
-        rot->y = (Camera_GetCamDirYaw(GET_ACTIVE_CAM(play)) - this->actor.shape.rot.y) + 0x8000;
+        bili_hair_scale_anm(this, curFrame, &limbScale);
+        rot->y = (getRealCameraAngleY(GET_ACTIVE_CAM(play)) - this->actor.shape.rot.y) + 0x8000;
     }
 
-    Matrix_Scale(limbScale.x, limbScale.y, limbScale.z, MTXMODE_APPLY);
+    Matrix_scale(limbScale.x, limbScale.y, limbScale.z, MTXMODE_APPLY);
     return false;
 }
 
-static void* sTentaclesTextures[] = {
+static void* bili_txt[] = {
     gBiriTentacles0Tex, gBiriTentacles1Tex, gBiriTentacles2Tex, gBiriTentacles3Tex,
     gBiriTentacles4Tex, gBiriTentacles5Tex, gBiriTentacles6Tex, gBiriTentacles7Tex,
 };
 
 #include "assets/overlays/ovl_En_Bili/z_en_bili.c"
 
-void EnBili_Draw(Actor* thisx, PlayState* play) {
+void En_Bili_actor_draw(Actor* thisx, PlayState* play) {
     EnBili* this = (EnBili*)thisx;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_bili.c", 1521);
-    Gfx_SetupDL_25Xlu(play->state.gfxCtx);
+    _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
 
     this->tentaclesTexIndex = CLAMP_MAX(this->tentaclesTexIndex, 7);
 
-    gSPSegment(POLY_XLU_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(sTentaclesTextures[this->tentaclesTexIndex]));
+    gSPSegment(POLY_XLU_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(bili_txt[this->tentaclesTexIndex]));
 
-    if ((this->actionFunc == EnBili_DischargeLightning) && ((this->timer & 1) != 0)) {
-        gSPSegment(POLY_XLU_DISP++, 0x09, D_809C16F0);
+    if ((this->actionFunc == mode_elect) && ((this->timer & 1) != 0)) {
+        gSPSegment(POLY_XLU_DISP++, 0x09, reverse_combine_mode);
     } else {
-        gSPSegment(POLY_XLU_DISP++, 0x09, D_809C1700);
+        gSPSegment(POLY_XLU_DISP++, 0x09, normal_combine_mode);
     }
 
-    POLY_XLU_DISP = SkelAnime_Draw(play, this->skelAnime.skeleton, this->skelAnime.jointTable, EnBili_OverrideLimbDraw,
+    POLY_XLU_DISP = Si2_draw2(play, this->skelAnime.skeleton, this->skelAnime.jointTable, en_bili_display1,
                                    NULL, this, POLY_XLU_DISP);
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_bili.c", 1552);
 }

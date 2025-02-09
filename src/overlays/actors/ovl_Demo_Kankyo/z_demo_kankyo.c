@@ -2,7 +2,7 @@
 #include "z64cutscene_commands.h"
 
 // clang-format off
-CutsceneData gAdultWarpInCS[] = {
+CutsceneData okarina_iki_adult_soto[] = {
     CS_HEADER(2, 164),
     CS_CAM_EYE_SPLINE_REL_TO_PLAYER(0, 135),
         CS_CAM_POINT(CS_CAM_CONTINUE, 0x00, 0, CS_FLOAT(0x42714CA7, 60.324856f), 31, 79, 59, 0x010F),
@@ -28,7 +28,7 @@ CutsceneData gAdultWarpInCS[] = {
 #include "z64cutscene_commands.h"
 
 // clang-format off
-CutsceneData gAdultWarpOutCS[] = {
+CutsceneData okarina_kaeri_adult_soto[] = {
     CS_HEADER(5, 1167),
     CS_CAM_EYE_SPLINE_REL_TO_PLAYER(0, 1138),
         CS_CAM_POINT(CS_CAM_CONTINUE, 0x00, 0, CS_FLOAT(0x42714CA8, 60.32486f), 31, 82, 61, 0x20BA),
@@ -59,7 +59,7 @@ CutsceneData gAdultWarpOutCS[] = {
 #include "z64cutscene_commands.h"
 
 // clang-format off
-CutsceneData gAdultWarpInToTCS[] = {
+CutsceneData okarina_iki_adult_naka[] = {
     CS_HEADER(2, 118),
     CS_CAM_EYE_SPLINE_REL_TO_PLAYER(0, 89),
         CS_CAM_POINT(CS_CAM_CONTINUE, 0x00, 0, CS_FLOAT(0x428EA647, 71.32476f), 53, 53, 40, 0x010F),
@@ -85,7 +85,7 @@ CutsceneData gAdultWarpInToTCS[] = {
 #include "z64cutscene_commands.h"
 
 // clang-format off
-CutsceneData gAdultWarpOutToTCS[] = {
+CutsceneData okarina_kaeri_adult_naka[] = {
     CS_HEADER(5, 1120),
     CS_TRANSITION(CS_TRANS_GRAY_FILL_OUT, 36, 46),
     CS_TRANSITION(CS_TRANS_GRAY_FILL_IN, 30, 35),
@@ -110,7 +110,7 @@ CutsceneData gAdultWarpOutToTCS[] = {
 #include "z64cutscene_commands.h"
 
 // clang-format off
-CutsceneData gChildWarpInCS[] = {
+CutsceneData okarina_iki_child_soto[] = {
     CS_HEADER(2, 1164),
     CS_CAM_EYE_SPLINE_REL_TO_PLAYER(0, 1135),
         CS_CAM_POINT(CS_CAM_CONTINUE, 0x00, 0, CS_FLOAT(0x42714CA7, 60.324856f), 31, 68, 59, 0x010F),
@@ -138,7 +138,7 @@ CutsceneData gChildWarpInCS[] = {
 #include "z64cutscene_commands.h"
 
 // clang-format off
-CutsceneData gChildWarpOutCS[] = {
+CutsceneData okarina_kaeri_child_soto[] = {
     CS_HEADER(5, 1167),
     CS_TRANSITION(CS_TRANS_GRAY_FILL_OUT, 36, 46),
     CS_TRANSITION(CS_TRANS_GRAY_FILL_IN, 30, 35),
@@ -169,7 +169,7 @@ CutsceneData gChildWarpOutCS[] = {
 #include "z64cutscene_commands.h"
 
 // clang-format off
-CutsceneData gChildWarpInToTCS[] = {
+CutsceneData okarina_iki_child_naka[] = {
     CS_HEADER(2, 1118),
     CS_CAM_EYE_SPLINE_REL_TO_PLAYER(0, 1089),
         CS_CAM_POINT(CS_CAM_CONTINUE, 0x00, 0, CS_FLOAT(0x428EA647, 71.32476f), 53, 53, 40, 0x010F),
@@ -197,7 +197,7 @@ CutsceneData gChildWarpInToTCS[] = {
 #include "z64cutscene_commands.h"
 
 // clang-format off
-CutsceneData gChildWarpOutToTCS[] = {
+CutsceneData okarina_kaeri_child_naka[] = {
     CS_HEADER(5, 1120),
     CS_TRANSITION(CS_TRANS_GRAY_FILL_OUT, 36, 46),
     CS_TRANSITION(CS_TRANS_GRAY_FILL_IN, 30, 35),
@@ -231,39 +231,39 @@ CutsceneData gChildWarpOutToTCS[] = {
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED)
 
-void DemoKankyo_Init(Actor* thisx, PlayState* play);
-void DemoKankyo_Destroy(Actor* thisx, PlayState* play);
-void DemoKankyo_Update(Actor* thisx, PlayState* play);
-void DemoKankyo_Draw(Actor* thisx, PlayState* play);
+void Demo_Kankyo_actor_ct(Actor* thisx, PlayState* play);
+void Demo_Kankyo_actor_dt(Actor* thisx, PlayState* play);
+void Demo_Kankyo_actor_move(Actor* thisx, PlayState* play);
+void Demo_Kankyo_actor_draw(Actor* thisx, PlayState* play);
 
-void DemoKankyo_SetupType(DemoKankyo* this, PlayState* play);
-void DemoKankyo_UpdateClouds(DemoKankyo* this, PlayState* play);
-void DemoKankyo_UpdateRock(DemoKankyo* this, PlayState* play);
-void DemoKankyo_UpdateWarpIn(DemoKankyo* this, PlayState* play);
-void DemoKankyo_UpdateDoorOfTime(DemoKankyo* this, PlayState* play);
-void DemoKankyo_DoNothing(DemoKankyo* this, PlayState* play);
-void DemoKankyo_KillDoorOfTimeCollision(DemoKankyo* this, PlayState* play);
+static void move_wait(DemoKankyo* this, PlayState* play);
+void cloud_move(DemoKankyo* this, PlayState* play);
+void rock_move(DemoKankyo* this, PlayState* play);
+void move_oka16(DemoKankyo* this, PlayState* play);
+void tobira_move(DemoKankyo* this, PlayState* play);
+void move_nonproc(DemoKankyo* this, PlayState* play);
+void tobira_move2(DemoKankyo* this, PlayState* play);
 
-void DemoKankyo_DrawRain(Actor* thisx, PlayState* play);
-void DemoKankyo_DrawRock(Actor* thisx, PlayState* play);
-void DemoKankyo_DrawClouds(Actor* thisx, PlayState* play);
-void DemoKankyo_DrawDoorOfTime(Actor* thisx, PlayState* play);
-void DemoKankyo_DrawLightPlane(Actor* thisx, PlayState* play);
-void DemoKankyo_DrawWarpSparkles(Actor* thisx, PlayState* play);
-void DemoKankyo_DrawSparkles(Actor* thisx, PlayState* play);
+void Demo_Starfield_draw(Actor* thisx, PlayState* play);
+void Demo_Rock_draw(Actor* thisx, PlayState* play);
+void Demo_cloud_draw(Actor* thisx, PlayState* play);
+void Demo_tokidoor_draw(Actor* thisx, PlayState* play);
+void Demo_madopika_draw(Actor* thisx, PlayState* play);
+void Demo_okawarp_draw(Actor* thisx, PlayState* play);
+void Demo_Takara_draw(Actor* thisx, PlayState* play);
 
 // adult warp songs cutscenes
-extern CutsceneData gAdultWarpInCS[];
-extern CutsceneData gAdultWarpOutCS[];
+extern CutsceneData okarina_iki_adult_soto[];
+extern CutsceneData okarina_kaeri_adult_soto[];
 // adult warp songs cutscenes in temple of time
-extern CutsceneData gAdultWarpInToTCS[];
-extern CutsceneData gAdultWarpOutToTCS[];
+extern CutsceneData okarina_iki_adult_naka[];
+extern CutsceneData okarina_kaeri_adult_naka[];
 // child warp songs cutscenes
-extern CutsceneData gChildWarpInCS[];
-extern CutsceneData gChildWarpOutCS[];
+extern CutsceneData okarina_iki_child_soto[];
+extern CutsceneData okarina_kaeri_child_soto[];
 // child warp songs cutscenes in temple of time
-extern CutsceneData gChildWarpInToTCS[];
-extern CutsceneData gChildWarpOutToTCS[];
+extern CutsceneData okarina_iki_child_naka[];
+extern CutsceneData okarina_kaeri_child_naka[];
 
 ActorProfile Demo_Kankyo_Profile = {
     /**/ ACTOR_DEMO_KANKYO,
@@ -271,13 +271,13 @@ ActorProfile Demo_Kankyo_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(DemoKankyo),
-    /**/ DemoKankyo_Init,
-    /**/ DemoKankyo_Destroy,
-    /**/ DemoKankyo_Update,
-    /**/ DemoKankyo_Draw,
+    /**/ Demo_Kankyo_actor_ct,
+    /**/ Demo_Kankyo_actor_dt,
+    /**/ Demo_Kankyo_actor_move,
+    /**/ Demo_Kankyo_actor_draw,
 };
 
-static s16 sObjectIds[] = {
+static s16 demo_kankyo_shape_data[] = {
     OBJECT_EFC_STAR_FIELD, OBJECT_EFC_STAR_FIELD, OBJECT_EFC_STAR_FIELD, OBJECT_EFC_STAR_FIELD, OBJECT_EFC_STAR_FIELD,
     OBJECT_EFC_STAR_FIELD, OBJECT_EFC_STAR_FIELD, OBJECT_GAMEPLAY_KEEP,  OBJECT_GI_MELODY,      OBJECT_GI_MELODY,
     OBJECT_GI_MELODY,      OBJECT_GI_MELODY,      OBJECT_GI_MELODY,      OBJECT_TOKI_OBJECTS,   OBJECT_TOKI_OBJECTS,
@@ -285,128 +285,23 @@ static s16 sObjectIds[] = {
 };
 
 // unused, presumed to be floats
-static f32 D_8098C314[] = {
+static f32 topmode[] = {
     0.0f,
     150.0f,
 };
 
-static Color_RGB8 sWarpSparkleEnvColors[] = {
-    { 0, 200, 0 },    // minuet
-    { 255, 50, 0 },   // bolero
-    { 0, 150, 255 },  // serenade
-    { 255, 150, 0 },  // requiem
-    { 200, 50, 255 }, // nocturne
-    { 200, 255, 0 },  // prelude
-};
+static s16 SFIELDSPEED;
+static s16 SFIELDSCALE;
+static s16 end_timer;
 
-static CutsceneCameraPoint sWarpOutCameraPoints[] = {
-    { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x0000, 0x0000, 0xFFE5 } },
-    { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x0000, 0x0000, 0xFFE5 } },
-    { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0xFFE6, 0x0000, 0x0000 } },
-    { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x0000, 0x0017, 0x0024 } },
-    { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x001C, 0x0032, 0xFFFF } },
-    { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x0001, 0x0018, 0xFFD9 } },
-    { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0xFFE6, 0xFFFA, 0x0003 } },
-    { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x0000, 0x0025, 0x0037 } },
-    { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x004F, 0x0066, 0x0029 } },
-    { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x00A6, 0x00AD, 0x0006 } },
-    { CS_CAM_CONTINUE, 0, 5, 45.0f, { 0x010D, 0x015A, 0xFF4C } },
-    { CS_CAM_CONTINUE, 0, 5, 45.0f, { 0x019F, 0x0245, 0xFE35 } },
-    { CS_CAM_STOP, 0, 5, 45.0f, { 0x01CE, 0x036F, 0xFCC2 } },
-    { CS_CAM_STOP, 0, 5, 45.0f, { 0x01CE, 0x036F, 0xFCC2 } },
-};
-
-static CutsceneCameraPoint sWarpInCameraPoints[] = {
-    { CS_CAM_CONTINUE, 0, 5, 45.0f, { 0x019F, 0x0245, 0xFE35 } },
-    { CS_CAM_CONTINUE, 0, 5, 45.0f, { 0x010D, 0x015A, 0xFF4C } },
-    { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x00A6, 0x00AD, 0x0006 } },
-    { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x004F, 0x0066, 0x0029 } },
-    { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x0000, 0x0025, 0x0037 } },
-    { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0xFFE6, 0xFFFA, 0x0003 } },
-    { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x0001, 0x0018, 0xFFD9 } },
-    { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x001C, 0x0032, 0xFFFF } },
-    { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x0000, 0x0017, 0x0024 } },
-    { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0xFFE6, 0x0000, 0x0000 } },
-    { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x0000, 0x0000, 0xFFE5 } },
-    { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x0000, 0x0000, 0xFFE5 } },
-    { CS_CAM_STOP, 0, 5, 45.0f, { 0x01CE, 0x036F, 0xFCC2 } },
-    { CS_CAM_STOP, 0, 5, 45.0f, { 0x01CE, 0x036F, 0xFCC2 } },
-};
-
-static Color_RGB8 sSparkleEnvColors[] = {
-    { 0, 200, 0 },   { 255, 50, 0 },  { 0, 150, 255 }, { 255, 150, 0 }, // only this one is used
-    { 0, 255, 255 }, { 200, 255, 0 },
-};
-
-static CutsceneCameraPoint sSparklesCameraPoints[] = {
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFF7, 0x0000, 0xFFD0 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFF7, 0x0000, 0xFFD0 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFF7, 0x0000, 0xFFD0 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFF7, 0x0000, 0xFFD0 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFD7, 0x0000, 0xFFE9 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFD3, 0x0000, 0x000A } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFE8, 0x0001, 0x0027 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x0015, 0x0000, 0x002B } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x002F, 0x0005, 0x000E } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x0031, 0x0005, 0xFFF5 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x0020, 0x0005, 0xFFDA } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFF5, 0x0005, 0xFFD1 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFD7, 0x0006, 0xFFEA } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFD5, 0x0009, 0x000D } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFE9, 0x0009, 0x0027 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x0014, 0x000B, 0x0029 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x002D, 0x000B, 0x000F } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x002E, 0x000B, 0xFFF0 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x001E, 0x000B, 0xFFDA } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFFA, 0x000E, 0xFFD3 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFDA, 0x000E, 0xFFEB } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFD7, 0x0010, 0x0008 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFE9, 0x0010, 0x0024 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x0011, 0x0010, 0x0028 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x002C, 0x0010, 0x000D } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x002C, 0x0012, 0xFFF5 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x001F, 0x0011, 0xFFDE } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFFB, 0x0014, 0xFFD5 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFDD, 0x0014, 0xFFEC } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFDA, 0x0017, 0x0008 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFE8, 0x0014, 0x001F } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x000C, 0x0018, 0x0026 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x0027, 0x0018, 0x000D } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x0027, 0x001B, 0xFFF6 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x001C, 0x001A, 0xFFE2 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFFA, 0x000E, 0xFFD4 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFD9, 0x001B, 0xFFEF } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFD7, 0x001B, 0x000A } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFE6, 0x001B, 0x0022 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x000F, 0x001F, 0x002C } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x0032, 0x0020, 0x0009 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x0030, 0x0021, 0xFFF0 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x001C, 0x0025, 0xFFD9 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFFA, 0x0028, 0xFFD4 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFD8, 0x002B, 0xFFF5 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFD7, 0x002B, 0x0006 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFDF, 0x002B, 0x0019 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x000E, 0x002E, 0x002C } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x0032, 0x002E, 0x0003 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x002A, 0x0030, 0xFFE7 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFF6, 0x002B, 0xFFD4 } },
-    { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFF6, 0x002B, 0xFFD4 } },
-    { CS_CAM_STOP, 0, 2, 45.0f, { 0xFFF6, 0x002B, 0xFFD4 } },
-    { CS_CAM_STOP, 0, 2, 45.0f, { 0xFFF6, 0x002B, 0xFFD4 } },
-};
-
-static s16 D_8098CF80;
-static s16 sRainScale;
-static s16 D_8098CF84;
-
-void DemoKankyo_SetupAction(DemoKankyo* this, DemoKankyoActionFunc actionFunc) {
+void Demo_Kankyo_actor_set_process(DemoKankyo* this, DemoKankyoActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
 
-void DemoKankyo_Init(Actor* thisx, PlayState* play) {
+void Demo_Kankyo_actor_ct(Actor* thisx, PlayState* play) {
     DemoKankyo* this = (DemoKankyo*)thisx;
     s16 i;
-    s32 objectSlot = Object_GetSlot(&play->objectCtx, sObjectIds[this->actor.params]);
+    s32 objectSlot = Object_Exchange_bank_check(&play->objectCtx, demo_kankyo_shape_data[this->actor.params]);
 
     PRINTF("bank_ID = %d\n", objectSlot);
     if (objectSlot < 0) {
@@ -421,19 +316,19 @@ void DemoKankyo_Init(Actor* thisx, PlayState* play) {
             switch (play->sceneId) {
                 case SCENE_CUTSCENE_MAP:
                     play->roomCtx.curRoom.segment = NULL;
-                    D_8098CF80 = 10;
-                    sRainScale = 8;
+                    SFIELDSPEED = 10;
+                    SFIELDSCALE = 8;
                     break;
                 case SCENE_TEMPLE_OF_TIME:
-                    D_8098CF80 = 14;
-                    sRainScale = 8;
+                    SFIELDSPEED = 14;
+                    SFIELDSCALE = 8;
                     break;
                 case SCENE_HYRULE_FIELD:
-                    D_8098CF80 = 1;
-                    sRainScale = 5;
+                    SFIELDSPEED = 1;
+                    SFIELDSCALE = 5;
                     break;
                 default:
-                    Actor_Kill(&this->actor);
+                    Actor_delete(&this->actor);
                     break;
             }
             break;
@@ -443,26 +338,26 @@ void DemoKankyo_Init(Actor* thisx, PlayState* play) {
         case DEMOKANKYO_ROCK_4:
         case DEMOKANKYO_ROCK_5:
             play->roomCtx.curRoom.segment = NULL;
-            this->actor.scale.x = this->actor.scale.y = this->actor.scale.z = Rand_ZeroOne() * 0.5f + 0.5f;
-            this->unk_150[0].unk_0.x = Rand_ZeroOne() * 3.0f + 1.0f;
-            this->unk_150[0].unk_0.y = Rand_ZeroOne() * 3.0f + 1.0f;
-            this->unk_150[0].unk_0.z = Rand_ZeroOne() * 3.0f + 1.0f;
+            this->actor.scale.x = this->actor.scale.y = this->actor.scale.z = fqrand() * 0.5f + 0.5f;
+            this->unk_150[0].unk_0.x = fqrand() * 3.0f + 1.0f;
+            this->unk_150[0].unk_0.y = fqrand() * 3.0f + 1.0f;
+            this->unk_150[0].unk_0.z = fqrand() * 3.0f + 1.0f;
             break;
         case DEMOKANKYO_CLOUDS:
             for (i = 0; i < 30; i++) {
-                this->unk_150[i].unk_20 = Rand_ZeroOne() * 65535.0f;
-                this->unk_150[i].unk_18 = Rand_ZeroOne() * 100.0f + 60.0f;
+                this->unk_150[i].unk_20 = fqrand() * 65535.0f;
+                this->unk_150[i].unk_18 = fqrand() * 100.0f + 60.0f;
             }
             break;
         case DEMOKANKYO_DOOR_OF_TIME:
             this->actor.scale.x = this->actor.scale.y = this->actor.scale.z = 1.0f;
             this->unk_150[0].unk_18 = 0.0f;
             if (!GET_EVENTCHKINF(EVENTCHKINF_OPENED_DOOR_OF_TIME)) {
-                Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_DOOR_TOKI, this->actor.world.pos.x,
+                Actor_info_make_child_actor(&play->actorCtx, &this->actor, play, ACTOR_DOOR_TOKI, this->actor.world.pos.x,
                                    this->actor.world.pos.y, this->actor.world.pos.z, 0, 0, 0, 0x0000);
             } else {
                 play->roomCtx.drawParams[1] = 0xFF;
-                Actor_Kill(&this->actor);
+                Actor_delete(&this->actor);
             }
             break;
         case DEMOKANKYO_LIGHT_PLANE:
@@ -471,15 +366,15 @@ void DemoKankyo_Init(Actor* thisx, PlayState* play) {
             break;
         case DEMOKANKYO_WARP_OUT:
         case DEMOKANKYO_WARP_IN:
-            Actor_ChangeCategory(play, &play->actorCtx, &this->actor, ACTORCAT_ITEMACTION);
+            Actor_info_part_chg(play, &play->actorCtx, &this->actor, ACTORCAT_ITEMACTION);
             this->actor.flags |= ACTOR_FLAG_UPDATE_DURING_OCARINA;
             this->actor.room = -1;
             this->warpTimer = 35;
             this->sparkleCounter = 0;
             this->actor.scale.x = this->actor.scale.y = this->actor.scale.z = 1.0f;
             if (this->actor.params == DEMOKANKYO_WARP_OUT) {
-                Audio_PlaySfxGeneral(NA_SE_EV_SARIA_MELODY, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                     &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                Nai_FxFlagEntry(NA_SE_EV_SARIA_MELODY, &_dummy_zero_f, 4, &_dummy_one,
+                                     &_dummy_one, &_dummy_zero_s8);
             }
             break;
         case DEMOKANKYO_SPARKLES:
@@ -493,14 +388,14 @@ void DemoKankyo_Init(Actor* thisx, PlayState* play) {
     for (i = 0; i < 30; i++) {
         this->unk_150[i].unk_22 = 0;
     }
-    DemoKankyo_SetupAction(this, DemoKankyo_SetupType);
+    Demo_Kankyo_actor_set_process(this, move_wait);
 }
 
-void DemoKankyo_Destroy(Actor* thisx, PlayState* play) {
+void Demo_Kankyo_actor_dt(Actor* thisx, PlayState* play) {
     if (thisx) {}
 }
 
-void DemoKankyo_SetupType(DemoKankyo* this, PlayState* play) {
+static void move_wait(DemoKankyo* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     if (this->actor.objectSlot == this->requiredObjectSlot) {
@@ -510,14 +405,14 @@ void DemoKankyo_SetupType(DemoKankyo* this, PlayState* play) {
             case DEMOKANKYO_ROCK_3:
             case DEMOKANKYO_ROCK_4:
             case DEMOKANKYO_ROCK_5:
-                DemoKankyo_SetupAction(this, DemoKankyo_UpdateRock);
+                Demo_Kankyo_actor_set_process(this, rock_move);
                 break;
             case DEMOKANKYO_CLOUDS:
-                DemoKankyo_SetupAction(this, DemoKankyo_UpdateClouds);
+                Demo_Kankyo_actor_set_process(this, cloud_move);
                 break;
             case DEMOKANKYO_DOOR_OF_TIME:
-                if (CutsceneFlags_Get(play, 2)) {
-                    DemoKankyo_SetupAction(this, DemoKankyo_UpdateDoorOfTime);
+                if (eventbit_check(play, 2)) {
+                    Demo_Kankyo_actor_set_process(this, tobira_move);
                 }
                 break;
             case DEMOKANKYO_WARP_OUT:
@@ -545,42 +440,42 @@ void DemoKankyo_SetupType(DemoKankyo* this, PlayState* play) {
                 }
                 if (this->warpTimer == 1) {
                     if (play->sceneId == SCENE_TEMPLE_OF_TIME) {
-                        D_8098CF84 = 25;
+                        end_timer = 25;
                         if (!LINK_IS_ADULT) {
-                            play->csCtx.script = gChildWarpInToTCS;
+                            play->csCtx.script = okarina_iki_child_naka;
                         } else {
-                            play->csCtx.script = gAdultWarpInToTCS;
+                            play->csCtx.script = okarina_iki_adult_naka;
                         }
                     } else {
-                        D_8098CF84 = 32;
+                        end_timer = 32;
                         if (!LINK_IS_ADULT) {
-                            play->csCtx.script = gChildWarpInCS;
+                            play->csCtx.script = okarina_iki_child_soto;
                         } else {
-                            play->csCtx.script = gAdultWarpInCS;
+                            play->csCtx.script = okarina_iki_adult_soto;
                         }
                     }
-                    if (Play_CamIsNotFixed(play)) {
-                        gSaveContext.cutsceneTrigger = 1;
+                    if (Game_play_change_camera_check(play)) {
+                        z_common_data.cutsceneTrigger = 1;
                     }
-                    DemoKankyo_SetupAction(this, DemoKankyo_DoNothing);
+                    Demo_Kankyo_actor_set_process(this, move_nonproc);
                 }
                 break;
             case DEMOKANKYO_WARP_IN:
                 if (play->sceneId == SCENE_TEMPLE_OF_TIME) {
                     if (!LINK_IS_ADULT) {
-                        play->csCtx.script = gChildWarpOutToTCS;
+                        play->csCtx.script = okarina_kaeri_child_naka;
                     } else {
-                        play->csCtx.script = gAdultWarpOutToTCS;
+                        play->csCtx.script = okarina_kaeri_adult_naka;
                     }
                 } else {
                     if (!LINK_IS_ADULT) {
-                        play->csCtx.script = gChildWarpOutCS;
+                        play->csCtx.script = okarina_kaeri_child_soto;
                     } else {
-                        play->csCtx.script = gAdultWarpOutCS;
+                        play->csCtx.script = okarina_kaeri_adult_soto;
                     }
                 }
-                gSaveContext.cutsceneTrigger = 1;
-                DemoKankyo_SetupAction(this, DemoKankyo_UpdateWarpIn);
+                z_common_data.cutsceneTrigger = 1;
+                Demo_Kankyo_actor_set_process(this, move_oka16);
                 break;
             case DEMOKANKYO_BLUE_RAIN:
             case DEMOKANKYO_SPARKLES:
@@ -589,18 +484,18 @@ void DemoKankyo_SetupType(DemoKankyo* this, PlayState* play) {
     }
 }
 
-void DemoKankyo_DoNothing(DemoKankyo* this, PlayState* play) {
+void move_nonproc(DemoKankyo* this, PlayState* play) {
 }
 
-void DemoKankyo_UpdateWarpIn(DemoKankyo* this, PlayState* play) {
+void move_oka16(DemoKankyo* this, PlayState* play) {
 #if OOT_VERSION < PAL_1_0
-    Audio_PlaySfxGeneral(NA_SE_EV_LINK_WARP_OUT, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                         &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+    Nai_FxFlagEntry(NA_SE_EV_LINK_WARP_OUT, &_dummy_zero_f, 4, &_dummy_one,
+                         &_dummy_one, &_dummy_zero_s8);
 #endif
-    DemoKankyo_SetupAction(this, DemoKankyo_DoNothing);
+    Demo_Kankyo_actor_set_process(this, move_nonproc);
 }
 
-void DemoKankyo_SetPosFromCue(DemoKankyo* this, PlayState* play, s32 cueChannel) {
+static void DemoEffMoveProc_local(DemoKankyo* this, PlayState* play, s32 cueChannel) {
     Vec3f startPos;
     Vec3f endPos;
     CsCmdActorCue* cue = play->csCtx.actorCues[cueChannel];
@@ -614,16 +509,16 @@ void DemoKankyo_SetPosFromCue(DemoKankyo* this, PlayState* play, s32 cueChannel)
     endPos.y = cue->endPos.y;
     endPos.z = cue->endPos.z;
 
-    lerp = Environment_LerpWeight(cue->endFrame, cue->startFrame, play->csCtx.curFrame);
+    lerp = get_parcent(cue->endFrame, cue->startFrame, play->csCtx.curFrame);
 
     this->actor.world.pos.x = ((endPos.x - startPos.x) * lerp) + startPos.x;
     this->actor.world.pos.y = ((endPos.y - startPos.y) * lerp) + startPos.y;
     this->actor.world.pos.z = ((endPos.z - startPos.z) * lerp) + startPos.z;
 }
 
-void DemoKankyo_UpdateRock(DemoKankyo* this, PlayState* play) {
+void rock_move(DemoKankyo* this, PlayState* play) {
     if (play->csCtx.state != CS_STATE_IDLE && play->csCtx.actorCues[this->actor.params - DEMOKANKYO_ROCK_1] != NULL) {
-        DemoKankyo_SetPosFromCue(this, play, this->actor.params - DEMOKANKYO_ROCK_1);
+        DemoEffMoveProc_local(this, play, this->actor.params - DEMOKANKYO_ROCK_1);
     }
 
     this->unk_150[0].unk_C.x += this->unk_150[0].unk_0.x;
@@ -631,7 +526,7 @@ void DemoKankyo_UpdateRock(DemoKankyo* this, PlayState* play) {
     this->unk_150[0].unk_C.z += this->unk_150[0].unk_0.z;
 }
 
-void DemoKankyo_UpdateClouds(DemoKankyo* this, PlayState* play) {
+void cloud_move(DemoKankyo* this, PlayState* play) {
     u8 i;
 
     for (i = 0; i < 30; i++) {
@@ -639,27 +534,27 @@ void DemoKankyo_UpdateClouds(DemoKankyo* this, PlayState* play) {
     }
 }
 
-void DemoKankyo_UpdateDoorOfTime(DemoKankyo* this, PlayState* play) {
-    Actor_PlaySfx(&this->actor, NA_SE_EV_STONE_STATUE_OPEN - SFX_FLAG);
+void tobira_move(DemoKankyo* this, PlayState* play) {
+    Actor_SE_set(&this->actor, NA_SE_EV_STONE_STATUE_OPEN - SFX_FLAG);
     this->unk_150[0].unk_18 += 1.0f;
     if (this->unk_150[0].unk_18 >= 102.0f) {
-        Actor_PlaySfx(&this->actor, NA_SE_EV_STONEDOOR_STOP);
+        Actor_SE_set(&this->actor, NA_SE_EV_STONEDOOR_STOP);
         SET_EVENTCHKINF(EVENTCHKINF_OPENED_DOOR_OF_TIME);
-        Actor_Kill(this->actor.child);
-        DemoKankyo_SetupAction(this, DemoKankyo_KillDoorOfTimeCollision);
+        Actor_delete(this->actor.child);
+        Demo_Kankyo_actor_set_process(this, tobira_move2);
     }
 }
 
-void DemoKankyo_KillDoorOfTimeCollision(DemoKankyo* this, PlayState* play) {
-    Actor_Kill(this->actor.child);
+void tobira_move2(DemoKankyo* this, PlayState* play) {
+    Actor_delete(this->actor.child);
 }
 
-void DemoKankyo_Update(Actor* thisx, PlayState* play) {
+void Demo_Kankyo_actor_move(Actor* thisx, PlayState* play) {
     DemoKankyo* this = (DemoKankyo*)thisx;
     this->actionFunc(this, play);
 }
 
-void DemoKankyo_Draw(Actor* thisx, PlayState* play) {
+void Demo_Kankyo_actor_draw(Actor* thisx, PlayState* play) {
     DemoKankyo* this = (DemoKankyo*)thisx;
 
     if (this->actor.objectSlot == this->requiredObjectSlot) {
@@ -667,9 +562,9 @@ void DemoKankyo_Draw(Actor* thisx, PlayState* play) {
             case DEMOKANKYO_BLUE_RAIN:
             case DEMOKANKYO_BLUE_RAIN_2:
                 if (play->sceneId == SCENE_TEMPLE_OF_TIME) {
-                    if (!CutsceneFlags_Get(play, 1)) {
+                    if (!eventbit_check(play, 1)) {
                         break;
-                    } else if (!Actor_IsFacingAndNearPlayer(&this->actor, 300.0f, 0x7530)) {
+                    } else if (!Actor_player_distance_direction_check(&this->actor, 300.0f, 0x7530)) {
                         break;
                     } else {
                         if (!LINK_IS_ADULT) {
@@ -683,66 +578,66 @@ void DemoKankyo_Draw(Actor* thisx, PlayState* play) {
                         }
                     }
                 }
-                DemoKankyo_DrawRain(thisx, play);
+                Demo_Starfield_draw(thisx, play);
                 break;
             case DEMOKANKYO_ROCK_1:
             case DEMOKANKYO_ROCK_2:
             case DEMOKANKYO_ROCK_3:
             case DEMOKANKYO_ROCK_4:
             case DEMOKANKYO_ROCK_5:
-                DemoKankyo_DrawRock(thisx, play);
+                Demo_Rock_draw(thisx, play);
                 break;
             case DEMOKANKYO_CLOUDS:
-                DemoKankyo_DrawClouds(thisx, play);
+                Demo_cloud_draw(thisx, play);
                 break;
             case DEMOKANKYO_DOOR_OF_TIME:
-                DemoKankyo_DrawDoorOfTime(thisx, play);
+                Demo_tokidoor_draw(thisx, play);
                 break;
             case DEMOKANKYO_LIGHT_PLANE:
-                DemoKankyo_DrawLightPlane(thisx, play);
+                Demo_madopika_draw(thisx, play);
                 break;
             case DEMOKANKYO_WARP_OUT:
             case DEMOKANKYO_WARP_IN:
-                DemoKankyo_DrawWarpSparkles(thisx, play);
+                Demo_okawarp_draw(thisx, play);
                 break;
             case DEMOKANKYO_SPARKLES:
-                DemoKankyo_DrawSparkles(thisx, play);
+                Demo_Takara_draw(thisx, play);
                 break;
         }
     }
-    if (Object_IsLoaded(&play->objectCtx, this->requiredObjectSlot)) {
+    if (Object_Exchange_bank_dma_check(&play->objectCtx, this->requiredObjectSlot)) {
         this->actor.objectSlot = this->requiredObjectSlot;
     }
 }
 
 // transform relating to blue rain
-void func_80989B54(Actor* thisx, PlayState* play, s16 i) {
+void Demo_Starfield_init(Actor* thisx, PlayState* play, s16 i) {
     DemoKankyo* this = (DemoKankyo*)thisx;
 
     switch (play->sceneId) {
         case SCENE_CUTSCENE_MAP:
-            this->unk_150[i].unk_0.x = (Rand_ZeroOne() - 0.5f) * 500.0f;
+            this->unk_150[i].unk_0.x = (fqrand() - 0.5f) * 500.0f;
             this->unk_150[i].unk_0.y = 500.0f;
-            this->unk_150[i].unk_0.z = (Rand_ZeroOne() - 0.5f) * 500.0f;
+            this->unk_150[i].unk_0.z = (fqrand() - 0.5f) * 500.0f;
             break;
         case SCENE_TEMPLE_OF_TIME:
             this->unk_150[i].unk_C.x = 0.0f;
             this->unk_150[i].unk_C.y = 0.0f;
             this->unk_150[i].unk_C.z = 0.0f;
-            this->unk_150[i].unk_0.x = (Rand_ZeroOne() - 0.5f) * 180.0f;
+            this->unk_150[i].unk_0.x = (fqrand() - 0.5f) * 180.0f;
             this->unk_150[i].unk_0.y = 10.0f;
-            this->unk_150[i].unk_0.z = (Rand_ZeroOne() - 0.5f) * 180.0f;
+            this->unk_150[i].unk_0.z = (fqrand() - 0.5f) * 180.0f;
             break;
         case SCENE_HYRULE_FIELD:
-            this->unk_150[i].unk_0.x = (Rand_ZeroOne() - 0.5f) * 600.0f;
+            this->unk_150[i].unk_0.x = (fqrand() - 0.5f) * 600.0f;
             this->unk_150[i].unk_0.y = -500.0f;
-            this->unk_150[i].unk_0.z = (Rand_ZeroOne() - 0.5f) * 600.0f;
+            this->unk_150[i].unk_0.z = (fqrand() - 0.5f) * 600.0f;
             break;
     }
-    this->unk_150[i].unk_18 = Rand_ZeroOne() * (D_8098CF80 * 4.0f) + D_8098CF80;
+    this->unk_150[i].unk_18 = fqrand() * (SFIELDSPEED * 4.0f) + SFIELDSPEED;
 }
 
-void DemoKankyo_DrawRain(Actor* thisx, PlayState* play) {
+void Demo_Starfield_draw(Actor* thisx, PlayState* play) {
     DemoKankyo* this = (DemoKankyo*)thisx;
     f32 temp_f12_2;
     s16 i;
@@ -773,26 +668,26 @@ void DemoKankyo_DrawRain(Actor* thisx, PlayState* play) {
 
         switch (this->unk_150[i].unk_22) {
             case 0:
-                func_80989B54(thisx, play, i);
-                if (gSaveContext.save.entranceIndex == ENTR_CUTSCENE_MAP_0) {
-                    this->unk_150[i].unk_0.y = Rand_ZeroOne() * 500.0f;
+                Demo_Starfield_init(thisx, play, i);
+                if (z_common_data.save.entranceIndex == ENTR_CUTSCENE_MAP_0) {
+                    this->unk_150[i].unk_0.y = fqrand() * 500.0f;
                 } else {
-                    this->unk_150[i].unk_0.y = Rand_ZeroOne() * -500.0f;
+                    this->unk_150[i].unk_0.y = fqrand() * -500.0f;
                 }
                 this->unk_150[i].unk_22++;
                 break;
             case 1:
                 temp_f12_2 = play->view.eye.y + (dy / norm) * 150.0f;
-                if (gSaveContext.save.entranceIndex == ENTR_CUTSCENE_MAP_0) {
+                if (z_common_data.save.entranceIndex == ENTR_CUTSCENE_MAP_0) {
                     this->unk_150[i].unk_0.y -= this->unk_150[i].unk_18;
                 } else {
                     this->unk_150[i].unk_0.y += this->unk_150[i].unk_18;
                 }
-                if (gSaveContext.save.entranceIndex == ENTR_CUTSCENE_MAP_0) {
+                if (z_common_data.save.entranceIndex == ENTR_CUTSCENE_MAP_0) {
                     if (this->unk_150[i].unk_C.y + this->unk_150[i].unk_0.y < temp_f12_2 - 300.0f) {
                         this->unk_150[i].unk_22++;
                     }
-                } else if (gSaveContext.save.entranceIndex == ENTR_HYRULE_FIELD_0) {
+                } else if (z_common_data.save.entranceIndex == ENTR_HYRULE_FIELD_0) {
                     if (temp_f12_2 + 300.0f < this->unk_150[i].unk_C.y + this->unk_150[i].unk_0.y) {
                         this->unk_150[i].unk_22++;
                     }
@@ -803,22 +698,22 @@ void DemoKankyo_DrawRain(Actor* thisx, PlayState* play) {
                 }
                 break;
             case 2:
-                func_80989B54(thisx, play, i);
+                Demo_Starfield_init(thisx, play, i);
                 this->unk_150[i].unk_22--;
                 break;
         }
 
-        Matrix_Translate(this->unk_150[i].unk_C.x + this->unk_150[i].unk_0.x,
+        Matrix_translate(this->unk_150[i].unk_C.x + this->unk_150[i].unk_0.x,
                          this->unk_150[i].unk_C.y + this->unk_150[i].unk_0.y,
                          this->unk_150[i].unk_C.z + this->unk_150[i].unk_0.z, MTXMODE_NEW);
 
-        if (gSaveContext.save.entranceIndex != ENTR_CUTSCENE_MAP_0) {
-            Matrix_RotateX(M_PI, MTXMODE_APPLY);
+        if (z_common_data.save.entranceIndex != ENTR_CUTSCENE_MAP_0) {
+            Matrix_rotateX(M_PI, MTXMODE_APPLY);
         }
 
         gDPPipeSync(POLY_XLU_DISP++);
 
-        if (gSaveContext.save.entranceIndex == ENTR_HYRULE_FIELD_0) {
+        if (z_common_data.save.entranceIndex == ENTR_HYRULE_FIELD_0) {
             gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, 255, 255, 255, 255);
             gDPSetEnvColor(POLY_XLU_DISP++, 255, 255, 0, 255);
         } else {
@@ -826,7 +721,7 @@ void DemoKankyo_DrawRain(Actor* thisx, PlayState* play) {
             gDPSetEnvColor(POLY_XLU_DISP++, 0, 150, 255, 255);
         }
 
-        Matrix_Scale(sRainScale * 0.001f, sRainScale * 0.001f, sRainScale * 0.001f, MTXMODE_APPLY);
+        Matrix_scale(SFIELDSCALE * 0.001f, SFIELDSCALE * 0.001f, SFIELDSCALE * 0.001f, MTXMODE_APPLY);
 
         for (j = 0; j < 5; j++) {
             s32 pad1;
@@ -853,27 +748,27 @@ void DemoKankyo_DrawRain(Actor* thisx, PlayState* play) {
                 translateZ = 0.0f;
             }
 
-            Matrix_Translate(translateX, translateY, translateZ, MTXMODE_APPLY);
+            Matrix_translate(translateX, translateY, translateZ, MTXMODE_APPLY);
             MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx, "../z_demo_kankyo.c", 1344);
-            POLY_XLU_DISP = Gfx_SetupDL(POLY_XLU_DISP, SETUPDL_20);
+            POLY_XLU_DISP = rcp_mode_set(POLY_XLU_DISP, SETUPDL_20);
             gSPDisplayList(POLY_XLU_DISP++, object_efc_star_field_DL_000080);
         }
     }
     CLOSE_DISPS(play->state.gfxCtx, "../z_demo_kankyo.c", 1358);
 }
 
-void DemoKankyo_DrawRock(Actor* thisx, PlayState* play) {
+void Demo_Rock_draw(Actor* thisx, PlayState* play) {
     DemoKankyo* this = (DemoKankyo*)thisx;
     s32 pad;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_demo_kankyo.c", 1376);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
-    Matrix_Translate(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z, MTXMODE_NEW);
-    Matrix_RotateX(DEG_TO_RAD(this->unk_150[0].unk_C.x), MTXMODE_APPLY);
-    Matrix_RotateY(DEG_TO_RAD(this->unk_150[0].unk_C.y), MTXMODE_APPLY);
-    Matrix_RotateZ(DEG_TO_RAD(this->unk_150[0].unk_C.z), MTXMODE_APPLY);
-    Matrix_Scale(this->actor.scale.x, this->actor.scale.y, this->actor.scale.z, MTXMODE_APPLY);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
+    Matrix_translate(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z, MTXMODE_NEW);
+    Matrix_rotateX(DEG_TO_RAD(this->unk_150[0].unk_C.x), MTXMODE_APPLY);
+    Matrix_rotateY(DEG_TO_RAD(this->unk_150[0].unk_C.y), MTXMODE_APPLY);
+    Matrix_rotateZ(DEG_TO_RAD(this->unk_150[0].unk_C.z), MTXMODE_APPLY);
+    Matrix_scale(this->actor.scale.x, this->actor.scale.y, this->actor.scale.z, MTXMODE_APPLY);
     gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, 255, 155, 55, 255);
     gDPSetEnvColor(POLY_OPA_DISP++, 155, 255, 55, 255);
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_demo_kankyo.c", 1404);
@@ -882,7 +777,7 @@ void DemoKankyo_DrawRock(Actor* thisx, PlayState* play) {
     CLOSE_DISPS(play->state.gfxCtx, "../z_demo_kankyo.c", 1409);
 }
 
-void DemoKankyo_DrawClouds(Actor* thisx, PlayState* play) {
+void Demo_cloud_draw(Actor* thisx, PlayState* play) {
     DemoKankyo* this = (DemoKankyo*)thisx;
     s16 i;
     s32 pad;
@@ -893,13 +788,13 @@ void DemoKankyo_DrawClouds(Actor* thisx, PlayState* play) {
     OPEN_DISPS(play->state.gfxCtx, "../z_demo_kankyo.c", 1425);
 
     for (i = 0; i < 30; i++) {
-        dx = -(Math_SinS(this->unk_150[i].unk_20 - 0x8000) * 120.0f) * (30.0f + (i / 30.0f) * 10.0f);
-        dy = Math_CosS(this->unk_150[i].unk_20 - 0x8000) * 5.0f + 1200.0f;
-        dz = (Math_CosS(this->unk_150[i].unk_20 - 0x8000) * 120.0f) * (30.0f + (i / 30.0f) * 10.0f);
+        dx = -(sin_s(this->unk_150[i].unk_20 - 0x8000) * 120.0f) * (30.0f + (i / 30.0f) * 10.0f);
+        dy = cos_s(this->unk_150[i].unk_20 - 0x8000) * 5.0f + 1200.0f;
+        dz = (cos_s(this->unk_150[i].unk_20 - 0x8000) * 120.0f) * (30.0f + (i / 30.0f) * 10.0f);
 
-        Matrix_Translate(play->view.eye.x + dx, play->view.eye.y + dy + ((i - 12.0f) * 300.0f), play->view.eye.z + dz,
+        Matrix_translate(play->view.eye.x + dx, play->view.eye.y + dy + ((i - 12.0f) * 300.0f), play->view.eye.z + dz,
                          MTXMODE_NEW);
-        Matrix_Scale(125.0f, 60.0f, 125.0f, MTXMODE_APPLY);
+        Matrix_scale(125.0f, 60.0f, 125.0f, MTXMODE_APPLY);
 
         gDPPipeSync(POLY_XLU_DISP++);
         gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, 210, 210, 255, 255);
@@ -909,7 +804,7 @@ void DemoKankyo_DrawClouds(Actor* thisx, PlayState* play) {
         MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx, "../z_demo_kankyo.c", 1461);
         gSPSegment(POLY_XLU_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(gDust5Tex));
 
-        Gfx_SetupDL_61Xlu(play->state.gfxCtx);
+        texture_z_cld_poly_xlu_nd(play->state.gfxCtx);
 
         gSPMatrix(POLY_XLU_DISP++, &D_01000000, G_MTX_NOPUSH | G_MTX_MUL | G_MTX_MODELVIEW);
         gSPDisplayList(POLY_XLU_DISP++, gEffDustDL);
@@ -918,33 +813,33 @@ void DemoKankyo_DrawClouds(Actor* thisx, PlayState* play) {
     CLOSE_DISPS(play->state.gfxCtx, "../z_demo_kankyo.c", 1474);
 }
 
-void DemoKankyo_DrawDoorOfTime(Actor* thisx, PlayState* play) {
+void Demo_tokidoor_draw(Actor* thisx, PlayState* play) {
     DemoKankyo* this = (DemoKankyo*)thisx;
     s32 pad;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_demo_kankyo.c", 1487);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
-    Matrix_Translate(-this->unk_150[0].unk_18, 0.0f, 0.0f, MTXMODE_APPLY);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
+    Matrix_translate(-this->unk_150[0].unk_18, 0.0f, 0.0f, MTXMODE_APPLY);
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_demo_kankyo.c", 1492);
     gSPDisplayList(POLY_OPA_DISP++, object_toki_objects_DL_007440);
-    Matrix_Translate(this->unk_150[0].unk_18 + this->unk_150[0].unk_18, 0.0f, 0.0f, MTXMODE_APPLY);
+    Matrix_translate(this->unk_150[0].unk_18 + this->unk_150[0].unk_18, 0.0f, 0.0f, MTXMODE_APPLY);
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_demo_kankyo.c", 1497);
     gSPDisplayList(POLY_OPA_DISP++, object_toki_objects_DL_007578);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_demo_kankyo.c", 1501);
 }
 
-void DemoKankyo_DrawLightPlane(Actor* thisx, PlayState* play) {
+void Demo_madopika_draw(Actor* thisx, PlayState* play) {
     DemoKankyo* this = (DemoKankyo*)thisx;
     s32 pad;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_demo_kankyo.c", 1514);
 
     if (play->csCtx.state == CS_STATE_IDLE || IS_CUTSCENE_LAYER) {
-        Gfx_SetupDL_25Xlu(play->state.gfxCtx);
+        _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
 
-        gSPSegment(POLY_XLU_DISP++, 0x08, Gfx_TexScroll(play->state.gfxCtx, 0, play->state.frames & 0x7F, 64, 32));
+        gSPSegment(POLY_XLU_DISP++, 0x08, tex_scroll2(play->state.gfxCtx, 0, play->state.frames & 0x7F, 64, 32));
         MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx, "../z_demo_kankyo.c", 1529);
         gSPDisplayList(POLY_XLU_DISP++, object_toki_objects_DL_008390);
     }
@@ -952,15 +847,15 @@ void DemoKankyo_DrawLightPlane(Actor* thisx, PlayState* play) {
     CLOSE_DISPS(play->state.gfxCtx, "../z_demo_kankyo.c", 1534);
 }
 
-void DemoKankyo_Vec3fCopy(Vec3f* src, Vec3f* dst) {
+static void fv2xyz(Vec3f* src, Vec3f* dst) {
     dst->x = src->x;
     dst->y = src->y;
     dst->z = src->z;
 }
 
-Vec3f DemoKankyo_AddVecGeoToVec3f(Vec3f* a, VecGeo* geo) {
+static Vec3f translate_by_sglobe(Vec3f* a, VecGeo* geo) {
     Vec3f sum;
-    Vec3f b = OLib_VecGeoToVec3f(geo);
+    Vec3f b = sglobe2world(geo);
 
     sum.x = a->x + b.x;
     sum.y = a->y + b.y;
@@ -969,23 +864,66 @@ Vec3f DemoKankyo_AddVecGeoToVec3f(Vec3f* a, VecGeo* geo) {
     return sum;
 }
 
-void DemoKankyo_Vec3fAddPosRot(PosRot* posRot, Vec3f* vec, Vec3f* dst) {
+static void fvrel2xyz(PosRot* posRot, Vec3f* vec, Vec3f* dst) {
     VecGeo geo;
     Vec3f vecCopy;
 
-    DemoKankyo_Vec3fCopy(vec, &vecCopy);
-    geo = OLib_Vec3fToVecGeo(&vecCopy);
+    fv2xyz(vec, &vecCopy);
+    geo = world2sglobe(&vecCopy);
     geo.yaw += posRot->rot.y;
-    *dst = DemoKankyo_AddVecGeoToVec3f(&posRot->pos, &geo);
+    *dst = translate_by_sglobe(&posRot->pos, &geo);
 }
 
-void DemoKankyo_DrawWarpSparkles(Actor* thisx, PlayState* play) {
-    static f32 sWarpRoll;
-    static f32 sWarpFoV;
+void Demo_okawarp_draw(Actor* thisx, PlayState* play) {
+    static Color_RGB8 tamacol[] = {
+        { 0, 200, 0 },    // minuet
+        { 255, 50, 0 },   // bolero
+        { 0, 150, 255 },  // serenade
+        { 255, 150, 0 },  // requiem
+        { 200, 50, 255 }, // nocturne
+        { 200, 255, 0 },  // prelude
+    };
+
+    static CutsceneCameraPoint Position[] = {
+        { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x0000, 0x0000, 0xFFE5 } },
+        { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x0000, 0x0000, 0xFFE5 } },
+        { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0xFFE6, 0x0000, 0x0000 } },
+        { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x0000, 0x0017, 0x0024 } },
+        { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x001C, 0x0032, 0xFFFF } },
+        { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x0001, 0x0018, 0xFFD9 } },
+        { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0xFFE6, 0xFFFA, 0x0003 } },
+        { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x0000, 0x0025, 0x0037 } },
+        { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x004F, 0x0066, 0x0029 } },
+        { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x00A6, 0x00AD, 0x0006 } },
+        { CS_CAM_CONTINUE, 0, 5, 45.0f, { 0x010D, 0x015A, 0xFF4C } },
+        { CS_CAM_CONTINUE, 0, 5, 45.0f, { 0x019F, 0x0245, 0xFE35 } },
+        { CS_CAM_STOP, 0, 5, 45.0f, { 0x01CE, 0x036F, 0xFCC2 } },
+        { CS_CAM_STOP, 0, 5, 45.0f, { 0x01CE, 0x036F, 0xFCC2 } },
+    };
+
+    static CutsceneCameraPoint Position2[] = {
+        { CS_CAM_CONTINUE, 0, 5, 45.0f, { 0x019F, 0x0245, 0xFE35 } },
+        { CS_CAM_CONTINUE, 0, 5, 45.0f, { 0x010D, 0x015A, 0xFF4C } },
+        { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x00A6, 0x00AD, 0x0006 } },
+        { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x004F, 0x0066, 0x0029 } },
+        { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x0000, 0x0025, 0x0037 } },
+        { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0xFFE6, 0xFFFA, 0x0003 } },
+        { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x0001, 0x0018, 0xFFD9 } },
+        { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x001C, 0x0032, 0xFFFF } },
+        { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x0000, 0x0017, 0x0024 } },
+        { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0xFFE6, 0x0000, 0x0000 } },
+        { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x0000, 0x0000, 0xFFE5 } },
+        { CS_CAM_CONTINUE, 0, 8, 45.0f, { 0x0000, 0x0000, 0xFFE5 } },
+        { CS_CAM_STOP, 0, 5, 45.0f, { 0x01CE, 0x036F, 0xFCC2 } },
+        { CS_CAM_STOP, 0, 5, 45.0f, { 0x01CE, 0x036F, 0xFCC2 } },
+    };
+
+    static f32 z;
+    static f32 fovy;
     // the following 2 vars are unused
-    static u32 D_8098CF90;
-    static u32 D_8098CF94;
-    static Vec3f D_8098CF98;
+    static u32 key;
+    static u32 frame;
+    static Vec3f pos0;
 
     PlayState* play2 = (PlayState*)play;
     s16 i;
@@ -997,7 +935,7 @@ void DemoKankyo_DrawWarpSparkles(Actor* thisx, PlayState* play) {
     f32 translateY;
     f32 translateZ;
     PosRot posRot;
-    u8 linkAge = gSaveContext.save.linkAge;
+    u8 linkAge = z_common_data.save.linkAge;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_demo_kankyo.c", 1824);
 
@@ -1011,15 +949,15 @@ void DemoKankyo_DrawWarpSparkles(Actor* thisx, PlayState* play) {
             case 0:
                 this->unk_150[i].unk_20 = 0;
                 this->unk_150[i].unk_1C = 0;
-                this->unk_150[i].unk_0.x = (s16)((Rand_ZeroOne() - 0.5f) * 16.0f * temp_f22);
-                this->unk_150[i].unk_0.y = (s16)((Rand_ZeroOne() - 0.5f) * 16.0f * temp_f22);
-                this->unk_150[i].unk_0.z = (s16)((Rand_ZeroOne() - 0.5f) * 16.0f * temp_f22);
+                this->unk_150[i].unk_0.x = (s16)((fqrand() - 0.5f) * 16.0f * temp_f22);
+                this->unk_150[i].unk_0.y = (s16)((fqrand() - 0.5f) * 16.0f * temp_f22);
+                this->unk_150[i].unk_0.z = (s16)((fqrand() - 0.5f) * 16.0f * temp_f22);
                 this->unk_150[i].unk_23 = 0;
                 this->unk_150[i].unk_22++;
                 FALLTHROUGH;
             case 1:
                 if (this->actor.params == DEMOKANKYO_WARP_OUT) {
-                    if (func_800BB2B4(&camPos, &sWarpRoll, &sWarpFoV, sWarpOutCameraPoints, &this->unk_150[i].unk_20,
+                    if (Grou_Dospline(&camPos, &z, &fovy, Position, &this->unk_150[i].unk_20,
                                       &this->unk_150[i].unk_1C) != 0) {
                         this->unk_150[i].unk_22++;
                     }
@@ -1028,54 +966,54 @@ void DemoKankyo_DrawWarpSparkles(Actor* thisx, PlayState* play) {
                     }
                 } else {
 #if OOT_VERSION >= PAL_1_0
-                    Audio_PlaySfxGeneral(NA_SE_EV_LINK_WARP_OUT - SFX_FLAG, &gSfxDefaultPos, 4,
-                                         &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                    Nai_FxFlagEntry(NA_SE_EV_LINK_WARP_OUT - SFX_FLAG, &_dummy_zero_f, 4,
+                                         &_dummy_one, &_dummy_one, &_dummy_zero_s8);
 #endif
-                    if (func_800BB2B4(&camPos, &sWarpRoll, &sWarpFoV, sWarpInCameraPoints, &this->unk_150[i].unk_20,
+                    if (Grou_Dospline(&camPos, &z, &fovy, Position2, &this->unk_150[i].unk_20,
                                       &this->unk_150[i].unk_1C) != 0) {
                         this->unk_150[i].unk_22++;
                     }
-                    if (D_8098CF84 < play2->csCtx.curFrame && this->actor.params == DEMOKANKYO_WARP_OUT) {
+                    if (end_timer < play2->csCtx.curFrame && this->actor.params == DEMOKANKYO_WARP_OUT) {
                         this->unk_150[i].unk_22++;
                     }
                 }
-                posRot = Actor_GetWorld(&player->actor);
-                DemoKankyo_Vec3fAddPosRot(&posRot, &camPos, &D_8098CF98);
+                posRot = Actor_get_world(&player->actor);
+                fvrel2xyz(&posRot, &camPos, &pos0);
                 break;
             case 2:
                 if (this->actor.params == DEMOKANKYO_WARP_OUT) {
                     if (i == 0) {
-                        Environment_WarpSongLeave(play2);
+                        OcaWarpJumpProc(play2);
                         this->unk_150[i].unk_22++;
                     }
                 } else if (i + 1 == this->sparkleCounter && play2->csCtx.state == CS_STATE_IDLE) {
-                    Interface_SetSubTimerToFinalSecond(play2);
-                    Actor_Kill(&this->actor);
+                    total_event_timer_end(play2);
+                    Actor_delete(&this->actor);
                 }
                 break;
         }
 
-        this->unk_150[i].unk_C.x = D_8098CF98.x;
-        this->unk_150[i].unk_C.y = D_8098CF98.y;
-        this->unk_150[i].unk_C.z = D_8098CF98.z;
+        this->unk_150[i].unk_C.x = pos0.x;
+        this->unk_150[i].unk_C.y = pos0.y;
+        this->unk_150[i].unk_C.z = pos0.z;
 
         switch (this->unk_150[i].unk_23) {
             case 0:
-                this->unk_150[i].unk_18 = Rand_ZeroOne();
+                this->unk_150[i].unk_18 = fqrand();
                 this->unk_150[i].unk_23++;
                 FALLTHROUGH;
             case 1:
-                Math_SmoothStepToF(&this->unk_150[i].unk_18, 1.0f, 0.5f, 0.4f, 0.2f);
+                add_calc(&this->unk_150[i].unk_18, 1.0f, 0.5f, 0.4f, 0.2f);
                 if (this->unk_150[i].unk_18 >= 1.0f) {
                     this->unk_150[i].unk_23 = 2;
                 }
                 break;
             case 2:
-                Math_SmoothStepToF(&this->unk_150[i].unk_18, 0.0f, 0.5f, 0.3f, 0.2f);
+                add_calc(&this->unk_150[i].unk_18, 0.0f, 0.5f, 0.3f, 0.2f);
                 if (this->unk_150[i].unk_18 <= 0.0f) {
-                    this->unk_150[i].unk_0.x = (s16)((Rand_ZeroOne() - 0.5f) * 16.0f * temp_f22);
-                    this->unk_150[i].unk_0.y = (s16)((Rand_ZeroOne() - 0.5f) * 16.0f * temp_f22);
-                    this->unk_150[i].unk_0.z = (s16)((Rand_ZeroOne() - 0.5f) * 16.0f * temp_f22);
+                    this->unk_150[i].unk_0.x = (s16)((fqrand() - 0.5f) * 16.0f * temp_f22);
+                    this->unk_150[i].unk_0.y = (s16)((fqrand() - 0.5f) * 16.0f * temp_f22);
+                    this->unk_150[i].unk_0.z = (s16)((fqrand() - 0.5f) * 16.0f * temp_f22);
                     this->unk_150[i].unk_18 = 0.0f;
                     this->unk_150[i].unk_23 = 1;
                 }
@@ -1088,27 +1026,27 @@ void DemoKankyo_DrawWarpSparkles(Actor* thisx, PlayState* play) {
 
         if (this->unk_150[i].unk_22 < 2) {
             if (linkAge != LINK_AGE_ADULT) {
-                Matrix_Translate(translateX, translateY, translateZ, MTXMODE_NEW);
+                Matrix_translate(translateX, translateY, translateZ, MTXMODE_NEW);
             } else {
                 if (translateY) {}
-                Matrix_Translate(translateX, translateY + 15.0f, translateZ, MTXMODE_NEW);
+                Matrix_translate(translateX, translateY + 15.0f, translateZ, MTXMODE_NEW);
             }
-            Matrix_Scale(this->unk_150[i].unk_18 * (0.018f * temp_f22), this->unk_150[i].unk_18 * (0.018f * temp_f22),
+            Matrix_scale(this->unk_150[i].unk_18 * (0.018f * temp_f22), this->unk_150[i].unk_18 * (0.018f * temp_f22),
                          this->unk_150[i].unk_18 * (0.018f * temp_f22), MTXMODE_APPLY);
             gDPSetPrimColor(POLY_XLU_DISP++, 0, 0x80, 255, 255, 255, 255);
             if (this->actor.params == DEMOKANKYO_WARP_OUT) {
-                gDPSetEnvColor(POLY_XLU_DISP++, sWarpSparkleEnvColors[play2->msgCtx.lastPlayedSong].r,
-                               sWarpSparkleEnvColors[play2->msgCtx.lastPlayedSong].g,
-                               sWarpSparkleEnvColors[play2->msgCtx.lastPlayedSong].b, 255);
+                gDPSetEnvColor(POLY_XLU_DISP++, tamacol[play2->msgCtx.lastPlayedSong].r,
+                               tamacol[play2->msgCtx.lastPlayedSong].g,
+                               tamacol[play2->msgCtx.lastPlayedSong].b, 255);
             } else {
-                s8 respawnData = gSaveContext.respawn[RESPAWN_MODE_RETURN].data;
+                s8 respawnData = z_common_data.respawn[RESPAWN_MODE_RETURN].data;
 
-                gDPSetEnvColor(POLY_XLU_DISP++, sWarpSparkleEnvColors[respawnData].r,
-                               sWarpSparkleEnvColors[respawnData].g, sWarpSparkleEnvColors[respawnData].b, 255);
+                gDPSetEnvColor(POLY_XLU_DISP++, tamacol[respawnData].r,
+                               tamacol[respawnData].g, tamacol[respawnData].b, 255);
             }
-            Gfx_SetupDL_25Xlu(play->state.gfxCtx);
-            Matrix_Mult(&play2->billboardMtxF, MTXMODE_APPLY);
-            Matrix_RotateZ(DEG_TO_RAD(this->unk_150[i].unk_24), MTXMODE_APPLY);
+            _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
+            Matrix_mult(&play2->billboardMtxF, MTXMODE_APPLY);
+            Matrix_rotateZ(DEG_TO_RAD(this->unk_150[i].unk_24), MTXMODE_APPLY);
             MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx, "../z_demo_kankyo.c", 2011);
             gSPDisplayList(POLY_XLU_DISP++, gEffFlash1DL);
             this->unk_150[i].unk_24 += 0x190;
@@ -1118,14 +1056,76 @@ void DemoKankyo_DrawWarpSparkles(Actor* thisx, PlayState* play) {
     CLOSE_DISPS(play->state.gfxCtx, "../z_demo_kankyo.c", 2019);
 }
 
-void DemoKankyo_DrawSparkles(Actor* thisx, PlayState* play) {
-    static f32 sSparklesRoll;
-    static f32 sSparklesFoV;
+void Demo_Takara_draw(Actor* thisx, PlayState* play) {
+    static Color_RGB8 tamacol[] = {
+        { 0, 200, 0 },   { 255, 50, 0 },  { 0, 150, 255 }, { 255, 150, 0 }, // only this one is used
+        { 0, 255, 255 }, { 200, 255, 0 },
+    };
+
+    static CutsceneCameraPoint Position[] = {
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFF7, 0x0000, 0xFFD0 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFF7, 0x0000, 0xFFD0 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFF7, 0x0000, 0xFFD0 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFF7, 0x0000, 0xFFD0 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFD7, 0x0000, 0xFFE9 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFD3, 0x0000, 0x000A } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFE8, 0x0001, 0x0027 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x0015, 0x0000, 0x002B } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x002F, 0x0005, 0x000E } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x0031, 0x0005, 0xFFF5 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x0020, 0x0005, 0xFFDA } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFF5, 0x0005, 0xFFD1 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFD7, 0x0006, 0xFFEA } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFD5, 0x0009, 0x000D } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFE9, 0x0009, 0x0027 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x0014, 0x000B, 0x0029 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x002D, 0x000B, 0x000F } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x002E, 0x000B, 0xFFF0 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x001E, 0x000B, 0xFFDA } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFFA, 0x000E, 0xFFD3 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFDA, 0x000E, 0xFFEB } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFD7, 0x0010, 0x0008 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFE9, 0x0010, 0x0024 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x0011, 0x0010, 0x0028 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x002C, 0x0010, 0x000D } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x002C, 0x0012, 0xFFF5 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x001F, 0x0011, 0xFFDE } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFFB, 0x0014, 0xFFD5 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFDD, 0x0014, 0xFFEC } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFDA, 0x0017, 0x0008 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFE8, 0x0014, 0x001F } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x000C, 0x0018, 0x0026 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x0027, 0x0018, 0x000D } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x0027, 0x001B, 0xFFF6 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x001C, 0x001A, 0xFFE2 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFFA, 0x000E, 0xFFD4 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFD9, 0x001B, 0xFFEF } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFD7, 0x001B, 0x000A } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFE6, 0x001B, 0x0022 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x000F, 0x001F, 0x002C } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x0032, 0x0020, 0x0009 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x0030, 0x0021, 0xFFF0 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x001C, 0x0025, 0xFFD9 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFFA, 0x0028, 0xFFD4 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFD8, 0x002B, 0xFFF5 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFD7, 0x002B, 0x0006 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFDF, 0x002B, 0x0019 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x000E, 0x002E, 0x002C } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x0032, 0x002E, 0x0003 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0x002A, 0x0030, 0xFFE7 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFF6, 0x002B, 0xFFD4 } },
+        { CS_CAM_CONTINUE, 0, 2, 45.0f, { 0xFFF6, 0x002B, 0xFFD4 } },
+        { CS_CAM_STOP, 0, 2, 45.0f, { 0xFFF6, 0x002B, 0xFFD4 } },
+        { CS_CAM_STOP, 0, 2, 45.0f, { 0xFFF6, 0x002B, 0xFFD4 } },
+    };
+
+    static f32 z;
+    static f32 fovy;
     // the following 3 vars are unused
-    static u32 D_8098CFAC;
-    static u32 D_8098CFB0;
+    static u32 key;
+    static u32 frame;
     static u32 D_8098CFB4;
-    static Vec3f D_8098CFB8;
+    static Vec3f pos0;
 
     DemoKankyo* this = (DemoKankyo*)thisx;
     f32 translateX;
@@ -1150,48 +1150,48 @@ void DemoKankyo_DrawSparkles(Actor* thisx, PlayState* play) {
             case 0:
                 this->unk_150[i].unk_20 = 0;
                 this->unk_150[i].unk_1C = 0;
-                this->unk_150[i].unk_0.x = (s16)((Rand_ZeroOne() - 0.5f) * 16.0f * temp_f20);
-                this->unk_150[i].unk_0.y = (s16)((Rand_ZeroOne() - 0.5f) * 16.0f * temp_f20);
-                this->unk_150[i].unk_0.z = (s16)((Rand_ZeroOne() - 0.5f) * 16.0f * temp_f20);
+                this->unk_150[i].unk_0.x = (s16)((fqrand() - 0.5f) * 16.0f * temp_f20);
+                this->unk_150[i].unk_0.y = (s16)((fqrand() - 0.5f) * 16.0f * temp_f20);
+                this->unk_150[i].unk_0.z = (s16)((fqrand() - 0.5f) * 16.0f * temp_f20);
                 this->unk_150[i].unk_23 = 0;
                 this->unk_150[i].unk_22++;
                 FALLTHROUGH;
             case 1:
-                if (func_800BB2B4(&camPos, &sSparklesRoll, &sSparklesFoV, sSparklesCameraPoints,
+                if (Grou_Dospline(&camPos, &z, &fovy, Position,
                                   &this->unk_150[i].unk_20, &this->unk_150[i].unk_1C) != 0) {
                     this->unk_150[i].unk_22++;
                 }
-                posRot = Actor_GetWorld(&this->actor);
-                DemoKankyo_Vec3fAddPosRot(&posRot, &camPos, &D_8098CFB8);
+                posRot = Actor_get_world(&this->actor);
+                fvrel2xyz(&posRot, &camPos, &pos0);
                 break;
             case 2:
                 if (i + 1 == this->sparkleCounter && play->csCtx.state == CS_STATE_IDLE) {
-                    Actor_Kill(&this->actor);
+                    Actor_delete(&this->actor);
                 }
                 break;
         }
 
-        this->unk_150[i].unk_C.x = D_8098CFB8.x;
-        this->unk_150[i].unk_C.y = D_8098CFB8.y;
-        this->unk_150[i].unk_C.z = D_8098CFB8.z;
+        this->unk_150[i].unk_C.x = pos0.x;
+        this->unk_150[i].unk_C.y = pos0.y;
+        this->unk_150[i].unk_C.z = pos0.z;
 
         switch (this->unk_150[i].unk_23) {
             case 0:
-                this->unk_150[i].unk_18 = Rand_ZeroOne();
+                this->unk_150[i].unk_18 = fqrand();
                 this->unk_150[i].unk_23++;
                 FALLTHROUGH;
             case 1:
-                Math_SmoothStepToF(&this->unk_150[i].unk_18, 1.0f, 0.5f, 0.4f, 0.2f);
+                add_calc(&this->unk_150[i].unk_18, 1.0f, 0.5f, 0.4f, 0.2f);
                 if (1.0f <= this->unk_150[i].unk_18) {
                     this->unk_150[i].unk_23 = 2;
                 }
                 break;
             case 2:
-                Math_SmoothStepToF(&this->unk_150[i].unk_18, 0.0f, 0.5f, 0.3f, 0.2f);
+                add_calc(&this->unk_150[i].unk_18, 0.0f, 0.5f, 0.3f, 0.2f);
                 if (this->unk_150[i].unk_18 <= 0.0f) {
-                    this->unk_150[i].unk_0.x = (s16)((Rand_ZeroOne() - 0.5f) * 16.0f * temp_f20);
-                    this->unk_150[i].unk_0.y = (s16)((Rand_ZeroOne() - 0.5f) * 16.0f * temp_f20);
-                    this->unk_150[i].unk_0.z = (s16)((Rand_ZeroOne() - 0.5f) * 16.0f * temp_f20);
+                    this->unk_150[i].unk_0.x = (s16)((fqrand() - 0.5f) * 16.0f * temp_f20);
+                    this->unk_150[i].unk_0.y = (s16)((fqrand() - 0.5f) * 16.0f * temp_f20);
+                    this->unk_150[i].unk_0.z = (s16)((fqrand() - 0.5f) * 16.0f * temp_f20);
                     this->unk_150[i].unk_18 = 0.0f;
                     this->unk_150[i].unk_23 = 1;
                 }
@@ -1203,15 +1203,15 @@ void DemoKankyo_DrawSparkles(Actor* thisx, PlayState* play) {
         translateZ = this->unk_150[i].unk_C.z + this->unk_150[i].unk_0.z;
 
         if (this->unk_150[i].unk_22 < 2) {
-            Matrix_Translate(translateX, translateY, translateZ, MTXMODE_NEW);
+            Matrix_translate(translateX, translateY, translateZ, MTXMODE_NEW);
             scale = this->unk_150[i].unk_18 * (0.02f * temp_f20);
-            Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
+            Matrix_scale(scale, scale, scale, MTXMODE_APPLY);
             gDPSetPrimColor(POLY_XLU_DISP++, 0, 0x80, 255, 255, 255, 255);
-            gDPSetEnvColor(POLY_XLU_DISP++, sSparkleEnvColors[3].r, sSparkleEnvColors[3].g, sSparkleEnvColors[3].b,
+            gDPSetEnvColor(POLY_XLU_DISP++, tamacol[3].r, tamacol[3].g, tamacol[3].b,
                            255);
-            Gfx_SetupDL_25Xlu(play->state.gfxCtx);
-            Matrix_Mult(&play->billboardMtxF, MTXMODE_APPLY);
-            Matrix_RotateZ(DEG_TO_RAD(this->unk_150[i].unk_24), MTXMODE_APPLY);
+            _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
+            Matrix_mult(&play->billboardMtxF, MTXMODE_APPLY);
+            Matrix_rotateZ(DEG_TO_RAD(this->unk_150[i].unk_24), MTXMODE_APPLY);
             MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx, "../z_demo_kankyo.c", 2572);
             gSPDisplayList(POLY_XLU_DISP++, gEffFlash1DL);
             this->unk_150[i].unk_24 += 0x190;

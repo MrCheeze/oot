@@ -1,21 +1,21 @@
-void DemoEc_InitCarpenter(DemoEc* this, PlayState* play) {
-    DemoEc_UseDrawObject(this, play);
-    DemoEc_InitSkelAnime(this, play, &object_daiku_Skel_007958);
-    DemoEc_UseAnimationObject(this, play);
-    DemoEc_ChangeAnimation(this, &gDemoEcCarpenterAnim, 0, 0.0f, false);
-    func_8096D5D4(this, play);
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 30.0f);
+void Demo_Ec_main_init_Dk2(DemoEc* this, PlayState* play) {
+    Demo_Ec_Change_ShapeBank(this, play);
+    Demo_Ec_Setup_Mdl(this, play, &object_daiku_Skel_007958);
+    Demo_Ec_Change_AnimeBank(this, play);
+    Demo_Ec_Change_Anime(this, &gDemoEcCarpenterAnim, 0, 0.0f, false);
+    Demo_Ec_Start_Movement_byAnimation(this, play);
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 30.0f);
     this->updateMode = EC_UPDATE_CARPENTER;
     this->drawConfig = EC_DRAW_CARPENTER;
 }
 
-void DemoEc_UpdateCarpenter(DemoEc* this, PlayState* play) {
-    DemoEc_UpdateSkelAnime(this);
-    func_8096D594(this, play);
-    DemoEc_UpdateBgFlags(this, play);
+void Demo_Ec_main_Dk2_Wait(DemoEc* this, PlayState* play) {
+    Demo_Ec_Animation_Base(this);
+    Demo_Ec_Movement_byAnimation_CorrectNone(this, play);
+    Demo_Ec_BGcheck(this, play);
 }
 
-s32 DemoEc_CarpenterOverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx,
+s32 Demo_Ec_BeforeDraw_Dk2(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx,
                                      Gfx** gfx) {
     DemoEc* this = (DemoEc*)thisx;
 
@@ -40,7 +40,7 @@ s32 DemoEc_CarpenterOverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList
     return false;
 }
 
-Gfx* DemoEc_GetCarpenterPostLimbDList(DemoEc* this) {
+Gfx* Demo_Ec_Get_Zura_Dk2(DemoEc* this) {
     switch (this->actor.params) {
         case 10:
             return object_daiku_DL_005BD0;
@@ -56,16 +56,16 @@ Gfx* DemoEc_GetCarpenterPostLimbDList(DemoEc* this) {
     }
 }
 
-void DemoEc_CarpenterPostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx, Gfx** gfx) {
+void Demo_Ec_AfterDraw_Dk2(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx, Gfx** gfx) {
     DemoEc* this = (DemoEc*)thisx;
     Gfx* postLimbDList;
 
     if (limbIndex == 15) {
-        postLimbDList = DemoEc_GetCarpenterPostLimbDList(this);
+        postLimbDList = Demo_Ec_Get_Zura_Dk2(this);
         gSPDisplayList((*gfx)++, SEGMENTED_TO_VIRTUAL(postLimbDList));
     }
 }
 
-void DemoEc_DrawCarpenter(DemoEc* this, PlayState* play) {
-    DemoEc_DrawSkeleton(this, play, NULL, NULL, DemoEc_CarpenterOverrideLimbDraw, DemoEc_CarpenterPostLimbDraw);
+void Demo_Ec_draw_normal_Dk2(DemoEc* this, PlayState* play) {
+    Demo_Ec_draw_normal_1(this, play, NULL, NULL, Demo_Ec_BeforeDraw_Dk2, Demo_Ec_AfterDraw_Dk2);
 }

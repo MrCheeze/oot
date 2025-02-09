@@ -17,7 +17,7 @@
         0,                                   \
     },
 
-DmaEntry gDmaDataTable[] = {
+DmaEntry dma_rom_ad[] = {
 #include "tables/dmadata_table.h"
     { 0 },
 };

@@ -10,19 +10,19 @@
 
 #define FLAGS 0
 
-void BgSpot12Gate_Init(Actor* thisx, PlayState* play);
-void BgSpot12Gate_Destroy(Actor* thisx, PlayState* play);
-void BgSpot12Gate_Update(Actor* thisx, PlayState* play);
-void BgSpot12Gate_Draw(Actor* thisx, PlayState* play);
+void Bg_Spot12_Gate_actor_ct(Actor* thisx, PlayState* play);
+void Bg_Spot12_Gate_actor_dt(Actor* thisx, PlayState* play);
+void Bg_Spot12_Gate_actor_move(Actor* thisx, PlayState* play);
+void Bg_Spot12_Gate_actor_draw(Actor* thisx, PlayState* play);
 
-void func_808B30C0(BgSpot12Gate* this);
-void func_808B30D8(BgSpot12Gate* this, PlayState* play);
-void func_808B3134(BgSpot12Gate* this);
-void func_808B314C(BgSpot12Gate* this, PlayState* play);
-void func_808B317C(BgSpot12Gate* this);
-void func_808B318C(BgSpot12Gate* this, PlayState* play);
-void func_808B3274(BgSpot12Gate* this);
-void func_808B3298(BgSpot12Gate* this, PlayState* play);
+static void mv_wait_init(BgSpot12Gate* this);
+static void mv_wait(BgSpot12Gate* this, PlayState* play);
+void mv_wait2_init(BgSpot12Gate* this);
+void mv_wait2(BgSpot12Gate* this, PlayState* play);
+static void mv_up_init(BgSpot12Gate* this);
+static void mv_up(BgSpot12Gate* this, PlayState* play);
+static void mv_end_init(BgSpot12Gate* this);
+static void mv_end(BgSpot12Gate* this, PlayState* play);
 
 ActorProfile Bg_Spot12_Gate_Profile = {
     /**/ ACTOR_BG_SPOT12_GATE,
@@ -30,26 +30,26 @@ ActorProfile Bg_Spot12_Gate_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_SPOT12_OBJ,
     /**/ sizeof(BgSpot12Gate),
-    /**/ BgSpot12Gate_Init,
-    /**/ BgSpot12Gate_Destroy,
-    /**/ BgSpot12Gate_Update,
-    /**/ BgSpot12Gate_Draw,
+    /**/ Bg_Spot12_Gate_actor_ct,
+    /**/ Bg_Spot12_Gate_actor_dt,
+    /**/ Bg_Spot12_Gate_actor_move,
+    /**/ Bg_Spot12_Gate_actor_draw,
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDistance, 2500, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeScale, 500, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDownward, 1200, ICHAIN_STOP),
 };
 
-void BgSpot12Gate_InitDynaPoly(BgSpot12Gate* this, PlayState* play, CollisionHeader* collision, s32 flags) {
+static void set_dynaPoly(BgSpot12Gate* this, PlayState* play, CollisionHeader* collision, s32 flags) {
     s32 pad;
     CollisionHeader* colHeader = NULL;
 
-    DynaPolyActor_Init(&this->dyna, flags);
-    CollisionHeader_GetVirtual(collision, &colHeader);
-    this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
+    MoveBG_ct(&this->dyna, flags);
+    DynaPolyUty_bgdi_SG2KSG(collision, &colHeader);
+    this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
 
 #if DEBUG_FEATURES
     if (this->dyna.bgId == BG_ACTOR_MAX) {
@@ -61,83 +61,83 @@ void BgSpot12Gate_InitDynaPoly(BgSpot12Gate* this, PlayState* play, CollisionHea
 #endif
 }
 
-void BgSpot12Gate_Init(Actor* thisx, PlayState* play) {
+void Bg_Spot12_Gate_actor_ct(Actor* thisx, PlayState* play) {
     BgSpot12Gate* this = (BgSpot12Gate*)thisx;
 
-    BgSpot12Gate_InitDynaPoly(this, play, &gGerudoFortressWastelandGateCol, 0);
-    Actor_ProcessInitChain(&this->dyna.actor, sInitChain);
+    set_dynaPoly(this, play, &gGerudoFortressWastelandGateCol, 0);
+    ValueSet_process(&this->dyna.actor, value_init);
 
-    if (Flags_GetSwitch(play, PARAMS_GET_U(this->dyna.actor.params, 0, 6))) {
-        func_808B3274(this);
+    if (Actor_Environment_sw_Check(play, PARAMS_GET_U(this->dyna.actor.params, 0, 6))) {
+        mv_end_init(this);
     } else {
-        func_808B30C0(this);
+        mv_wait_init(this);
     }
 }
 
-void BgSpot12Gate_Destroy(Actor* thisx, PlayState* play) {
+void Bg_Spot12_Gate_actor_dt(Actor* thisx, PlayState* play) {
     BgSpot12Gate* this = (BgSpot12Gate*)thisx;
 
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
 }
 
-void func_808B30C0(BgSpot12Gate* this) {
-    this->actionFunc = func_808B30D8;
+static void mv_wait_init(BgSpot12Gate* this) {
+    this->actionFunc = mv_wait;
     this->dyna.actor.world.pos.y = this->dyna.actor.home.pos.y;
 }
 
-void func_808B30D8(BgSpot12Gate* this, PlayState* play) {
-    if (Flags_GetSwitch(play, PARAMS_GET_U(this->dyna.actor.params, 0, 6))) {
-        func_808B3134(this);
-        OnePointCutscene_Init(play, 4160, -99, &this->dyna.actor, CAM_ID_MAIN);
+static void mv_wait(BgSpot12Gate* this, PlayState* play) {
+    if (Actor_Environment_sw_Check(play, PARAMS_GET_U(this->dyna.actor.params, 0, 6))) {
+        mv_wait2_init(this);
+        makeOnepointDemo(play, 4160, -99, &this->dyna.actor, CAM_ID_MAIN);
     }
 }
 
-void func_808B3134(BgSpot12Gate* this) {
-    this->actionFunc = func_808B314C;
+void mv_wait2_init(BgSpot12Gate* this) {
+    this->actionFunc = mv_wait2;
     this->unk_168 = 40;
 }
 
-void func_808B314C(BgSpot12Gate* this, PlayState* play) {
+void mv_wait2(BgSpot12Gate* this, PlayState* play) {
     if (this->unk_168 <= 0) {
-        func_808B317C(this);
+        mv_up_init(this);
     }
 }
 
-void func_808B317C(BgSpot12Gate* this) {
-    this->actionFunc = func_808B318C;
+static void mv_up_init(BgSpot12Gate* this) {
+    this->actionFunc = mv_up;
 }
 
-void func_808B318C(BgSpot12Gate* this, PlayState* play) {
+static void mv_up(BgSpot12Gate* this, PlayState* play) {
     s32 pad;
 
-    Math_StepToF(&this->dyna.actor.velocity.y, 1.6f, 0.03f);
-    if (Math_StepToF(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y + 200.0f,
+    chase_f(&this->dyna.actor.velocity.y, 1.6f, 0.03f);
+    if (chase_f(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y + 200.0f,
                      this->dyna.actor.velocity.y)) {
-        func_808B3274(this);
+        mv_end_init(this);
 
         {
-            s32 quakeIndex = Quake_Request(GET_ACTIVE_CAM(play), QUAKE_TYPE_3);
+            s32 quakeIndex = startQuake(GET_ACTIVE_CAM(play), QUAKE_TYPE_3);
 
-            Quake_SetSpeed(quakeIndex, -0x3CB0);
-            Quake_SetPerturbations(quakeIndex, 3, 0, 0, 0);
-            Quake_SetDuration(quakeIndex, 12);
+            setSpeedQuake(quakeIndex, -0x3CB0);
+            setScaleQuake(quakeIndex, 3, 0, 0, 0);
+            setTimerQuake(quakeIndex, 12);
         }
 
-        Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_BRIDGE_OPEN_STOP);
+        Actor_SE_set(&this->dyna.actor, NA_SE_EV_BRIDGE_OPEN_STOP);
     } else {
-        Actor_PlaySfx_Flagged(&this->dyna.actor, NA_SE_EV_METALGATE_OPEN - SFX_FLAG);
+        Actor_level_SE_set(&this->dyna.actor, NA_SE_EV_METALGATE_OPEN - SFX_FLAG);
     }
 }
 
-void func_808B3274(BgSpot12Gate* this) {
-    this->actionFunc = func_808B3298;
+static void mv_end_init(BgSpot12Gate* this) {
+    this->actionFunc = mv_end;
     this->dyna.actor.world.pos.y = this->dyna.actor.home.pos.y + 200.0f;
 }
 
-void func_808B3298(BgSpot12Gate* this, PlayState* play) {
+static void mv_end(BgSpot12Gate* this, PlayState* play) {
 }
 
-void BgSpot12Gate_Update(Actor* thisx, PlayState* play) {
+void Bg_Spot12_Gate_actor_move(Actor* thisx, PlayState* play) {
     BgSpot12Gate* this = (BgSpot12Gate*)thisx;
 
     if (this->unk_168 > 0) {
@@ -146,6 +146,6 @@ void BgSpot12Gate_Update(Actor* thisx, PlayState* play) {
     this->actionFunc(this, play);
 }
 
-void BgSpot12Gate_Draw(Actor* thisx, PlayState* play) {
-    Gfx_DrawDListOpa(play, gGerudoFortressWastelandGateDL);
+void Bg_Spot12_Gate_actor_draw(Actor* thisx, PlayState* play) {
+    Cheap_gfx_display(play, gGerudoFortressWastelandGateDL);
 }

@@ -1,4 +1,4 @@
-void EnTkEff_Create(EnTk* this, Vec3f* pos, Vec3f* speed, Vec3f* accel, u8 duration, f32 size, f32 growth) {
+void tk_eff_dust_ct(EnTk* this, Vec3f* pos, Vec3f* speed, Vec3f* accel, u8 duration, f32 size, f32 growth) {
     s16 i;
     EnTkEff* eff = this->eff;
 
@@ -17,7 +17,7 @@ void EnTkEff_Create(EnTk* this, Vec3f* pos, Vec3f* speed, Vec3f* accel, u8 durat
     }
 }
 
-void EnTkEff_Update(EnTk* this) {
+void tk_eff_dust_mv(EnTk* this) {
     s16 i;
     EnTkEff* eff;
 
@@ -28,8 +28,8 @@ void EnTkEff_Update(EnTk* this) {
             if (eff->timeLeft == 0) {
                 eff->active = 0;
             }
-            eff->accel.x = Rand_ZeroOne() * 0.4f - 0.2f;
-            eff->accel.z = Rand_ZeroOne() * 0.4f - 0.2f;
+            eff->accel.x = fqrand() * 0.4f - 0.2f;
+            eff->accel.z = fqrand() * 0.4f - 0.2f;
             eff->pos.x += eff->speed.x;
             eff->pos.y += eff->speed.y;
             eff->pos.z += eff->speed.z;
@@ -42,8 +42,8 @@ void EnTkEff_Update(EnTk* this) {
     }
 }
 
-void EnTkEff_Draw(EnTk* this, PlayState* play) {
-    static void* dustTextures[] = {
+void tk_eff_dust_dr(EnTk* this, PlayState* play) {
+    static void* smoke_txt[] = {
         gDust8Tex, gDust7Tex, gDust6Tex, gDust5Tex, gDust4Tex, gDust3Tex, gDust2Tex, gDust1Tex,
     };
 
@@ -57,7 +57,7 @@ void EnTkEff_Draw(EnTk* this, PlayState* play) {
 
     gfxSetup = 0;
 
-    Gfx_SetupDL_25Xlu(play->state.gfxCtx);
+    _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
 
     for (i = 0; i < ARRAY_COUNT(this->eff); i++, eff++) {
         if (eff->active == 0) {
@@ -65,7 +65,7 @@ void EnTkEff_Draw(EnTk* this, PlayState* play) {
         }
 
         if (gfxSetup == 0) {
-            POLY_XLU_DISP = Gfx_SetupDL(POLY_XLU_DISP, SETUPDL_0);
+            POLY_XLU_DISP = rcp_mode_set(POLY_XLU_DISP, SETUPDL_0);
             gSPDisplayList(POLY_XLU_DISP++, gDampeEff1DL);
             gDPSetEnvColor(POLY_XLU_DISP++, 100, 60, 20, 0);
             gfxSetup = 1;
@@ -75,13 +75,13 @@ void EnTkEff_Draw(EnTk* this, PlayState* play) {
         gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, 170, 130, 90, alpha);
 
         gDPPipeSync(POLY_XLU_DISP++);
-        Matrix_Translate(eff->pos.x, eff->pos.y, eff->pos.z, MTXMODE_NEW);
-        Matrix_ReplaceRotation(&play->billboardMtxF);
-        Matrix_Scale(eff->size, eff->size, 1.0f, MTXMODE_APPLY);
+        Matrix_translate(eff->pos.x, eff->pos.y, eff->pos.z, MTXMODE_NEW);
+        Matrix_rotate_scale_exchange(&play->billboardMtxF);
+        Matrix_scale(eff->size, eff->size, 1.0f, MTXMODE_APPLY);
         MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx, "../z_en_tk_eff.c", 140);
 
-        imageIdx = eff->timeLeft * ((f32)ARRAY_COUNT(dustTextures) / eff->timeTotal);
-        gSPSegment(POLY_XLU_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(dustTextures[imageIdx]));
+        imageIdx = eff->timeLeft * ((f32)ARRAY_COUNT(smoke_txt) / eff->timeTotal);
+        gSPSegment(POLY_XLU_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(smoke_txt[imageIdx]));
 
         gSPDisplayList(POLY_XLU_DISP++, gDampeEff2DL);
     }
@@ -89,13 +89,13 @@ void EnTkEff_Draw(EnTk* this, PlayState* play) {
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_tk_eff.c", 154);
 }
 
-s32 EnTkEff_CreateDflt(EnTk* this, Vec3f* pos, u8 duration, f32 size, f32 growth, f32 yAccelMax) {
+static s32 set_dust_effect(EnTk* this, Vec3f* pos, u8 duration, f32 size, f32 growth, f32 yAccelMax) {
     Vec3f speed = { 0.0f, 0.0f, 0.0f };
     Vec3f accel = { 0.0f, 0.3f, 0.0f };
 
-    accel.y += Rand_ZeroOne() * yAccelMax;
+    accel.y += fqrand() * yAccelMax;
 
-    EnTkEff_Create(this, pos, &speed, &accel, duration, size, growth);
+    tk_eff_dust_ct(this, pos, &speed, &accel, duration, size, growth);
 
     return 0;
 }

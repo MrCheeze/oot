@@ -20,6 +20,6 @@ typedef struct MapMarkIconData {
 
 typedef MapMarkIconData MapMarkData[3]; // size = 0x72
 
-extern MapMarkData* gMapMarkDataTable[];
+extern MapMarkData* MarkPos[];
 
 #endif

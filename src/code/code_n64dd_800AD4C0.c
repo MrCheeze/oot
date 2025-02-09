@@ -6,12 +6,12 @@ n64ddStruct_800FEE70_pointers D_800FEE70 = {
     func_801C7C1C,
     NULL,
     NULL,
-    Fault_RemoveClient,
-    Fault_AddClient,
-    Fault_DrawText,
-    Fault_WaitForInput,
-    Fault_AddHungupAndCrashImpl,
-    Fault_AddHungupAndCrash,
+    fault_RemoveClient,
+    fault_AddClient,
+    faultprint_PosPrintf,
+    fault_KeyWait,
+    fault_HungUpMsg,
+    fault_HungUp,
     func_800AD598,
     _Printf,
     osCreateThread,
@@ -37,14 +37,14 @@ n64ddStruct_800FEE70_pointers D_800FEE70 = {
     osSetTime,
     osSetTimer,
     osStopTimer,
-    &gSaveContext,
-    DmaMgr_RequestAsync,
-    DmaMgr_RequestSync,
-    DmaMgr_DmaFromDriveRom,
-    Cutscene_HandleEntranceTriggers,
-    gSegments,
-    Flags_GetEventChkInf,
-    Flags_SetEventChkInf,
+    &z_common_data,
+    dmacopy_bg,
+    dmacopy_fg,
+    dmacopy_ddrom_fg,
+    SpotShowKansi,
+    SegmentBaseAddress,
+    event_check,
+    event_set,
     NULL, // TODO possibly file padding
     NULL,
 };
@@ -70,8 +70,8 @@ void func_800AD51C(void) {
 
 n64ddStruct_800FEE70_pointers* func_800AD560(void) {
     D_800FEE70.unk_04 = 0;
-    D_800FEE70.unk_08 = gRegEditor;
-    D_800FEE70.unk_88 = &gSaveContext;
+    D_800FEE70.unk_08 = debug_mode;
+    D_800FEE70.unk_88 = &z_common_data;
     return &D_800FEE70;
 }
 

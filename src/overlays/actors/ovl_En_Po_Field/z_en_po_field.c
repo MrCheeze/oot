@@ -12,28 +12,28 @@
     (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE | ACTOR_FLAG_UPDATE_CULLING_DISABLED | \
      ACTOR_FLAG_DRAW_CULLING_DISABLED | ACTOR_FLAG_IGNORE_QUAKE)
 
-void EnPoField_Init(Actor* thisx, PlayState* play);
-void EnPoField_Destroy(Actor* thisx, PlayState* play);
-void EnPoField_Update(Actor* thisx, PlayState* play);
-void EnPoField_Draw(Actor* thisx, PlayState* play);
+void En_Po_Field_actor_ct(Actor* thisx, PlayState* play);
+void En_Po_Field_actor_dt(Actor* thisx, PlayState* play);
+void En_Po_Field_actor_move(Actor* thisx, PlayState* play);
+void En_Po_Field_actor_draw(Actor* thisx, PlayState* play);
 
-void EnPoField_UpdateDead(Actor* thisx, PlayState* play);
-void EnPoField_DrawSoul(Actor* thisx, PlayState* play);
+void En_Po_Field_actor_after_move(Actor* thisx, PlayState* play);
+void En_Po_Field_actor_after_draw(Actor* thisx, PlayState* play);
 
-void EnPoField_SetupWaitForSpawn(EnPoField* this, PlayState* play);
-void EnPoField_WaitForSpawn(EnPoField* this, PlayState* play);
-void EnPoField_Appear(EnPoField* this, PlayState* play);
-void EnPoField_CirclePlayer(EnPoField* this, PlayState* play);
-void EnPoField_Damage(EnPoField* this, PlayState* play);
-void EnPoField_Flee(EnPoField* this, PlayState* play);
-void EnPoField_Death(EnPoField* this, PlayState* play);
-void EnPoField_Disappear(EnPoField* this, PlayState* play);
-void EnPoField_SoulIdle(EnPoField* this, PlayState* play);
-void func_80AD587C(EnPoField* this, PlayState* play);
-void func_80AD58D4(EnPoField* this, PlayState* play);
-void EnPoField_SoulDisappear(EnPoField* this, PlayState* play);
-void EnPoField_SoulInteract(EnPoField* this, PlayState* play);
-void EnPoField_SpawnFlame(EnPoField* this);
+static void mode_dummy_init(EnPoField* this, PlayState* play);
+static void mode_dummy(EnPoField* this, PlayState* play);
+static void mode_start(EnPoField* this, PlayState* play);
+static void mode_rotate(EnPoField* this, PlayState* play);
+static void mode_damage(EnPoField* this, PlayState* play);
+static void mode_escape(EnPoField* this, PlayState* play);
+static void mode_down(EnPoField* this, PlayState* play);
+static void mode_disappear(EnPoField* this, PlayState* play);
+static void mode_kantera_drop(EnPoField* this, PlayState* play);
+static void mode_soul_appear(EnPoField* this, PlayState* play);
+static void mode_soul(EnPoField* this, PlayState* play);
+static void mode_soul_delete(EnPoField* this, PlayState* play);
+static void mode_soul_get(EnPoField* this, PlayState* play);
+void po_field_fire_ct(EnPoField* this);
 
 ActorProfile En_Po_Field_Profile = {
     /**/ ACTOR_EN_PO_FIELD,
@@ -41,13 +41,13 @@ ActorProfile En_Po_Field_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_PO_FIELD,
     /**/ sizeof(EnPoField),
-    /**/ EnPoField_Init,
-    /**/ EnPoField_Destroy,
-    /**/ EnPoField_Update,
-    /**/ EnPoField_Draw,
+    /**/ En_Po_Field_actor_ct,
+    /**/ En_Po_Field_actor_dt,
+    /**/ En_Po_Field_actor_move,
+    /**/ En_Po_Field_actor_draw,
 };
 
-static ColliderCylinderInit D_80AD7080 = {
+static ColliderCylinderInit PoFieldAcOcPipeData = {
     {
         COL_MATERIAL_HIT3,
         AT_NONE,
@@ -67,7 +67,7 @@ static ColliderCylinderInit D_80AD7080 = {
     { 25, 50, 20, { 0, 0, 0 } },
 };
 
-static ColliderCylinderInit D_80AD70AC = {
+static ColliderCylinderInit PoFieldAtPipeData = {
     {
         COL_MATERIAL_NONE,
         AT_ON | AT_TYPE_ENEMY,
@@ -87,9 +87,9 @@ static ColliderCylinderInit D_80AD70AC = {
     { 10, 30, 0, { 0, 0, 0 } },
 };
 
-static CollisionCheckInfoInit D_80AD70D8 = { 4, 25, 50, 40 };
+static CollisionCheckInfoInit PoFieldStatusData = { 4, 25, 50, 40 };
 
-static DamageTable sDamageTable = {
+static DamageTable PoFieldBtlData = {
     /* Deku nut      */ DMG_ENTRY(0, 0x0),
     /* Deku stick    */ DMG_ENTRY(2, 0x0),
     /* Slingshot     */ DMG_ENTRY(1, 0x0),
@@ -124,98 +124,98 @@ static DamageTable sDamageTable = {
     /* Unknown 2     */ DMG_ENTRY(0, 0x0),
 };
 
-static s32 sNumSpawned = 0;
+static s32 set_cnt = 0;
 
-static Vec3f sFieldMiddle = { -1000.0f, 0.0f, 6500.0f };
+static Vec3f map_center_pos = { -1000.0f, 0.0f, 6500.0f };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_F32(lockOnArrowOffset, 3200, ICHAIN_STOP),
 };
 
-static Vec3f D_80AD7114 = { 0.0f, 3.0f, 0.0f };
+static Vec3f pvec = { 0.0f, 3.0f, 0.0f };
 
-static Vec3f D_80AD7120 = { 0.0f, 0.0f, 0.0f };
+static Vec3f pacc = { 0.0f, 0.0f, 0.0f };
 
-static EnPoFieldInfo sPoFieldInfo[2] = {
+static EnPoFieldInfo soul_status_data[2] = {
     { { 255, 170, 255 }, { 100, 0, 150 }, { 255, 85, 0 }, 248, gPoeFieldSoulTex },
     { { 255, 255, 170 }, { 255, 200, 0 }, { 160, 0, 255 }, 241, gBigPoeSoulTex },
 };
 
-static Vec3f D_80AD714C = { 0.0f, 1400.0f, 0.0f };
+static Vec3f local_light_pos = { 0.0f, 1400.0f, 0.0f };
 
 #pragma increment_block_number "gc-jp:128 gc-jp-ce:128 gc-jp-mq:128 gc-us:128 gc-us-mq:128 ntsc-1.2:128 pal-1.0:128" \
                                "pal-1.1:128 hiratsu3:128"
 
-static Vec3s sSpawnPositions[10];
-static u8 sSpawnSwitchFlags[10];
-static MtxF sLimb7Mtx;
+static Vec3s set_pos[10];
+static u8 sw_num[10];
+static MtxF kantera_mtx;
 
-void EnPoField_Init(Actor* thisx, PlayState* play) {
+void En_Po_Field_actor_ct(Actor* thisx, PlayState* play) {
     EnPoField* this = (EnPoField*)thisx;
     s32 pad;
 
-    if (sNumSpawned != 10) {
-        sSpawnPositions[sNumSpawned].x = this->actor.world.pos.x;
-        sSpawnPositions[sNumSpawned].y = this->actor.world.pos.y;
-        sSpawnPositions[sNumSpawned].z = this->actor.world.pos.z;
-        sSpawnSwitchFlags[sNumSpawned] = PARAMS_GET_U(this->actor.params, 0, 8);
-        sNumSpawned++;
+    if (set_cnt != 10) {
+        set_pos[set_cnt].x = this->actor.world.pos.x;
+        set_pos[set_cnt].y = this->actor.world.pos.y;
+        set_pos[set_cnt].z = this->actor.world.pos.z;
+        sw_num[set_cnt] = PARAMS_GET_U(this->actor.params, 0, 8);
+        set_cnt++;
     }
-    if (sNumSpawned >= 2) {
+    if (set_cnt >= 2) {
         this->actor.params = 0xFF;
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
         return;
     }
-    Actor_ProcessInitChain(&this->actor, sInitChain);
-    SkelAnime_Init(play, &this->skelAnime, &gPoeFieldSkel, &gPoeFieldFloatAnim, this->jointTable, this->morphTable, 10);
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinder(play, &this->collider, &this->actor, &D_80AD7080);
-    Collider_InitCylinder(play, &this->flameCollider);
-    Collider_SetCylinder(play, &this->flameCollider, &this->actor, &D_80AD70AC);
-    CollisionCheck_SetInfo(&this->actor.colChkInfo, &sDamageTable, &D_80AD70D8);
-    this->lightNode = LightContext_InsertLight(play, &play->lightCtx, &this->lightInfo);
-    Lights_PointGlowSetInfo(&this->lightInfo, this->actor.home.pos.x, this->actor.home.pos.y, this->actor.home.pos.z,
+    ValueSet_process(&this->actor, value_init);
+    Skeleton_Info2_M_ct(play, &this->skelAnime, &gPoeFieldSkel, &gPoeFieldFloatAnim, this->jointTable, this->morphTable, 10);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set5(play, &this->collider, &this->actor, &PoFieldAcOcPipeData);
+    ClObjPipe_ct(play, &this->flameCollider);
+    ClObjPipe_set5(play, &this->flameCollider, &this->actor, &PoFieldAtPipeData);
+    CollisionCheck_Status_set2(&this->actor.colChkInfo, &PoFieldBtlData, &PoFieldStatusData);
+    this->lightNode = Global_light_list_new(play, &play->lightCtx, &this->lightInfo);
+    Light_point2_ct(&this->lightInfo, this->actor.home.pos.x, this->actor.home.pos.y, this->actor.home.pos.z,
                             255, 255, 255, 0);
-    this->actor.shape.shadowDraw = ActorShadow_DrawCircle;
-    EnPoField_SetupWaitForSpawn(this, play);
+    this->actor.shape.shadowDraw = Actor_shadow_circle;
+    mode_dummy_init(this, play);
 }
 
-void EnPoField_Destroy(Actor* thisx, PlayState* play) {
+void En_Po_Field_actor_dt(Actor* thisx, PlayState* play) {
     EnPoField* this = (EnPoField*)thisx;
 
     if (this->actor.params != 0xFF) {
-        LightContext_RemoveLight(play, &play->lightCtx, this->lightNode);
-        Collider_DestroyCylinder(play, &this->flameCollider);
-        Collider_DestroyCylinder(play, &this->collider);
+        Global_light_list_delete(play, &play->lightCtx, this->lightNode);
+        ClObjPipe_dt(play, &this->flameCollider);
+        ClObjPipe_dt(play, &this->collider);
     }
 }
 
-void EnPoField_SetupWaitForSpawn(EnPoField* this, PlayState* play) {
-    this->actor.update = EnPoField_Update;
-    Actor_ChangeCategory(play, &play->actorCtx, &this->actor, ACTORCAT_ENEMY);
+static void mode_dummy_init(EnPoField* this, PlayState* play) {
+    this->actor.update = En_Po_Field_actor_move;
+    Actor_info_part_chg(play, &play->actorCtx, &this->actor, ACTORCAT_ENEMY);
     this->actor.shape.rot.x = 0;
-    Lights_PointSetColorAndRadius(&this->lightInfo, 0, 0, 0, 0);
+    Light_point_color_set(&this->lightInfo, 0, 0, 0, 0);
     this->actionTimer = 200;
-    Actor_SetScale(&this->actor, 0.0f);
+    Actor_set_scale(&this->actor, 0.0f);
     this->actor.flags &= ~(ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_TALK_OFFER_AUTO_ACCEPTED);
     this->collider.base.acFlags &= ~AC_ON;
     this->collider.base.ocFlags1 = OC1_ON | OC1_TYPE_ALL;
-    this->actor.colChkInfo.health = D_80AD70D8.health;
+    this->actor.colChkInfo.health = PoFieldStatusData.health;
     this->actor.gravity = 0.0f;
     this->actor.velocity.y = 0.0f;
-    this->actionFunc = EnPoField_WaitForSpawn;
+    this->actionFunc = mode_dummy;
 }
 
-void EnPoField_SetupAppear(EnPoField* this) {
-    Animation_PlayOnce(&this->skelAnime, &gPoeFieldAppearAnim);
-    this->actor.draw = EnPoField_Draw;
+static void mode_start_init(EnPoField* this) {
+    Skeleton_Info2_init_standard_stop(&this->skelAnime, &gPoeFieldAppearAnim);
+    this->actor.draw = En_Po_Field_actor_draw;
     this->lightColor.r = 255;
     this->lightColor.g = 255;
     this->lightColor.b = 210;
     this->lightColor.a = 0;
     this->actor.shape.shadowAlpha = 0;
     this->actor.shape.yOffset = 0.0f;
-    Actor_PlaySfx(&this->actor, NA_SE_EN_PO_APPEAR);
+    Actor_SE_set(&this->actor, NA_SE_EN_PO_APPEAR);
     this->actor.home.pos.y = this->actor.world.pos.y;
     if (this->actor.params == EN_PO_FIELD_BIG) {
         this->actor.speed = 12.0f;
@@ -227,38 +227,38 @@ void EnPoField_SetupAppear(EnPoField* this) {
         this->actor.naviEnemyId = NAVI_ENEMY_BIG_POE;
     } else {
         this->actor.speed = 0.0f;
-        this->collider.dim.radius = D_80AD7080.dim.radius;
-        this->collider.dim.height = D_80AD7080.dim.height;
-        this->collider.dim.yShift = D_80AD7080.dim.yShift;
+        this->collider.dim.radius = PoFieldAcOcPipeData.dim.radius;
+        this->collider.dim.height = PoFieldAcOcPipeData.dim.height;
+        this->collider.dim.yShift = PoFieldAcOcPipeData.dim.yShift;
         this->actor.shape.shadowScale = 37.0f;
         this->scaleModifier = 0.01f;
         this->actor.naviEnemyId = NAVI_ENEMY_POE_WASTELAND;
     }
-    this->actionFunc = EnPoField_Appear;
+    this->actionFunc = mode_start;
 }
 
-void EnPoField_SetupCirclePlayer(EnPoField* this, PlayState* play) {
+static void mode_rotate_init(EnPoField* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    Animation_PlayLoop(&this->skelAnime, &gPoeFieldFloatAnim);
+    Skeleton_Info2_init_standard_repeat(&this->skelAnime, &gPoeFieldFloatAnim);
     this->collider.base.acFlags |= AC_ON;
     this->scaleModifier = this->actor.xzDistToPlayer;
-    Math_Vec3f_Copy(&this->actor.home.pos, &player->actor.world.pos);
+    xyz_t_move(&this->actor.home.pos, &player->actor.world.pos);
     this->actor.world.rot.y = this->actor.yawTowardsPlayer;
-    if (this->actionFunc != EnPoField_Damage) {
+    if (this->actionFunc != mode_damage) {
         this->actor.flags |= ACTOR_FLAG_ATTENTION_ENABLED;
         this->actionTimer = 600;
         this->unk_194 = 32;
     }
-    this->actionFunc = EnPoField_CirclePlayer;
+    this->actionFunc = mode_rotate;
 }
 
-void EnPoField_SetupFlee(EnPoField* this) {
-    Animation_MorphToLoop(&this->skelAnime, &gPoeFieldFleeAnim, -5.0f);
+static void mode_escape_init(EnPoField* this) {
+    Skeleton_Info2_init_standard_repeat_morf(&this->skelAnime, &gPoeFieldFleeAnim, -5.0f);
     this->collider.base.acFlags |= AC_ON;
-    this->actionFunc = EnPoField_Flee;
+    this->actionFunc = mode_escape;
     this->actor.speed = 12.0f;
-    if (this->actionFunc != EnPoField_Damage) {
+    if (this->actionFunc != mode_damage) {
         this->actor.flags |= ACTOR_FLAG_ATTENTION_ENABLED;
         this->actor.world.rot.y = this->actor.shape.rot.y + 0x8000;
         this->actionTimer = 2000;
@@ -266,20 +266,20 @@ void EnPoField_SetupFlee(EnPoField* this) {
     }
 }
 
-void EnPoField_SetupDamage(EnPoField* this) {
-    Animation_MorphToPlayOnce(&this->skelAnime, &gPoeFieldDamagedAnim, -6.0f);
+static void mode_damage_init(EnPoField* this) {
+    Skeleton_Info2_init_standard_stop_morf(&this->skelAnime, &gPoeFieldDamagedAnim, -6.0f);
     if (this->collider.elem.acHitElem->atDmgInfo.dmgFlags & (DMG_ARROW | DMG_SLINGSHOT)) {
         this->actor.world.rot.y = this->collider.base.ac->world.rot.y;
     } else {
-        this->actor.world.rot.y = Actor_WorldYawTowardActor(&this->actor, this->collider.base.ac) + 0x8000;
+        this->actor.world.rot.y = Actor_search_actor_angleY(&this->actor, this->collider.base.ac) + 0x8000;
     }
     this->collider.base.acFlags &= ~(AC_HIT | AC_ON);
     this->actor.speed = 5.0f;
-    Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_OPA, 16);
-    this->actionFunc = EnPoField_Damage;
+    Set_Fog(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_OPA, 16);
+    this->actionFunc = mode_damage;
 }
 
-void EnPoField_SetupDeath(EnPoField* this) {
+static void mode_down_init(EnPoField* this) {
     this->actionTimer = 0;
     this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
     this->actor.speed = 0.0f;
@@ -288,35 +288,35 @@ void EnPoField_SetupDeath(EnPoField* this) {
     if (this->flameTimer >= 20) {
         this->flameTimer = 19;
     }
-    this->actionFunc = EnPoField_Death;
+    this->actionFunc = mode_down;
 }
 
-void EnPoField_SetupDisappear(EnPoField* this) {
-    Animation_MorphToLoop(&this->skelAnime, &gPoeFieldDisappearAnim, -6.0f);
+static void mode_disappear_init(EnPoField* this) {
+    Skeleton_Info2_init_standard_repeat_morf(&this->skelAnime, &gPoeFieldDisappearAnim, -6.0f);
     this->actionTimer = 16;
     this->collider.base.acFlags &= ~(AC_HIT | AC_ON);
     this->actor.speed = 0.0f;
-    Actor_PlaySfx(&this->actor, NA_SE_EN_PO_LAUGH);
-    Actor_PlaySfx(&this->actor, NA_SE_EN_PO_DISAPPEAR);
-    this->actionFunc = EnPoField_Disappear;
+    Actor_SE_set(&this->actor, NA_SE_EN_PO_LAUGH);
+    Actor_SE_set(&this->actor, NA_SE_EN_PO_DISAPPEAR);
+    this->actionFunc = mode_disappear;
 }
 
-void EnPoField_SetupSoulIdle(EnPoField* this, PlayState* play) {
-    this->actor.update = EnPoField_UpdateDead;
-    this->actor.draw = EnPoField_DrawSoul;
+static void mode_kantera_drop_init(EnPoField* this, PlayState* play) {
+    this->actor.update = En_Po_Field_actor_after_move;
+    this->actor.draw = En_Po_Field_actor_after_draw;
     this->actor.shape.shadowDraw = NULL;
-    Actor_SetScale(&this->actor, 0.01f);
+    Actor_set_scale(&this->actor, 0.01f);
     this->actor.gravity = -1.0f;
     this->actor.shape.yOffset = 1500.0f;
     this->actor.shape.rot.x = -0x8000;
     this->actionTimer = 60;
     this->actor.world.pos.y -= 15.0f;
-    Actor_ChangeCategory(play, &play->actorCtx, &this->actor, ACTORCAT_MISC);
-    this->actionFunc = EnPoField_SoulIdle;
+    Actor_info_part_chg(play, &play->actorCtx, &this->actor, ACTORCAT_MISC);
+    this->actionFunc = mode_kantera_drop;
 }
 
-void func_80AD42B0(EnPoField* this) {
-    Lights_PointNoGlowSetInfo(&this->lightInfo, this->actor.world.pos.x, this->actor.world.pos.y,
+static void mode_soul_appear_init(EnPoField* this) {
+    Light_point_ct(&this->lightInfo, this->actor.world.pos.x, this->actor.world.pos.y,
                               this->actor.world.pos.z, 0, 0, 0, 0);
     this->actor.shape.rot.y = 0;
     this->lightColor.a = 0;
@@ -327,16 +327,16 @@ void func_80AD42B0(EnPoField* this) {
     this->actor.home.pos.y = this->actor.world.pos.y;
     this->actor.scale.x = 0.0f;
     this->actor.scale.y = 0.0f;
-    Actor_PlaySfx(&this->actor, NA_SE_EV_METAL_BOX_BOUND);
+    Actor_SE_set(&this->actor, NA_SE_EV_METAL_BOX_BOUND);
     if (this->actor.params == EN_PO_FIELD_BIG) {
-        Sfx_PlaySfxCentered(NA_SE_SY_TRE_BOX_APPEAR);
+        Na_StartSystemSe_F(NA_SE_SY_TRE_BOX_APPEAR);
     }
-    this->actionFunc = func_80AD587C;
+    this->actionFunc = mode_soul_appear;
 }
 
-void func_80AD4384(EnPoField* this) {
+static void mode_soul_init(EnPoField* this) {
     this->actor.home.pos.y = this->actor.world.pos.y;
-    Actor_SetFocus(&this->actor, -10.0f);
+    Actor_world_to_eye(&this->actor, -10.0f);
     this->collider.dim.radius = 13;
     this->collider.dim.height = 30;
     this->collider.dim.yShift = 0;
@@ -348,19 +348,19 @@ void func_80AD4384(EnPoField* this) {
     this->actionTimer = 400;
     this->unk_194 = 32;
     this->actor.flags |= ACTOR_FLAG_ATTENTION_ENABLED;
-    this->actionFunc = func_80AD58D4;
+    this->actionFunc = mode_soul;
 }
 
-void EnPoField_SetupSoulDisappear(EnPoField* this) {
-    this->actionFunc = EnPoField_SoulDisappear;
+static void mode_soul_delete_init(EnPoField* this) {
+    this->actionFunc = mode_soul_delete;
 }
 
-void EnPoField_SetupInteractWithSoul(EnPoField* this) {
-    this->actionFunc = EnPoField_SoulInteract;
+static void mode_soul_get_init(EnPoField* this) {
+    this->actionFunc = mode_soul_get;
     this->actor.home.pos.y = this->actor.world.pos.y - 15.0f;
 }
 
-void EnPoField_CorrectYPos(EnPoField* this, PlayState* play) {
+void set_po_field_position_y(EnPoField* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     if (this->unk_194 == 0) {
@@ -370,18 +370,18 @@ void EnPoField_CorrectYPos(EnPoField* this, PlayState* play) {
         this->unk_194 -= 1;
     }
     if (this->actor.floorHeight == BGCHECK_Y_MIN) {
-        EnPoField_SetupDisappear(this);
+        mode_disappear_init(this);
         return;
     }
-    Math_ApproachF(
+    add_calc2(
         &this->actor.home.pos.y,
         ((player->actor.world.pos.y > this->actor.floorHeight) ? player->actor.world.pos.y : this->actor.floorHeight) +
             13.0f,
         0.2f, 5.0f);
-    this->actor.world.pos.y = Math_SinS(this->unk_194 * 0x800) * 13.0f + this->actor.home.pos.y;
+    this->actor.world.pos.y = sin_s(this->unk_194 * 0x800) * 13.0f + this->actor.home.pos.y;
 }
 
-void EnPoField_SetFleeSpeed(EnPoField* this, PlayState* play) {
+void set_po_field_speedF(EnPoField* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     f32 speed =
         ((player->stateFlags1 & PLAYER_STATE1_23) && player->rideActor != NULL) ? player->rideActor->speed : 12.0f;
@@ -398,7 +398,7 @@ void EnPoField_SetFleeSpeed(EnPoField* this, PlayState* play) {
     this->actor.speed = CLAMP_MIN(this->actor.speed, 12.0f);
 }
 
-void EnPoField_WaitForSpawn(EnPoField* this, PlayState* play) {
+static void mode_dummy(EnPoField* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     f32 spawnDist;
     s32 i;
@@ -408,17 +408,17 @@ void EnPoField_WaitForSpawn(EnPoField* this, PlayState* play) {
         this->actionTimer--;
     }
     if (this->actionTimer == 0) {
-        for (i = 0; i < sNumSpawned; i++) {
-            if (fabsf(sSpawnPositions[i].x - player->actor.world.pos.x) < 150.0f &&
-                fabsf(sSpawnPositions[i].z - player->actor.world.pos.z) < 150.0f) {
-                if (Flags_GetSwitch(play, sSpawnSwitchFlags[i])) {
+        for (i = 0; i < set_cnt; i++) {
+            if (fabsf(set_pos[i].x - player->actor.world.pos.x) < 150.0f &&
+                fabsf(set_pos[i].z - player->actor.world.pos.z) < 150.0f) {
+                if (Actor_Environment_sw_Check(play, sw_num[i])) {
                     if (player->stateFlags1 & PLAYER_STATE1_23) { // Player riding Epona
                         return;
                     } else {
                         this->actor.params = EN_PO_FIELD_SMALL;
                         spawnDist = 300.0f;
                     }
-                } else if (player->stateFlags1 & PLAYER_STATE1_23 || Rand_ZeroOne() < 0.4f) {
+                } else if (player->stateFlags1 & PLAYER_STATE1_23 || fqrand() < 0.4f) {
                     this->actor.params = EN_PO_FIELD_BIG;
                     this->spawnFlagIndex = i;
                     spawnDist = 480.0f;
@@ -426,14 +426,14 @@ void EnPoField_WaitForSpawn(EnPoField* this, PlayState* play) {
                     this->actor.params = EN_PO_FIELD_SMALL;
                     spawnDist = 300.0f;
                 }
-                this->actor.world.pos.x = Math_SinS(player->actor.shape.rot.y) * spawnDist + player->actor.world.pos.x;
-                this->actor.world.pos.z = Math_CosS(player->actor.shape.rot.y) * spawnDist + player->actor.world.pos.z;
+                this->actor.world.pos.x = sin_s(player->actor.shape.rot.y) * spawnDist + player->actor.world.pos.x;
+                this->actor.world.pos.z = cos_s(player->actor.shape.rot.y) * spawnDist + player->actor.world.pos.z;
                 this->actor.world.pos.y = player->actor.world.pos.y + 1000.0f;
-                this->actor.world.pos.y = BgCheck_EntityRaycastDown4(&play->colCtx, &this->actor.floorPoly, &bgId,
+                this->actor.world.pos.y = T_BGCheck_ObjGroundCheck_aiac(&play->colCtx, &this->actor.floorPoly, &bgId,
                                                                      &this->actor, &this->actor.world.pos);
                 if (this->actor.world.pos.y != BGCHECK_Y_MIN) {
-                    this->actor.shape.rot.y = Actor_WorldYawTowardActor(&this->actor, &player->actor);
-                    EnPoField_SetupAppear(this);
+                    this->actor.shape.rot.y = Actor_search_actor_angleY(&this->actor, &player->actor);
+                    mode_start_init(this);
                 } else {
                     return;
                 }
@@ -442,14 +442,14 @@ void EnPoField_WaitForSpawn(EnPoField* this, PlayState* play) {
     }
 }
 
-void EnPoField_Appear(EnPoField* this, PlayState* play) {
-    if (SkelAnime_Update(&this->skelAnime)) {
+static void mode_start(EnPoField* this, PlayState* play) {
+    if (Skeleton_Info2_anime_play(&this->skelAnime)) {
         this->lightColor.a = 255;
-        Actor_SetScale(&this->actor, this->scaleModifier);
+        Actor_set_scale(&this->actor, this->scaleModifier);
         if (this->actor.params == EN_PO_FIELD_BIG) {
-            EnPoField_SetupFlee(this);
+            mode_escape_init(this);
         } else {
-            EnPoField_SetupCirclePlayer(this, play);
+            mode_rotate_init(this, play);
         }
     } else if (this->skelAnime.curFrame > 10.0f) {
         this->lightColor.a = ((this->skelAnime.curFrame - 10.0f) * 0.05f) * 255.0f;
@@ -462,25 +462,25 @@ void EnPoField_Appear(EnPoField* this, PlayState* play) {
     this->actor.shape.rot.y = this->actor.yawTowardsPlayer;
     if (this->actor.params == EN_PO_FIELD_BIG) {
         this->actor.world.rot.y = this->actor.yawTowardsPlayer + 0x8000;
-        EnPoField_SetFleeSpeed(this, play);
+        set_po_field_speedF(this, play);
     }
 }
 
-void EnPoField_CirclePlayer(EnPoField* this, PlayState* play) {
+static void mode_rotate(EnPoField* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     s32 temp_v1 = 16 - this->unk_194;
 
-    SkelAnime_Update(&this->skelAnime);
+    Skeleton_Info2_anime_play(&this->skelAnime);
     if (this->actionTimer != 0) {
         this->actionTimer--;
     }
     if (ABS(temp_v1) < 16) {
-        this->actor.world.rot.y += 512.0f * fabsf(Math_SinS(this->unk_194 * 0x800));
+        this->actor.world.rot.y += 512.0f * fabsf(sin_s(this->unk_194 * 0x800));
     }
-    Math_ApproachF(&this->scaleModifier, 180.0f, 0.5f, 10.0f);
-    Math_ApproachF(&this->actor.home.pos.x, player->actor.world.pos.x, 0.2f, 6.0f);
-    Math_ApproachF(&this->actor.home.pos.z, player->actor.world.pos.z, 0.2f, 6.0f);
-    Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.world.rot.y, 1, 0x800, 0x200);
+    add_calc2(&this->scaleModifier, 180.0f, 0.5f, 10.0f);
+    add_calc2(&this->actor.home.pos.x, player->actor.world.pos.x, 0.2f, 6.0f);
+    add_calc2(&this->actor.home.pos.z, player->actor.world.pos.z, 0.2f, 6.0f);
+    add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.world.rot.y, 1, 0x800, 0x200);
     if (this->actor.home.pos.x - player->actor.world.pos.x > 100.0f) {
         this->actor.home.pos.x = player->actor.world.pos.x + 100.0f;
     } else if (this->actor.home.pos.x - player->actor.world.pos.x < -100.0f) {
@@ -491,59 +491,59 @@ void EnPoField_CirclePlayer(EnPoField* this, PlayState* play) {
     } else if (this->actor.home.pos.z - player->actor.world.pos.z < -100.0f) {
         this->actor.home.pos.z = player->actor.world.pos.z + -100.0f;
     }
-    this->actor.world.pos.x = this->actor.home.pos.x - (Math_SinS(this->actor.world.rot.y) * this->scaleModifier);
-    this->actor.world.pos.z = this->actor.home.pos.z - (Math_CosS(this->actor.world.rot.y) * this->scaleModifier);
+    this->actor.world.pos.x = this->actor.home.pos.x - (sin_s(this->actor.world.rot.y) * this->scaleModifier);
+    this->actor.world.pos.z = this->actor.home.pos.z - (cos_s(this->actor.world.rot.y) * this->scaleModifier);
     if (this->actionTimer == 0) {
-        EnPoField_SetupDisappear(this);
+        mode_disappear_init(this);
     } else {
-        EnPoField_SpawnFlame(this);
+        po_field_fire_ct(this);
     }
-    EnPoField_CorrectYPos(this, play);
-    Actor_PlaySfx_Flagged(&this->actor, NA_SE_EN_PO_FLY - SFX_FLAG);
+    set_po_field_position_y(this, play);
+    Actor_level_SE_set(&this->actor, NA_SE_EN_PO_FLY - SFX_FLAG);
 }
 
-void EnPoField_Flee(EnPoField* this, PlayState* play) {
+static void mode_escape(EnPoField* this, PlayState* play) {
     f32 temp_f6;
     s16 phi_t0;
 
-    SkelAnime_Update(&this->skelAnime);
+    Skeleton_Info2_anime_play(&this->skelAnime);
     if (this->actionTimer != 0) {
         this->actionTimer--;
     }
-    if (Actor_WorldDistXZToPoint(&this->actor, &sFieldMiddle) > 3000.0f) {
-        phi_t0 = (s16)(this->actor.yawTowardsPlayer - Actor_WorldYawTowardPoint(&this->actor, &sFieldMiddle) - 0x8000) *
+    if (Actor_search_position_distanceXZ(&this->actor, &map_center_pos) > 3000.0f) {
+        phi_t0 = (s16)(this->actor.yawTowardsPlayer - Actor_search_position_angleY(&this->actor, &map_center_pos) - 0x8000) *
                  0.2f;
     } else {
         phi_t0 = 0;
     }
-    Math_ApproachS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer - phi_t0, 6, 0x400);
-    EnPoField_SetFleeSpeed(this, play);
+    adds(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer - phi_t0, 6, 0x400);
+    set_po_field_speedF(this, play);
     this->actor.world.rot.y = this->actor.shape.rot.y + 0x8000;
-    temp_f6 = Math_SinS(this->actionTimer * 0x800) * 3.0f;
-    this->actor.world.pos.x -= temp_f6 * Math_CosS(this->actor.shape.rot.y);
-    this->actor.world.pos.z += temp_f6 * Math_SinS(this->actor.shape.rot.y);
+    temp_f6 = sin_s(this->actionTimer * 0x800) * 3.0f;
+    this->actor.world.pos.x -= temp_f6 * cos_s(this->actor.shape.rot.y);
+    this->actor.world.pos.z += temp_f6 * sin_s(this->actor.shape.rot.y);
     if (this->actionTimer == 0 || this->actor.xzDistToPlayer > 1500.0f) {
-        EnPoField_SetupDisappear(this);
+        mode_disappear_init(this);
     } else {
-        EnPoField_CorrectYPos(this, play);
+        set_po_field_position_y(this, play);
     }
-    Actor_PlaySfx_Flagged(&this->actor, NA_SE_EN_PO_AWAY - SFX_FLAG);
+    Actor_level_SE_set(&this->actor, NA_SE_EN_PO_AWAY - SFX_FLAG);
 }
 
-void EnPoField_Damage(EnPoField* this, PlayState* play) {
-    Math_StepToF(&this->actor.speed, 0.0f, 0.5f);
-    if (SkelAnime_Update(&this->skelAnime)) {
+static void mode_damage(EnPoField* this, PlayState* play) {
+    chase_f(&this->actor.speed, 0.0f, 0.5f);
+    if (Skeleton_Info2_anime_play(&this->skelAnime)) {
         if (this->actor.colChkInfo.health == 0) {
-            EnPoField_SetupDeath(this);
+            mode_down_init(this);
         } else if (this->actor.params == EN_PO_FIELD_BIG) {
-            EnPoField_SetupFlee(this);
+            mode_escape_init(this);
         } else {
-            EnPoField_SetupCirclePlayer(this, play);
+            mode_rotate_init(this, play);
         }
     }
 }
 
-void EnPoField_Death(EnPoField* this, PlayState* play) {
+static void mode_down(EnPoField* this, PlayState* play) {
     Vec3f sp6C;
     f32 sp68;
     s32 pad;
@@ -553,30 +553,30 @@ void EnPoField_Death(EnPoField* this, PlayState* play) {
     this->actionTimer++;
     if (this->actionTimer < 8) {
         if (this->actionTimer < 5) {
-            sp6C.y = Math_SinS(this->actionTimer * 0x1000 - 0x4000) * 23.0f + (this->actor.world.pos.y + 40.0f);
-            sp68 = Math_CosS(this->actionTimer * 0x1000 - 0x4000) * 23.0f;
-            sp6C.x = Math_SinS(Camera_GetCamDirYaw(GET_ACTIVE_CAM(play)) + 0x4800) * sp68 + this->actor.world.pos.x;
-            sp6C.z = Math_CosS(Camera_GetCamDirYaw(GET_ACTIVE_CAM(play)) + 0x4800) * sp68 + this->actor.world.pos.z;
+            sp6C.y = sin_s(this->actionTimer * 0x1000 - 0x4000) * 23.0f + (this->actor.world.pos.y + 40.0f);
+            sp68 = cos_s(this->actionTimer * 0x1000 - 0x4000) * 23.0f;
+            sp6C.x = sin_s(getRealCameraAngleY(GET_ACTIVE_CAM(play)) + 0x4800) * sp68 + this->actor.world.pos.x;
+            sp6C.z = cos_s(getRealCameraAngleY(GET_ACTIVE_CAM(play)) + 0x4800) * sp68 + this->actor.world.pos.z;
         } else {
             sp6C.y = this->actor.world.pos.y + 40.0f + 15.0f * (this->actionTimer - 5);
-            sp6C.x = Math_SinS(Camera_GetCamDirYaw(GET_ACTIVE_CAM(play)) + 0x4800) * 23.0f + this->actor.world.pos.x;
-            sp6C.z = Math_CosS(Camera_GetCamDirYaw(GET_ACTIVE_CAM(play)) + 0x4800) * 23.0f + this->actor.world.pos.z;
+            sp6C.x = sin_s(getRealCameraAngleY(GET_ACTIVE_CAM(play)) + 0x4800) * 23.0f + this->actor.world.pos.x;
+            sp6C.z = cos_s(getRealCameraAngleY(GET_ACTIVE_CAM(play)) + 0x4800) * 23.0f + this->actor.world.pos.z;
         }
-        EffectSsDeadDb_Spawn(play, &sp6C, &D_80AD7114, &D_80AD7120, this->actionTimer * 10 + 80, 0, 255, 255, 255, 255,
+        _Effect_SS_Db_ct(play, &sp6C, &pvec, &pacc, this->actionTimer * 10 + 80, 0, 255, 255, 255, 255,
                              0, 0, 255, 1, 9, 1);
         sp6C.x = (this->actor.world.pos.x + this->actor.world.pos.x) - sp6C.x;
         sp6C.z = (this->actor.world.pos.z + this->actor.world.pos.z) - sp6C.z;
-        EffectSsDeadDb_Spawn(play, &sp6C, &D_80AD7114, &D_80AD7120, this->actionTimer * 10 + 80, 0, 255, 255, 255, 255,
+        _Effect_SS_Db_ct(play, &sp6C, &pvec, &pacc, this->actionTimer * 10 + 80, 0, 255, 255, 255, 255,
                              0, 0, 255, 1, 9, 1);
         sp6C.x = this->actor.world.pos.x;
         sp6C.z = this->actor.world.pos.z;
-        EffectSsDeadDb_Spawn(play, &sp6C, &D_80AD7114, &D_80AD7120, this->actionTimer * 10 + 80, 0, 255, 255, 255, 255,
+        _Effect_SS_Db_ct(play, &sp6C, &pvec, &pacc, this->actionTimer * 10 + 80, 0, 255, 255, 255, 255,
                              0, 0, 255, 1, 9, 1);
         if (this->actionTimer == 1) {
-            Actor_PlaySfx(&this->actor, NA_SE_EN_EXTINCT);
+            Actor_SE_set(&this->actor, NA_SE_EN_EXTINCT);
         }
     } else if (this->actionTimer == 28) {
-        EnPoField_SetupSoulIdle(this, play);
+        mode_kantera_drop_init(this, play);
     } else if (this->actionTimer >= 19) {
         temp_f0 = (28 - this->actionTimer) * 0.001f;
         this->actor.world.pos.y += 5.0f;
@@ -585,12 +585,12 @@ void EnPoField_Death(EnPoField* this, PlayState* play) {
         this->actor.scale.x = temp_f0;
     }
     if (this->actionTimer == 18) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_PO_DEAD2);
+        Actor_SE_set(&this->actor, NA_SE_EN_PO_DEAD2);
     }
 }
 
-void EnPoField_Disappear(EnPoField* this, PlayState* play) {
-    SkelAnime_Update(&this->skelAnime);
+static void mode_disappear(EnPoField* this, PlayState* play) {
+    Skeleton_Info2_anime_play(&this->skelAnime);
     if (this->actionTimer != 0) {
         this->actionTimer--;
     }
@@ -598,27 +598,27 @@ void EnPoField_Disappear(EnPoField* this, PlayState* play) {
     this->lightColor.a = this->actionTimer * 15.9375f;
     this->actor.shape.shadowAlpha = this->lightColor.a;
     if (this->actionTimer == 0) {
-        EnPoField_SetupWaitForSpawn(this, play);
+        mode_dummy_init(this, play);
     }
 }
 
-void EnPoField_SoulIdle(EnPoField* this, PlayState* play) {
+static void mode_kantera_drop(EnPoField* this, PlayState* play) {
     if (this->actionTimer != 0) {
         this->actionTimer--;
     }
     if (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) {
-        EffectSsHahen_SpawnBurst(play, &this->actor.world.pos, 6.0f, 0, 1, 1, 15, OBJECT_PO_FIELD, 10,
+        Effect_Hahen_Kakusan_ct3(play, &this->actor.world.pos, 6.0f, 0, 1, 1, 15, OBJECT_PO_FIELD, 10,
                                  gPoeFieldLanternDL);
-        func_80AD42B0(this);
+        mode_soul_appear_init(this);
     } else if (this->actionTimer == 0) {
-        EnPoField_SetupWaitForSpawn(this, play);
+        mode_dummy_init(this, play);
     }
-    Actor_MoveXZGravity(&this->actor);
-    Actor_UpdateBgCheckInfo(play, &this->actor, 10.0f, 10.0f, 10.0f, UPDBGCHECKINFO_FLAG_2);
+    Actor_position_moveF(&this->actor);
+    Actor_BGcheck2(play, &this->actor, 10.0f, 10.0f, 10.0f, UPDBGCHECKINFO_FLAG_2);
 }
 
-void EnPoField_SoulUpdateProperties(EnPoField* this, s32 arg1) {
-    EnPoFieldInfo* info = &sPoFieldInfo[this->actor.params];
+void po_field_soul_set(EnPoField* this, s32 arg1) {
+    EnPoFieldInfo* info = &soul_status_data[this->actor.params];
     f32 multiplier;
 
     this->lightColor.a = CLAMP(this->lightColor.a + arg1, 0, 255);
@@ -634,41 +634,41 @@ void EnPoField_SoulUpdateProperties(EnPoField* this, s32 arg1) {
     this->lightColor.r = info->lightColor.r * multiplier;
     this->lightColor.g = info->lightColor.g * multiplier;
     this->lightColor.b = info->lightColor.b * multiplier;
-    Lights_PointNoGlowSetInfo(&this->lightInfo, this->actor.world.pos.x, this->actor.world.pos.y,
+    Light_point_ct(&this->lightInfo, this->actor.world.pos.x, this->actor.world.pos.y,
                               this->actor.world.pos.z, info->lightColor.r, info->lightColor.g, info->lightColor.b,
                               this->lightColor.a * (200.0f / 255));
 }
 
-void func_80AD587C(EnPoField* this, PlayState* play) {
+static void mode_soul_appear(EnPoField* this, PlayState* play) {
     this->actor.home.pos.y += 2.0f;
-    EnPoField_SoulUpdateProperties(this, 20);
+    po_field_soul_set(this, 20);
     if (this->lightColor.a == 255) {
-        func_80AD4384(this);
+        mode_soul_init(this);
     }
 }
 
-void func_80AD58D4(EnPoField* this, PlayState* play) {
+static void mode_soul(EnPoField* this, PlayState* play) {
     if (this->actionTimer != 0) {
         this->actionTimer--;
     }
-    if (Actor_TalkOfferAccepted(&this->actor, play)) {
-        EnPoField_SetupInteractWithSoul(this);
+    if (Actor_talk_check(&this->actor, play)) {
+        mode_soul_get_init(this);
         return;
     }
     if (this->actionTimer == 0) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_PO_LAUGH);
+        Actor_SE_set(&this->actor, NA_SE_EN_PO_LAUGH);
         this->actor.flags &= ~ACTOR_FLAG_TALK_OFFER_AUTO_ACCEPTED;
-        EnPoField_SetupSoulDisappear(this);
+        mode_soul_delete_init(this);
         return;
     }
     if (this->collider.base.ocFlags1 & OC1_HIT) {
         this->actor.flags |= ACTOR_FLAG_TALK_OFFER_AUTO_ACCEPTED;
-        Actor_OfferTalkNearColChkInfoCylinder(&this->actor, play);
+        Actor_talk_request(&this->actor, play);
     } else {
         this->actor.flags &= ~ACTOR_FLAG_TALK_OFFER_AUTO_ACCEPTED;
-        CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
+        CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
     }
-    this->actor.world.pos.y = Math_SinS(this->unk_194 * 0x800) * 5.0f + this->actor.home.pos.y;
+    this->actor.world.pos.y = sin_s(this->unk_194 * 0x800) * 5.0f + this->actor.home.pos.y;
     if (this->unk_194 != 0) {
         this->unk_194 -= 1;
     }
@@ -676,72 +676,72 @@ void func_80AD58D4(EnPoField* this, PlayState* play) {
         this->unk_194 = 32;
     }
     this->collider.dim.pos.y = this->actor.world.pos.y - 20.0f;
-    Actor_SetFocus(&this->actor, -10.0f);
-    Lights_PointNoGlowSetInfo(&this->lightInfo, this->actor.world.pos.x, this->actor.world.pos.y,
+    Actor_world_to_eye(&this->actor, -10.0f);
+    Light_point_ct(&this->lightInfo, this->actor.world.pos.x, this->actor.world.pos.y,
                               this->actor.world.pos.z, this->lightInfo.params.point.color[0],
                               this->lightInfo.params.point.color[1], this->lightInfo.params.point.color[2],
                               this->lightColor.a * (200.0f / 255));
 }
 
-void EnPoField_SoulDisappear(EnPoField* this, PlayState* play) {
-    EnPoField_SoulUpdateProperties(this, -13);
+static void mode_soul_delete(EnPoField* this, PlayState* play) {
+    po_field_soul_set(this, -13);
     if (this->lightColor.a == 0) {
-        EnPoField_SetupWaitForSpawn(this, play);
+        mode_dummy_init(this, play);
     }
 }
 
-void EnPoField_SoulInteract(EnPoField* this, PlayState* play) {
+static void mode_soul_get(EnPoField* this, PlayState* play) {
     if (this->actor.textId != 0x5005) {
-        EnPoField_SoulUpdateProperties(this, -13);
+        po_field_soul_set(this, -13);
     } else {
-        Actor_PlaySfx_Flagged(&this->actor, NA_SE_EN_PO_BIG_CRY - SFX_FLAG);
+        Actor_level_SE_set(&this->actor, NA_SE_EN_PO_BIG_CRY - SFX_FLAG);
     }
-    if (Message_GetState(&play->msgCtx) == TEXT_STATE_CHOICE) {
-        if (Message_ShouldAdvance(play)) {
-            Audio_StopSfxByPosAndId(&this->actor.projectedPos, NA_SE_EN_PO_BIG_CRY - SFX_FLAG);
+    if (message_check(&play->msgCtx) == TEXT_STATE_CHOICE) {
+        if (pad_on_check(play)) {
+            Nai_StopObjFlagFx(&this->actor.projectedPos, NA_SE_EN_PO_BIG_CRY - SFX_FLAG);
             if (play->msgCtx.choiceIndex == 0) {
-                if (Inventory_HasEmptyBottle()) {
-                    Actor_PlaySfx(&this->actor, NA_SE_EN_PO_BIG_GET);
+                if (findEmptyBottle()) {
+                    Actor_SE_set(&this->actor, NA_SE_EN_PO_BIG_GET);
                     if (this->actor.params == 0) {
-                        Item_Give(play, ITEM_BOTTLE_POE);
+                        item_get_setting(play, ITEM_BOTTLE_POE);
                         this->actor.textId = 0x5008;
                     } else {
                         this->actor.textId = 0x508F;
-                        Item_Give(play, ITEM_BOTTLE_BIG_POE);
-                        Flags_SetSwitch(play, sSpawnSwitchFlags[this->spawnFlagIndex]);
+                        item_get_setting(play, ITEM_BOTTLE_BIG_POE);
+                        Actor_Environment_sw_On(play, sw_num[this->spawnFlagIndex]);
                     }
                 } else {
-                    Actor_PlaySfx(&this->actor, NA_SE_EN_PO_LAUGH);
+                    Actor_SE_set(&this->actor, NA_SE_EN_PO_LAUGH);
                     this->actor.textId = 0x5006;
                 }
             } else {
                 this->actor.textId = 0x5007;
-                Actor_PlaySfx(&this->actor, NA_SE_EN_PO_LAUGH);
+                Actor_SE_set(&this->actor, NA_SE_EN_PO_LAUGH);
             }
-            Message_ContinueTextbox(play, this->actor.textId);
+            message_set2(play, this->actor.textId);
             return;
         }
-    } else if (Actor_TextboxIsClosing(&this->actor, play)) {
-        EnPoField_SetupSoulDisappear(this);
+    } else if (Actor_talk_end_check(&this->actor, play)) {
+        mode_soul_delete_init(this);
     }
 }
 
-void EnPoField_TestForDamage(EnPoField* this, PlayState* play) {
+void En_Po_Field_damage_proc(EnPoField* this, PlayState* play) {
     if (this->collider.base.acFlags & AC_HIT) {
         this->collider.base.acFlags &= ~AC_HIT;
         if (this->actor.colChkInfo.damageEffect != 0 || this->actor.colChkInfo.damage != 0) {
-            if (Actor_ApplyDamage(&this->actor) == 0) {
-                Enemy_StartFinishingBlow(play, &this->actor);
-                Actor_PlaySfx(&this->actor, NA_SE_EN_PO_DEAD);
+            if (hp_down(&this->actor) == 0) {
+                Actor_info_finish(play, &this->actor);
+                Actor_SE_set(&this->actor, NA_SE_EN_PO_DEAD);
             } else {
-                Actor_PlaySfx(&this->actor, NA_SE_EN_PO_DAMAGE);
+                Actor_SE_set(&this->actor, NA_SE_EN_PO_DAMAGE);
             }
-            EnPoField_SetupDamage(this);
+            mode_damage_init(this);
         }
     }
 }
 
-void EnPoField_SpawnFlame(EnPoField* this) {
+void po_field_fire_ct(EnPoField* this) {
     if (this->flameTimer == 0) {
         this->flamePosition.x = this->lightInfo.params.point.x;
         this->flamePosition.y = this->lightInfo.params.point.y;
@@ -751,7 +751,7 @@ void EnPoField_SpawnFlame(EnPoField* this) {
     }
 }
 
-void EnPoField_UpdateFlame(EnPoField* this, PlayState* play) {
+void po_field_fire_move(EnPoField* this, PlayState* play) {
     if (this->flameTimer != 0) {
         if (this->flameTimer != 0) {
             this->flameTimer--;
@@ -761,40 +761,40 @@ void EnPoField_UpdateFlame(EnPoField* this, PlayState* play) {
             this->flameTimer = 19;
         }
         if (this->flameTimer < 20) {
-            Math_StepToF(&this->flameScale, 0.0f, 0.00015f);
+            chase_f(&this->flameScale, 0.0f, 0.00015f);
             return;
         }
-        if (Math_StepToF(&this->flameScale, 0.003f, 0.0006f) != 0) {
-            this->flamePosition.x += 2.5f * Math_SinS(this->flameRotation);
-            this->flamePosition.z += 2.5f * Math_CosS(this->flameRotation);
+        if (chase_f(&this->flameScale, 0.003f, 0.0006f) != 0) {
+            this->flamePosition.x += 2.5f * sin_s(this->flameRotation);
+            this->flamePosition.z += 2.5f * cos_s(this->flameRotation);
         }
         this->flameCollider.dim.pos.x = this->flamePosition.x;
         this->flameCollider.dim.pos.y = this->flamePosition.y;
         this->flameCollider.dim.pos.z = this->flamePosition.z;
-        CollisionCheck_SetAT(play, &play->colChkCtx, &this->flameCollider.base);
+        CollisionCheck_setAT(play, &play->colChkCtx, &this->flameCollider.base);
     }
 }
 
-void EnPoField_DrawFlame(EnPoField* this, PlayState* play) {
+void po_field_fire_draw(EnPoField* this, PlayState* play) {
     f32 sp4C;
     s32 pad;
 
     if (this->flameTimer != 0) {
         OPEN_DISPS(play->state.gfxCtx, "../z_en_po_field.c", 1669);
-        Gfx_SetupDL_25Xlu(play->state.gfxCtx);
+        _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
         gSPSegment(POLY_XLU_DISP++, 0x08,
-                   Gfx_TwoTexScroll(play->state.gfxCtx, G_TX_RENDERTILE, 0, 0, 32, 64, 1, 0,
+                   two_tex_scroll(play->state.gfxCtx, G_TX_RENDERTILE, 0, 0, 32, 64, 1, 0,
                                     (play->gameplayFrames * -20) % 512, 32, 128));
         sp4C = this->flameScale * 85000.0f;
         gDPSetPrimColor(POLY_XLU_DISP++, 0x80, 0x80, 255, 255, 0, sp4C);
-        Matrix_Translate(this->flamePosition.x, this->flamePosition.y, this->flamePosition.z, MTXMODE_NEW);
-        Matrix_RotateY(BINANG_TO_RAD((s16)(Camera_GetCamDirYaw(GET_ACTIVE_CAM(play)) + 0x8000)), MTXMODE_APPLY);
+        Matrix_translate(this->flamePosition.x, this->flamePosition.y, this->flamePosition.z, MTXMODE_NEW);
+        Matrix_rotateY(BINANG_TO_RAD((s16)(getRealCameraAngleY(GET_ACTIVE_CAM(play)) + 0x8000)), MTXMODE_APPLY);
         if (this->flameTimer >= 20) {
             gDPSetEnvColor(POLY_XLU_DISP++, 255, 0, 0, 0);
-            Matrix_Scale(this->flameScale, this->flameScale, this->flameScale, MTXMODE_APPLY);
+            Matrix_scale(this->flameScale, this->flameScale, this->flameScale, MTXMODE_APPLY);
         } else {
             gDPSetEnvColor(POLY_XLU_DISP++, sp4C, 0, 0, 0);
-            Matrix_Scale((this->flameScale * 0.7f) + 0.00090000004f, (0.003f - this->flameScale) + 0.003f, 0.003f,
+            Matrix_scale((this->flameScale * 0.7f) + 0.00090000004f, (0.003f - this->flameScale) + 0.003f, 0.003f,
                          MTXMODE_APPLY);
         }
         MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx, "../z_en_po_field.c", 1709);
@@ -804,15 +804,15 @@ void EnPoField_DrawFlame(EnPoField* this, PlayState* play) {
     }
 }
 
-void func_80AD619C(EnPoField* this) {
+void set_po_field_color_data(EnPoField* this) {
     s16 temp_var;
 
-    if (this->actionFunc == EnPoField_Flee) {
+    if (this->actionFunc == mode_escape) {
         this->lightColor.r = CLAMP_MAX((s16)(this->lightColor.r + 5), 80);
         this->lightColor.g = CLAMP_MAX((s16)(this->lightColor.g + 5), 255);
         temp_var = this->lightColor.b + 5;
         this->lightColor.b = CLAMP_MAX(temp_var, 225);
-    } else if (this->actionFunc == EnPoField_Damage) {
+    } else if (this->actionFunc == mode_damage) {
         if (this->actor.colorFilterTimer & 2) {
             this->lightColor.r = 0;
             this->lightColor.g = 0;
@@ -835,14 +835,14 @@ void func_80AD619C(EnPoField* this) {
     }
 }
 
-void func_80AD6330(EnPoField* this) {
+void set_po_field_kantera_color_data(EnPoField* this) {
     f32 rand;
 
-    if (this->actionFunc == EnPoField_Appear && this->skelAnime.curFrame < 12.0f) {
+    if (this->actionFunc == mode_start && this->skelAnime.curFrame < 12.0f) {
         this->soulColor.r = this->soulColor.g = this->soulColor.b = (s16)(this->skelAnime.curFrame * 16.66f) + 55;
         this->soulColor.a = this->skelAnime.curFrame * (100.0f / 6.0f);
     } else {
-        rand = Rand_ZeroOne();
+        rand = fqrand();
         this->soulColor.r = (s16)(rand * 30.0f) + 225;
         this->soulColor.g = (s16)(rand * 100.0f) + 155;
         this->soulColor.b = (s16)(rand * 160.0f) + 95;
@@ -850,35 +850,35 @@ void func_80AD6330(EnPoField* this) {
     }
 }
 
-void EnPoField_Update(Actor* thisx, PlayState* play) {
+void En_Po_Field_actor_move(Actor* thisx, PlayState* play) {
     s32 pad;
     EnPoField* this = (EnPoField*)thisx;
 
-    EnPoField_TestForDamage(this, play);
+    En_Po_Field_damage_proc(this, play);
     this->actionFunc(this, play);
-    EnPoField_UpdateFlame(this, play);
-    if (this->actionFunc == EnPoField_Flee || this->actionFunc == EnPoField_Damage ||
-        this->actionFunc == EnPoField_Appear) {
-        Actor_MoveXZGravity(&this->actor);
+    po_field_fire_move(this, play);
+    if (this->actionFunc == mode_escape || this->actionFunc == mode_damage ||
+        this->actionFunc == mode_start) {
+        Actor_position_moveF(&this->actor);
     }
-    if (this->actionFunc != EnPoField_WaitForSpawn) {
-        Actor_SetFocus(&this->actor, 42.0f);
-        Actor_UpdateBgCheckInfo(play, &this->actor, 0.0f, 27.0f, 60.0f, UPDBGCHECKINFO_FLAG_2);
-        func_80AD619C(this);
-        func_80AD6330(this);
-        Collider_UpdateCylinder(&this->actor, &this->collider);
-        CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
+    if (this->actionFunc != mode_dummy) {
+        Actor_world_to_eye(&this->actor, 42.0f);
+        Actor_BGcheck2(play, &this->actor, 0.0f, 27.0f, 60.0f, UPDBGCHECKINFO_FLAG_2);
+        set_po_field_color_data(this);
+        set_po_field_kantera_color_data(this);
+        CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
+        CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
         if (this->collider.base.acFlags & AC_ON) {
-            CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
+            CollisionCheck_setAC(play, &play->colChkCtx, &this->collider.base);
         }
     }
 }
 
-s32 EnPoField_OverrideLimbDraw2(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx,
+s32 en_po_field_display1(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx,
                                 Gfx** gfxP) {
     EnPoField* this = (EnPoField*)thisx;
 
-    if (this->lightColor.a == 0 || limbIndex == 7 || (this->actionFunc == EnPoField_Death && this->actionTimer >= 2)) {
+    if (this->lightColor.a == 0 || limbIndex == 7 || (this->actionFunc == mode_down && this->actionTimer >= 2)) {
         *dList = NULL;
     } else if (this->actor.params == EN_PO_FIELD_BIG) {
         if (limbIndex == 1) {
@@ -889,115 +889,115 @@ s32 EnPoField_OverrideLimbDraw2(PlayState* play, s32 limbIndex, Gfx** dList, Vec
             *dList = gBigPoeBodyDL;
         }
     }
-    if (this->actionFunc == EnPoField_Disappear && limbIndex == 7) {
-        Matrix_Scale(this->actionTimer / 16.0f, this->actionTimer / 16.0f, this->actionTimer / 16.0f, MTXMODE_APPLY);
+    if (this->actionFunc == mode_disappear && limbIndex == 7) {
+        Matrix_scale(this->actionTimer / 16.0f, this->actionTimer / 16.0f, this->actionTimer / 16.0f, MTXMODE_APPLY);
     }
     return false;
 }
 
-void EnPoField_PostLimDraw2(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx, Gfx** gfxP) {
+void en_po_field_display2(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx, Gfx** gfxP) {
     EnPoField* this = (EnPoField*)thisx;
 
-    if (this->actionFunc == EnPoField_Death && this->actionTimer >= 2 && limbIndex == 8) {
+    if (this->actionFunc == mode_down && this->actionTimer >= 2 && limbIndex == 8) {
         MATRIX_FINALIZE_AND_LOAD((*gfxP)++, play->state.gfxCtx, "../z_en_po_field.c", 1916);
         gSPDisplayList((*gfxP)++, gPoeFieldBurnDL);
     }
     if (limbIndex == 7) {
         Vec3f vec;
-        Matrix_MultVec3f(&D_80AD714C, &vec);
-        if (this->actionFunc == EnPoField_Death && this->actionTimer >= 19 && this->actor.scale.x != 0.0f) {
+        Matrix_Position(&local_light_pos, &vec);
+        if (this->actionFunc == mode_down && this->actionTimer >= 19 && this->actor.scale.x != 0.0f) {
             f32 mtxScale = 0.01f / this->actor.scale.x;
-            Matrix_Scale(mtxScale, mtxScale, mtxScale, MTXMODE_APPLY);
+            Matrix_scale(mtxScale, mtxScale, mtxScale, MTXMODE_APPLY);
         }
-        Matrix_Get(&sLimb7Mtx);
-        if (this->actionFunc == EnPoField_Death && this->actionTimer == 27) {
-            this->actor.world.pos.x = sLimb7Mtx.xw;
-            this->actor.world.pos.y = sLimb7Mtx.yw;
-            this->actor.world.pos.z = sLimb7Mtx.zw;
+        Matrix_get(&kantera_mtx);
+        if (this->actionFunc == mode_down && this->actionTimer == 27) {
+            this->actor.world.pos.x = kantera_mtx.xw;
+            this->actor.world.pos.y = kantera_mtx.yw;
+            this->actor.world.pos.z = kantera_mtx.zw;
         }
-        Lights_PointGlowSetInfo(&this->lightInfo, vec.x, vec.y, vec.z, this->soulColor.r, this->soulColor.g,
+        Light_point2_ct(&this->lightInfo, vec.x, vec.y, vec.z, this->soulColor.r, this->soulColor.g,
                                 this->soulColor.b, this->soulColor.a * (200.0f / 255));
     }
 }
 
-void EnPoField_Draw(Actor* thisx, PlayState* play) {
+void En_Po_Field_actor_draw(Actor* thisx, PlayState* play) {
     EnPoField* this = (EnPoField*)thisx;
-    EnPoFieldInfo* info = &sPoFieldInfo[this->actor.params];
+    EnPoFieldInfo* info = &soul_status_data[this->actor.params];
 
-    if (this->actionFunc != EnPoField_WaitForSpawn) {
+    if (this->actionFunc != mode_dummy) {
         OPEN_DISPS(play->state.gfxCtx, "../z_en_po_field.c", 1976);
-        Gfx_SetupDL_25Opa(play->state.gfxCtx);
-        Gfx_SetupDL_25Xlu(play->state.gfxCtx);
+        _texture_z_light_fog_prim(play->state.gfxCtx);
+        _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
         gSPSegment(POLY_OPA_DISP++, 0x0A,
-                   Gfx_EnvColor(play->state.gfxCtx, info->envColor.r, info->envColor.g, info->envColor.b, 255));
+                   anime_envcolor(play->state.gfxCtx, info->envColor.r, info->envColor.g, info->envColor.b, 255));
         if (this->lightColor.a == 255 || this->lightColor.a == 0) {
             gSPSegment(POLY_OPA_DISP++, 0x08,
-                       Gfx_EnvColor(play->state.gfxCtx, this->lightColor.r, this->lightColor.g, this->lightColor.b,
+                       anime_envcolor(play->state.gfxCtx, this->lightColor.r, this->lightColor.g, this->lightColor.b,
                                     this->lightColor.a));
-            gSPSegment(POLY_OPA_DISP++, 0x0C, D_80116280 + 2);
+            gSPSegment(POLY_OPA_DISP++, 0x0C, Actor_change_render_mode + 2);
             POLY_OPA_DISP =
-                SkelAnime_Draw(play, this->skelAnime.skeleton, this->skelAnime.jointTable, EnPoField_OverrideLimbDraw2,
-                               EnPoField_PostLimDraw2, &this->actor, POLY_OPA_DISP);
+                Si2_draw2(play, this->skelAnime.skeleton, this->skelAnime.jointTable, en_po_field_display1,
+                               en_po_field_display2, &this->actor, POLY_OPA_DISP);
         } else {
             gSPSegment(POLY_XLU_DISP++, 0x08,
-                       Gfx_EnvColor(play->state.gfxCtx, this->lightColor.r, this->lightColor.g, this->lightColor.b,
+                       anime_envcolor(play->state.gfxCtx, this->lightColor.r, this->lightColor.g, this->lightColor.b,
                                     this->lightColor.a));
-            gSPSegment(POLY_XLU_DISP++, 0x0C, D_80116280);
+            gSPSegment(POLY_XLU_DISP++, 0x0C, Actor_change_render_mode);
             POLY_XLU_DISP =
-                SkelAnime_Draw(play, this->skelAnime.skeleton, this->skelAnime.jointTable, EnPoField_OverrideLimbDraw2,
-                               EnPoField_PostLimDraw2, &this->actor, POLY_XLU_DISP);
+                Si2_draw2(play, this->skelAnime.skeleton, this->skelAnime.jointTable, en_po_field_display1,
+                               en_po_field_display2, &this->actor, POLY_XLU_DISP);
         }
         gDPPipeSync(POLY_OPA_DISP++);
         gDPSetEnvColor(POLY_OPA_DISP++, this->soulColor.r, this->soulColor.g, this->soulColor.b, 255);
-        Matrix_Put(&sLimb7Mtx);
+        Matrix_put(&kantera_mtx);
         MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_en_po_field.c", 2033);
         gSPDisplayList(POLY_OPA_DISP++, gPoeFieldLanternDL);
         gSPDisplayList(POLY_OPA_DISP++, gPoeFieldLanternTopDL);
         CLOSE_DISPS(play->state.gfxCtx, "../z_en_po_field.c", 2039);
     }
-    EnPoField_DrawFlame(this, play);
+    po_field_fire_draw(this, play);
 }
 
-void EnPoField_UpdateDead(Actor* thisx, PlayState* play) {
+void En_Po_Field_actor_after_move(Actor* thisx, PlayState* play) {
     EnPoField* this = (EnPoField*)thisx;
 
     this->actionFunc(this, play);
-    if (this->actionFunc == EnPoField_SoulIdle) {
-        func_80AD6330(this);
+    if (this->actionFunc == mode_kantera_drop) {
+        set_po_field_kantera_color_data(this);
     }
-    EnPoField_UpdateFlame(this, play);
+    po_field_fire_move(this, play);
 }
 
-void EnPoField_DrawSoul(Actor* thisx, PlayState* play) {
+void En_Po_Field_actor_after_draw(Actor* thisx, PlayState* play) {
     EnPoField* this = (EnPoField*)thisx;
     s32 pad;
-    EnPoFieldInfo* info = &sPoFieldInfo[this->actor.params];
+    EnPoFieldInfo* info = &soul_status_data[this->actor.params];
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_po_field.c", 2077);
-    if (this->actionFunc == EnPoField_SoulIdle) {
-        Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    if (this->actionFunc == mode_kantera_drop) {
+        _texture_z_light_fog_prim(play->state.gfxCtx);
         gSPSegment(POLY_OPA_DISP++, 0x0A,
-                   Gfx_EnvColor(play->state.gfxCtx, info->envColor.r, info->envColor.g, info->envColor.b, 255));
-        Lights_PointGlowSetInfo(&this->lightInfo, this->actor.world.pos.x, this->actor.world.pos.y,
+                   anime_envcolor(play->state.gfxCtx, info->envColor.r, info->envColor.g, info->envColor.b, 255));
+        Light_point2_ct(&this->lightInfo, this->actor.world.pos.x, this->actor.world.pos.y,
                                 this->actor.world.pos.z, this->soulColor.r, this->soulColor.g, this->soulColor.b, 200);
         gDPSetEnvColor(POLY_OPA_DISP++, this->soulColor.r, this->soulColor.g, this->soulColor.b, 255);
         MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_en_po_field.c", 2104);
         gSPDisplayList(POLY_OPA_DISP++, gPoeFieldLanternDL);
         gSPDisplayList(POLY_OPA_DISP++, gPoeFieldLanternTopDL);
     } else {
-        Gfx_SetupDL_25Xlu(play->state.gfxCtx);
+        _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
         gSPSegment(POLY_XLU_DISP++, 0x08,
-                   Gfx_TwoTexScroll(play->state.gfxCtx, G_TX_RENDERTILE, 0, 0, 0x20, 0x40, 1, 0,
+                   two_tex_scroll(play->state.gfxCtx, G_TX_RENDERTILE, 0, 0, 0x20, 0x40, 1, 0,
                                     (play->gameplayFrames * info->unk_9) & 0x1FF, 0x20, 0x80));
         gSPSegment(POLY_XLU_DISP++, 0x09, SEGMENTED_TO_VIRTUAL(info->soulTexture));
         gDPSetPrimColor(POLY_XLU_DISP++, 0x80, 0x80, info->primColor.r, info->primColor.g, info->primColor.b,
                         this->lightColor.a);
         gDPSetEnvColor(POLY_XLU_DISP++, this->lightColor.r, this->lightColor.g, this->lightColor.b, 255);
-        Matrix_RotateY((s16)(Camera_GetCamDirYaw(GET_ACTIVE_CAM(play)) + 0x8000) * 9.58738e-05f, MTXMODE_APPLY);
+        Matrix_rotateY((s16)(getRealCameraAngleY(GET_ACTIVE_CAM(play)) + 0x8000) * 9.58738e-05f, MTXMODE_APPLY);
         MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx, "../z_en_po_field.c", 2143);
         gSPDisplayList(POLY_XLU_DISP++, gPoeFieldSoulDL);
     }
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_po_field.c", 2149);
-    EnPoField_DrawFlame(this, play);
+    po_field_fire_draw(this, play);
 }

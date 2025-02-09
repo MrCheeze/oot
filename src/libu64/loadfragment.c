@@ -2,9 +2,9 @@
  * @file relocation.c
  *
  * This file contains the routine responsible for runtime relocation of dynamically loadable code segments (overlays),
- * see the description of Overlay_Relocate for details.
+ * see the description of DoRelocation for details.
  *
- * @see Overlay_Relocate
+ * @see DoRelocation
  */
 #include "global.h"
 
@@ -37,7 +37,7 @@
  * @param ovlRelocs Overlay relocation section containing overlay section layout and runtime relocations.
  * @param vramStart Virtual RAM address that the overlay was compiled at.
  */
-void Overlay_Relocate(void* allocatedRamAddr, OverlayRelocationSection* ovlRelocs, void* vramStart) {
+void DoRelocation(void* allocatedRamAddr, OverlayRelocationSection* ovlRelocs, void* vramStart) {
     uintptr_t sections[RELOC_SECTION_MAX];
     u32* relocDataP;
     u32 reloc;
@@ -62,7 +62,7 @@ void Overlay_Relocate(void* allocatedRamAddr, OverlayRelocationSection* ovlReloc
     uintptr_t relocatedAddress = 0;
     uintptr_t vramu32 = (uintptr_t)vramStart;
 
-    if (gOverlayLogSeverity >= 3) {
+    if (loadfragment_verbose >= 3) {
         PRINTF("DoRelocation(%08x, %08x, %08x)\n", allocatedRamAddr, ovlRelocs, vramStart);
         PRINTF("text=%08x, data=%08x, rodata=%08x, bss=%08x\n", ovlRelocs->textSize, ovlRelocs->dataSize,
                ovlRelocs->rodataSize, ovlRelocs->bssSize);
@@ -152,7 +152,7 @@ void Overlay_Relocate(void* allocatedRamAddr, OverlayRelocationSection* ovlReloc
                 dbg += 10;
                 FALLTHROUGH;
             case R_MIPS_LO16 << RELOC_TYPE_SHIFT:
-                if (gOverlayLogSeverity >= 3) {
+                if (loadfragment_verbose >= 3) {
                     PRINTF("%02d %08x %08x %08x ", dbg, relocDataP, relocatedValue, relocatedAddress);
                     PRINTF(" %08x %08x %08x %08x\n", (uintptr_t)relocDataP + vramu32 - allocu32, relocData,
                            unrelocatedAddress, relocOffset);

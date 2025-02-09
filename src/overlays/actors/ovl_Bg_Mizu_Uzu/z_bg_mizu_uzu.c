@@ -9,12 +9,12 @@
 
 #define FLAGS 0
 
-void BgMizuUzu_Init(Actor* thisx, PlayState* play);
-void BgMizuUzu_Destroy(Actor* thisx, PlayState* play);
-void BgMizuUzu_Update(Actor* thisx, PlayState* play);
-void BgMizuUzu_Draw(Actor* thisx, PlayState* play);
+void Bg_Mizu_Uzu_actor_ct(Actor* thisx, PlayState* play);
+void Bg_Mizu_Uzu_actor_dt(Actor* thisx, PlayState* play);
+void Bg_Mizu_Uzu_actor_move(Actor* thisx, PlayState* play);
+void Bg_Mizu_Uzu_actor_draw(Actor* thisx, PlayState* play);
 
-void func_8089F788(BgMizuUzu* this, PlayState* play);
+static void mode_rotate(BgMizuUzu* this, PlayState* play);
 
 ActorProfile Bg_Mizu_Uzu_Profile = {
     /**/ ACTOR_BG_MIZU_UZU,
@@ -22,54 +22,54 @@ ActorProfile Bg_Mizu_Uzu_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_MIZU_OBJECTS,
     /**/ sizeof(BgMizuUzu),
-    /**/ BgMizuUzu_Init,
-    /**/ BgMizuUzu_Destroy,
-    /**/ BgMizuUzu_Update,
-    /**/ BgMizuUzu_Draw,
+    /**/ Bg_Mizu_Uzu_actor_ct,
+    /**/ Bg_Mizu_Uzu_actor_dt,
+    /**/ Bg_Mizu_Uzu_actor_move,
+    /**/ Bg_Mizu_Uzu_actor_draw,
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_F32(cullingVolumeScale, 1000, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDownward, 1000, ICHAIN_CONTINUE),
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_STOP),
 };
 
-void BgMizuUzu_Init(Actor* thisx, PlayState* play) {
+void Bg_Mizu_Uzu_actor_ct(Actor* thisx, PlayState* play) {
     s32 pad;
     BgMizuUzu* this = (BgMizuUzu*)thisx;
     CollisionHeader* colHeader = NULL;
     s32 pad2;
 
-    Actor_ProcessInitChain(&this->dyna.actor, sInitChain);
-    DynaPolyActor_Init(&this->dyna, 0);
-    CollisionHeader_GetVirtual(&gObjectMizuObjectsUzuCol_0074EC, &colHeader);
-    this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
-    this->actionFunc = func_8089F788;
+    ValueSet_process(&this->dyna.actor, value_init);
+    MoveBG_ct(&this->dyna, 0);
+    DynaPolyUty_bgdi_SG2KSG(&gObjectMizuObjectsUzuCol_0074EC, &colHeader);
+    this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
+    this->actionFunc = mode_rotate;
 }
 
-void BgMizuUzu_Destroy(Actor* thisx, PlayState* play) {
+void Bg_Mizu_Uzu_actor_dt(Actor* thisx, PlayState* play) {
     BgMizuUzu* this = (BgMizuUzu*)thisx;
 
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
 }
 
-void func_8089F788(BgMizuUzu* this, PlayState* play) {
+static void mode_rotate(BgMizuUzu* this, PlayState* play) {
     Actor* thisx = &this->dyna.actor;
 
     if (GET_PLAYER(play)->currentBoots == PLAYER_BOOTS_IRON) {
-        DynaPoly_DisableCollision(play, &play->colCtx.dyna, this->dyna.bgId);
+        DynaPolygonInfo_setThrough(play, &play->colCtx.dyna, this->dyna.bgId);
     } else {
-        DynaPoly_EnableCollision(play, &play->colCtx.dyna, this->dyna.bgId);
+        DynaPolygonInfo_clearThrough(play, &play->colCtx.dyna, this->dyna.bgId);
     }
-    Actor_PlaySfx(thisx, NA_SE_EV_WATER_CONVECTION - SFX_FLAG);
+    Actor_SE_set(thisx, NA_SE_EV_WATER_CONVECTION - SFX_FLAG);
     thisx->shape.rot.y += 0x1C0;
 }
 
-void BgMizuUzu_Update(Actor* thisx, PlayState* play) {
+void Bg_Mizu_Uzu_actor_move(Actor* thisx, PlayState* play) {
     BgMizuUzu* this = (BgMizuUzu*)thisx;
 
     this->actionFunc(this, play);
 }
 
-void BgMizuUzu_Draw(Actor* thisx, PlayState* play) {
+void Bg_Mizu_Uzu_actor_draw(Actor* thisx, PlayState* play) {
 }

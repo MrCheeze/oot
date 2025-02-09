@@ -1,11 +1,11 @@
-void EnNb_SetupCreditsSpawn(EnNb* this, PlayState* play) {
-    EnNb_SetCurrentAnim(this, &gNabooruSittingCrossLeggedAnim, 0, 0.0f, 0);
+void En_Nb_Ending_Init(EnNb* this, PlayState* play) {
+    En_Nb_Change_Anime(this, &gNabooruSittingCrossLeggedAnim, 0, 0.0f, 0);
     this->action = NB_CREDITS_INIT;
     this->drawMode = NB_DRAW_NOTHING;
     this->actor.shape.shadowAlpha = 0;
 }
 
-void EnNb_SetAlphaInCredits(EnNb* this) {
+void En_Nb_inEnding_Set_Alpha(EnNb* this) {
     f32* alphaTimer = &this->alphaTimer;
     s32 alpha;
 
@@ -21,32 +21,32 @@ void EnNb_SetAlphaInCredits(EnNb* this) {
     }
 }
 
-void EnNb_SetupCreditsFadeIn(EnNb* this, PlayState* play) {
-    EnNb_SetStartPosRotFromCue2(this, play, 1);
+void En_Nb_inEnding_setup_Appear(EnNb* this, PlayState* play) {
+    En_Nb_Set_StartPos_npcdemopnt(this, play, 1);
     this->action = NB_CREDITS_FADEIN;
     this->drawMode = NB_DRAW_HIDE;
 }
 
-void EnNb_SetupCreditsSit(EnNb* this) {
+void En_Nb_inEnding_check_AppearToStand(EnNb* this) {
     if (this->alphaTimer >= kREG(17) + 10.0f) {
         this->action = NB_CREDITS_SIT;
         this->drawMode = NB_DRAW_DEFAULT;
     }
 }
 
-void EnNb_SetupCreditsHeadTurn(EnNb* this) {
-    EnNb_SetCurrentAnim(this, &gNabooruSittingCrossLeggedTurningToLookUpRightTransitionAnim, 2, -8.0f, 0);
+void En_Nb_inEnding_setup_Lookup(EnNb* this) {
+    En_Nb_Change_Anime(this, &gNabooruSittingCrossLeggedTurningToLookUpRightTransitionAnim, 2, -8.0f, 0);
     this->action = NB_CREDITS_HEAD_TURN;
 }
 
-void EnNb_CheckIfLookingUp(EnNb* this, s32 animFinished) {
+void En_Nb_inEnding_Check_Animation_Lookup(EnNb* this, s32 animFinished) {
     if (animFinished) {
-        EnNb_SetCurrentAnim(this, &gNabooruSittingCrossLeggedLookingUpRightAnim, 0, 0.0f, 0);
+        En_Nb_Change_Anime(this, &gNabooruSittingCrossLeggedLookingUpRightAnim, 0, 0.0f, 0);
     }
 }
 
-void EnNb_CheckCreditsCsModeImpl(EnNb* this, PlayState* play) {
-    CsCmdActorCue* cue = EnNb_GetCue(play, 1);
+void En_Nb_inEnding_Check_DemoMode(EnNb* this, PlayState* play) {
+    CsCmdActorCue* cue = En_Nb_Get_npcdemopnt(play, 1);
     s32 nextCueId;
     s32 currentCueId;
 
@@ -57,10 +57,10 @@ void EnNb_CheckCreditsCsModeImpl(EnNb* this, PlayState* play) {
         if (nextCueId != currentCueId) {
             switch (nextCueId) {
                 case 15:
-                    EnNb_SetupCreditsFadeIn(this, play);
+                    En_Nb_inEnding_setup_Appear(this, play);
                     break;
                 case 16:
-                    EnNb_SetupCreditsHeadTurn(this);
+                    En_Nb_inEnding_setup_Lookup(this);
                     break;
                 default:
                     // "En_Nb_inEnding_Check_DemoMode: Operation doesn't exist!!!!!!!!"
@@ -72,30 +72,30 @@ void EnNb_CheckCreditsCsModeImpl(EnNb* this, PlayState* play) {
     }
 }
 
-void EnNb_CheckCreditsCsMode(EnNb* this, PlayState* play) {
-    EnNb_CheckCreditsCsModeImpl(this, play);
+void En_Nb_inEnding_main_wait(EnNb* this, PlayState* play) {
+    En_Nb_inEnding_Check_DemoMode(this, play);
 }
 
-void EnNb_CreditsFade(EnNb* this, PlayState* play) {
-    func_80AB1284(this, play);
-    EnNb_UpdateSkelAnime(this);
-    EnNb_UpdateEyes(this);
-    EnNb_SetAlphaInCredits(this);
-    EnNb_SetupCreditsSit(this);
+void En_Nb_inEnding_main_alpha(EnNb* this, PlayState* play) {
+    En_Nb_BGcheck(this, play);
+    En_Nb_Animation_Base(this);
+    En_Nb_set_eye_pattern(this);
+    En_Nb_inEnding_Set_Alpha(this);
+    En_Nb_inEnding_check_AppearToStand(this);
 }
 
-void func_80AB3428(EnNb* this, PlayState* play) {
-    func_80AB1284(this, play);
-    EnNb_UpdateSkelAnime(this);
-    EnNb_UpdateEyes(this);
-    EnNb_CheckCreditsCsModeImpl(this, play);
+void En_Nb_inEnding_main_stand(EnNb* this, PlayState* play) {
+    En_Nb_BGcheck(this, play);
+    En_Nb_Animation_Base(this);
+    En_Nb_set_eye_pattern(this);
+    En_Nb_inEnding_Check_DemoMode(this, play);
 }
 
-void EnNb_LookUp(EnNb* this, PlayState* play) {
+void En_Nb_inEnding_main_lookup(EnNb* this, PlayState* play) {
     s32 animFinished;
 
-    func_80AB1284(this, play);
-    animFinished = EnNb_UpdateSkelAnime(this);
-    EnNb_UpdateEyes(this);
-    EnNb_CheckIfLookingUp(this, animFinished);
+    En_Nb_BGcheck(this, play);
+    animFinished = En_Nb_Animation_Base(this);
+    En_Nb_set_eye_pattern(this);
+    En_Nb_inEnding_Check_Animation_Lookup(this, animFinished);
 }

@@ -73,7 +73,7 @@ typedef struct BgCamInfo {
 } BgCamInfo; // size = 0x8
 
 // The structure used for all instances of s16 data from `BgCamInfo` with the exception of crawlspaces.
-// See `Camera_Subj4` for Vec3s data usage in crawlspaces
+// See `subject_camerawork_04` for Vec3s data usage in crawlspaces
 typedef struct BgCamFuncData {
     /* 0x00 */ Vec3s pos;
     /* 0x06 */ Vec3s rot;
@@ -361,131 +361,131 @@ typedef struct DynaLineTest {
     /* 0x28 */ f32 chkDist;    // distance from poly
 } DynaLineTest;
 
-void func_80038A28(CollisionPoly* poly, f32 tx, f32 ty, f32 tz, MtxF* dest);
-f32 CollisionPoly_GetPointDistanceFromPlane(CollisionPoly* poly, Vec3f* point);
-void CollisionPoly_GetVerticesByBgId(CollisionPoly* poly, s32 bgId, CollisionContext* colCtx, Vec3f* dest);
-void BgCheck_Allocate(CollisionContext* colCtx, struct PlayState* play, CollisionHeader* colHeader);
-f32 BgCheck_EntityRaycastDown1(CollisionContext* colCtx, CollisionPoly** outGroundPoly, Vec3f* pos);
-f32 BgCheck_EntityRaycastDown2(struct PlayState* play, CollisionContext* colCtx, CollisionPoly** outGroundPoly,
+void T_Polygon_Ground_Matrix(CollisionPoly* poly, f32 tx, f32 ty, f32 tz, MtxF* dest);
+f32 T_Polygon_PlaneFunc(CollisionPoly* poly, Vec3f* point);
+void T_Polygon_GetVertex_bg_ai(CollisionPoly* poly, s32 bgId, CollisionContext* colCtx, Vec3f* dest);
+void T_BGCheck_ct(CollisionContext* colCtx, struct PlayState* play, CollisionHeader* colHeader);
+f32 T_BGCheck_ObjGroundCheck(CollisionContext* colCtx, CollisionPoly** outGroundPoly, Vec3f* pos);
+f32 T_BGCheck_ObjGroundCheck2(struct PlayState* play, CollisionContext* colCtx, CollisionPoly** outGroundPoly,
                                Vec3f* pos);
-f32 BgCheck_EntityRaycastDown3(CollisionContext* colCtx, CollisionPoly** outGroundPoly, s32* bgId, Vec3f* pos);
-f32 BgCheck_EntityRaycastDown4(CollisionContext* colCtx, CollisionPoly** outGroundPoly, s32* bgId, struct Actor* actor,
+f32 T_BGCheck_ObjGroundCheck_ai(CollisionContext* colCtx, CollisionPoly** outGroundPoly, s32* bgId, Vec3f* pos);
+f32 T_BGCheck_ObjGroundCheck_aiac(CollisionContext* colCtx, CollisionPoly** outGroundPoly, s32* bgId, struct Actor* actor,
                                Vec3f* pos);
-f32 BgCheck_EntityRaycastDown5(struct PlayState* play, CollisionContext* colCtx, CollisionPoly** outGroundPoly,
+f32 T_BGCheck_ObjGroundCheck_aiac2(struct PlayState* play, CollisionContext* colCtx, CollisionPoly** outGroundPoly,
                                s32* bgId, struct Actor* actor, Vec3f* pos);
-f32 BgCheck_EntityRaycastDown6(CollisionContext* colCtx, CollisionPoly** outGroundPoly, s32* bgId, struct Actor* actor,
+f32 T_BGCheck_ObjGroundCheck_aiac_skp(CollisionContext* colCtx, CollisionPoly** outGroundPoly, s32* bgId, struct Actor* actor,
                                Vec3f* pos, f32 chkDist);
-f32 BgCheck_EntityRaycastDown7(CollisionContext* colCtx, CollisionPoly** outPoly, s32* bgId, struct Actor* actor,
+f32 T_BGCheck_ObjGroundCheck_grpWG_aiac(CollisionContext* colCtx, CollisionPoly** outPoly, s32* bgId, struct Actor* actor,
                                Vec3f* pos);
-f32 BgCheck_AnyRaycastDown1(CollisionContext* colCtx, CollisionPoly* outGroundPoly, Vec3f* pos);
-f32 BgCheck_AnyRaycastDown2(CollisionContext* colCtx, CollisionPoly* outGroundPoly, s32* bgId, Vec3f* pos);
-f32 BgCheck_CameraRaycastDown2(CollisionContext* colCtx, CollisionPoly** outPoly, s32* bgId, Vec3f* pos);
-f32 BgCheck_EntityRaycastDownWalls(CollisionContext* colCtx, CollisionPoly** outPoly, s32* bgId, struct Actor* actor,
+f32 T_BGCheck_GroundCheck(CollisionContext* colCtx, CollisionPoly* outGroundPoly, Vec3f* pos);
+f32 T_BGCheck_GroundCheck_ai(CollisionContext* colCtx, CollisionPoly* outGroundPoly, s32* bgId, Vec3f* pos);
+f32 T_BGCheck_CameraGroundCheck_grpWG_ai(CollisionContext* colCtx, CollisionPoly** outPoly, s32* bgId, Vec3f* pos);
+f32 T_BGCheck_ObjGroundCheck_grpW_aiac(CollisionContext* colCtx, CollisionPoly** outPoly, s32* bgId, struct Actor* actor,
                                    Vec3f* pos);
-f32 BgCheck_EntityRaycastDown9(CollisionContext* colCtx, CollisionPoly** outPoly, s32* bgId, Vec3f* pos);
-s32 BgCheck_EntitySphVsWall1(CollisionContext* colCtx, Vec3f* posResult, Vec3f* posNext, Vec3f* posPrev, f32 radius,
+f32 T_BGCheck_ObjGroundCheck_grpWG_ai(CollisionContext* colCtx, CollisionPoly** outPoly, s32* bgId, Vec3f* pos);
+s32 T_BGCheck_ObjWallCheck2(CollisionContext* colCtx, Vec3f* posResult, Vec3f* posNext, Vec3f* posPrev, f32 radius,
                              CollisionPoly** outPoly, f32 checkHeight);
-s32 BgCheck_EntitySphVsWall2(CollisionContext* colCtx, Vec3f* posResult, Vec3f* posNext, Vec3f* posPrev, f32 radius,
+s32 T_BGCheck_ObjWallCheck2_ai(CollisionContext* colCtx, Vec3f* posResult, Vec3f* posNext, Vec3f* posPrev, f32 radius,
                              CollisionPoly** outPoly, s32* outBgId, f32 checkHeight);
-s32 BgCheck_EntitySphVsWall3(CollisionContext* colCtx, Vec3f* posResult, Vec3f* posNext, Vec3f* posPrev, f32 radius,
+s32 T_BGCheck_ObjWallCheck2_aiac(CollisionContext* colCtx, Vec3f* posResult, Vec3f* posNext, Vec3f* posPrev, f32 radius,
                              CollisionPoly** outPoly, s32* outBgId, struct Actor* actor, f32 checkHeight);
-s32 BgCheck_EntitySphVsWall4(CollisionContext* colCtx, Vec3f* posResult, Vec3f* posNext, Vec3f* posPrev, f32 radius,
+s32 T_BGCheck_ObjWallCheck2_aiac_nl(CollisionContext* colCtx, Vec3f* posResult, Vec3f* posNext, Vec3f* posPrev, f32 radius,
                              CollisionPoly** outPoly, s32* outBgId, struct Actor* actor, f32 checkHeight);
-s32 BgCheck_AnyCheckCeiling(CollisionContext* colCtx, f32* outY, Vec3f* pos, f32 checkHeight);
-s32 BgCheck_EntityCheckCeiling(CollisionContext* colCtx, f32* outY, Vec3f* pos, f32 checkHeight,
+s32 T_BGCheck_RoofCheck(CollisionContext* colCtx, f32* outY, Vec3f* pos, f32 checkHeight);
+s32 T_BGCheck_ObjRoofCheck_aiac(CollisionContext* colCtx, f32* outY, Vec3f* pos, f32 checkHeight,
                                CollisionPoly** outPoly, s32* outBgId, struct Actor* actor);
-s32 BgCheck_CameraLineTest1(CollisionContext* colCtx, Vec3f* posA, Vec3f* posB, Vec3f* posResult,
+s32 T_BGCheck_CameraLineCheck_poly_chgrp_ai(CollisionContext* colCtx, Vec3f* posA, Vec3f* posB, Vec3f* posResult,
                             CollisionPoly** outPoly, s32 chkWall, s32 chkFloor, s32 chkCeil, s32 chkOneFace, s32* bgId);
-s32 BgCheck_CameraLineTest2(CollisionContext* colCtx, Vec3f* posA, Vec3f* posB, Vec3f* posResult,
+s32 T_BGCheck_CameraLineCheck_polyThrough_chgrp_ai(CollisionContext* colCtx, Vec3f* posA, Vec3f* posB, Vec3f* posResult,
                             CollisionPoly** outPoly, s32 chkWall, s32 chkFloor, s32 chkCeil, s32 chkOneFace, s32* bgId);
-s32 BgCheck_EntityLineTest1(CollisionContext* colCtx, Vec3f* posA, Vec3f* posB, Vec3f* posResult,
+s32 T_BGCheck_ObjLineCheck_poly_chgrp_ai(CollisionContext* colCtx, Vec3f* posA, Vec3f* posB, Vec3f* posResult,
                             CollisionPoly** outPoly, s32 chkWall, s32 chkFloor, s32 chkCeil, s32 chkOneFace, s32* bgId);
-s32 BgCheck_EntityLineTest2(CollisionContext* colCtx, Vec3f* posA, Vec3f* posB, Vec3f* posResult,
+s32 T_BGCheck_ObjLineCheck_poly_chgrp_aiac(CollisionContext* colCtx, Vec3f* posA, Vec3f* posB, Vec3f* posResult,
                             CollisionPoly** outPoly, s32 chkWall, s32 chkFloor, s32 chkCeil, s32 chkOneFace, s32* bgId,
                             struct Actor* actor);
-s32 BgCheck_EntityLineTest3(CollisionContext* colCtx, Vec3f* posA, Vec3f* posB, Vec3f* posResult,
+s32 T_BGCheck_ObjLineCheck_poly_chgrp_aiac_skp(CollisionContext* colCtx, Vec3f* posA, Vec3f* posB, Vec3f* posResult,
                             CollisionPoly** outPoly, s32 chkWall, s32 chkFloor, s32 chkCeil, s32 chkOneFace, s32* bgId,
                             struct Actor* actor, f32 chkDist);
-s32 BgCheck_ProjectileLineTest(CollisionContext* colCtx, Vec3f* posA, Vec3f* posB, Vec3f* posResult,
+s32 T_BGCheck_ArrowLineCheck_poly_chgrp_ai(CollisionContext* colCtx, Vec3f* posA, Vec3f* posB, Vec3f* posResult,
                                CollisionPoly** outPoly, s32 chkWall, s32 chkFloor, s32 chkCeil, s32 chkOneFace,
                                s32* bgId);
-s32 BgCheck_AnyLineTest1(CollisionContext* colCtx, Vec3f* posA, Vec3f* posB, Vec3f* posResult, CollisionPoly** outPoly,
+s32 T_BGCheck_LineCheck_poly(CollisionContext* colCtx, Vec3f* posA, Vec3f* posB, Vec3f* posResult, CollisionPoly** outPoly,
                          s32 chkOneFace);
-s32 BgCheck_AnyLineTest2(CollisionContext* colCtx, Vec3f* posA, Vec3f* posB, Vec3f* posResult, CollisionPoly** outPoly,
+s32 T_BGCheck_LineCheck_poly_chgrp(CollisionContext* colCtx, Vec3f* posA, Vec3f* posB, Vec3f* posResult, CollisionPoly** outPoly,
                          s32 chkWall, s32 chkFloor, s32 chkCeil, s32 chkOneFace);
-s32 BgCheck_AnyLineTest3(CollisionContext* colCtx, Vec3f* posA, Vec3f* posB, Vec3f* posResult, CollisionPoly** outPoly,
+s32 T_BGCheck_LineCheck_poly_chgrp_ai(CollisionContext* colCtx, Vec3f* posA, Vec3f* posB, Vec3f* posResult, CollisionPoly** outPoly,
                          s32 chkWall, s32 chkFloor, s32 chkCeil, s32 chkOneFace, s32* bgId);
-s32 BgCheck_SphVsFirstPoly(CollisionContext* colCtx, Vec3f* center, f32 radius);
-s32 DynaPoly_IsBgIdBgActor(s32 bgId);
-void DynaPoly_DisableCollision(struct PlayState* play, DynaCollisionContext* dyna, s32 bgId);
-void DynaPoly_EnableCollision(struct PlayState* play, DynaCollisionContext* dyna, s32 bgId);
-void DynaPoly_DisableCeilingCollision(struct PlayState* play, DynaCollisionContext* dyna, s32 bgId);
-s32 DynaPoly_SetBgActor(struct PlayState* play, DynaCollisionContext* dyna, struct Actor* actor,
+s32 T_BGCheck_SimpleCheck(CollisionContext* colCtx, Vec3f* center, f32 radius);
+s32 DynaPolyInfo_checkMoveBG(s32 bgId);
+void DynaPolygonInfo_setThrough(struct PlayState* play, DynaCollisionContext* dyna, s32 bgId);
+void DynaPolygonInfo_clearThrough(struct PlayState* play, DynaCollisionContext* dyna, s32 bgId);
+void DynaPolygonInfo_setRoofOff(struct PlayState* play, DynaCollisionContext* dyna, s32 bgId);
+s32 DynaPolyInfo_setActor(struct PlayState* play, DynaCollisionContext* dyna, struct Actor* actor,
                         CollisionHeader* colHeader);
-struct DynaPolyActor* DynaPoly_GetActor(CollisionContext* colCtx, s32 bgId);
-void DynaPoly_DeleteBgActor(struct PlayState* play, DynaCollisionContext* dyna, s32 bgId);
-void DynaPoly_InvalidateLookup(struct PlayState* play, DynaCollisionContext* dyna);
-void DynaPoly_UnsetAllInteractFlags(struct PlayState* play, DynaCollisionContext* dyna, struct Actor* actor);
-void DynaPoly_UpdateContext(struct PlayState* play, DynaCollisionContext* dyna);
-void DynaPoly_UpdateBgActorTransforms(struct PlayState* play, DynaCollisionContext* dyna);
-void CollisionHeader_GetVirtual(void* colHeader, CollisionHeader** dest);
-void func_800418D0(CollisionContext* colCtx, struct PlayState* play);
-u32 SurfaceType_GetBgCamIndex(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-u16 BgCheck_GetBgCamSettingImpl(CollisionContext* colCtx, u32 bgCamIndex, s32 bgId);
-u16 BgCheck_GetBgCamSetting(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-u16 BgCheck_GetBgCamCount(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-Vec3s* BgCheck_GetBgCamFuncDataImpl(CollisionContext* colCtx, s32 bgCamIndex, s32 bgId);
-Vec3s* BgCheck_GetBgCamFuncData(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-u32 SurfaceType_GetExitIndex(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-u32 SurfaceType_GetFloorType(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-u32 func_80041D70(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-s32 SurfaceType_GetWallFlags(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-s32 SurfaceType_CheckWallFlag0(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-s32 SurfaceType_CheckWallFlag1(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-s32 SurfaceType_CheckWallFlag2(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-u32 SurfaceType_GetFloorProperty(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-u32 SurfaceType_IsSoft(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-u32 SurfaceType_IsHorseBlocked(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-u32 SurfaceType_GetMaterial(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-u16 SurfaceType_GetSfxOffset(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-u32 SurfaceType_GetFloorEffect(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-u32 SurfaceType_GetLightSetting(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-u32 SurfaceType_GetEcho(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-u32 SurfaceType_CanHookshot(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-s32 SurfaceType_IsIgnoredByEntities(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-s32 SurfaceType_IsIgnoredByProjectiles(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-s32 SurfaceType_IsFloorConveyor(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-u32 SurfaceType_GetConveyorSpeed(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-u32 SurfaceType_GetConveyorDirection(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-u32 func_80042108(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
-s32 WaterBox_GetSurface1(struct PlayState* play, CollisionContext* colCtx, f32 x, f32 z, f32* ySurface,
+struct DynaPolyActor* DynaPolyInfo_actor_index2pointer(CollisionContext* colCtx, s32 bgId);
+void DynaPolyInfo_delReserve(struct PlayState* play, DynaCollisionContext* dyna, s32 bgId);
+void DynaPolygonInfo_setExpand(struct PlayState* play, DynaCollisionContext* dyna);
+void DynaPolyInfo_statusClear(struct PlayState* play, DynaCollisionContext* dyna, struct Actor* actor);
+void DynaPolyInfo_setup(struct PlayState* play, DynaCollisionContext* dyna);
+void DynaPolyInfo_cleanUp(struct PlayState* play, DynaCollisionContext* dyna);
+void DynaPolyUty_bgdi_SG2KSG(void* colHeader, CollisionHeader** dest);
+void DynaPolyInfo_resetBGDataInfo(CollisionContext* colCtx, struct PlayState* play);
+u32 T_BGCheck_getCameraSet_ai(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+u16 T_BGCheck_getCameraType_index_ai(CollisionContext* colCtx, u32 bgCamIndex, s32 bgId);
+u16 T_BGCheck_getCameraType_ai(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+u16 T_BGCheck_getCameraDataNum_ai(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+Vec3s* T_BGCheck_getCameraPos_index_ai(CollisionContext* colCtx, s32 bgCamIndex, s32 bgId);
+Vec3s* T_BGCheck_getCameraPos_ai(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+u32 T_BGCheck_getSceneChangeCode_ai(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+u32 T_BGCheck_getAttributeCode_ai(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+u32 T_BGCheck_getRoofCode_ai(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+s32 T_BGCheck_getWallCodeBit_ai(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+s32 T_BGCheck_WallNotClib_ai(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+s32 T_BGCheck_WallLadder_ai(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+s32 T_BGCheck_WallLadderUp_ai(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+u32 T_BGCheck_GroundAutoJumpType_ai(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+u32 T_BGCheck_getGroundUpBit_ai(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+u32 T_BGCheck_getHorseKeepOutBit_ai(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+u32 T_BGCheck_getTypeSoundCode_ai(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+u16 T_BGCheck_getSoundGroundLabel(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+u32 T_BGCheck_getFriction_ai(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+u32 T_BGCheck_getKankyo_ai(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+u32 T_BGCheck_getEcho_ai(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+u32 T_BGCheck_checkHookShotStick(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+s32 T_BGCheck_CheckObjNoHit(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+s32 T_BGCheck_CheckArrowNoHit(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+s32 T_BGCheck_checkBelt(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+u32 T_BGCheck_getSlidePowerIndex(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+u32 T_BGCheck_getSlideAngle(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+u32 T_BGCheck_CheckDamagePoly(CollisionContext* colCtx, CollisionPoly* poly, s32 bgId);
+s32 T_BGCheck_WaterSurfaceCheck3(struct PlayState* play, CollisionContext* colCtx, f32 x, f32 z, f32* ySurface,
                          WaterBox** outWaterBox);
-s32 WaterBox_GetSurface2(struct PlayState* play, CollisionContext* colCtx, Vec3f* pos, f32 surfaceChkDist,
+s32 T_BGCheck_WaterGetIndex(struct PlayState* play, CollisionContext* colCtx, Vec3f* pos, f32 surfaceChkDist,
                          WaterBox** outWaterBox);
-s32 WaterBox_GetSurfaceImpl(struct PlayState* play, CollisionContext* colCtx, f32 x, f32 z, f32* ySurface,
+s32 T_BGCheck_WaterSurfaceCheck2(struct PlayState* play, CollisionContext* colCtx, f32 x, f32 z, f32* ySurface,
                             WaterBox** outWaterBox);
-u32 WaterBox_GetBgCamIndex(CollisionContext* colCtx, WaterBox* waterBox);
-u16 WaterBox_GetBgCamSetting(CollisionContext* colCtx, WaterBox* waterBox);
-u32 WaterBox_GetLightIndex(CollisionContext* colCtx, WaterBox* waterBox);
-s32 func_80042708(CollisionPoly* polyA, CollisionPoly* polyB, Vec3f* point, Vec3f* closestPoint);
-s32 func_800427B4(CollisionPoly* polyA, CollisionPoly* polyB, Vec3f* pointA, Vec3f* pointB, Vec3f* closestPoint);
+u32 T_BGCheck_WaterGetCameraSet(CollisionContext* colCtx, WaterBox* waterBox);
+u16 T_BGCheck_WaterGetCameraType(CollisionContext* colCtx, WaterBox* waterBox);
+u32 T_BGCheck_WaterGetKankyo(CollisionContext* colCtx, WaterBox* waterBox);
+s32 T_BGCheck_2PlaneLinePosNearPos(CollisionPoly* polyA, CollisionPoly* polyB, Vec3f* point, Vec3f* closestPoint);
+s32 T_BGCheck_2PlaneLine_LineNearPos(CollisionPoly* polyA, CollisionPoly* polyB, Vec3f* pointA, Vec3f* pointB, Vec3f* closestPoint);
 #if DEBUG_FEATURES
 void BgCheck_DrawDynaCollision(struct PlayState*, CollisionContext*);
 void BgCheck_DrawStaticCollision(struct PlayState*, CollisionContext*);
 #endif
 
-void func_80043334(CollisionContext* colCtx, struct Actor* actor, s32 bgId);
-s32 DynaPolyActor_TransformCarriedActor(CollisionContext* colCtx, s32 bgId, struct Actor* carriedActor);
-void DynaPolyActor_Init(struct DynaPolyActor* dynaActor, s32 transformFlags);
-void DynaPolyActor_UnsetAllInteractFlags(struct DynaPolyActor* dynaActor);
-void DynaPolyActor_SetActorOnTop(struct DynaPolyActor* dynaActor);
-void DynaPoly_SetPlayerOnTop(CollisionContext* colCtx, s32 floorBgId);
-void DynaPoly_SetPlayerAbove(CollisionContext* colCtx, s32 floorBgId);
-void DynaPolyActor_SetSwitchPressed(struct DynaPolyActor* dynaActor);
-s32 DynaPolyActor_IsActorOnTop(struct DynaPolyActor* dynaActor);
-s32 DynaPolyActor_IsPlayerOnTop(struct DynaPolyActor* dynaActor);
-s32 DynaPolyActor_IsPlayerAbove(struct DynaPolyActor* dynaActor);
-s32 DynaPolyActor_IsSwitchPressed(struct DynaPolyActor* dynaActor);
-s32 func_800435D8(struct PlayState* play, struct DynaPolyActor* dynaActor, s16 arg2, s16 arg3, s16 arg4);
+void BGCheckCollection_setRideStatus(CollisionContext* colCtx, struct Actor* actor, s32 bgId);
+s32 BGCheckCollection_proc(CollisionContext* colCtx, s32 bgId, struct Actor* carriedActor);
+void MoveBG_ct(struct DynaPolyActor* dynaActor, s32 transformFlags);
+void MoveBG_clearStatus(struct DynaPolyActor* dynaActor);
+void MoveBG_setRideStatus(struct DynaPolyActor* dynaActor);
+void MoveBG_setRidePlayerStatus_ai(CollisionContext* colCtx, s32 floorBgId);
+void MoveBG_setOverPlayerStatus_ai(CollisionContext* colCtx, s32 floorBgId);
+void MoveBG_setSwOnStatus(struct DynaPolyActor* dynaActor);
+s32 MoveBG_checkRideStatus(struct DynaPolyActor* dynaActor);
+s32 MoveBG_checkRidePlayerStatus(struct DynaPolyActor* dynaActor);
+s32 MoveBG_checkOverPlayerStatus(struct DynaPolyActor* dynaActor);
+s32 MoveBG_checkSwOnStatus(struct DynaPolyActor* dynaActor);
+s32 MoveBG_checkMoveArea(struct PlayState* play, struct DynaPolyActor* dynaActor, s16 arg2, s16 arg3, s16 arg4);
 
 #endif

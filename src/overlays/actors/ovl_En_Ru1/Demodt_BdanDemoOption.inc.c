@@ -1,10 +1,10 @@
 #include "z_en_ru1.h"
 #include "z64cutscene_commands.h"
 
-static u32 D_80AF10A0 = 0;
+static u32 En_Ru1_In_BdanDemoOption_Dummy = 0;
 
 // clang-format off
-static CutsceneData gRutoObtainingSapphireCs[] = {
+static CutsceneData En_Ru1_Data1_In_BdanDemoOption[] = {
     CS_HEADER(14, 1299),
     CS_PLAYER_CUE_LIST(3),
         CS_PLAYER_CUE(PLAYER_CUEID_5, 0, 272, 0x0000, 0xC000, 0x0000, -1085, -1025, -3347, -1085, -1025, -3347, CS_FLOAT(0xF671408, 1.1393037e-29f), CS_FLOAT(0x0, 0.0f), CS_FLOAT(0x1, 1e-45f)),

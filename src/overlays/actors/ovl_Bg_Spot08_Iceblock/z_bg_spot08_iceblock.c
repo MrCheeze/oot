@@ -19,18 +19,18 @@
 
 #define FLAGS 0
 
-void BgSpot08Iceblock_Init(Actor* thisx, PlayState* play);
-void BgSpot08Iceblock_Destroy(Actor* thisx, PlayState* play);
-void BgSpot08Iceblock_Update(Actor* thisx, PlayState* play);
-void BgSpot08Iceblock_Draw(Actor* thisx, PlayState* play);
+void Bg_Spot08_Iceblock_actor_ct(Actor* thisx, PlayState* play);
+void Bg_Spot08_Iceblock_actor_dt(Actor* thisx, PlayState* play);
+void Bg_Spot08_Iceblock_actor_move(Actor* thisx, PlayState* play);
+void Bg_Spot08_Iceblock_actor_draw(Actor* thisx, PlayState* play);
 
-void BgSpot08Iceblock_SetupFloatNonrotating(BgSpot08Iceblock* this);
-void BgSpot08Iceblock_FloatNonrotating(BgSpot08Iceblock* this, PlayState* play);
-void BgSpot08Iceblock_SetupFloatRotating(BgSpot08Iceblock* this);
-void BgSpot08Iceblock_FloatRotating(BgSpot08Iceblock* this, PlayState* play);
-void BgSpot08Iceblock_SetupFloatOrbitingTwins(BgSpot08Iceblock* this);
-void BgSpot08Iceblock_FloatOrbitingTwins(BgSpot08Iceblock* this, PlayState* play);
-void BgSpot08Iceblock_SetupNoAction(BgSpot08Iceblock* this);
+void mv_norm_init(BgSpot08Iceblock* this);
+void mv_norm(BgSpot08Iceblock* this, PlayState* play);
+static void mv_rot_init(BgSpot08Iceblock* this);
+static void mv_rot(BgSpot08Iceblock* this, PlayState* play);
+void mv_twin_init(BgSpot08Iceblock* this);
+void mv_twin(BgSpot08Iceblock* this, PlayState* play);
+static void mv_stop_init(BgSpot08Iceblock* this);
 
 ActorProfile Bg_Spot08_Iceblock_Profile = {
     /**/ ACTOR_BG_SPOT08_ICEBLOCK,
@@ -38,23 +38,23 @@ ActorProfile Bg_Spot08_Iceblock_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_SPOT08_OBJ,
     /**/ sizeof(BgSpot08Iceblock),
-    /**/ BgSpot08Iceblock_Init,
-    /**/ BgSpot08Iceblock_Destroy,
-    /**/ BgSpot08Iceblock_Update,
-    /**/ BgSpot08Iceblock_Draw,
+    /**/ Bg_Spot08_Iceblock_actor_ct,
+    /**/ Bg_Spot08_Iceblock_actor_dt,
+    /**/ Bg_Spot08_Iceblock_actor_move,
+    /**/ Bg_Spot08_Iceblock_actor_draw,
 };
 
-void BgSpot08Iceblock_SetupAction(BgSpot08Iceblock* this, BgSpot08IceblockActionFunc actionFunc) {
+static void set_moveProc(BgSpot08Iceblock* this, BgSpot08IceblockActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
 
-void BgSpot08Iceblock_InitDynaPoly(BgSpot08Iceblock* this, PlayState* play, CollisionHeader* collision, s32 flags) {
+static void set_dynaPoly(BgSpot08Iceblock* this, PlayState* play, CollisionHeader* collision, s32 flags) {
     s32 pad;
     CollisionHeader* colHeader = NULL;
 
-    DynaPolyActor_Init(&this->dyna, flags);
-    CollisionHeader_GetVirtual(collision, &colHeader);
-    this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
+    MoveBG_ct(&this->dyna, flags);
+    DynaPolyUty_bgdi_SG2KSG(collision, &colHeader);
+    this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
 
 #if DEBUG_FEATURES
     if (this->dyna.bgId == BG_ACTOR_MAX) {
@@ -68,7 +68,7 @@ void BgSpot08Iceblock_InitDynaPoly(BgSpot08Iceblock* this, PlayState* play, Coll
 }
 
 // Sets params to 0x10 (medium, nonrotating) if not in the cases listed.
-void BgSpot08Iceblock_CheckParams(BgSpot08Iceblock* this) {
+void check_arg_data(BgSpot08Iceblock* this) {
     switch (PARAMS_GET_U(this->dyna.actor.params, 0, 8)) {
         case 0xFF:
             this->dyna.actor.params = 0x10;
@@ -92,11 +92,11 @@ void BgSpot08Iceblock_CheckParams(BgSpot08Iceblock* this) {
     }
 }
 
-void BgSpot08Iceblock_Bobbing(BgSpot08Iceblock* this) {
-    this->bobOffset = (Math_SinS(this->bobPhaseSlow) * 4.0f) + (Math_SinS(this->bobPhaseFast) * 3.0f);
+void set_swing_vertical(BgSpot08Iceblock* this) {
+    this->bobOffset = (sin_s(this->bobPhaseSlow) * 4.0f) + (sin_s(this->bobPhaseFast) * 3.0f);
 }
 
-void BgSpot08Iceblock_SinkUnderPlayer(BgSpot08Iceblock* this) {
+void set_sink(BgSpot08Iceblock* this) {
     f32 target;
     f32 step;
 
@@ -113,31 +113,31 @@ void BgSpot08Iceblock_SinkUnderPlayer(BgSpot08Iceblock* this) {
     }
 
     // Sink under an actor's weight if standing on it
-    target = (DynaPolyActor_IsActorOnTop(&this->dyna) ? -4.0f : 0.0f);
+    target = (MoveBG_checkRideStatus(&this->dyna) ? -4.0f : 0.0f);
 
-    Math_StepToF(&this->sinkOffset, target, step);
+    chase_f(&this->sinkOffset, target, step);
 }
 
-void BgSpot08Iceblock_SetWaterline(BgSpot08Iceblock* this) {
+void set_positionY(BgSpot08Iceblock* this) {
     this->dyna.actor.world.pos.y = this->sinkOffset + this->bobOffset + this->dyna.actor.home.pos.y;
 }
 
-void BgSpot08Iceblock_MultVectorScalar(Vec3f* dest, Vec3f* v, f32 scale) {
+void vector_mul_scalar(Vec3f* dest, Vec3f* v, f32 scale) {
     dest->x = v->x * scale;
     dest->y = v->y * scale;
     dest->z = v->z * scale;
 }
 
-void BgSpot08Iceblock_CrossProduct(Vec3f* dest, Vec3f* v1, Vec3f* v2) {
+static void gaiseki(Vec3f* dest, Vec3f* v1, Vec3f* v2) {
     dest->x = (v1->y * v2->z) - (v1->z * v2->y);
     dest->y = (v1->z * v2->x) - (v1->x * v2->z);
     dest->z = (v1->x * v2->y) - (v1->y * v2->x);
 }
 
-s32 BgSpot08Iceblock_NormalizeVector(Vec3f* dest, Vec3f* v) {
+static s32 get_unitVec(Vec3f* dest, Vec3f* v) {
     f32 magnitude;
 
-    magnitude = Math3D_Vec3fMagnitude(v);
+    magnitude = Math3DVecLength(v);
     if (magnitude < 0.001f) {
         dest->x = dest->y = 0.0f;
         dest->z = 1.0f;
@@ -150,18 +150,18 @@ s32 BgSpot08Iceblock_NormalizeVector(Vec3f* dest, Vec3f* v) {
     }
 }
 
-static Vec3f sVerticalVector = { 0.0f, 1.0f, 0.0f };
-static Vec3f sZeroVector = { 0.0f, 0.0f, 0.0f };
-static f32 sInertias[] = { 1.0f / 70000000, 1.0f / 175000000, 1.0f / 700000000 };
-static f32 sDampingFactors[] = { 0.96f, 0.96f, 0.98f };
+static Vec3f BASE_vecY = { 0.0f, 1.0f, 0.0f };
+static Vec3f ZERO_vec = { 0.0f, 0.0f, 0.0f };
+static f32 scalar_l[] = { 1.0f / 70000000, 1.0f / 175000000, 1.0f / 700000000 };
+static f32 zx_capa[] = { 0.96f, 0.96f, 0.98f };
 
-static f32 sRollSins[] = {
+static f32 limit_ss[] = {
     0.22495104f, // sin(13 degrees)
     0.22495104f, // sin(13 degrees)
     0.03489947f, // sin(2 degrees)
 };
 
-static f32 sRollCoss[] = {
+static f32 limit_cc[] = {
     0.97437006f, // cos(13 degrees)
     0.97437006f, // cos(13 degrees)
     0.99939084f, // cos(2 degrees)
@@ -171,7 +171,7 @@ static f32 sRollCoss[] = {
  *  Handles all the factors that influence rolling: inertia, random oscillations, and most significantly, player weight,
  * and combines them to produce a matrix that rotates the actor to match the surface normal
  */
-void BgSpot08Iceblock_Roll(BgSpot08Iceblock* this, PlayState* play) {
+void set_slope(BgSpot08Iceblock* this, PlayState* play) {
     f32 deviationFromVertSq;
     f32 stabilityCorrection;
     Vec3f surfaceNormalHorizontal;
@@ -199,81 +199,81 @@ void BgSpot08Iceblock_Roll(BgSpot08Iceblock* this, PlayState* play) {
             break;
     }
 
-    Math_Vec3f_Diff(&player->actor.world.pos, &this->dyna.actor.world.pos, &playerCentroidDiff);
+    xyz_t_sub(&player->actor.world.pos, &this->dyna.actor.world.pos, &playerCentroidDiff);
     playerCentroidDiff.y -= (150.0f * this->dyna.actor.scale.y);
-    playerCentroidDist = Math3D_Vec3fMagnitude(&playerCentroidDiff);
+    playerCentroidDist = Math3DVecLength(&playerCentroidDiff);
 
-    randomNutation.x = (Rand_ZeroOne() - 0.5f) * (1.0f / 625);
+    randomNutation.x = (fqrand() - 0.5f) * (1.0f / 625);
     randomNutation.y = 0.0f;
-    randomNutation.z = (Rand_ZeroOne() - 0.5f) * (1.0f / 625);
+    randomNutation.z = (fqrand() - 0.5f) * (1.0f / 625);
 
     surfaceNormalHorizontal.x = this->surfaceNormal.x;
     surfaceNormalHorizontal.y = 0.0f;
     surfaceNormalHorizontal.z = this->surfaceNormal.z;
 
     // If player is standing on it or holding the edge
-    if (DynaPolyActor_IsPlayerOnTop(&this->dyna) && (playerCentroidDist > 3.0f)) {
-        Math_Vec3f_Diff(&playerCentroidDiff, &surfaceNormalHorizontal, &playerMoment);
-        BgSpot08Iceblock_MultVectorScalar(&playerMoment, &playerMoment,
-                                          (sInertias[rollDataIndex] * playerCentroidDist) / this->dyna.actor.scale.x);
+    if (MoveBG_checkRidePlayerStatus(&this->dyna) && (playerCentroidDist > 3.0f)) {
+        xyz_t_sub(&playerCentroidDiff, &surfaceNormalHorizontal, &playerMoment);
+        vector_mul_scalar(&playerMoment, &playerMoment,
+                                          (scalar_l[rollDataIndex] * playerCentroidDist) / this->dyna.actor.scale.x);
     } else {
-        playerMoment = sZeroVector;
+        playerMoment = ZERO_vec;
     }
 
-    BgSpot08Iceblock_MultVectorScalar(&surfaceNormalHorizontalScaled, &surfaceNormalHorizontal, -0.01f);
+    vector_mul_scalar(&surfaceNormalHorizontalScaled, &surfaceNormalHorizontal, -0.01f);
 
     // Add all three deviations
-    Math_Vec3f_Sum(&this->normalDelta, &playerMoment, &this->normalDelta);
-    Math_Vec3f_Sum(&this->normalDelta, &surfaceNormalHorizontalScaled, &this->normalDelta);
-    Math_Vec3f_Sum(&this->normalDelta, &randomNutation, &this->normalDelta);
+    xyz_t_add(&this->normalDelta, &playerMoment, &this->normalDelta);
+    xyz_t_add(&this->normalDelta, &surfaceNormalHorizontalScaled, &this->normalDelta);
+    xyz_t_add(&this->normalDelta, &randomNutation, &this->normalDelta);
 
     this->normalDelta.y = 0.0f;
 
-    Math_Vec3f_Sum(&this->surfaceNormal, &this->normalDelta, &tempVec);
+    xyz_t_add(&this->surfaceNormal, &this->normalDelta, &tempVec);
 
-    tempVec.x *= sDampingFactors[rollDataIndex];
-    tempVec.z *= sDampingFactors[rollDataIndex];
+    tempVec.x *= zx_capa[rollDataIndex];
+    tempVec.z *= zx_capa[rollDataIndex];
 
     // Set up roll axis and final new angle
-    if (BgSpot08Iceblock_NormalizeVector(&this->surfaceNormal, &tempVec)) {
-        deviationFromVertSq = Math3D_Dist1DSq(this->surfaceNormal.z, this->surfaceNormal.x);
+    if (get_unitVec(&this->surfaceNormal, &tempVec)) {
+        deviationFromVertSq = Math3DVecLengthSquare2D(this->surfaceNormal.z, this->surfaceNormal.x);
 
         // Prevent overrolling
-        if (sRollSins[rollDataIndex] < deviationFromVertSq) {
-            stabilityCorrection = sRollSins[rollDataIndex] / deviationFromVertSq;
+        if (limit_ss[rollDataIndex] < deviationFromVertSq) {
+            stabilityCorrection = limit_ss[rollDataIndex] / deviationFromVertSq;
 
             this->surfaceNormal.x *= stabilityCorrection;
-            this->surfaceNormal.y = sRollCoss[rollDataIndex];
+            this->surfaceNormal.y = limit_cc[rollDataIndex];
             this->surfaceNormal.z *= stabilityCorrection;
         }
 
-        BgSpot08Iceblock_CrossProduct(&tempVec, &sVerticalVector, &this->surfaceNormal);
+        gaiseki(&tempVec, &BASE_vecY, &this->surfaceNormal);
 
-        if (BgSpot08Iceblock_NormalizeVector(&torqueDirection, &tempVec)) {
+        if (get_unitVec(&torqueDirection, &tempVec)) {
             this->rotationAxis = torqueDirection;
         }
     } else {
-        this->surfaceNormal = sVerticalVector;
+        this->surfaceNormal = BASE_vecY;
     }
 
     // Rotation by the angle between surfaceNormal and the vertical about rotationAxis
-    Matrix_RotateAxis(Math_FAcosF(Math3D_Cos(&sVerticalVector, &this->surfaceNormal)), &this->rotationAxis,
+    Matrix_rotateVector(facos(M3D_getCos(&BASE_vecY, &this->surfaceNormal)), &this->rotationAxis,
                       MTXMODE_NEW);
-    Matrix_RotateY(BINANG_TO_RAD(this->dyna.actor.shape.rot.y), MTXMODE_APPLY);
-    Matrix_Get(&mtx);
-    Matrix_MtxFToYXZRotS(&mtx, &this->dyna.actor.shape.rot, 0);
+    Matrix_rotateY(BINANG_TO_RAD(this->dyna.actor.shape.rot.y), MTXMODE_APPLY);
+    Matrix_get(&mtx);
+    Matrix_to_rotate_new(&mtx, &this->dyna.actor.shape.rot, 0);
 }
 
-void BgSpot08Iceblock_SpawnTwinFloe(BgSpot08Iceblock* this, PlayState* play) {
+void moveType_twin_ct(BgSpot08Iceblock* this, PlayState* play) {
     s32 pad[2];
     f32 sin;
     f32 cos;
 
-    sin = Math_SinS(this->dyna.actor.home.rot.y) * 100.0f;
-    cos = Math_CosS(this->dyna.actor.home.rot.y) * 100.0f;
+    sin = sin_s(this->dyna.actor.home.rot.y) * 100.0f;
+    cos = cos_s(this->dyna.actor.home.rot.y) * 100.0f;
 
     if (!PARAMS_GET_NOSHIFT(this->dyna.actor.params, 8, 1)) {
-        Actor_SpawnAsChild(&play->actorCtx, &this->dyna.actor, play, ACTOR_BG_SPOT08_ICEBLOCK,
+        Actor_info_make_child_actor(&play->actorCtx, &this->dyna.actor, play, ACTOR_BG_SPOT08_ICEBLOCK,
                            this->dyna.actor.home.pos.x, this->dyna.actor.home.pos.y, this->dyna.actor.home.pos.z,
                            this->dyna.actor.home.rot.x, this->dyna.actor.home.rot.y, this->dyna.actor.home.rot.z,
                            0x123);
@@ -284,22 +284,22 @@ void BgSpot08Iceblock_SpawnTwinFloe(BgSpot08Iceblock* this, PlayState* play) {
         this->dyna.actor.world.pos.x -= sin;
         this->dyna.actor.world.pos.z -= cos;
     }
-    BgSpot08Iceblock_SetupFloatOrbitingTwins(this);
+    mv_twin_init(this);
 }
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_F32(cullingVolumeDistance, 3000, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeScale, 1000, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDownward, 2200, ICHAIN_STOP),
 };
 
-void BgSpot08Iceblock_Init(Actor* thisx, PlayState* play) {
+void Bg_Spot08_Iceblock_actor_ct(Actor* thisx, PlayState* play) {
     BgSpot08Iceblock* this = (BgSpot08Iceblock*)thisx;
     CollisionHeader* colHeader;
 
     // "spot08 ice floe"
     PRINTF("(spot08 流氷)(arg_data 0x%04x)\n", this->dyna.actor.params);
-    BgSpot08Iceblock_CheckParams(this);
+    check_arg_data(this);
 
     switch (PARAMS_GET_NOSHIFT(this->dyna.actor.params, 9, 1)) {
         case 0:
@@ -313,102 +313,102 @@ void BgSpot08Iceblock_Init(Actor* thisx, PlayState* play) {
     switch (PARAMS_GET_U(this->dyna.actor.params, 0, 4)) {
         case 2:
         case 3:
-            BgSpot08Iceblock_InitDynaPoly(this, play, colHeader, DYNA_TRANSFORM_POS | DYNA_TRANSFORM_ROT_Y);
+            set_dynaPoly(this, play, colHeader, DYNA_TRANSFORM_POS | DYNA_TRANSFORM_ROT_Y);
             break;
         default:
-            BgSpot08Iceblock_InitDynaPoly(this, play, colHeader, 0);
+            set_dynaPoly(this, play, colHeader, 0);
             break;
     }
 
     if (LINK_AGE_IN_YEARS == YEARS_CHILD) {
-        Actor_Kill(&this->dyna.actor);
+        Actor_delete(&this->dyna.actor);
         return;
     }
 
-    Actor_ProcessInitChain(&this->dyna.actor, sInitChain);
+    ValueSet_process(&this->dyna.actor, value_init);
 
     switch (PARAMS_GET_NOSHIFT(this->dyna.actor.params, 4, 4)) {
         case 0:
-            Actor_SetScale(&this->dyna.actor, 0.2f);
+            Actor_set_scale(&this->dyna.actor, 0.2f);
             break;
         case 0x10:
-            Actor_SetScale(&this->dyna.actor, 0.1f);
+            Actor_set_scale(&this->dyna.actor, 0.1f);
             break;
         case 0x20:
-            Actor_SetScale(&this->dyna.actor, 0.05f);
+            Actor_set_scale(&this->dyna.actor, 0.05f);
             break;
     }
 
-    this->bobPhaseSlow = (s32)(Rand_ZeroOne() * (0xFFFF + 0.5f));
-    this->bobPhaseFast = (s32)(Rand_ZeroOne() * (0xFFFF + 0.5f));
+    this->bobPhaseSlow = (s32)(fqrand() * (0xFFFF + 0.5f));
+    this->bobPhaseFast = (s32)(fqrand() * (0xFFFF + 0.5f));
     this->surfaceNormal.y = 1.0f;
     this->rotationAxis.x = 1.0f;
 
     switch (PARAMS_GET_U(this->dyna.actor.params, 0, 4)) {
         case 0:
         case 1:
-            BgSpot08Iceblock_SetupFloatNonrotating(this);
+            mv_norm_init(this);
             break;
         case 2:
-            BgSpot08Iceblock_SetupFloatRotating(this);
+            mv_rot_init(this);
             break;
         case 3:
-            BgSpot08Iceblock_SpawnTwinFloe(this, play);
+            moveType_twin_ct(this, play);
             break;
         case 4:
-            BgSpot08Iceblock_SetupNoAction(this);
+            mv_stop_init(this);
             break;
     }
 }
 
-void BgSpot08Iceblock_Destroy(Actor* thisx, PlayState* play) {
+void Bg_Spot08_Iceblock_actor_dt(Actor* thisx, PlayState* play) {
     BgSpot08Iceblock* this = (BgSpot08Iceblock*)thisx;
 
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
 }
 
-void BgSpot08Iceblock_SetupFloatNonrotating(BgSpot08Iceblock* this) {
-    BgSpot08Iceblock_SetupAction(this, BgSpot08Iceblock_FloatNonrotating);
+void mv_norm_init(BgSpot08Iceblock* this) {
+    set_moveProc(this, mv_norm);
 }
 
-void BgSpot08Iceblock_FloatNonrotating(BgSpot08Iceblock* this, PlayState* play) {
-    BgSpot08Iceblock_Bobbing(this);
-    BgSpot08Iceblock_SinkUnderPlayer(this);
-    BgSpot08Iceblock_SetWaterline(this);
+void mv_norm(BgSpot08Iceblock* this, PlayState* play) {
+    set_swing_vertical(this);
+    set_sink(this);
+    set_positionY(this);
     this->dyna.actor.shape.rot.y = this->dyna.actor.home.rot.y;
-    BgSpot08Iceblock_Roll(this, play);
+    set_slope(this, play);
 }
 
-void BgSpot08Iceblock_SetupFloatRotating(BgSpot08Iceblock* this) {
-    BgSpot08Iceblock_SetupAction(this, BgSpot08Iceblock_FloatRotating);
+static void mv_rot_init(BgSpot08Iceblock* this) {
+    set_moveProc(this, mv_rot);
 }
 
-void BgSpot08Iceblock_FloatRotating(BgSpot08Iceblock* this, PlayState* play) {
-    BgSpot08Iceblock_Bobbing(this);
-    BgSpot08Iceblock_SinkUnderPlayer(this);
-    BgSpot08Iceblock_SetWaterline(this);
+static void mv_rot(BgSpot08Iceblock* this, PlayState* play) {
+    set_swing_vertical(this);
+    set_sink(this);
+    set_positionY(this);
     this->dyna.actor.world.rot.y += 0x190;
     this->dyna.actor.shape.rot.y = this->dyna.actor.world.rot.y;
-    BgSpot08Iceblock_Roll(this, play);
+    set_slope(this, play);
 }
 
-void BgSpot08Iceblock_SetupFloatOrbitingTwins(BgSpot08Iceblock* this) {
-    BgSpot08Iceblock_SetupAction(this, BgSpot08Iceblock_FloatOrbitingTwins);
+void mv_twin_init(BgSpot08Iceblock* this) {
+    set_moveProc(this, mv_twin);
 }
 
-void BgSpot08Iceblock_FloatOrbitingTwins(BgSpot08Iceblock* this, PlayState* play) {
+void mv_twin(BgSpot08Iceblock* this, PlayState* play) {
     f32 cos;
     f32 sin;
 
-    BgSpot08Iceblock_Bobbing(this);
-    BgSpot08Iceblock_SinkUnderPlayer(this);
-    BgSpot08Iceblock_SetWaterline(this);
+    set_swing_vertical(this);
+    set_sink(this);
+    set_positionY(this);
 
     // parent handles rotations of both
     if (!PARAMS_GET_NOSHIFT(this->dyna.actor.params, 8, 1)) {
         this->dyna.actor.world.rot.y += 0x190;
-        sin = Math_SinS(this->dyna.actor.world.rot.y) * 100.0f;
-        cos = Math_CosS(this->dyna.actor.world.rot.y) * 100.0f;
+        sin = sin_s(this->dyna.actor.world.rot.y) * 100.0f;
+        cos = cos_s(this->dyna.actor.world.rot.y) * 100.0f;
 
         this->dyna.actor.world.pos.x = this->dyna.actor.home.pos.x + sin;
         this->dyna.actor.world.pos.z = this->dyna.actor.home.pos.z + cos;
@@ -420,19 +420,19 @@ void BgSpot08Iceblock_FloatOrbitingTwins(BgSpot08Iceblock* this, PlayState* play
     }
 
     this->dyna.actor.shape.rot.y = this->dyna.actor.home.rot.y;
-    BgSpot08Iceblock_Roll(this, play);
+    set_slope(this, play);
 }
 
-void BgSpot08Iceblock_SetupNoAction(BgSpot08Iceblock* this) {
-    BgSpot08Iceblock_SetupAction(this, NULL);
+static void mv_stop_init(BgSpot08Iceblock* this) {
+    set_moveProc(this, NULL);
 }
 
-void BgSpot08Iceblock_Update(Actor* thisx, PlayState* play) {
+void Bg_Spot08_Iceblock_actor_move(Actor* thisx, PlayState* play) {
     BgSpot08Iceblock* this = (BgSpot08Iceblock*)thisx;
 
-    if (Rand_ZeroOne() < 0.05f) {
-        this->bobIncrSlow = Rand_S16Offset(300, 100);
-        this->bobIncrFast = Rand_S16Offset(800, 400);
+    if (fqrand() < 0.05f) {
+        this->bobIncrSlow = get_random_timer(300, 100);
+        this->bobIncrFast = get_random_timer(800, 400);
     }
 
     this->bobPhaseSlow += this->bobIncrSlow;
@@ -442,7 +442,7 @@ void BgSpot08Iceblock_Update(Actor* thisx, PlayState* play) {
     }
 }
 
-void BgSpot08Iceblock_Draw(Actor* thisx, PlayState* play) {
+void Bg_Spot08_Iceblock_actor_draw(Actor* thisx, PlayState* play) {
     Gfx* dList;
     BgSpot08Iceblock* this = (BgSpot08Iceblock*)thisx;
 
@@ -455,5 +455,5 @@ void BgSpot08Iceblock_Draw(Actor* thisx, PlayState* play) {
             break;
     }
 
-    Gfx_DrawDListOpa(play, dList);
+    Cheap_gfx_display(play, dList);
 }

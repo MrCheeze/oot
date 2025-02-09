@@ -25,10 +25,10 @@ if __name__ == '__main__':
     config = version_config.load_version_config(version)
 
     code_vram = config.dmadata_segments["code"].vram
-    soundfont_table_code_offset = config.variables["gSoundFontTable"] - code_vram
-    seq_font_table_code_offset = config.variables["gSequenceFontTable"] - code_vram
-    seq_table_code_offset = config.variables["gSequenceTable"] - code_vram
-    sample_bank_table_code_offset = config.variables["gSampleBankTable"] - code_vram
+    soundfont_table_code_offset = config.variables["AudiobankHeaderStart"] - code_vram
+    seq_font_table_code_offset = config.variables["AudiomapHeaderStart"] - code_vram
+    seq_table_code_offset = config.variables["AudioseqHeaderStart"] - code_vram
+    sample_bank_table_code_offset = config.variables["AudiowaveHeaderStart"] - code_vram
 
     # List any sequences that are "handwritten", we don't extract these by
     # default as we want these checked in for documentation.

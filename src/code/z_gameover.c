@@ -3,22 +3,22 @@
 #include "global.h"
 #include "versions.h"
 
-void GameOver_Init(PlayState* play) {
+void gameover_ct(PlayState* play) {
     play->gameOverCtx.state = GAMEOVER_INACTIVE;
 }
 
-void GameOver_FadeInLights(PlayState* play) {
+void gameover_draw(PlayState* play) {
     GameOverContext* gameOverCtx = &play->gameOverCtx;
 
     if ((gameOverCtx->state >= GAMEOVER_DEATH_WAIT_GROUND && gameOverCtx->state < GAMEOVER_REVIVE_START) ||
         (gameOverCtx->state >= GAMEOVER_REVIVE_RUMBLE && gameOverCtx->state < GAMEOVER_REVIVE_FADE_OUT)) {
-        Environment_FadeInGameOverLights(play);
+        Gameover_anten_proc(play);
     }
 }
 
-s16 sGameOverTimer = 0;
+s16 go_ct = 0;
 
-void GameOver_Update(PlayState* play) {
+void gameover_move(PlayState* play) {
     GameOverContext* gameOverCtx = &play->gameOverCtx;
     s16 i;
     s16 j;
@@ -28,67 +28,67 @@ void GameOver_Update(PlayState* play) {
 
     switch (gameOverCtx->state) {
         case GAMEOVER_DEATH_START:
-            Message_CloseTextbox(play);
+            message_close(play);
 
-            gSaveContext.timerState = TIMER_STATE_OFF;
-            gSaveContext.subTimerState = SUBTIMER_STATE_OFF;
+            z_common_data.timerState = TIMER_STATE_OFF;
+            z_common_data.subTimerState = SUBTIMER_STATE_OFF;
             CLEAR_EVENTINF(EVENTINF_MARATHON_ACTIVE);
 
             // search inventory for spoiling items and revert if necessary
-            for (i = 0; i < ARRAY_COUNT(gSpoilingItems); i++) {
-                if (INV_CONTENT(ITEM_POCKET_EGG) == gSpoilingItems[i]) {
-                    INV_CONTENT(gSpoilingItemReverts[i]) = gSpoilingItemReverts[i];
+            for (i = 0; i < ARRAY_COUNT(Warashibe_item); i++) {
+                if (INV_CONTENT(ITEM_POCKET_EGG) == Warashibe_item[i]) {
+                    INV_CONTENT(Warashibe_before_item[i]) = Warashibe_before_item[i];
 
                     // search c buttons for the found spoiling item and revert if necessary
-                    for (j = 1; j < ARRAY_COUNT(gSaveContext.save.info.equips.buttonItems); j++) {
-                        if (gSaveContext.save.info.equips.buttonItems[j] == gSpoilingItems[i]) {
-                            gSaveContext.save.info.equips.buttonItems[j] = gSpoilingItemReverts[i];
-                            Interface_LoadItemIcon1(play, j);
+                    for (j = 1; j < ARRAY_COUNT(z_common_data.save.info.equips.buttonItems); j++) {
+                        if (z_common_data.save.info.equips.buttonItems[j] == Warashibe_item[i]) {
+                            z_common_data.save.info.equips.buttonItems[j] = Warashibe_before_item[i];
+                            item_textuer_dma(play, j);
                         }
                     }
                 }
             }
 
             // restore "temporary B" to the B Button if not a sword item
-            if (gSaveContext.save.info.equips.buttonItems[0] != ITEM_SWORD_KOKIRI &&
-                gSaveContext.save.info.equips.buttonItems[0] != ITEM_SWORD_MASTER &&
-                gSaveContext.save.info.equips.buttonItems[0] != ITEM_SWORD_BIGGORON &&
-                gSaveContext.save.info.equips.buttonItems[0] != ITEM_GIANTS_KNIFE) {
+            if (z_common_data.save.info.equips.buttonItems[0] != ITEM_SWORD_KOKIRI &&
+                z_common_data.save.info.equips.buttonItems[0] != ITEM_SWORD_MASTER &&
+                z_common_data.save.info.equips.buttonItems[0] != ITEM_SWORD_BIGGORON &&
+                z_common_data.save.info.equips.buttonItems[0] != ITEM_GIANTS_KNIFE) {
 
-                if (gSaveContext.buttonStatus[0] != BTN_ENABLED) {
-                    gSaveContext.save.info.equips.buttonItems[0] = gSaveContext.buttonStatus[0];
+                if (z_common_data.buttonStatus[0] != BTN_ENABLED) {
+                    z_common_data.save.info.equips.buttonItems[0] = z_common_data.buttonStatus[0];
                 } else {
-                    gSaveContext.save.info.equips.buttonItems[0] = ITEM_NONE;
+                    z_common_data.save.info.equips.buttonItems[0] = ITEM_NONE;
                 }
             }
 
 #if OOT_VERSION < PAL_1_1
-            gSaveContext.nayrusLoveTimer = 0;
+            z_common_data.nayrusLoveTimer = 0;
 #else
-            gSaveContext.nayrusLoveTimer = 2000;
+            z_common_data.nayrusLoveTimer = 2000;
 #endif
 
-            gSaveContext.save.info.playerData.naviTimer = 0;
-            gSaveContext.seqId = (u8)NA_BGM_DISABLED;
-            gSaveContext.natureAmbienceId = NATURE_ID_DISABLED;
-            gSaveContext.eventInf[0] = 0;
-            gSaveContext.eventInf[1] = 0;
-            gSaveContext.eventInf[2] = 0;
-            gSaveContext.eventInf[3] = 0;
-            gSaveContext.buttonStatus[0] = gSaveContext.buttonStatus[1] = gSaveContext.buttonStatus[2] =
-                gSaveContext.buttonStatus[3] = gSaveContext.buttonStatus[4] = BTN_ENABLED;
-            gSaveContext.forceRisingButtonAlphas = gSaveContext.nextHudVisibilityMode = gSaveContext.hudVisibilityMode =
-                gSaveContext.hudVisibilityModeTimer = 0; // false, HUD_VISIBILITY_NO_CHANGE
+            z_common_data.save.info.playerData.naviTimer = 0;
+            z_common_data.seqId = (u8)NA_BGM_DISABLED;
+            z_common_data.natureAmbienceId = NATURE_ID_DISABLED;
+            z_common_data.eventInf[0] = 0;
+            z_common_data.eventInf[1] = 0;
+            z_common_data.eventInf[2] = 0;
+            z_common_data.eventInf[3] = 0;
+            z_common_data.buttonStatus[0] = z_common_data.buttonStatus[1] = z_common_data.buttonStatus[2] =
+                z_common_data.buttonStatus[3] = z_common_data.buttonStatus[4] = BTN_ENABLED;
+            z_common_data.forceRisingButtonAlphas = z_common_data.nextHudVisibilityMode = z_common_data.hudVisibilityMode =
+                z_common_data.hudVisibilityModeTimer = 0; // false, HUD_VISIBILITY_NO_CHANGE
 
-            Environment_InitGameOverLights(play);
-            sGameOverTimer = 20;
+            Gameover_anten_init(play);
+            go_ct = 20;
 
             if (1) {}
             rumbleStrength = R_GAME_OVER_RUMBLE_STRENGTH;
             rumbleDuration = R_GAME_OVER_RUMBLE_DURATION;
             rumbleDecreaseRate = R_GAME_OVER_RUMBLE_DECREASE_RATE;
 
-            Rumble_Request(0.0f, ((rumbleStrength > 100) ? 255 : (rumbleStrength * 255) / 100),
+            z_vibctl2_vib_setQ(0.0f, ((rumbleStrength > 100) ? 255 : (rumbleStrength * 255) / 100),
                            (CLAMP_MAX(rumbleDuration * 3, 255)),
                            ((rumbleDecreaseRate > 100) ? 255 : (rumbleDecreaseRate * 255) / 100));
 
@@ -99,24 +99,24 @@ void GameOver_Update(PlayState* play) {
             break;
 
         case GAMEOVER_DEATH_DELAY_MENU:
-            sGameOverTimer--;
+            go_ct--;
 
-            if (sGameOverTimer == 0) {
+            if (go_ct == 0) {
                 play->pauseCtx.state = PAUSE_STATE_GAME_OVER_START;
                 gameOverCtx->state++;
-                Rumble_Reset();
+                z_vibctl2_StageInit();
             }
             break;
 
         case GAMEOVER_REVIVE_START:
             gameOverCtx->state++;
-            sGameOverTimer = 0;
-            Environment_InitGameOverLights(play);
-            Letterbox_SetSizeTarget(32);
+            go_ct = 0;
+            Gameover_anten_init(play);
+            shrink_window_setval(32);
             return;
 
         case GAMEOVER_REVIVE_RUMBLE:
-            sGameOverTimer = 50;
+            go_ct = 50;
             gameOverCtx->state++;
 
             if (1) {}
@@ -124,34 +124,34 @@ void GameOver_Update(PlayState* play) {
             rumbleDuration = R_GAME_OVER_RUMBLE_DURATION;
             rumbleDecreaseRate = R_GAME_OVER_RUMBLE_DECREASE_RATE;
 
-            Rumble_Request(0.0f, ((rumbleStrength > 100) ? 255 : (rumbleStrength * 255) / 100),
+            z_vibctl2_vib_setQ(0.0f, ((rumbleStrength > 100) ? 255 : (rumbleStrength * 255) / 100),
                            (CLAMP_MAX(rumbleDuration * 3, 255)),
                            ((rumbleDecreaseRate > 100) ? 255 : (rumbleDecreaseRate * 255) / 100));
             break;
 
         case GAMEOVER_REVIVE_WAIT_GROUND:
-            sGameOverTimer--;
+            go_ct--;
 
-            if (sGameOverTimer == 0) {
-                sGameOverTimer = 64;
+            if (go_ct == 0) {
+                go_ct = 64;
                 gameOverCtx->state++;
             }
             break;
 
         case GAMEOVER_REVIVE_WAIT_FAIRY:
-            sGameOverTimer--;
+            go_ct--;
 
-            if (sGameOverTimer == 0) {
-                sGameOverTimer = 50;
+            if (go_ct == 0) {
+                go_ct = 50;
                 gameOverCtx->state++;
             }
             break;
 
         case GAMEOVER_REVIVE_FADE_OUT:
-            Environment_FadeOutGameOverLights(play);
-            sGameOverTimer--;
+            Gameover_anten_return(play);
+            go_ct--;
 
-            if (sGameOverTimer == 0) {
+            if (go_ct == 0) {
                 gameOverCtx->state = GAMEOVER_INACTIVE;
             }
             break;

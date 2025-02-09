@@ -8,12 +8,12 @@
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void ObjRoomtimer_Init(Actor* thisx, PlayState* play);
-void ObjRoomtimer_Destroy(Actor* thisx, PlayState* play);
-void ObjRoomtimer_Update(Actor* thisx, PlayState* play);
+void Obj_Roomtimer_actor_ct(Actor* thisx, PlayState* play);
+void Obj_Roomtimer_actor_dt(Actor* thisx, PlayState* play);
+void Obj_Roomtimer_actor_move(Actor* thisx, PlayState* play);
 
-void func_80B9D054(ObjRoomtimer* this, PlayState* play);
-void func_80B9D0B0(ObjRoomtimer* this, PlayState* play);
+static void mode_wait(ObjRoomtimer* this, PlayState* play);
+static void mode_check(ObjRoomtimer* this, PlayState* play);
 
 ActorProfile Obj_Roomtimer_Profile = {
     /**/ ACTOR_OBJ_ROOMTIMER,
@@ -21,13 +21,13 @@ ActorProfile Obj_Roomtimer_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(ObjRoomtimer),
-    /**/ ObjRoomtimer_Init,
-    /**/ ObjRoomtimer_Destroy,
-    /**/ ObjRoomtimer_Update,
+    /**/ Obj_Roomtimer_actor_ct,
+    /**/ Obj_Roomtimer_actor_dt,
+    /**/ Obj_Roomtimer_actor_move,
     /**/ NULL,
 };
 
-void ObjRoomtimer_Init(Actor* thisx, PlayState* play) {
+void Obj_Roomtimer_actor_ct(Actor* thisx, PlayState* play) {
     ObjRoomtimer* this = (ObjRoomtimer*)thisx;
 
     this->switchFlag = PARAMS_GET_U(this->actor.params, 10, 6);
@@ -37,47 +37,47 @@ void ObjRoomtimer_Init(Actor* thisx, PlayState* play) {
         this->actor.params = CLAMP_MAX(this->actor.params, 600);
     }
 
-    this->actionFunc = func_80B9D054;
+    this->actionFunc = mode_wait;
 }
 
-void ObjRoomtimer_Destroy(Actor* thisx, PlayState* play) {
+void Obj_Roomtimer_actor_dt(Actor* thisx, PlayState* play) {
     ObjRoomtimer* this = (ObjRoomtimer*)thisx;
 
-    if ((this->actor.params != 0x3FF) && (gSaveContext.timerSeconds > 0)) {
-        gSaveContext.timerState = TIMER_STATE_STOP;
+    if ((this->actor.params != 0x3FF) && (z_common_data.timerSeconds > 0)) {
+        z_common_data.timerState = TIMER_STATE_STOP;
     }
 }
 
-void func_80B9D054(ObjRoomtimer* this, PlayState* play) {
+static void mode_wait(ObjRoomtimer* this, PlayState* play) {
     if (this->actor.params != 0x3FF) {
-        Interface_SetTimer(this->actor.params);
+        event_timer_set(this->actor.params);
     }
 
-    Actor_ChangeCategory(play, &play->actorCtx, &this->actor, ACTORCAT_PROP);
-    this->actionFunc = func_80B9D0B0;
+    Actor_info_part_chg(play, &play->actorCtx, &this->actor, ACTORCAT_PROP);
+    this->actionFunc = mode_check;
 }
 
-void func_80B9D0B0(ObjRoomtimer* this, PlayState* play) {
-    if (Flags_GetTempClear(play, this->actor.room)) {
+static void mode_check(ObjRoomtimer* this, PlayState* play) {
+    if (Actor_Environment_no_enemy_Check(play, this->actor.room)) {
         if (this->actor.params != 0x3FF) {
-            gSaveContext.timerState = TIMER_STATE_STOP;
+            z_common_data.timerState = TIMER_STATE_STOP;
         }
-        Flags_SetClear(play, this->actor.room);
-        Flags_SetSwitch(play, this->switchFlag);
-        Sfx_PlaySfxCentered(NA_SE_SY_CORRECT_CHIME);
-        Actor_Kill(&this->actor);
+        Actor_Environment_room_clear_On(play, this->actor.room);
+        Actor_Environment_sw_On(play, this->switchFlag);
+        Na_StartSystemSe_F(NA_SE_SY_CORRECT_CHIME);
+        Actor_delete(&this->actor);
         return;
     }
 
-    if ((this->actor.params != 0x3FF) && (gSaveContext.timerSeconds == 0)) {
-        Audio_PlaySfxGeneral(NA_SE_OC_ABYSS, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
-        Play_TriggerVoidOut(play);
-        Actor_Kill(&this->actor);
+    if ((this->actor.params != 0x3FF) && (z_common_data.timerSeconds == 0)) {
+        Nai_FxFlagEntry(NA_SE_OC_ABYSS, &_dummy_zero_f, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
+        Game_play_down_restart(play);
+        Actor_delete(&this->actor);
     }
 }
 
-void ObjRoomtimer_Update(Actor* thisx, PlayState* play) {
+void Obj_Roomtimer_actor_move(Actor* thisx, PlayState* play) {
     ObjRoomtimer* this = (ObjRoomtimer*)thisx;
 
     this->actionFunc(this, play);

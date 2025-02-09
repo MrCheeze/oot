@@ -8,11 +8,11 @@
 
 #define FLAGS 0
 
-void EnIt_Init(Actor* thisx, PlayState* play);
-void EnIt_Destroy(Actor* thisx, PlayState* play);
-void EnIt_Update(Actor* thisx, PlayState* play);
+void En_It_actor_ct(Actor* thisx, PlayState* play);
+void En_It_actor_dt(Actor* thisx, PlayState* play);
+void En_It_actor_move(Actor* thisx, PlayState* play);
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit EnItAtInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -32,7 +32,7 @@ static ColliderCylinderInit sCylinderInit = {
     { 40, 10, 0, { 0 } },
 };
 
-static CollisionCheckInfoInit2 sColChkInfoInit = { 0, 0, 0, 0, MASS_IMMOVABLE };
+static CollisionCheckInfoInit2 ItStatusData = { 0, 0, 0, 0, MASS_IMMOVABLE };
 
 ActorProfile En_It_Profile = {
     /**/ ACTOR_EN_IT,
@@ -40,31 +40,31 @@ ActorProfile En_It_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(EnIt),
-    /**/ EnIt_Init,
-    /**/ EnIt_Destroy,
-    /**/ EnIt_Update,
+    /**/ En_It_actor_ct,
+    /**/ En_It_actor_dt,
+    /**/ En_It_actor_move,
     /**/ NULL,
 };
 
-void EnIt_Init(Actor* thisx, PlayState* play) {
+void En_It_actor_ct(Actor* thisx, PlayState* play) {
     EnIt* this = (EnIt*)thisx;
 
     this->actor.params = 0x0D05;
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
-    CollisionCheck_SetInfo2(&this->actor.colChkInfo, NULL, &sColChkInfoInit);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set5(play, &this->collider, &this->actor, &EnItAtInfoData);
+    CollisionCheck_Status_set3(&this->actor.colChkInfo, NULL, &ItStatusData);
 }
 
-void EnIt_Destroy(Actor* thisx, PlayState* play) {
+void En_It_actor_dt(Actor* thisx, PlayState* play) {
     EnIt* this = (EnIt*)thisx;
 
-    Collider_DestroyCylinder(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider);
 }
 
-void EnIt_Update(Actor* thisx, PlayState* play) {
+void En_It_actor_move(Actor* thisx, PlayState* play) {
     EnIt* this = (EnIt*)thisx;
     s32 pad;
 
-    Collider_UpdateCylinder(&this->actor, &this->collider);
-    CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
+    CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
 }

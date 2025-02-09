@@ -1,31 +1,31 @@
-void DemoEc_InitMido(DemoEc* this, PlayState* play) {
-    DemoEc_UseDrawObject(this, play);
-    DemoEc_InitSkelAnime(this, play, &gMidoSkel);
-    DemoEc_UseAnimationObject(this, play);
-    DemoEc_ChangeAnimation(this, &gDemoEcMidoAnim, 0, 0.0f, false);
-    func_8096D5D4(this, play);
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 30.0f);
+void Demo_Ec_main_init_Md(DemoEc* this, PlayState* play) {
+    Demo_Ec_Change_ShapeBank(this, play);
+    Demo_Ec_Setup_Mdl(this, play, &gMidoSkel);
+    Demo_Ec_Change_AnimeBank(this, play);
+    Demo_Ec_Change_Anime(this, &gDemoEcMidoAnim, 0, 0.0f, false);
+    Demo_Ec_Start_Movement_byAnimation(this, play);
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 30.0f);
     this->updateMode = EC_UPDATE_MIDO;
     this->drawConfig = EC_DRAW_MIDO;
-    DemoEc_SetEyeTexIndex(this, 3);
+    Demo_Ec_set_eye_Num(this, 3);
 }
 
-void func_8096F4FC(DemoEc* this, PlayState* play) {
-    DemoEc_UseAnimationObject(this, play);
-    DemoEc_ChangeAnimation(this, &gDemoEcAnim_008D1C, 2, -8.0f, false);
+void Demo_Ec_inMd_Setup_Stand(DemoEc* this, PlayState* play) {
+    Demo_Ec_Change_AnimeBank(this, play);
+    Demo_Ec_Change_Anime(this, &gDemoEcAnim_008D1C, 2, -8.0f, false);
     this->updateMode = EC_UPDATE_20;
 }
 
-void func_8096F544(DemoEc* this, s32 changeAnim) {
+void Demo_Ec_inMd_Check_Animation_Stand(DemoEc* this, s32 changeAnim) {
     if (changeAnim) {
-        DemoEc_ChangeAnimation(this, &gDemoEcAnim_009234, 0, 0.0f, false);
+        Demo_Ec_Change_Anime(this, &gDemoEcAnim_009234, 0, 0.0f, false);
     }
 }
 
-void func_8096F578(DemoEc* this, PlayState* play, s32 cueChannel) {
+void Demo_Ec_inMd_Check_DemoMode(DemoEc* this, PlayState* play, s32 cueChannel) {
     CsCmdActorCue* cue;
 
-    cue = DemoEc_GetCue(play, cueChannel);
+    cue = Demo_Ec_Get_npcdemopnt(play, cueChannel);
 
     if (cue != NULL) {
         s32 nextCueId = cue->id;
@@ -34,7 +34,7 @@ void func_8096F578(DemoEc* this, PlayState* play, s32 cueChannel) {
         if (nextCueId != currentCueId) {
             switch (nextCueId) {
                 case 2:
-                    func_8096F4FC(this, play);
+                    Demo_Ec_inMd_Setup_Stand(this, play);
                     break;
             }
 
@@ -43,32 +43,32 @@ void func_8096F578(DemoEc* this, PlayState* play, s32 cueChannel) {
     }
 }
 
-void DemoEc_UpdateMido(DemoEc* this, PlayState* play) {
-    DemoEc_UpdateSkelAnime(this);
-    func_8096D594(this, play);
-    DemoEc_SetStartPosRotFromCue(this, play, 7);
-    DemoEc_UpdateBgFlags(this, play);
-    func_8096F578(this, play, 7);
+void Demo_Ec_main_Md_Wait(DemoEc* this, PlayState* play) {
+    Demo_Ec_Animation_Base(this);
+    Demo_Ec_Movement_byAnimation_CorrectNone(this, play);
+    Demo_Ec_Set_StartPos_npcdemopnt(this, play, 7);
+    Demo_Ec_BGcheck(this, play);
+    Demo_Ec_inMd_Check_DemoMode(this, play, 7);
 }
 
-void func_8096F640(DemoEc* this, PlayState* play) {
-    s32 animDone = DemoEc_UpdateSkelAnime(this);
+void Demo_Ec_main_Md_Stand(DemoEc* this, PlayState* play) {
+    s32 animDone = Demo_Ec_Animation_Base(this);
 
-    func_8096D594(this, play);
-    DemoEc_UpdateEyes(this);
-    DemoEc_UpdateBgFlags(this, play);
-    func_8096F544(this, animDone);
+    Demo_Ec_Movement_byAnimation_CorrectNone(this, play);
+    Demo_Ec_set_eye_pattern(this);
+    Demo_Ec_BGcheck(this, play);
+    Demo_Ec_inMd_Check_Animation_Stand(this, animDone);
 }
 
-void DemoEc_DrawMido(DemoEc* this, PlayState* play) {
-    static void* eyeTextures[] = {
+void Demo_Ec_draw_normal_Md(DemoEc* this, PlayState* play) {
+    static void* Demo_Ec_inMd_eye[] = {
         gMidoEyeOpenTex,
         gMidoEyeHalfTex,
         gMidoEyeClosedTex,
         gMidoEyeAngryTex,
     };
     s32 eyeTexIndex = this->eyeTexIndex;
-    void* eyeTexture = eyeTextures[eyeTexIndex];
+    void* eyeTexture = Demo_Ec_inMd_eye[eyeTexIndex];
 
-    DemoEc_DrawSkeleton(this, play, eyeTexture, NULL, NULL, NULL);
+    Demo_Ec_draw_normal_1(this, play, eyeTexture, NULL, NULL, NULL);
 }

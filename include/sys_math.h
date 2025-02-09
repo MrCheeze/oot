@@ -3,12 +3,12 @@
 
 #include "ultra64.h"
 
-f32 Math_FactorialF(f32 n);
-f32 Math_Factorial(s32 n);
-f32 Math_PowF(f32 base, s32 exp);
-f32 Math_SinF(f32 angle);
-f32 Math_CosF(f32 angle);
-s16 Math_Atan2S(f32 x, f32 y);
-f32 Math_Atan2F(f32 x, f32 y);
+f32 ffact(f32 n);
+f32 ifact(s32 n);
+f32 powi(f32 base, s32 exp);
+f32 sinf_table(f32 angle);
+f32 cosf_table(f32 angle);
+s16 atans_table(f32 x, f32 y);
+f32 atanf_table(f32 x, f32 y);
 
 #endif

@@ -1,28 +1,28 @@
-void EnXc_InitTempleOfTime(EnXc* this, PlayState* play) {
+void En_Oa2_Actor_Wall_Init(EnXc* this, PlayState* play) {
     if (LINK_IS_ADULT) {
         if (!GET_EVENTCHKINF(EVENTCHKINF_C5)) {
             SET_EVENTCHKINF(EVENTCHKINF_C5);
             play->csCtx.script = SEGMENTED_TO_VIRTUAL(gTempleOfTimeFirstAdultCs);
-            gSaveContext.cutsceneTrigger = 1;
-            func_80B3EBF0(this, play);
+            z_common_data.cutsceneTrigger = 1;
+            En_Oa2_Actor_Tokinoma_Init(this, play);
         } else if (!GET_EVENTCHKINF(EVENTCHKINF_55) && GET_EVENTCHKINF(EVENTCHKINF_48)) {
             SET_EVENTCHKINF(EVENTCHKINF_55);
-            Item_Give(play, ITEM_SONG_PRELUDE);
+            item_get_setting(play, ITEM_SONG_PRELUDE);
             play->csCtx.script = SEGMENTED_TO_VIRTUAL(gTempleOfTimePreludeCs);
-            gSaveContext.cutsceneTrigger = 1;
+            z_common_data.cutsceneTrigger = 1;
             this->action = SHEIK_ACTION_30;
         } else if (!GET_EVENTCHKINF(EVENTCHKINF_55)) {
-            func_80B3C9EC(this);
+            En_Oa2_Setup_TokinomaToWall(this);
         } else {
-            Actor_Kill(&this->actor);
+            Actor_delete(&this->actor);
         }
     } else {
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     }
 }
 
-void EnXc_SetupDialogueAction(EnXc* this, PlayState* play) {
-    if (Actor_TalkOfferAccepted(&this->actor, play)) {
+void En_Oa2_inStand_check_BlockingToGreeting(EnXc* this, PlayState* play) {
+    if (Actor_talk_check(&this->actor, play)) {
         s32 pad;
 
         this->action = SHEIK_ACTION_IN_DIALOGUE;
@@ -33,31 +33,31 @@ void EnXc_SetupDialogueAction(EnXc* this, PlayState* play) {
         } else {
             this->actor.textId = 0x700F;
         }
-        Actor_OfferTalkNearColChkInfoCylinder(&this->actor, play);
+        Actor_talk_request(&this->actor, play);
     }
 }
 
-void func_80B41798(EnXc* this, PlayState* play) {
-    if (Message_GetState(&play->msgCtx) == TEXT_STATE_CLOSING) {
+void En_Oa2_inStand_check_GreetingToBlocking(EnXc* this, PlayState* play) {
+    if (message_check(&play->msgCtx) == TEXT_STATE_CLOSING) {
         this->action = SHEIK_ACTION_BLOCK_PEDESTAL;
         this->actor.flags &= ~(ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY);
     }
 }
 
-void EnXc_BlockingPedestalAction(EnXc* this, PlayState* play) {
-    EnXc_BgCheck(this, play);
-    EnXc_UpdateCollider(&this->actor, play);
-    EnXc_CalculateHeadTurn(this, play);
-    EnXc_AnimIsFinished(this);
-    EnXc_SetEyePattern(this);
-    EnXc_SetupDialogueAction(this, play);
+void En_Oa2_Wall_main_blocking(EnXc* this, PlayState* play) {
+    En_Oa2_BGcheck(this, play);
+    En_Oa2_Excute_Corect(&this->actor, play);
+    En_Oa2_Calc_turn_link(this, play);
+    En_Oa2_Animation_Basic(this);
+    En_Oa2_set_eye_pattern(this);
+    En_Oa2_inStand_check_BlockingToGreeting(this, play);
 }
 
-void EnXc_ActionFunc80(EnXc* this, PlayState* play) {
-    EnXc_BgCheck(this, play);
-    EnXc_UpdateCollider(&this->actor, play);
-    EnXc_CalculateHeadTurn(this, play);
-    EnXc_AnimIsFinished(this);
-    EnXc_SetEyePattern(this);
-    func_80B41798(this, play);
+void En_Oa2_Wall_main_greeting(EnXc* this, PlayState* play) {
+    En_Oa2_BGcheck(this, play);
+    En_Oa2_Excute_Corect(&this->actor, play);
+    En_Oa2_Calc_turn_link(this, play);
+    En_Oa2_Animation_Basic(this);
+    En_Oa2_set_eye_pattern(this);
+    En_Oa2_inStand_check_GreetingToBlocking(this, play);
 }

@@ -1,2 +1,2 @@
-800FE2E0 gMtxClear
-80AE1D60 sShadowTex
+800FE2E0 Mtx_clear
+80AE1D60 js_jyutan_sahdow_txt

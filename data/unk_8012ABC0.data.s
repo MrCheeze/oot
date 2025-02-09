@@ -10,16 +10,16 @@
 .balign 16
 
 /* Unused */
-glabel D_8012ABC0
+glabel traplink
     .word fmodf
     .word guScale
     .word guRotate
     .word guTranslate
-    .word GfxPrint_SetPos
-    .word GfxPrint_SetColor
-    .word GfxPrint_Printf
-    .word GfxPrint_SetPosPx
-    .word GfxPrint_Init
-    .word GfxPrint_Open
-    .word GfxPrint_Close
-    .word GfxPrint_Destroy
+    .word gfxprint_locate8x8
+    .word gfxprint_color
+    .word gfxprint_printf
+    .word gfxprint_locate
+    .word gfxprint_init
+    .word gfxprint_open
+    .word gfxprint_close
+    .word gfxprint_cleanup

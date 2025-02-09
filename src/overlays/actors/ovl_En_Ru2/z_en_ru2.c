@@ -11,37 +11,37 @@
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void EnRu2_Init(Actor* thisx, PlayState* play);
-void EnRu2_Destroy(Actor* thisx, PlayState* play);
-void EnRu2_Update(Actor* thisx, PlayState* play);
-void EnRu2_Draw(Actor* thisx, PlayState* play);
+void En_Ru2_Actor_ct(Actor* thisx, PlayState* play);
+void En_Ru2_Actor_dt(Actor* thisx, PlayState* play);
+void En_Ru2_Actor_main(Actor* thisx, PlayState* play);
+void En_Ru2_Actor_draw(Actor* thisx, PlayState* play);
 
-void EnRu2_SetupWaterMedallionCutscene(EnRu2* this, PlayState* play);
-void EnRu2_AwaitBlueWarp(EnRu2* this, PlayState* play);
-void EnRu2_RiseThroughBlueWarp(EnRu2* this, PlayState* play);
-void EnRu2_SageOfWaterDialog(EnRu2* this, PlayState* play);
-void EnRu2_RaiseArms(EnRu2* this, PlayState* play);
-void EnRu2_AwaitWaterMedallion(EnRu2* this, PlayState* play);
-void EnRu2_FinishWaterMedallionCutscene(EnRu2* this, PlayState* play);
-void EnRu2_WaterTrialInvisible(EnRu2* this, PlayState* play);
-void EnRu2_WaterTrialFade(EnRu2* this, PlayState* play);
-void EnRu2_AwaitSpawnLightBall(EnRu2* this, PlayState* play);
-void EnRu2_CreditsInvisible(EnRu2* this, PlayState* play);
-void EnRu2_CreditsFadeIn(EnRu2* this, PlayState* play);
-void EnRu2_CreditsVisible(EnRu2* this, PlayState* play);
-void EnRu2_CreditsTurnHeadDownLeft(EnRu2* this, PlayState* play);
-void EnRu2_WaterTempleEncounterRangeCheck(EnRu2* this, PlayState* play);
-void EnRu2_WaterTempleEncounterUnconditional(EnRu2* this, PlayState* play);
-void EnRu2_WaterTempleEncounterBegin(EnRu2* this, PlayState* play);
-void EnRu2_WaterTempleEncounterDialog(EnRu2* this, PlayState* play);
-void EnRu2_WaterTempleEncounterEnd(EnRu2* this, PlayState* play);
-void EnRu2_WaterTempleSwimmingUp(EnRu2* this, PlayState* play);
+void En_Ru2_Actor_main_wait(EnRu2* this, PlayState* play);
+void En_Ru2_Actor_main_hide(EnRu2* this, PlayState* play);
+void En_Ru2_Actor_main_up(EnRu2* this, PlayState* play);
+void En_Ru2_Actor_main_greet(EnRu2* this, PlayState* play);
+void En_Ru2_Actor_main_handup(EnRu2* this, PlayState* play);
+void En_Ru2_Actor_main_cheer(EnRu2* this, PlayState* play);
+void En_Ru2_Actor_main_stop(EnRu2* this, PlayState* play);
+void En_Ru2_Seal_Actor_main_hide(EnRu2* this, PlayState* play);
+void En_Ru2_Seal_Actor_main_fade(EnRu2* this, PlayState* play);
+void En_Ru2_Seal_Actor_main_pray(EnRu2* this, PlayState* play);
+void En_Ru2_inEnding_main_wait(EnRu2* this, PlayState* play);
+void En_Ru2_inEnding_main_alpha(EnRu2* this, PlayState* play);
+void En_Ru2_inEnding_main_stand(EnRu2* this, PlayState* play);
+void En_Ru2_inEnding_main_lookup(EnRu2* this, PlayState* play);
+void En_Ru2_inMizusin_main_wait(EnRu2* this, PlayState* play);
+void En_Ru2_inMizusin_main_stand(EnRu2* this, PlayState* play);
+void En_Ru2_inMizusin_main_greet(EnRu2* this, PlayState* play);
+void En_Ru2_inMizusin_main_greeting(EnRu2* this, PlayState* play);
+void En_Ru2_inMizusin_main_gooby(EnRu2* this, PlayState* play);
+void En_Ru2_inMizusin_main_swim(EnRu2* this, PlayState* play);
 
-void EnRu2_DrawNothing(EnRu2* this, PlayState* play);
-void EnRu2_DrawOpa(EnRu2* this, PlayState* play);
-void EnRu2_DrawXlu(EnRu2* this, PlayState* play);
+void En_Ru2_Actor_draw_none(EnRu2* this, PlayState* play);
+void En_Ru2_Actor_draw_normal(EnRu2* this, PlayState* play);
+void En_Ru2_Actor_draw_alpha(EnRu2* this, PlayState* play);
 
-void EnRu2_CheckWaterMedallionCutscene(EnRu2* this, PlayState* play);
+void En_Ru2_check_WaitToHide(EnRu2* this, PlayState* play);
 
 typedef enum {
     /* 00 */ ENRU2_SETUP_WATER_MEDALLION_CS,
@@ -72,7 +72,7 @@ typedef enum {
     /* 02 */ ENRU2_DRAW_XLU
 } EnRu2DrawConfig;
 
-static ColliderCylinderInitType1 sCylinderInit = {
+static ColliderCylinderInitType1 En_Ru2_OcInfoData_forStand = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -84,7 +84,7 @@ static ColliderCylinderInitType1 sCylinderInit = {
     { 30, 100, 0, { 0 } },
 };
 
-static void* sEyeTextures[] = {
+static void* en_ru2_eye[] = {
     gAdultRutoEyeOpenTex,
     gAdultRutoEyeHalfTex,
     gAdultRutoEyeClosedTex,
@@ -96,74 +96,33 @@ static UNK_TYPE D_80AF4118 = 0;
 
 #include "Demodt_Kenjyanoma.inc.c"
 
-static EnRu2ActionFunc sActionFuncs[] = {
-    EnRu2_SetupWaterMedallionCutscene,
-    EnRu2_AwaitBlueWarp,
-    EnRu2_RiseThroughBlueWarp,
-    EnRu2_SageOfWaterDialog,
-    EnRu2_RaiseArms,
-    EnRu2_AwaitWaterMedallion,
-    EnRu2_FinishWaterMedallionCutscene,
-    EnRu2_WaterTrialInvisible,
-    EnRu2_WaterTrialFade,
-    EnRu2_AwaitSpawnLightBall,
-    EnRu2_CreditsInvisible,
-    EnRu2_CreditsFadeIn,
-    EnRu2_CreditsVisible,
-    EnRu2_CreditsTurnHeadDownLeft,
-    EnRu2_WaterTempleEncounterRangeCheck,
-    EnRu2_WaterTempleEncounterUnconditional,
-    EnRu2_WaterTempleEncounterBegin,
-    EnRu2_WaterTempleEncounterDialog,
-    EnRu2_WaterTempleEncounterEnd,
-    EnRu2_WaterTempleSwimmingUp,
-};
-
-static EnRu2DrawFunc sDrawFuncs[] = {
-    EnRu2_DrawNothing,
-    EnRu2_DrawOpa,
-    EnRu2_DrawXlu,
-};
-
-ActorProfile En_Ru2_Profile = {
-    /**/ ACTOR_EN_RU2,
-    /**/ ACTORCAT_NPC,
-    /**/ FLAGS,
-    /**/ OBJECT_RU2,
-    /**/ sizeof(EnRu2),
-    /**/ EnRu2_Init,
-    /**/ EnRu2_Destroy,
-    /**/ EnRu2_Update,
-    /**/ EnRu2_Draw,
-};
-
-void EnRu2_InitCollider(Actor* thisx, PlayState* play) {
+void En_Ru2_ct_forCorect(Actor* thisx, PlayState* play) {
     EnRu2* this = (EnRu2*)thisx;
 
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinderType1(play, &this->collider, &this->actor, &sCylinderInit);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set3(play, &this->collider, &this->actor, &En_Ru2_OcInfoData_forStand);
 }
 
-void EnRu2_UpdateCollider(EnRu2* this, PlayState* play) {
+void En_Ru2_Excute_Corect_forStand(EnRu2* this, PlayState* play) {
     s32 pad[5];
 
-    Collider_UpdateCylinder(&this->actor, &this->collider);
-    CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
+    CollisionCheck_setAC(play, &play->colChkCtx, &this->collider.base);
 }
 
-void EnRu2_Destroy(Actor* thisx, PlayState* play) {
+void En_Ru2_Actor_dt(Actor* thisx, PlayState* play) {
     EnRu2* this = (EnRu2*)thisx;
 
-    Collider_DestroyCylinder(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider);
 }
 
-void EnRu2_UpdateEyes(EnRu2* this) {
+void En_Ru2_set_eye_pattern(EnRu2* this) {
     s32 pad[3];
     s16* blinkTimer = &this->blinkTimer;
     s16* eyeIndex = &this->eyeIndex;
 
     if (DECR(*blinkTimer) == 0) {
-        *blinkTimer = Rand_S16Offset(60, 60);
+        *blinkTimer = get_random_timer(60, 60);
     }
 
     *eyeIndex = *blinkTimer;
@@ -172,13 +131,13 @@ void EnRu2_UpdateEyes(EnRu2* this) {
     }
 }
 
-s32 EnRu2_GetSwitchFlag(EnRu2* this) {
+s32 En_Ru2_GetUpper_arg_data(EnRu2* this) {
     s32 switchFlag = ENRU2_GET_SWITCH_FLAG(this);
 
     return switchFlag;
 }
 
-s32 EnRu2_GetType(EnRu2* this) {
+s32 En_Ru2_GetLower_arg_data(EnRu2* this) {
     s32 type = ENRU2_GET_TYPE(this);
 
     return type;
@@ -214,15 +173,15 @@ void func_80AF26D0(EnRu2* this, PlayState* play) {
 }
 #endif
 
-void EnRu2_UpdateBgCheckInfo(EnRu2* this, PlayState* play) {
-    Actor_UpdateBgCheckInfo(play, &this->actor, 75.0f, 30.0f, 30.0f, UPDBGCHECKINFO_FLAG_2);
+void En_Ru2_BGcheck(EnRu2* this, PlayState* play) {
+    Actor_BGcheck2(play, &this->actor, 75.0f, 30.0f, 30.0f, UPDBGCHECKINFO_FLAG_2);
 }
 
-s32 EnRu2_UpdateSkelAnime(EnRu2* this) {
-    return SkelAnime_Update(&this->skelAnime);
+s32 En_Ru2_Animation_Base(EnRu2* this) {
+    return Skeleton_Info2_anime_play(&this->skelAnime);
 }
 
-CsCmdActorCue* EnRu2_GetCue(PlayState* play, s32 cueChannel) {
+CsCmdActorCue* En_Ru2_Get_npcdemopnt(PlayState* play, s32 cueChannel) {
     if (play->csCtx.state != CS_STATE_IDLE) {
         CsCmdActorCue* cue = play->csCtx.actorCues[cueChannel];
 
@@ -232,8 +191,8 @@ CsCmdActorCue* EnRu2_GetCue(PlayState* play, s32 cueChannel) {
     return NULL;
 }
 
-s32 EnRu2_CheckCueMatchingId(EnRu2* this, PlayState* play, u16 cueId, s32 cueChannel) {
-    CsCmdActorCue* cue = EnRu2_GetCue(play, cueChannel);
+s32 En_Ru2_Check_npcdemopnt(EnRu2* this, PlayState* play, u16 cueId, s32 cueChannel) {
+    CsCmdActorCue* cue = En_Ru2_Get_npcdemopnt(play, cueChannel);
 
     if ((cue != NULL) && (cue->id == cueId)) {
         return true;
@@ -241,8 +200,8 @@ s32 EnRu2_CheckCueMatchingId(EnRu2* this, PlayState* play, u16 cueId, s32 cueCha
     return false;
 }
 
-s32 EnRu2_CheckCueNotMatchingId(EnRu2* this, PlayState* play, u16 cueId, s32 cueChannel) {
-    CsCmdActorCue* cue = EnRu2_GetCue(play, cueChannel);
+s32 En_Ru2_Check2_npcdemopnt(EnRu2* this, PlayState* play, u16 cueId, s32 cueChannel) {
+    CsCmdActorCue* cue = En_Ru2_Get_npcdemopnt(play, cueChannel);
 
     if ((cue != NULL) && (cue->id != cueId)) {
         return true;
@@ -253,8 +212,8 @@ s32 EnRu2_CheckCueNotMatchingId(EnRu2* this, PlayState* play, u16 cueId, s32 cue
 /**
  * Checks cutscene data and, if applicable, configures Ruto's position accordingly.
  */
-void EnRu2_InitPositionFromCue(EnRu2* this, PlayState* play, u32 cueChannel) {
-    CsCmdActorCue* cue = EnRu2_GetCue(play, cueChannel);
+void En_Ru2_Set_StartPos_npcdemopnt(EnRu2* this, PlayState* play, u32 cueChannel) {
+    CsCmdActorCue* cue = En_Ru2_Get_npcdemopnt(play, cueChannel);
     Actor* thisx = &this->actor;
 
     if (cue != NULL) {
@@ -270,8 +229,8 @@ void EnRu2_InitPositionFromCue(EnRu2* this, PlayState* play, u32 cueChannel) {
  * Changes the animation for Ruto's actor. The direction argument decides whether to play the animation
  * forwards (if 0) or backwards (otherwise).
  */
-void EnRu2_AnimationChange(EnRu2* this, AnimationHeader* animation, u8 mode, f32 morphFrames, s32 direction) {
-    f32 frameCount = Animation_GetLastFrame(animation);
+void En_Ru2_Change_Anime(EnRu2* this, AnimationHeader* animation, u8 mode, f32 morphFrames, s32 direction) {
+    f32 frameCount = Si2_anime_end_frame(animation);
     f32 playbackSpeed;
     f32 startFrame;
     f32 endFrame;
@@ -286,7 +245,7 @@ void EnRu2_AnimationChange(EnRu2* this, AnimationHeader* animation, u8 mode, f32
         playbackSpeed = -1.0f;
     }
 
-    Animation_Change(&this->skelAnime, animation, playbackSpeed, startFrame, endFrame, mode, morphFrames);
+    Skeleton_Info2_init(&this->skelAnime, animation, playbackSpeed, startFrame, endFrame, mode, morphFrames);
 }
 
 #include "z_en_ru2_inKenjyanoma.inc.c"
@@ -297,36 +256,59 @@ void EnRu2_AnimationChange(EnRu2* this, AnimationHeader* animation, u8 mode, f32
 
 #include "z_en_ru2_inMizusin.inc.c"
 
-void EnRu2_Update(Actor* thisx, PlayState* play) {
+void En_Ru2_Actor_main(Actor* thisx, PlayState* play) {
+    static EnRu2ActionFunc proc[] = {
+        En_Ru2_Actor_main_wait,
+        En_Ru2_Actor_main_hide,
+        En_Ru2_Actor_main_up,
+        En_Ru2_Actor_main_greet,
+        En_Ru2_Actor_main_handup,
+        En_Ru2_Actor_main_cheer,
+        En_Ru2_Actor_main_stop,
+        En_Ru2_Seal_Actor_main_hide,
+        En_Ru2_Seal_Actor_main_fade,
+        En_Ru2_Seal_Actor_main_pray,
+        En_Ru2_inEnding_main_wait,
+        En_Ru2_inEnding_main_alpha,
+        En_Ru2_inEnding_main_stand,
+        En_Ru2_inEnding_main_lookup,
+        En_Ru2_inMizusin_main_wait,
+        En_Ru2_inMizusin_main_stand,
+        En_Ru2_inMizusin_main_greet,
+        En_Ru2_inMizusin_main_greeting,
+        En_Ru2_inMizusin_main_gooby,
+        En_Ru2_inMizusin_main_swim,
+    };
+
     EnRu2* this = (EnRu2*)thisx;
 
-    if ((this->action < 0) || (this->action >= ARRAY_COUNT(sActionFuncs)) || (sActionFuncs[this->action] == NULL)) {
+    if ((this->action < 0) || (this->action >= ARRAY_COUNT(proc)) || (proc[this->action] == NULL)) {
         // "Main Mode is improper!"
         PRINTF(VT_FGCOL(RED) "メインモードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
         return;
     }
-    sActionFuncs[this->action](this, play);
+    proc[this->action](this, play);
 }
 
-void EnRu2_Init(Actor* thisx, PlayState* play) {
+void En_Ru2_Actor_ct(Actor* thisx, PlayState* play) {
     EnRu2* this = (EnRu2*)thisx;
 
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 30.0f);
-    EnRu2_InitCollider(thisx, play);
-    SkelAnime_InitFlex(play, &this->skelAnime, &gAdultRutoSkel, NULL, this->jointTable, this->morphTable, 23);
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 30.0f);
+    En_Ru2_ct_forCorect(thisx, play);
+    Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &gAdultRutoSkel, NULL, this->jointTable, this->morphTable, 23);
 
-    switch (EnRu2_GetType(this)) {
+    switch (En_Ru2_GetLower_arg_data(this)) {
         case 2:
-            EnRu2_InitWaterTrial(this, play);
+            En_Ru2_KenjyanomaDemo02_Init(this, play);
             break;
         case 3:
-            EnRu2_InitCredits(this, play);
+            En_Ru2_Ending_Init(this, play);
             break;
         case 4:
-            EnRu2_InitWaterTempleEncounter(this, play);
+            En_Ru2_Mizusin_Init(this, play);
             break;
         default:
-            EnRu2_InitChamberOfSages(this, play);
+            En_Ru2_Kenjyanoma_Init(this, play);
             break;
     }
 
@@ -334,37 +316,55 @@ void EnRu2_Init(Actor* thisx, PlayState* play) {
     this->lastDialogState = TEXT_STATE_DONE_FADING;
 }
 
-void EnRu2_DrawNothing(EnRu2* this, PlayState* play) {
+void En_Ru2_Actor_draw_none(EnRu2* this, PlayState* play) {
 }
 
-void EnRu2_DrawOpa(EnRu2* this, PlayState* play) {
+void En_Ru2_Actor_draw_normal(EnRu2* this, PlayState* play) {
     s32 pad[2];
     s16 eyeIndex = this->eyeIndex;
-    void* tex = sEyeTextures[eyeIndex];
+    void* tex = en_ru2_eye[eyeIndex];
     SkelAnime* skelAnime = &this->skelAnime;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_ru2.c", 642);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
 
     gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(tex));
     gSPSegment(POLY_OPA_DISP++, 0x09, SEGMENTED_TO_VIRTUAL(tex));
     gDPSetEnvColor(POLY_OPA_DISP++, 0, 0, 0, 255);
-    gSPSegment(POLY_OPA_DISP++, 0x0C, &D_80116280[2]);
+    gSPSegment(POLY_OPA_DISP++, 0x0C, &Actor_change_render_mode[2]);
 
-    SkelAnime_DrawFlexOpa(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount, NULL, NULL, this);
+    Si2_draw_SV(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount, NULL, NULL, this);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_ru2.c", 663);
 }
 
-void EnRu2_Draw(Actor* thisx, PlayState* play) {
+void En_Ru2_Actor_draw(Actor* thisx, PlayState* play) {
+    static EnRu2DrawFunc proc[] = {
+        En_Ru2_Actor_draw_none,
+        En_Ru2_Actor_draw_normal,
+        En_Ru2_Actor_draw_alpha,
+    };
+
     EnRu2* this = (EnRu2*)thisx;
 
-    if ((this->drawConfig < 0) || (this->drawConfig >= ARRAY_COUNT(sDrawFuncs)) ||
-        (sDrawFuncs[this->drawConfig] == NULL)) {
+    if ((this->drawConfig < 0) || (this->drawConfig >= ARRAY_COUNT(proc)) ||
+        (proc[this->drawConfig] == NULL)) {
         // "Draw Mode is improper!"
         PRINTF(VT_FGCOL(RED) "描画モードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
         return;
     }
-    sDrawFuncs[this->drawConfig](this, play);
+    proc[this->drawConfig](this, play);
 }
+
+ActorProfile En_Ru2_Profile = {
+    /**/ ACTOR_EN_RU2,
+    /**/ ACTORCAT_NPC,
+    /**/ FLAGS,
+    /**/ OBJECT_RU2,
+    /**/ sizeof(EnRu2),
+    /**/ En_Ru2_Actor_ct,
+    /**/ En_Ru2_Actor_dt,
+    /**/ En_Ru2_Actor_main,
+    /**/ En_Ru2_Actor_draw,
+};

@@ -10,18 +10,18 @@
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void ItemOcarina_Init(Actor* thisx, PlayState* play);
-void ItemOcarina_Destroy(Actor* thisx, PlayState* play);
-void ItemOcarina_Update(Actor* thisx, PlayState* play);
-void ItemOcarina_Draw(Actor* thisx, PlayState* play);
+void Item_Ocarina_Actor_ct(Actor* thisx, PlayState* play);
+void Item_Ocarina_Actor_dt(Actor* thisx, PlayState* play);
+void Item_Ocarina_Actor_move(Actor* thisx, PlayState* play);
+void Item_Ocarina_Actor_draw(Actor* thisx, PlayState* play);
 
-void ItemOcarina_GetThrown(ItemOcarina* this, PlayState* play);
-void ItemOcarina_Fly(ItemOcarina* this, PlayState* play);
-void ItemOcarina_WaitInWater(ItemOcarina* this, PlayState* play);
-void ItemOcarina_StartSoTCutscene(ItemOcarina* this, PlayState* play);
-void func_80B864EC(ItemOcarina* this, PlayState* play);
-void func_80B865E0(ItemOcarina* this, PlayState* play);
-void ItemOcarina_DoNothing(ItemOcarina* this, PlayState* play);
+static void move_wait(ItemOcarina* this, PlayState* play);
+void move_next(ItemOcarina* this, PlayState* play);
+void move_get(ItemOcarina* this, PlayState* play);
+void to_demo(ItemOcarina* this, PlayState* play);
+void move_next2(ItemOcarina* this, PlayState* play);
+static void move_wait2(ItemOcarina* this, PlayState* play);
+void move_test(ItemOcarina* this, PlayState* play);
 
 ActorProfile Item_Ocarina_Profile = {
     /**/ ACTOR_ITEM_OCARINA,
@@ -29,44 +29,44 @@ ActorProfile Item_Ocarina_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GI_OCARINA,
     /**/ sizeof(ItemOcarina),
-    /**/ ItemOcarina_Init,
-    /**/ ItemOcarina_Destroy,
-    /**/ ItemOcarina_Update,
-    /**/ ItemOcarina_Draw,
+    /**/ Item_Ocarina_Actor_ct,
+    /**/ Item_Ocarina_Actor_dt,
+    /**/ Item_Ocarina_Actor_move,
+    /**/ Item_Ocarina_Actor_draw,
 };
 
-void ItemOcarina_SetupAction(ItemOcarina* this, ItemOcarinaActionFunc actionFunc) {
+void Item_Ocarina_actor_set_process(ItemOcarina* this, ItemOcarinaActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
 
-void ItemOcarina_Init(Actor* thisx, PlayState* play) {
+void Item_Ocarina_Actor_ct(Actor* thisx, PlayState* play) {
     ItemOcarina* this = (ItemOcarina*)thisx;
     s32 params = thisx->params;
 
-    ActorShape_Init(&this->actor.shape, 0, NULL, 0);
-    Actor_SetScale(&this->actor, 0.1f);
+    Shape_Info_init(&this->actor.shape, 0, NULL, 0);
+    Actor_set_scale(&this->actor, 0.1f);
 
     switch (params) {
         case 0:
-            ItemOcarina_SetupAction(this, ItemOcarina_GetThrown);
+            Item_Ocarina_actor_set_process(this, move_wait);
             break;
         case 1:
-            ItemOcarina_SetupAction(this, func_80B865E0);
+            Item_Ocarina_actor_set_process(this, move_wait2);
             break;
         case 2:
-            ItemOcarina_SetupAction(this, ItemOcarina_DoNothing);
+            Item_Ocarina_actor_set_process(this, move_test);
             break;
         case 3:
-            ItemOcarina_SetupAction(this, ItemOcarina_WaitInWater);
+            Item_Ocarina_actor_set_process(this, move_get);
             if (!GET_EVENTCHKINF(EVENTCHKINF_80) || GET_EVENTCHKINF(EVENTCHKINF_43)) {
-                Actor_Kill(thisx);
+                Actor_delete(thisx);
                 return;
             }
-            Actor_Spawn(&play->actorCtx, play, ACTOR_ELF_MSG2, 299.0f, -140.0f, 884.0f, 0, 4, 1, 0x3800);
-            Actor_SetScale(thisx, 0.2f);
+            Actor_info_make_actor(&play->actorCtx, play, ACTOR_ELF_MSG2, 299.0f, -140.0f, 884.0f, 0, 4, 1, 0x3800);
+            Actor_set_scale(thisx, 0.2f);
             break;
         default:
-            Actor_Kill(thisx);
+            Actor_delete(thisx);
             return;
     }
 
@@ -74,13 +74,13 @@ void ItemOcarina_Init(Actor* thisx, PlayState* play) {
     this->spinRotOffset = 0x400;
 }
 
-void ItemOcarina_Destroy(Actor* thisx, PlayState* play) {
+void Item_Ocarina_Actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void ItemOcarina_Fly(ItemOcarina* this, PlayState* play) {
+void move_next(ItemOcarina* this, PlayState* play) {
     Vec3f ripplePos;
 
-    Actor_UpdatePos(&this->actor);
+    Actor_position_move(&this->actor);
     this->actor.shape.rot.x += this->spinRotOffset * 2;
     this->actor.shape.rot.y += this->spinRotOffset * 3;
 
@@ -101,15 +101,15 @@ void ItemOcarina_Fly(ItemOcarina* this, PlayState* play) {
     }
 
     if (play->csCtx.curFrame == 897) {
-        EffectSsGRipple_Spawn(play, &this->actor.world.pos, 100, 500, 0);
-        EffectSsGSplash_Spawn(play, &this->actor.world.pos, NULL, NULL, 1, 0);
+        Effect_SS_G_Ripple_ct2(play, &this->actor.world.pos, 100, 500, 0);
+        Effect_SS_G_Splash_sc_cl_ct(play, &this->actor.world.pos, NULL, NULL, 1, 0);
         this->actor.velocity.x = 0.0f;
         this->actor.velocity.y = 0.0f;
         this->actor.velocity.z = 0.0f;
         this->actor.gravity = -0.1f;
         this->actor.minVelocityY = -0.5f;
         this->spinRotOffset = 0;
-        Actor_PlaySfx(&this->actor, NA_SE_EV_BOMB_DROP_WATER);
+        Actor_SE_set(&this->actor, NA_SE_EV_BOMB_DROP_WATER);
     }
 
     // landed in water
@@ -117,21 +117,21 @@ void ItemOcarina_Fly(ItemOcarina* this, PlayState* play) {
         ripplePos.x = 274.0f;
         ripplePos.y = -60.0f;
         ripplePos.z = 907.0f;
-        EffectSsGRipple_Spawn(play, &ripplePos, 100, 500, 0);
+        Effect_SS_G_Ripple_ct2(play, &ripplePos, 100, 500, 0);
     }
 }
 
-void ItemOcarina_GetThrown(ItemOcarina* this, PlayState* play) {
+static void move_wait(ItemOcarina* this, PlayState* play) {
     this->actor.gravity = -0.3f;
     this->actor.minVelocityY = -5.0f;
     this->actor.velocity.x = 0.0f;
     this->actor.velocity.y = 6.0f;
     this->actor.velocity.z = 0.0f;
-    ItemOcarina_SetupAction(this, ItemOcarina_Fly);
+    Item_Ocarina_actor_set_process(this, move_next);
 }
 
-void func_80B864EC(ItemOcarina* this, PlayState* play) {
-    Actor_UpdatePos(&this->actor);
+void move_next2(ItemOcarina* this, PlayState* play) {
+    Actor_position_move(&this->actor);
     this->actor.shape.rot.x += this->spinRotOffset * 2;
     this->actor.shape.rot.y += this->spinRotOffset * 3;
 
@@ -155,50 +155,50 @@ void func_80B864EC(ItemOcarina* this, PlayState* play) {
     }
 }
 
-void func_80B865E0(ItemOcarina* this, PlayState* play) {
+static void move_wait2(ItemOcarina* this, PlayState* play) {
     this->actor.gravity = -0.3f;
     this->actor.minVelocityY = -5.0f;
     this->actor.velocity.x = 0.0f;
     this->actor.velocity.y = 4.0f;
     this->actor.velocity.z = 6.0f;
-    ItemOcarina_SetupAction(this, func_80B864EC);
+    Item_Ocarina_actor_set_process(this, move_next2);
 }
 
-void ItemOcarina_DoNothing(ItemOcarina* this, PlayState* play) {
+void move_test(ItemOcarina* this, PlayState* play) {
 }
 
-void ItemOcarina_StartSoTCutscene(ItemOcarina* this, PlayState* play) {
-    if (Actor_TextboxIsClosing(&this->actor, play)) {
+void to_demo(ItemOcarina* this, PlayState* play) {
+    if (Actor_talk_end_check(&this->actor, play)) {
         play->csCtx.script = SEGMENTED_TO_VIRTUAL(gHyruleFieldZeldaSongOfTimeCs);
-        gSaveContext.cutsceneTrigger = 1;
+        z_common_data.cutsceneTrigger = 1;
     }
 }
 
-void ItemOcarina_WaitInWater(ItemOcarina* this, PlayState* play) {
-    if (Actor_HasParent(&this->actor, play)) {
+void move_get(ItemOcarina* this, PlayState* play) {
+    if (Actor_carry_check(&this->actor, play)) {
         SET_EVENTCHKINF(EVENTCHKINF_43);
-        Flags_SetSwitch(play, 3);
-        this->actionFunc = ItemOcarina_StartSoTCutscene;
+        Actor_Environment_sw_On(play, 3);
+        this->actionFunc = to_demo;
         this->actor.draw = NULL;
     } else {
-        Actor_OfferGetItem(&this->actor, play, GI_OCARINA_OF_TIME, 30.0f, 50.0f);
+        Actor_carry_request_set2(&this->actor, play, GI_OCARINA_OF_TIME, 30.0f, 50.0f);
 
         if ((play->gameplayFrames & 13) == 0) {
-            EffectSsBubble_Spawn(play, &this->actor.world.pos, 0.0f, 0.0f, 10.0f, 0.13f);
+            Effect_SS_Bubble_ct(play, &this->actor.world.pos, 0.0f, 0.0f, 10.0f, 0.13f);
         }
     }
 }
 
-void ItemOcarina_Update(Actor* thisx, PlayState* play) {
+void Item_Ocarina_Actor_move(Actor* thisx, PlayState* play) {
     ItemOcarina* this = (ItemOcarina*)thisx;
 
     this->actionFunc(this, play);
 }
 
-void ItemOcarina_Draw(Actor* thisx, PlayState* play) {
+void Item_Ocarina_Actor_draw(Actor* thisx, PlayState* play) {
     ItemOcarina* this = (ItemOcarina*)thisx;
 
-    func_8002EBCC(thisx, play, 0);
-    func_8002ED80(thisx, play, 0);
-    GetItem_Draw(play, GID_OCARINA_OF_TIME);
+    Actor_HiliteReflect_set_init(thisx, play, 0);
+    Actor_HiliteReflect_xlu_set_init(thisx, play, 0);
+    Draw_GetItemType(play, GID_OCARINA_OF_TIME);
 }

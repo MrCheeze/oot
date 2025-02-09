@@ -67,13 +67,13 @@ typedef struct MapData {
 #define MAP_48x85_TEX_HEIGHT 85
 #define MAP_48x85_TEX_SIZE ((MAP_48x85_TEX_WIDTH * MAP_48x85_TEX_HEIGHT) / 2) // 48x85 CI4 texture
 
-void Map_SavePlayerInitialInfo(struct PlayState* play);
-void Map_SetFloorPalettesData(struct PlayState* play, s16 floor);
-void Map_InitData(struct PlayState* play, s16 room);
-void Map_InitRoomData(struct PlayState* play, s16 room);
-void Map_Destroy(struct PlayState* play);
-void Map_Init(struct PlayState* play);
-void Minimap_Draw(struct PlayState* play);
-void Map_Update(struct PlayState* play);
+void player_position_hold(struct PlayState* play);
+void map_floor_check(struct PlayState* play, s16 floor);
+void map_textuer_dma(struct PlayState* play, s16 room);
+void map_enter_set(struct PlayState* play, s16 room);
+void map_exp_dt(struct PlayState* play);
+void map_exp_ct(struct PlayState* play);
+void map_exp_draw(struct PlayState* play);
+void map_exp_move(struct PlayState* play);
 
 #endif

@@ -9,47 +9,47 @@
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED)
 
-void DemoGt_Init(Actor* thisx, PlayState* play);
-void DemoGt_Destroy(Actor* thisx, PlayState* play);
-void DemoGt_Update(Actor* thisx, PlayState* play);
-void DemoGt_Draw(Actor* thisx, PlayState* play);
+void Demo_Gt_Actor_ct(Actor* thisx, PlayState* play);
+void Demo_Gt_Actor_dt(Actor* thisx, PlayState* play);
+void Demo_Gt_main(Actor* thisx, PlayState* play);
+void Demo_Gt_draw(Actor* thisx, PlayState* play);
 
-void DemoGt_Destroy(Actor* thisx, PlayState* play) {
+void Demo_Gt_Actor_dt(Actor* thisx, PlayState* play) {
     DemoGt* this = (DemoGt*)thisx;
 
     if ((this->dyna.actor.params == 1) || (this->dyna.actor.params == 2)) {
-        DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+        DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
     }
 }
 
-void DemoGt_PlayEarthquakeSfx(void) {
-    Sfx_PlaySfxCentered2(NA_SE_EV_EARTHQUAKE - SFX_FLAG);
+void Demo_Gt_Set_EarthQuakeSound(void) {
+    Na_StartFixSe_F(NA_SE_EV_EARTHQUAKE - SFX_FLAG);
 }
 
-void DemoGt_PlayExplosion1Sfx(PlayState* play, Vec3f* pos) {
-    SfxSource_PlaySfxAtFixedWorldPos(play, pos, 60, NA_SE_IT_BOMB_EXPLOSION);
+void Demo_Gt_Set_BombSound(PlayState* play, Vec3f* pos) {
+    Effect_SE_Info_new(play, pos, 60, NA_SE_IT_BOMB_EXPLOSION);
 }
 
-void DemoGt_PlayExplosion2Sfx(PlayState* play, Vec3f* pos) {
-    SfxSource_PlaySfxAtFixedWorldPos(play, pos, 60, NA_SE_EV_GRAVE_EXPLOSION);
+void Demo_Gt_Set_BombSound2(PlayState* play, Vec3f* pos) {
+    Effect_SE_Info_new(play, pos, 60, NA_SE_EV_GRAVE_EXPLOSION);
 }
 
-void DemoGt_Rumble(PlayState* play) {
-    Rumble_Request(0.0f, 50, 10, 5);
+void Demo_Gt_Set_Viblation(PlayState* play) {
+    z_vibctl2_vib_setQ(0.0f, 50, 10, 5);
 }
 
-void DemoGt_SpawnDust(PlayState* play, Vec3f* pos, Vec3f* velocity, Vec3f* accel, f32 scale, s16 scaleStep, s16 life) {
-    static Color_RGBA8 brownPrim = { 100, 80, 100, 0 };
-    static Color_RGBA8 redEnv = { 255, 110, 96, 0 };
+void Birth_SingleDust_In_Demo_Gt(PlayState* play, Vec3f* pos, Vec3f* velocity, Vec3f* accel, f32 scale, s16 scaleStep, s16 life) {
+    static Color_RGBA8 prim = { 100, 80, 100, 0 };
+    static Color_RGBA8 env = { 255, 110, 96, 0 };
 
-    func_8002843C(play, pos, velocity, accel, &brownPrim, &redEnv, ((Rand_ZeroOne() * (scale * 0.2f)) + scale),
+    Effect_SS_Dust_sc_cl_co_nofog_ct(play, pos, velocity, accel, &prim, &env, ((fqrand() * (scale * 0.2f)) + scale),
                   scaleStep, life);
 }
 
-void func_8097D7D8(PlayState* play, Vec3f* pos, Vec3f* velOffset, f32 scale, s32 arg4, s32 arg5, s16 life) {
+void Birth_BirrarDust_In_Demo_Gt(PlayState* play, Vec3f* pos, Vec3f* velOffset, f32 scale, s32 arg4, s32 arg5, s16 life) {
     s32 pad;
 
-    if (!FrameAdvance_IsEnabled(play)) {
+    if (!_Game_play_isPause(play)) {
         s32 frames = play->gameplayFrames;
 
         if (ABS(frames % arg4) == arg5) {
@@ -71,29 +71,29 @@ void func_8097D7D8(PlayState* play, Vec3f* pos, Vec3f* velOffset, f32 scale, s32
             accel.y *= scale;
             accel.z *= scale;
 
-            DemoGt_SpawnDust(play, pos, &velocity, &accel, (300.0f * scale), (15.0f * scale), life);
+            Birth_SingleDust_In_Demo_Gt(play, pos, &velocity, &accel, (300.0f * scale), (15.0f * scale), life);
         }
     }
 }
 
-Actor* DemoGt_SpawnCloudRing(PlayState* play, Vec3f* pos, s16 params) {
-    return Actor_Spawn(&play->actorCtx, play, ACTOR_BG_SPOT16_DOUGHNUT, pos->x, pos->y, pos->z, 0, 0, 0, params);
+Actor* Birth_RingDust2_In_Demo_Gt(PlayState* play, Vec3f* pos, s16 params) {
+    return Actor_info_make_actor(&play->actorCtx, play, ACTOR_BG_SPOT16_DOUGHNUT, pos->x, pos->y, pos->z, 0, 0, 0, params);
 }
 
-void DemoGt_SpawnExplosionWithSound(PlayState* play, Vec3f* pos, f32 scale) {
+void Birth_SingleBomb_In_Demo_Gt(PlayState* play, Vec3f* pos, f32 scale) {
     s32 pad;
     Vec3f velocity = { 0.0f, 0.0f, 0.0f };
     Vec3f accel = { 0.0f, 0.0f, 0.0f };
 
-    EffectSsBomb2_SpawnLayered(play, pos, &velocity, &accel, (100.0f * scale), (15.0f * scale));
-    DemoGt_PlayExplosion1Sfx(play, pos);
+    Effect_SS_Bomb2_2_ct(play, pos, &velocity, &accel, (100.0f * scale), (15.0f * scale));
+    Demo_Gt_Set_BombSound(play, pos);
 }
 
-void DemoGt_SpawnExplosionNoSound(PlayState* play, Vec3f* pos, Vec3f* velocity, Vec3f* accel, f32 scale) {
-    EffectSsBomb2_SpawnLayered(play, pos, velocity, accel, (100.0f * scale), (25.0f * scale));
+void Birth_MoveBomb_In_Demo_Gt(PlayState* play, Vec3f* pos, Vec3f* velocity, Vec3f* accel, f32 scale) {
+    Effect_SS_Bomb2_2_ct(play, pos, velocity, accel, (100.0f * scale), (25.0f * scale));
 }
 
-void func_8097DAC8(DemoGt* this, PlayState* play, Vec3f* spawnerPos) {
+void Birth_Effect_Piece1_In_Demo_Gt(DemoGt* this, PlayState* play, Vec3f* spawnerPos) {
     Vec3f pos;
     Vec3f velocity;
     f32 temp_f0;
@@ -105,19 +105,19 @@ void func_8097DAC8(DemoGt* this, PlayState* play, Vec3f* spawnerPos) {
 
     for (i = 0; i < 12; i++) {
 
-        pos.x = Math_SinS(angle) * 46.0f;
-        pos.y = (Rand_ZeroOne() * 75.0f) + 2.0f;
-        pos.z = Math_CosS(angle) * 46.0f;
+        pos.x = sin_s(angle) * 46.0f;
+        pos.y = (fqrand() * 75.0f) + 2.0f;
+        pos.z = cos_s(angle) * 46.0f;
 
         velocity.x = (pos.x * 0.1f) + 20.0f;
-        velocity.y = Rand_ZeroOne() * 16.0f;
+        velocity.y = fqrand() * 16.0f;
         velocity.z = pos.z * 0.1f;
 
         pos.x += spawnerPos->x;
         pos.y += spawnerPos->y;
         pos.z += spawnerPos->z;
 
-        temp_f0 = Rand_ZeroOne();
+        temp_f0 = fqrand();
 
         if (temp_f0 < 0.1f) {
             phi_s0 = 96;
@@ -127,14 +127,14 @@ void func_8097DAC8(DemoGt* this, PlayState* play, Vec3f* spawnerPos) {
             phi_s0 = 32;
         }
 
-        EffectSsKakera_Spawn(play, &pos, &velocity, spawnerPos, -247, phi_s0, 3, 0, 0,
-                             (s32)(Rand_ZeroOne() * 10.0f + 30.0f), 2, 300, (s32)(Rand_ZeroOne() * 0.0f) + 30,
+        Effect_Kakera_ct2(play, &pos, &velocity, spawnerPos, -247, phi_s0, 3, 0, 0,
+                             (s32)(fqrand() * 10.0f + 30.0f), 2, 300, (s32)(fqrand() * 0.0f) + 30,
                              KAKERA_COLOR_NONE, OBJECT_GEFF, gGanonRubbleDL);
         angle += 0x1555;
     }
 }
 
-void func_8097DD28(DemoGt* this, PlayState* play, Vec3f* spawnerPos) {
+void Birth_Effect_Piece2_In_Demo_Gt(DemoGt* this, PlayState* play, Vec3f* spawnerPos) {
     Vec3f pos;
     Vec3f velocity;
     f32 temp_f0;
@@ -146,19 +146,19 @@ void func_8097DD28(DemoGt* this, PlayState* play, Vec3f* spawnerPos) {
 
     for (i = 0; i < 8; i++) {
 
-        pos.x = Math_SinS(angle) * 30.0f;
-        pos.y = (Rand_ZeroOne() * 75.0f) + 2.0f;
-        pos.z = Math_CosS(angle) * 30.0f;
+        pos.x = sin_s(angle) * 30.0f;
+        pos.y = (fqrand() * 75.0f) + 2.0f;
+        pos.z = cos_s(angle) * 30.0f;
 
         velocity.x = 0.0f;
-        velocity.y = Rand_ZeroOne() * -4.0f;
+        velocity.y = fqrand() * -4.0f;
         velocity.z = pos.z * 0.1f;
 
         pos.x += spawnerPos->x;
         pos.y += spawnerPos->y;
         pos.z += spawnerPos->z;
 
-        temp_f0 = Rand_ZeroOne();
+        temp_f0 = fqrand();
 
         if (temp_f0 < 0.1f) {
             phi_s0 = 96;
@@ -168,15 +168,15 @@ void func_8097DD28(DemoGt* this, PlayState* play, Vec3f* spawnerPos) {
             phi_s0 = 32;
         }
 
-        EffectSsKakera_Spawn(play, &pos, &velocity, spawnerPos, -247, phi_s0, 3, 0, 0,
-                             (s32)((Rand_ZeroOne() * 10.0f) + 30.0f), 2, 300, (s32)(Rand_ZeroOne() * 0.0f) + 0x1E,
+        Effect_Kakera_ct2(play, &pos, &velocity, spawnerPos, -247, phi_s0, 3, 0, 0,
+                             (s32)((fqrand() * 10.0f) + 30.0f), 2, 300, (s32)(fqrand() * 0.0f) + 0x1E,
                              KAKERA_COLOR_NONE, OBJECT_GEFF, gGanonRubbleDL);
 
         angle += 0x2000;
     }
 }
 
-void func_8097DF70(DemoGt* this, PlayState* play, Vec3f* spawnerPos) {
+void Birth_Effect_Piece3_In_Demo_Gt(DemoGt* this, PlayState* play, Vec3f* spawnerPos) {
     Vec3f pos;
     Vec3f velocity;
     f32 temp_f0;
@@ -188,19 +188,19 @@ void func_8097DF70(DemoGt* this, PlayState* play, Vec3f* spawnerPos) {
 
     for (i = 0; i < 12; i++) {
 
-        pos.x = Math_SinS(angle) * 16.0f;
-        pos.y = (Rand_ZeroOne() * 5.0f) + 2.0f;
-        pos.z = Math_CosS(angle) * 16.0f;
+        pos.x = sin_s(angle) * 16.0f;
+        pos.y = (fqrand() * 5.0f) + 2.0f;
+        pos.z = cos_s(angle) * 16.0f;
 
         velocity.x = pos.x * 0.6f;
-        velocity.y = (Rand_ZeroOne() * 36.0f) + 6.0f;
+        velocity.y = (fqrand() * 36.0f) + 6.0f;
         velocity.z = pos.z * 0.6f;
 
         pos.x += spawnerPos->x;
         pos.y += spawnerPos->y;
         pos.z += spawnerPos->z;
 
-        temp_f0 = Rand_ZeroOne();
+        temp_f0 = fqrand();
 
         if (temp_f0 < 0.1f) {
             phi_s0 = 97;
@@ -210,14 +210,14 @@ void func_8097DF70(DemoGt* this, PlayState* play, Vec3f* spawnerPos) {
             phi_s0 = 33;
         }
 
-        EffectSsKakera_Spawn(play, &pos, &velocity, spawnerPos, -200, phi_s0, 10, 10, 0, Rand_ZeroOne() * 30.0f + 30.0f,
-                             2, 300, (s32)(Rand_ZeroOne() * 30.0f) + 30, KAKERA_COLOR_NONE, OBJECT_GEFF,
+        Effect_Kakera_ct2(play, &pos, &velocity, spawnerPos, -200, phi_s0, 10, 10, 0, fqrand() * 30.0f + 30.0f,
+                             2, 300, (s32)(fqrand() * 30.0f) + 30, KAKERA_COLOR_NONE, OBJECT_GEFF,
                              gGanonRubbleDL);
         angle += 0x1555;
     }
 }
 
-void func_8097E1D4(PlayState* play, Vec3f* arg1, s16 arg2) {
+void Birth_Effect_Piece4_In_Demo_Gt(PlayState* play, Vec3f* arg1, s16 arg2) {
     Vec3f pos;
     Vec3f velocity;
     f32 temp_f0;
@@ -229,19 +229,19 @@ void func_8097E1D4(PlayState* play, Vec3f* arg1, s16 arg2) {
 
     for (i = 0; i < 1; i++) {
 
-        pos.x = Math_SinS(angle) * 46.0f;
-        pos.y = (Rand_ZeroOne() * 75.0f) - 28.0f;
-        pos.z = Math_CosS(angle) * 46.0f;
+        pos.x = sin_s(angle) * 46.0f;
+        pos.y = (fqrand() * 75.0f) - 28.0f;
+        pos.z = cos_s(angle) * 46.0f;
 
-        velocity.x = Math_SinS(arg2) * 3.0f;
-        velocity.y = (Rand_ZeroOne() * -4.0f) + 10.0f;
-        velocity.z = Math_CosS(arg2) * 3.0f;
+        velocity.x = sin_s(arg2) * 3.0f;
+        velocity.y = (fqrand() * -4.0f) + 10.0f;
+        velocity.z = cos_s(arg2) * 3.0f;
 
         pos.x += arg1->x;
         pos.y += arg1->y;
         pos.z += arg1->z;
 
-        temp_f0 = Rand_ZeroOne();
+        temp_f0 = fqrand();
 
         if (temp_f0 < 0.1f) {
             phi_s0 = 97;
@@ -251,15 +251,15 @@ void func_8097E1D4(PlayState* play, Vec3f* arg1, s16 arg2) {
             phi_s0 = 33;
         }
 
-        EffectSsKakera_Spawn(play, &pos, &velocity, arg1, -247, phi_s0, 3, 0, 0,
-                             (s32)((Rand_ZeroOne() * 10.0f) + 30.0f), 2, 300, (s32)(Rand_ZeroOne() * 0.0f) + 30,
+        Effect_Kakera_ct2(play, &pos, &velocity, arg1, -247, phi_s0, 3, 0, 0,
+                             (s32)((fqrand() * 10.0f) + 30.0f), 2, 300, (s32)(fqrand() * 0.0f) + 30,
                              KAKERA_COLOR_NONE, OBJECT_GEFF, gGanonRubbleDL);
 
         angle += 0x10000;
     }
 }
 
-void func_8097E454(PlayState* play, Vec3f* spawnerPos, Vec3f* velocity, Vec3f* accel, f32 arg4, f32 scale, s32 arg6,
+void Birth_RingDust3_In_Demo_Gt(PlayState* play, Vec3f* spawnerPos, Vec3f* velocity, Vec3f* accel, f32 arg4, f32 scale, s32 arg6,
                    s32 arg7, s16 life) {
     s32 pad2[3];
     s16 increment;
@@ -269,7 +269,7 @@ void func_8097E454(PlayState* play, Vec3f* spawnerPos, Vec3f* velocity, Vec3f* a
     s16 dustScaleStep = 15.0f * scale;
     f32 dustScale = 300.0f * scale;
 
-    if ((!FrameAdvance_IsEnabled(play)) && (arg7 > 0) && (arg6 > 0)) {
+    if ((!_Game_play_isPause(play)) && (arg7 > 0) && (arg6 > 0)) {
         frames = (ABS((s32)play->gameplayFrames) % arg7);
         phi_s0 = 0x10000 * frames / arg6;
         increment = 0x10000 / arg6;
@@ -277,14 +277,14 @@ void func_8097E454(PlayState* play, Vec3f* spawnerPos, Vec3f* velocity, Vec3f* a
         for (i = frames; i < arg6; i += arg7) {
             Vec3f pos;
 
-            pos.x = (Math_SinS(phi_s0) * arg4) + spawnerPos->x;
+            pos.x = (sin_s(phi_s0) * arg4) + spawnerPos->x;
             pos.y = spawnerPos->y;
-            pos.z = (Math_CosS(phi_s0) * arg4) + spawnerPos->z;
+            pos.z = (cos_s(phi_s0) * arg4) + spawnerPos->z;
 
-            DemoGt_SpawnDust(play, &pos, velocity, accel, dustScale, dustScaleStep, life);
+            Birth_SingleDust_In_Demo_Gt(play, &pos, velocity, accel, dustScale, dustScaleStep, life);
 
-            if (Rand_ZeroOne() <= 0.05f) {
-                func_8097E1D4(play, &pos, phi_s0);
+            if (fqrand() <= 0.05f) {
+                Birth_Effect_Piece4_In_Demo_Gt(play, &pos, phi_s0);
             }
 
             phi_s0 += increment;
@@ -292,7 +292,7 @@ void func_8097E454(PlayState* play, Vec3f* spawnerPos, Vec3f* velocity, Vec3f* a
     }
 }
 
-u8 DemoGt_IsCutsceneIdle(PlayState* play) {
+u8 Demo_Gt_Check_EndDemoMode(PlayState* play) {
     if (play->csCtx.state == CS_STATE_IDLE) {
         return true;
     } else {
@@ -300,19 +300,19 @@ u8 DemoGt_IsCutsceneIdle(PlayState* play) {
     }
 }
 
-CsCmdActorCue* DemoGt_GetCue(PlayState* play, u32 cueChannel) {
+CsCmdActorCue* Demo_Gt_Get_npcdemopnt(PlayState* play, u32 cueChannel) {
     s32 pad[2];
     CsCmdActorCue* cue = NULL;
 
-    if (!DemoGt_IsCutsceneIdle(play)) {
+    if (!Demo_Gt_Check_EndDemoMode(play)) {
         cue = play->csCtx.actorCues[cueChannel];
     }
 
     return cue;
 }
 
-u8 func_8097E704(PlayState* play, u16 cueId, s32 cueChannel) {
-    CsCmdActorCue* cue = DemoGt_GetCue(play, cueChannel);
+u8 Demo_Gt_Check_npcdemopnt(PlayState* play, u16 cueId, s32 cueChannel) {
+    CsCmdActorCue* cue = Demo_Gt_Get_npcdemopnt(play, cueChannel);
 
     if ((cue != NULL) && (cue->id == cueId)) {
         return true;
@@ -321,8 +321,8 @@ u8 func_8097E704(PlayState* play, u16 cueId, s32 cueChannel) {
     }
 }
 
-void func_8097E744(DemoGt* this, PlayState* play, u32 cueChannel) {
-    CsCmdActorCue* cue = DemoGt_GetCue(play, cueChannel);
+void Demo_Gt_SetPos_fromData(DemoGt* this, PlayState* play, u32 cueChannel) {
+    CsCmdActorCue* cue = Demo_Gt_Get_npcdemopnt(play, cueChannel);
     Vec3f* pos = &this->dyna.actor.world.pos;
     f32 startX;
     f32 startY;
@@ -333,7 +333,7 @@ void func_8097E744(DemoGt* this, PlayState* play, u32 cueChannel) {
     f32 lerp;
 
     if (cue != NULL) {
-        lerp = Environment_LerpWeightAccelDecel(cue->endFrame, cue->startFrame, play->csCtx.curFrame, 8, 0);
+        lerp = get_parcent_forAccelBrake(cue->endFrame, cue->startFrame, play->csCtx.curFrame, 8, 0);
 
         startX = cue->startPos.x;
         startY = cue->startPos.y;
@@ -349,7 +349,7 @@ void func_8097E744(DemoGt* this, PlayState* play, u32 cueChannel) {
     }
 }
 
-void func_8097E824(DemoGt* this, s32 arg1) {
+void Demo_Gt_SetPos_fromOffset(DemoGt* this, s32 arg1) {
     s16 phi_a1;
     s16 phi_a2;
     s16 phi_a3;
@@ -425,21 +425,21 @@ void func_8097E824(DemoGt* this, s32 arg1) {
     unk16C->y += phi_a2;
     unk16C->z += phi_a3;
 
-    tempf1 = Math_CosS(unk16C->x) * phi_f14;
-    tempf2 = Math_CosS(unk16C->y) * phi_f12;
-    tempf3 = Math_CosS(unk16C->z) * phi_f2;
+    tempf1 = cos_s(unk16C->x) * phi_f14;
+    tempf2 = cos_s(unk16C->y) * phi_f12;
+    tempf3 = cos_s(unk16C->z) * phi_f2;
 
     pos->x += tempf1;
     pos->y += tempf2;
     pos->z += tempf3;
 }
 
-void func_8097ED64(DemoGt* this, PlayState* play, s32 cueChannel) {
-    func_8097E744(this, play, cueChannel);
-    func_8097E824(this, cueChannel);
+void Demo_Gt_SetPos_forFall(DemoGt* this, PlayState* play, s32 cueChannel) {
+    Demo_Gt_SetPos_fromData(this, play, cueChannel);
+    Demo_Gt_SetPos_fromOffset(this, cueChannel);
 }
 
-u8 DemoGt_IsCutsceneLayer(void) {
+u8 Demo_Gt_Check_DemoScene(void) {
     if (DEBUG_FEATURES && (kREG(2) != 0)) {
         return true;
     } else if (!IS_CUTSCENE_LAYER) {
@@ -449,31 +449,31 @@ u8 DemoGt_IsCutsceneLayer(void) {
     }
 }
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_STOP),
 };
 
-void func_8097EDD8(DemoGt* this, PlayState* play, CollisionHeader* collision) {
+void Demo_Gt_Actor_init_BGdata_common(DemoGt* this, PlayState* play, CollisionHeader* collision) {
     s32 pad[3];
     CollisionHeader* colHeader;
 
     if (collision != NULL) {
-        Actor_ProcessInitChain(&this->dyna.actor, sInitChain);
-        DynaPolyActor_Init(&this->dyna, 0);
+        ValueSet_process(&this->dyna.actor, value_init);
+        MoveBG_ct(&this->dyna, 0);
         colHeader = NULL;
-        CollisionHeader_GetVirtual(collision, &colHeader);
-        this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
+        DynaPolyUty_bgdi_SG2KSG(collision, &colHeader);
+        this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
     }
 }
 
-u8 func_8097EE44(DemoGt* this, PlayState* play, s32 updateMode, s32 drawConfig, CollisionHeader* colHeader) {
-    if (DemoGt_IsCutsceneLayer()) {
+u8 Demo_Gt_Actor_init_part_common(DemoGt* this, PlayState* play, s32 updateMode, s32 drawConfig, CollisionHeader* colHeader) {
+    if (Demo_Gt_Check_DemoScene()) {
         this->updateMode = updateMode;
         this->drawConfig = drawConfig;
-        func_8097EDD8(this, play, colHeader);
+        Demo_Gt_Actor_init_BGdata_common(this, play, colHeader);
         return true;
     } else {
-        Actor_Kill(&this->dyna.actor);
+        Actor_delete(&this->dyna.actor);
         return false;
     }
 }
@@ -494,18 +494,18 @@ u8 func_8097EE44(DemoGt* this, PlayState* play, s32 updateMode, s32 drawConfig, 
 
 #include "z_demo_gt_part6.inc.c"
 
-static DemoGtUpdateFunc sUpdateFuncs[] = {
-    DemoGt_Update0,  DemoGt_Update1,  DemoGt_Update2,  DemoGt_Update3,  DemoGt_Update4,
-    DemoGt_Update5,  DemoGt_Update6,  DemoGt_Update7,  DemoGt_Update8,  DemoGt_Update9,
-    DemoGt_Update10, DemoGt_Update11, DemoGt_Update12, DemoGt_Update13, DemoGt_Update14,
-    DemoGt_Update15, DemoGt_Update16, DemoGt_Update17, DemoGt_Update18,
-};
+void Demo_Gt_main(Actor* thisx, PlayState* play) {
+    static DemoGtUpdateFunc proc[] = {
+        Demo_Gt_main_Stand_part1,  Demo_Gt_main_Stand_part2,  Demo_Gt_main_Stand_part3,  Demo_Gt_main_Stand_part4_1,  Demo_Gt_main_Stand_part4_2,
+        Demo_Gt_main_Stand_part4_3,  Demo_Gt_main_Stand_part5,  Demo_Gt_main_Stand_part6,  Demo_Gt_main_Fall_part1,  Demo_Gt_main_Fall_part2,
+        Demo_Gt_main_Fall_part3, Demo_Gt_main_Fall_part4_1, Demo_Gt_main_Fall_part4_2, Demo_Gt_main_Fall_part4_3, Demo_Gt_main_Fall_part5,
+        Demo_Gt_main_Fall_part6, Demo_Gt_main_Lay_part4_1, Demo_Gt_main_Lay_part4_2, Demo_Gt_main_Lay_part4_3,
+    };
 
-void DemoGt_Update(Actor* thisx, PlayState* play) {
     DemoGt* this = (DemoGt*)thisx;
     DemoGtUpdateFunc updateFunc;
 
-    if ((this->updateMode < 0) || (this->updateMode >= 19) || (updateFunc = sUpdateFuncs[this->updateMode]) == NULL) {
+    if ((this->updateMode < 0) || (this->updateMode >= 19) || (updateFunc = proc[this->updateMode]) == NULL) {
         // "The main mode is strange!"
         PRINTF(VT_FGCOL(RED) "メインモードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
         return;
@@ -514,54 +514,54 @@ void DemoGt_Update(Actor* thisx, PlayState* play) {
     updateFunc(this, play);
 }
 
-void DemoGt_Init(Actor* thisx, PlayState* play) {
+void Demo_Gt_Actor_ct(Actor* thisx, PlayState* play) {
     DemoGt* this = (DemoGt*)thisx;
 
     switch (this->dyna.actor.params) {
         case 0:
-            func_8097EEA8_Init0(this, play);
+            Demo_Gt_Actor_init_part1(this, play);
             break;
         case 1:
-            func_8097F904_Init1(this, play);
+            Demo_Gt_Actor_init_part2(this, play);
             break;
         case 2:
-            func_80980110_Init2(this, play);
+            Demo_Gt_Actor_init_part3(this, play);
             break;
         case 5:
-            func_80980F00_Init5(this, play);
+            Demo_Gt_Actor_init_part4_1(this, play);
             break;
         case 6:
-            func_809813CC_Init6(this, play);
+            Demo_Gt_Actor_init_part4_2(this, play);
             break;
         case 7:
-            func_809818A4_Init7(this, play);
+            Demo_Gt_Actor_init_part4_3(this, play);
             break;
         case 23:
-            func_80981C94_Init23(this, play);
+            Demo_Gt_Actor_init_part5(this, play);
             break;
         case 24:
-            func_80982054_Init24(this, play);
+            Demo_Gt_Actor_init_part6(this, play);
             break;
         default:
             // "Demo_Gt_Actor_ct There is no such argument !"
             PRINTF("Demo_Gt_Actor_ct そんな引数は無い!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-            Actor_Kill(&this->dyna.actor);
+            Actor_delete(&this->dyna.actor);
     }
 }
 
-void DemoGt_Draw0(Actor* thisx, PlayState* play) {
+void Demo_Gt_draw_none(Actor* thisx, PlayState* play) {
 }
 
-static DemoGtDrawFunc sDrawFuncs[] = {
-    DemoGt_Draw0, DemoGt_Draw1, DemoGt_Draw2, DemoGt_Draw3, DemoGt_Draw4,
-    DemoGt_Draw5, DemoGt_Draw6, DemoGt_Draw7, DemoGt_Draw8,
-};
+void Demo_Gt_draw(Actor* thisx, PlayState* play) {
+    static DemoGtDrawFunc proc[] = {
+        Demo_Gt_draw_none, Demo_Gt_draw_normal_part1, Demo_Gt_draw_normal_part2, Demo_Gt_draw_normal_part3, Demo_Gt_draw_normal_part4_1,
+        Demo_Gt_draw_normal_part4_2, Demo_Gt_draw_normal_part4_3, Demo_Gt_draw_normal_part5, Demo_Gt_draw_normal_part6,
+    };
 
-void DemoGt_Draw(Actor* thisx, PlayState* play) {
     DemoGt* this = (DemoGt*)thisx;
     DemoGtDrawFunc drawFunc;
 
-    if ((this->drawConfig < 0) || (this->drawConfig >= 9) || (drawFunc = sDrawFuncs[this->drawConfig]) == NULL) {
+    if ((this->drawConfig < 0) || (this->drawConfig >= 9) || (drawFunc = proc[this->drawConfig]) == NULL) {
         // "The drawing mode is strange !!!!!!!!!!!!!!!!!!!!!!!!!"
         PRINTF(VT_FGCOL(RED) "描画モードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
         return;
@@ -576,8 +576,8 @@ ActorProfile Demo_Gt_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GT,
     /**/ sizeof(DemoGt),
-    /**/ DemoGt_Init,
-    /**/ DemoGt_Destroy,
-    /**/ DemoGt_Update,
-    /**/ DemoGt_Draw,
+    /**/ Demo_Gt_Actor_ct,
+    /**/ Demo_Gt_Actor_dt,
+    /**/ Demo_Gt_main,
+    /**/ Demo_Gt_draw,
 };

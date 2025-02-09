@@ -9,19 +9,19 @@
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void EnTr_Init(Actor* thisx, PlayState* play);
-void EnTr_Destroy(Actor* thisx, PlayState* play);
-void EnTr_Update(Actor* thisx, PlayState* play);
-void EnTr_Draw(Actor* thisx, PlayState* play);
+void En_Tr_Actor_ct(Actor* thisx, PlayState* play);
+void En_Tr_Actor_dt(Actor* thisx, PlayState* play);
+void En_Tr_Actor_move(Actor* thisx, PlayState* play);
+void En_Tr_Actor_draw(Actor* thisx, PlayState* play);
 
-void EnTr_DoNothing(EnTr* this, PlayState* play);
-void EnTr_ShrinkVanish(EnTr* this, PlayState* play);
-void EnTr_WaitToReappear(EnTr* this, PlayState* play);
-void EnTr_ChooseAction1(EnTr* this, PlayState* play);
+static void move_wait(EnTr* this, PlayState* play);
+void move_demo_make_dust_hidden(EnTr* this, PlayState* play);
+void move_demo_hidden(EnTr* this, PlayState* play);
+static void move_start(EnTr* this, PlayState* play);
 
-void EnTr_SetRotFromCue(EnTr* this, PlayState* play, s32 cueChannel);
-void func_80B24038(EnTr* this, PlayState* play, s32 cueChannel);
-void EnTr_SetStartPosRotFromCue(EnTr* this, PlayState* play, s32 cueChannel);
+void En_Tr_AngleYProc_local(EnTr* this, PlayState* play, s32 cueChannel);
+void En_Tr_MoveProc_local(EnTr* this, PlayState* play, s32 cueChannel);
+void En_Tr_StartProc_local(EnTr* this, PlayState* play, s32 cueChannel);
 
 ActorProfile En_Tr_Profile = {
     /**/ ACTOR_EN_TR,
@@ -29,15 +29,15 @@ ActorProfile En_Tr_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_TR,
     /**/ sizeof(EnTr),
-    /**/ EnTr_Init,
-    /**/ EnTr_Destroy,
-    /**/ EnTr_Update,
-    /**/ EnTr_Draw,
+    /**/ En_Tr_Actor_ct,
+    /**/ En_Tr_Actor_dt,
+    /**/ En_Tr_Actor_move,
+    /**/ En_Tr_Actor_draw,
 };
 
 // The first elements of these animation arrays are for Koume, the second for Kotake
 
-static AnimationHeader* unused[] = {
+static AnimationHeader* anime_table[] = {
     &gKotakeKoumeStandingBroomOverRightShoulderAnim,
     &gKotakeKoumeStandingBroomOverLeftShoulderAnim,
 };
@@ -62,53 +62,53 @@ static AnimationHeader* D_80B24380[] = {
     &gKotakeKoumeCastMagicAnim,
 };
 
-static f32 D_80B24388[] = { 0.0f, 20.0f, -30.0f, 20.0f, -20.0f, -20.0f, 30.0f };
+static f32 x[] = { 0.0f, 20.0f, -30.0f, 20.0f, -20.0f, -20.0f, 30.0f };
 
-static f32 D_80B243A4[] = { 0.0f, 30.0f, 0.0f, -30.0f, 30.0f, -30.0f, 0.0f };
+static f32 y[] = { 0.0f, 30.0f, 0.0f, -30.0f, 30.0f, -30.0f, 0.0f };
 
 // Has to be 1-dimensional to match
-static Color_RGBA8 D_80B243C0[4] = {
+static Color_RGBA8 color_table[4] = {
     { 255, 200, 0, 255 },
     { 255, 0, 0, 255 },
     { 255, 255, 255, 255 },
     { 0, 0, 255, 255 },
 };
 
-static void* sEyeTextures[] = {
+static void* tr_eye[] = {
     gKotakeKoumeEyeOpenTex,
     gKotakeKoumeEyeHalfTex,
     gKotakeKoumeEyeClosedTex,
 };
 
-void EnTr_SetupAction(EnTr* this, EnTrActionFunc actionFunc) {
+void En_Tr_actor_set_process(EnTr* this, EnTrActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
 
-void EnTr_Init(Actor* thisx, PlayState* play) {
+void En_Tr_Actor_ct(Actor* thisx, PlayState* play) {
     EnTr* this = (EnTr*)thisx;
 
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 30.0f);
-    EnTr_SetupAction(this, EnTr_DoNothing);
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 30.0f);
+    En_Tr_actor_set_process(this, move_wait);
     this->unk_2D4 = 0; // Set and not used
     this->actor.child = NULL;
-    Actor_SetScale(&this->actor, 0.01f);
+    Actor_set_scale(&this->actor, 0.01f);
 
     switch (this->actor.params) {
         case TR_KOUME:
-            SkelAnime_InitFlex(play, &this->skelAnime, &gKoumeSkel, &gKotakeKoumeStandingBroomOverRightShoulderAnim,
+            Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &gKoumeSkel, &gKotakeKoumeStandingBroomOverRightShoulderAnim,
                                this->jointTable, this->morphTable, KOTAKE_KOUME_LIMB_MAX);
-            Animation_PlayOnce(&this->skelAnime, &gKotakeKoumeStandingBroomOverRightShoulderAnim);
+            Skeleton_Info2_init_standard_stop(&this->skelAnime, &gKotakeKoumeStandingBroomOverRightShoulderAnim);
             this->animation = NULL;
-            EnTr_SetupAction(this, EnTr_ChooseAction1);
+            En_Tr_actor_set_process(this, move_start);
             this->cueChannel = 3;
             break;
 
         case TR_KOTAKE:
-            SkelAnime_InitFlex(play, &this->skelAnime, &gKotakeSkel, &gKotakeKoumeStandingBroomOverLeftShoulderAnim,
+            Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &gKotakeSkel, &gKotakeKoumeStandingBroomOverLeftShoulderAnim,
                                this->jointTable, this->morphTable, KOTAKE_KOUME_LIMB_MAX);
-            Animation_PlayOnce(&this->skelAnime, &gKotakeKoumeStandingBroomOverLeftShoulderAnim);
+            Skeleton_Info2_init_standard_stop(&this->skelAnime, &gKotakeKoumeStandingBroomOverLeftShoulderAnim);
             this->animation = NULL;
-            EnTr_SetupAction(this, EnTr_ChooseAction1);
+            En_Tr_actor_set_process(this, move_start);
             this->cueChannel = 2;
             break;
 
@@ -118,15 +118,15 @@ void EnTr_Init(Actor* thisx, PlayState* play) {
     }
 }
 
-void EnTr_Destroy(Actor* thisx, PlayState* play) {
+void En_Tr_Actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void EnTr_CrySpellcast(EnTr* this, PlayState* play) {
+void move_shoot(EnTr* this, PlayState* play) {
     if (this->timer == 11) {
         // Both cry in the title screen cutscene, but only Kotake in the in-game cutscene
-        if ((this->actor.params != TR_KOUME) || (gSaveContext.sceneLayer == 6)) {
-            Audio_PlaySfxGeneral(NA_SE_EN_TWINROBA_SHOOT_VOICE, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        if ((this->actor.params != TR_KOUME) || (z_common_data.sceneLayer == 6)) {
+            Nai_FxFlagEntry(NA_SE_EN_TWINROBA_SHOOT_VOICE, &_dummy_zero_f, 4, &_dummy_one,
+                                 &_dummy_one, &_dummy_zero_s8);
         }
     }
 
@@ -135,61 +135,61 @@ void EnTr_CrySpellcast(EnTr* this, PlayState* play) {
     } else if (this->actor.child != NULL) {
         this->actor.child = NULL;
     }
-    Actor_PlaySfx_Flagged(&this->actor, NA_SE_EN_TWINROBA_FLY_DEMO - SFX_FLAG);
+    Actor_level_SE_set(&this->actor, NA_SE_EN_TWINROBA_FLY_DEMO - SFX_FLAG);
 }
 
-void EnTr_DoNothing(EnTr* this, PlayState* play) {
+static void move_wait(EnTr* this, PlayState* play) {
 }
 
-void EnTr_ChooseAction2(EnTr* this, PlayState* play) {
+void move_demo_fly(EnTr* this, PlayState* play) {
     if (play->csCtx.state != CS_STATE_IDLE) {
         if (play->csCtx.actorCues[this->cueChannel] != NULL) {
             switch (play->csCtx.actorCues[this->cueChannel]->id) {
 
                 case 4:
-                    Actor_SetScale(&this->actor, 0.01f);
-                    EnTr_SetupAction(this, EnTr_ShrinkVanish);
+                    Actor_set_scale(&this->actor, 0.01f);
+                    En_Tr_actor_set_process(this, move_demo_make_dust_hidden);
                     this->timer = 24;
-                    Actor_PlaySfx(&this->actor, NA_SE_EN_PO_DEAD2);
+                    Actor_SE_set(&this->actor, NA_SE_EN_PO_DEAD2);
                     break;
 
                 case 6:
-                    Animation_Change(&this->skelAnime, D_80B24380[this->actor.params], 1.0f, 0.0f,
-                                     Animation_GetLastFrame(D_80B24380[this->actor.params]), ANIMMODE_ONCE, -5.0f);
-                    EnTr_SetupAction(this, EnTr_CrySpellcast);
+                    Skeleton_Info2_init(&this->skelAnime, D_80B24380[this->actor.params], 1.0f, 0.0f,
+                                     Si2_anime_end_frame(D_80B24380[this->actor.params]), ANIMMODE_ONCE, -5.0f);
+                    En_Tr_actor_set_process(this, move_shoot);
                     this->animation = D_80B24378[this->actor.params];
                     this->timer = 39;
-                    Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_DEMO_6K, this->actor.world.pos.x,
+                    Actor_info_make_child_actor(&play->actorCtx, &this->actor, play, ACTOR_DEMO_6K, this->actor.world.pos.x,
                                        this->actor.world.pos.y, this->actor.world.pos.z, 0, 0, 0,
                                        this->actor.params + 9);
-                    Actor_PlaySfx(&this->actor, NA_SE_EN_FANTOM_MASIC1);
+                    Actor_SE_set(&this->actor, NA_SE_EN_FANTOM_MASIC1);
                     break;
 
                 default:
-                    func_80B24038(this, play, this->cueChannel);
-                    EnTr_SetRotFromCue(this, play, this->cueChannel);
+                    En_Tr_MoveProc_local(this, play, this->cueChannel);
+                    En_Tr_AngleYProc_local(this, play, this->cueChannel);
                     break;
             }
-            Actor_PlaySfx_Flagged(&this->actor, NA_SE_EN_TWINROBA_FLY_DEMO - SFX_FLAG);
+            Actor_level_SE_set(&this->actor, NA_SE_EN_TWINROBA_FLY_DEMO - SFX_FLAG);
         }
     }
 }
 
-void EnTr_FlyKidnapCutscene(EnTr* this, PlayState* play) {
+void move_demo_rolling(EnTr* this, PlayState* play) {
     Vec3f originalPos = this->actor.world.pos;
 
     if (play->csCtx.state != CS_STATE_IDLE) {
         if (play->csCtx.actorCues[this->cueChannel] != NULL) {
             if (play->csCtx.actorCues[this->cueChannel]->id == 8) {
-                func_80B24038(this, play, this->cueChannel);
-                this->actor.world.rot.y = Math_Atan2S(this->actor.velocity.z, this->actor.velocity.x);
-                Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.world.rot.y, 10, 0x400, 0x100);
+                En_Tr_MoveProc_local(this, play, this->cueChannel);
+                this->actor.world.rot.y = atans_table(this->actor.velocity.z, this->actor.velocity.x);
+                add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.world.rot.y, 10, 0x400, 0x100);
                 this->actor.world.rot.y = this->actor.shape.rot.y;
             } else {
-                EnTr_SetStartPosRotFromCue(this, play, this->cueChannel);
-                this->actor.world.pos.x += Math_SinS(this->timer) * 150.0f;
+                En_Tr_StartProc_local(this, play, this->cueChannel);
+                this->actor.world.pos.x += sin_s(this->timer) * 150.0f;
                 this->actor.world.pos.y += -100.0f;
-                this->actor.world.pos.z += Math_CosS(this->timer) * 150.0f;
+                this->actor.world.pos.z += cos_s(this->timer) * 150.0f;
 
                 this->actor.shape.rot.y = (s16)(this->timer) + 0x4000;
                 this->timer += 0x400;
@@ -200,13 +200,13 @@ void EnTr_FlyKidnapCutscene(EnTr* this, PlayState* play) {
             }
 
             if (play->csCtx.curFrame < 670) {
-                Actor_PlaySfx_Flagged(&this->actor, NA_SE_EN_TWINROBA_FLY_DEMO - SFX_FLAG);
+                Actor_level_SE_set(&this->actor, NA_SE_EN_TWINROBA_FLY_DEMO - SFX_FLAG);
             }
         }
     }
 }
 
-void func_80B23254(EnTr* this, PlayState* play, s32 arg2, f32 arg3, f32 scale) {
+void make_dust_local(EnTr* this, PlayState* play, s32 arg2, f32 arg3, f32 scale) {
     Vec3f pos;
     Vec3f velocity;
     Vec3f accel;
@@ -214,56 +214,56 @@ void func_80B23254(EnTr* this, PlayState* play, s32 arg2, f32 arg3, f32 scale) {
     Color_RGBA8* primColor;
     Color_RGBA8* envColor;
     Vec3f cameraEye = GET_ACTIVE_CAM(play)->eye;
-    s16 yaw = Math_Vec3f_Yaw(&cameraEye, &this->actor.world.pos);
-    s16 reversePitch = -Math_Vec3f_Pitch(&cameraEye, &this->actor.world.pos);
+    s16 yaw = search_position_angleY(&cameraEye, &this->actor.world.pos);
+    s16 reversePitch = -search_position_angleX(&cameraEye, &this->actor.world.pos);
     f32 sp3C;
 
     accel.x = accel.z = 0.0f;
-    sp3C = Math_SinS(yaw);
-    velocity.x = Math_CosS(reversePitch) * (arg3 * sp3C);
-    velocity.y = Math_SinS(reversePitch) * arg3;
-    sp3C = Math_CosS(yaw);
-    velocity.z = Math_CosS(reversePitch) * (arg3 * sp3C);
+    sp3C = sin_s(yaw);
+    velocity.x = cos_s(reversePitch) * (arg3 * sp3C);
+    velocity.y = sin_s(reversePitch) * arg3;
+    sp3C = cos_s(yaw);
+    velocity.z = cos_s(reversePitch) * (arg3 * sp3C);
     accel.y = 0.5f;
 
-    primColor = &D_80B243C0[2 * this->actor.params];
-    envColor = &D_80B243C0[2 * this->actor.params + 1];
+    primColor = &color_table[2 * this->actor.params];
+    envColor = &color_table[2 * this->actor.params + 1];
 
     sp58 = this->actor.world.pos;
     sp58.x -= velocity.x * 10.0f;
     sp58.y -= velocity.y * 10.0f;
     sp58.z -= velocity.z * 10.0f;
 
-    pos.x = sp58.x + ((D_80B24388[arg2] * scale) * Math_CosS(yaw));
-    pos.y = sp58.y + (D_80B243A4[arg2] * scale);
-    pos.z = sp58.z - ((D_80B24388[arg2] * scale) * Math_SinS(yaw));
-    func_8002829C(play, &pos, &velocity, &accel, primColor, envColor, (s32)(800.0f * scale), (s32)(80.0f * scale));
+    pos.x = sp58.x + ((x[arg2] * scale) * cos_s(yaw));
+    pos.y = sp58.y + (y[arg2] * scale);
+    pos.z = sp58.z - ((x[arg2] * scale) * sin_s(yaw));
+    Effect_SS_Dust_sc_cl_ct(play, &pos, &velocity, &accel, primColor, envColor, (s32)(800.0f * scale), (s32)(80.0f * scale));
 }
 
-void EnTr_ShrinkVanish(EnTr* this, PlayState* play) {
+void move_demo_make_dust_hidden(EnTr* this, PlayState* play) {
     s32 temp_hi;
 
     if (this->timer >= 17) {
         this->actor.shape.rot.y = (this->actor.shape.rot.y - (this->timer * 0x28F)) + 0x3D68;
     } else {
         if (this->timer >= 5) {
-            Actor_SetScale(&this->actor, this->actor.scale.x * 0.9f);
+            Actor_set_scale(&this->actor, this->actor.scale.x * 0.9f);
             this->actor.shape.rot.y = (this->actor.shape.rot.y - (this->timer * 0x28F)) + 0x3D68;
         } else if (this->timer > 0) {
             temp_hi = (this->timer * 2) % 7;
 
-            func_80B23254(this, play, temp_hi, 5.0f, 0.2f);
-            func_80B23254(this, play, (temp_hi + 1) % 7, 5.0f, 0.2f);
-            Actor_SetScale(&this->actor, this->actor.scale.x * 0.9f);
+            make_dust_local(this, play, temp_hi, 5.0f, 0.2f);
+            make_dust_local(this, play, (temp_hi + 1) % 7, 5.0f, 0.2f);
+            Actor_set_scale(&this->actor, this->actor.scale.x * 0.9f);
             this->actor.shape.rot.y = (this->actor.shape.rot.y - (this->timer * 0x28F)) + 0x3D68;
         } else {
-            EnTr_SetupAction(this, EnTr_WaitToReappear);
+            En_Tr_actor_set_process(this, move_demo_hidden);
             this->actor.draw = NULL;
         }
     }
 
     if (this->timer == 4) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_BUBLE_DOWN);
+        Actor_SE_set(&this->actor, NA_SE_EN_BUBLE_DOWN);
     }
 
     if (this->timer > 0) {
@@ -271,96 +271,96 @@ void EnTr_ShrinkVanish(EnTr* this, PlayState* play) {
     }
 }
 
-void EnTr_Reappear(EnTr* this, PlayState* play) {
+void move_demo_make_dust_fly(EnTr* this, PlayState* play) {
     if (this->timer >= 31) {
         s32 temp_hi = (this->timer * 2) % 7;
 
-        func_80B23254(this, play, temp_hi, 5.0f, 1.0f);
-        func_80B23254(this, play, (temp_hi + 1) % 7, 5.0f, 1.0f);
+        make_dust_local(this, play, temp_hi, 5.0f, 1.0f);
+        make_dust_local(this, play, (temp_hi + 1) % 7, 5.0f, 1.0f);
     } else if (this->timer == 30) {
-        this->actor.draw = EnTr_Draw;
+        this->actor.draw = En_Tr_Actor_draw;
         this->actor.shape.rot.y += this->timer * 0x1A6;
     } else if (this->timer > 0) {
         this->actor.shape.rot.y += this->timer * 0x1A6;
-        Actor_SetScale(&this->actor, (this->actor.scale.x * 0.8f) + 0.002f);
+        Actor_set_scale(&this->actor, (this->actor.scale.x * 0.8f) + 0.002f);
     } else {
-        EnTr_SetupAction(this, EnTr_ChooseAction2);
-        Actor_SetScale(&this->actor, 0.01f);
+        En_Tr_actor_set_process(this, move_demo_fly);
+        Actor_set_scale(&this->actor, 0.01f);
     }
 
     if (this->timer > 0) {
         this->timer--;
     }
-    Actor_PlaySfx_Flagged(&this->actor, NA_SE_EN_TWINROBA_FLY_DEMO - SFX_FLAG);
+    Actor_level_SE_set(&this->actor, NA_SE_EN_TWINROBA_FLY_DEMO - SFX_FLAG);
 }
 
-void EnTr_WaitToReappear(EnTr* this, PlayState* play) {
+void move_demo_hidden(EnTr* this, PlayState* play) {
     if (play->csCtx.state != CS_STATE_IDLE) {
         if ((play->csCtx.actorCues[this->cueChannel] != NULL) && ((play->csCtx.actorCues[this->cueChannel]->id == 3) ||
                                                                   (play->csCtx.actorCues[this->cueChannel]->id == 5))) {
-            Actor_PlaySfx(&this->actor, NA_SE_EN_TWINROBA_TRANSFORM);
+            Actor_SE_set(&this->actor, NA_SE_EN_TWINROBA_TRANSFORM);
             this->timer = 34;
-            EnTr_SetStartPosRotFromCue(this, play, this->cueChannel);
-            EnTr_SetupAction(this, EnTr_Reappear);
-            Animation_PlayLoop(&this->skelAnime, &gKotakeKoumeFlyAnim);
+            En_Tr_StartProc_local(this, play, this->cueChannel);
+            En_Tr_actor_set_process(this, move_demo_make_dust_fly);
+            Skeleton_Info2_init_standard_repeat(&this->skelAnime, &gKotakeKoumeFlyAnim);
             this->animation = NULL;
-            Actor_SetScale(&this->actor, 0.003f);
+            Actor_set_scale(&this->actor, 0.003f);
         }
     }
 }
 
-void EnTr_TakeOff(EnTr* this, PlayState* play) {
-    f32 lastFrame = Animation_GetLastFrame(D_80B24378[this->actor.params]);
+void move_demo_furimuki(EnTr* this, PlayState* play) {
+    f32 lastFrame = Si2_anime_end_frame(D_80B24378[this->actor.params]);
 
     if (play->csCtx.state != CS_STATE_IDLE) {
         if ((play->csCtx.actorCues[this->cueChannel] != NULL) && (play->csCtx.actorCues[this->cueChannel]->id == 3)) {
-            Animation_Change(&this->skelAnime, D_80B24378[this->actor.params], 1.0f, 0.0f, lastFrame, ANIMMODE_LOOP,
+            Skeleton_Info2_init(&this->skelAnime, D_80B24378[this->actor.params], 1.0f, 0.0f, lastFrame, ANIMMODE_LOOP,
                              -10.0f);
             this->animation = NULL;
-            EnTr_SetupAction(this, EnTr_ChooseAction2);
+            En_Tr_actor_set_process(this, move_demo_fly);
         }
     }
 }
 
-void EnTr_TurnLookOverShoulder(EnTr* this, PlayState* play) {
-    f32 lastFrame = Animation_GetLastFrame(D_80B24368[this->actor.params]);
+static void move_demo_wait(EnTr* this, PlayState* play) {
+    f32 lastFrame = Si2_anime_end_frame(D_80B24368[this->actor.params]);
 
     if (play->csCtx.state != CS_STATE_IDLE) {
         if ((play->csCtx.actorCues[this->cueChannel] != NULL) && (play->csCtx.actorCues[this->cueChannel]->id == 2)) {
-            Animation_Change(&this->skelAnime, D_80B24368[this->actor.params], 1.0f, 0.0f, lastFrame, ANIMMODE_ONCE,
+            Skeleton_Info2_init(&this->skelAnime, D_80B24368[this->actor.params], 1.0f, 0.0f, lastFrame, ANIMMODE_ONCE,
                              -4.0f);
             this->animation = D_80B24370[this->actor.params];
-            EnTr_SetupAction(this, EnTr_TakeOff);
+            En_Tr_actor_set_process(this, move_demo_furimuki);
         }
     }
 }
 
-void EnTr_ChooseAction1(EnTr* this, PlayState* play) {
+static void move_start(EnTr* this, PlayState* play) {
     u32 frames = play->gameplayFrames;
 
     if (play->csCtx.state != CS_STATE_IDLE) {
         if (play->csCtx.actorCues[this->cueChannel] != NULL) {
             switch (play->csCtx.actorCues[this->cueChannel]->id) {
                 case 1:
-                    EnTr_SetStartPosRotFromCue(this, play, this->cueChannel);
-                    EnTr_SetupAction(this, EnTr_TurnLookOverShoulder);
+                    En_Tr_StartProc_local(this, play, this->cueChannel);
+                    En_Tr_actor_set_process(this, move_demo_wait);
                     break;
 
                 case 3:
-                    EnTr_SetStartPosRotFromCue(this, play, this->cueChannel);
-                    EnTr_SetupAction(this, EnTr_ChooseAction2);
-                    Animation_PlayLoop(&this->skelAnime, &gKotakeKoumeFlyAnim);
+                    En_Tr_StartProc_local(this, play, this->cueChannel);
+                    En_Tr_actor_set_process(this, move_demo_fly);
+                    Skeleton_Info2_init_standard_repeat(&this->skelAnime, &gKotakeKoumeFlyAnim);
                     this->animation = NULL;
                     break;
 
                 case 4:
-                    EnTr_SetupAction(this, EnTr_WaitToReappear);
+                    En_Tr_actor_set_process(this, move_demo_hidden);
                     this->actor.draw = NULL;
                     break;
 
                 case 7:
-                    EnTr_SetupAction(this, EnTr_FlyKidnapCutscene);
-                    Animation_PlayLoop(&this->skelAnime, &gKotakeKoumeFlyAnim);
+                    En_Tr_actor_set_process(this, move_demo_rolling);
+                    Skeleton_Info2_init_standard_repeat(&this->skelAnime, &gKotakeKoumeFlyAnim);
                     this->animation = NULL;
                     this->timer =
                         ((this->actor.params != TR_KOUME) ? ((u8)frames * 0x400) + 0x8000 : (u8)frames * 0x400);
@@ -370,39 +370,39 @@ void EnTr_ChooseAction1(EnTr* this, PlayState* play) {
     }
 }
 
-void EnTr_Update(Actor* thisx, PlayState* play) {
+void En_Tr_Actor_move(Actor* thisx, PlayState* play) {
     s32 pad;
     EnTr* this = (EnTr*)thisx;
 
-    Actor_UpdateBgCheckInfo(play, &this->actor, 0.0f, 0.0f, 0.0f, UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
+    Actor_BGcheck2(play, &this->actor, 0.0f, 0.0f, 0.0f, UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
     this->actionFunc(this, play);
 
-    if (SkelAnime_Update(&this->skelAnime)) {
+    if (Skeleton_Info2_anime_play(&this->skelAnime)) {
         if (this->animation != NULL) {
             if ((this->animation == &gKotakeKoumeLookingOverLeftShoulderAnim) ||
                 (this->animation == &gKotakeKoumeLookingOverRightShoulderAnim)) {
                 if (this->actor.params != TR_KOUME) {
-                    Actor_PlaySfx(&this->actor, NA_SE_EN_TWINROBA_LAUGH2);
+                    Actor_SE_set(&this->actor, NA_SE_EN_TWINROBA_LAUGH2);
                 } else {
-                    Actor_PlaySfx(&this->actor, NA_SE_EN_TWINROBA_LAUGH);
+                    Actor_SE_set(&this->actor, NA_SE_EN_TWINROBA_LAUGH);
                 }
-                Animation_PlayLoop(&this->skelAnime, this->animation);
+                Skeleton_Info2_init_standard_repeat(&this->skelAnime, this->animation);
             } else if (this->animation == &gKotakeKoumeFlyAnim) {
-                EnTr_SetupAction(this, EnTr_ChooseAction2);
-                Animation_Change(&this->skelAnime, &gKotakeKoumeFlyAnim, 1.0f, 0.0f,
-                                 Animation_GetLastFrame(&gKotakeKoumeFlyAnim), ANIMMODE_LOOP, -5.0f);
+                En_Tr_actor_set_process(this, move_demo_fly);
+                Skeleton_Info2_init(&this->skelAnime, &gKotakeKoumeFlyAnim, 1.0f, 0.0f,
+                                 Si2_anime_end_frame(&gKotakeKoumeFlyAnim), ANIMMODE_LOOP, -5.0f);
             } else {
-                Animation_PlayLoop(&this->skelAnime, this->animation);
+                Skeleton_Info2_init_standard_repeat(&this->skelAnime, this->animation);
             }
             this->animation = NULL;
         } else {
             this->skelAnime.curFrame = 0.0f;
         }
     }
-    Actor_SetFocus(&this->actor, 0.0f);
+    Actor_world_to_eye(&this->actor, 0.0f);
 
     if (DECR(this->blinkTimer) == 0) {
-        this->blinkTimer = Rand_S16Offset(60, 60);
+        this->blinkTimer = get_random_timer(60, 60);
     }
     this->eyeIndex = this->blinkTimer;
     if (this->eyeIndex >= 3) {
@@ -410,22 +410,22 @@ void EnTr_Update(Actor* thisx, PlayState* play) {
     }
 }
 
-s32 EnTr_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+s32 en_tr_display1(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     Vec3f src = { 2300.0f, 0.0f, -600.0f };
     Vec3f dest = { 0.0f, 0.0f, 0.0f };
     EnTr* this = (EnTr*)thisx;
     Actor* child = this->actor.child;
 
     if ((child != NULL) && (limbIndex == KOTAKE_KOUME_LIMB_RIGHT_HAND)) {
-        Matrix_MultVec3f(&src, &dest);
-        dest.x -= (10.0f * Math_SinS(Camera_GetCamDirYaw(GET_ACTIVE_CAM(play))));
-        dest.z -= (10.0f * Math_CosS(Camera_GetCamDirYaw(GET_ACTIVE_CAM(play))));
+        Matrix_Position(&src, &dest);
+        dest.x -= (10.0f * sin_s(getRealCameraAngleY(GET_ACTIVE_CAM(play))));
+        dest.z -= (10.0f * cos_s(getRealCameraAngleY(GET_ACTIVE_CAM(play))));
         child->world.pos = dest;
     }
     return 0;
 }
 
-void EnTr_Draw(Actor* thisx, PlayState* play) {
+void En_Tr_Actor_draw(Actor* thisx, PlayState* play) {
     s32 pad;
     EnTr* this = (EnTr*)thisx;
 
@@ -434,26 +434,26 @@ void EnTr_Draw(Actor* thisx, PlayState* play) {
     if ((play->csCtx.state == CS_STATE_IDLE) || (play->csCtx.actorCues[this->cueChannel] == NULL)) {
         this->actor.shape.shadowDraw = NULL;
     } else {
-        this->actor.shape.shadowDraw = ActorShadow_DrawCircle;
+        this->actor.shape.shadowDraw = Actor_shadow_circle;
 
         OPEN_DISPS(play->state.gfxCtx, "../z_en_tr.c", 840);
-        Gfx_SetupDL_37Opa(play->state.gfxCtx);
-        gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(sEyeTextures[this->eyeIndex]));
-        func_8002EBCC(&this->actor, play, 0);
-        SkelAnime_DrawFlexOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
-                              EnTr_OverrideLimbDraw, NULL, this);
+        _polygon_z_light_fog_prim(play->state.gfxCtx);
+        gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(tr_eye[this->eyeIndex]));
+        Actor_HiliteReflect_set_init(&this->actor, play, 0);
+        Si2_draw_SV(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
+                              en_tr_display1, NULL, this);
         CLOSE_DISPS(play->state.gfxCtx, "../z_en_tr.c", 854);
     }
 }
 
-f32 func_80B23FDC(PlayState* play, s32 cueChannel) {
-    f32 phi_f2 = Environment_LerpWeight(play->csCtx.actorCues[cueChannel]->endFrame,
+static f32 get_demo_effect_parcent(PlayState* play, s32 cueChannel) {
+    f32 phi_f2 = get_parcent(play->csCtx.actorCues[cueChannel]->endFrame,
                                         play->csCtx.actorCues[cueChannel]->startFrame, play->csCtx.curFrame);
     phi_f2 = CLAMP_MAX(phi_f2, 1.0f);
     return phi_f2;
 }
 
-void func_80B24038(EnTr* this, PlayState* play, s32 cueChannel) {
+void En_Tr_MoveProc_local(EnTr* this, PlayState* play, s32 cueChannel) {
     Vec3f startPos;
     Vec3f endPos;
     f32 temp_f0;
@@ -468,7 +468,7 @@ void func_80B24038(EnTr* this, PlayState* play, s32 cueChannel) {
     endPos.y = play->csCtx.actorCues[cueChannel]->endPos.y;
     endPos.z = play->csCtx.actorCues[cueChannel]->endPos.z;
 
-    temp_f0 = func_80B23FDC(play, cueChannel);
+    temp_f0 = get_demo_effect_parcent(play, cueChannel);
 
     startPos.x = ((endPos.x - startPos.x) * temp_f0) + startPos.x;
     startPos.y = ((endPos.y - startPos.y) * temp_f0) + startPos.y;
@@ -487,13 +487,13 @@ void func_80B24038(EnTr* this, PlayState* play, s32 cueChannel) {
         endPos.z *= phi_f12 / temp_f0_2;
     }
 
-    Math_StepToF(&this->actor.velocity.x, endPos.x, 1.0f);
-    Math_StepToF(&this->actor.velocity.y, endPos.y, 1.0f);
-    Math_StepToF(&this->actor.velocity.z, endPos.z, 1.0f);
-    Actor_UpdatePos(&this->actor);
+    chase_f(&this->actor.velocity.x, endPos.x, 1.0f);
+    chase_f(&this->actor.velocity.y, endPos.y, 1.0f);
+    chase_f(&this->actor.velocity.z, endPos.z, 1.0f);
+    Actor_position_move(&this->actor);
 }
 
-void EnTr_SetRotFromCue(EnTr* this, PlayState* play, s32 cueChannel) {
+void En_Tr_AngleYProc_local(EnTr* this, PlayState* play, s32 cueChannel) {
     s16 rotY = play->csCtx.actorCues[cueChannel]->rot.y;
     s32 rotDiff = this->actor.world.rot.y - rotY;
     s32 rotSign;
@@ -516,7 +516,7 @@ void EnTr_SetRotFromCue(EnTr* this, PlayState* play, s32 cueChannel) {
     this->actor.shape.rot.y = this->actor.world.rot.y;
 }
 
-void EnTr_SetStartPosRotFromCue(EnTr* this, PlayState* play, s32 cueChannel) {
+void En_Tr_StartProc_local(EnTr* this, PlayState* play, s32 cueChannel) {
     Vec3f startPos;
 
     startPos.x = play->csCtx.actorCues[cueChannel]->startPos.x;

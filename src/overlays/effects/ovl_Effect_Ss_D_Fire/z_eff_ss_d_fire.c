@@ -18,18 +18,18 @@
 #define rObjectSlot regs[10]
 #define rYAccelStep regs[11] // has no effect due to how it's implemented
 
-u32 EffectSsDFire_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
-void EffectSsDFire_Draw(PlayState* play, u32 index, EffectSs* this);
-void EffectSsDFire_Update(PlayState* play, u32 index, EffectSs* this);
+u32 Effect_SS2_DFire_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
+void Effect_SS_Dfire_disp_mode(PlayState* play, u32 index, EffectSs* this);
+void Effect_SS_Dfire_func_proc(PlayState* play, u32 index, EffectSs* this);
 
 EffectSsProfile Effect_Ss_D_Fire_Profile = {
     EFFECT_SS_D_FIRE,
-    EffectSsDFire_Init,
+    Effect_SS2_DFire_ct,
 };
 
-u32 EffectSsDFire_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
+u32 Effect_SS2_DFire_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
     EffectSsDFireInitParams* initParams = (EffectSsDFireInitParams*)initParamsx;
-    s32 objectSlot = Object_GetSlot(&play->objectCtx, OBJECT_DODONGO);
+    s32 objectSlot = Object_Exchange_bank_check(&play->objectCtx, OBJECT_DODONGO);
 
     if (objectSlot >= 0) {
         this->pos = initParams->pos;
@@ -46,8 +46,8 @@ u32 EffectSsDFire_Init(PlayState* play, u32 index, EffectSs* this, void* initPar
         this->rScaleStep = initParams->scaleStep;
         this->rYAccelStep = 0;
         this->rObjectSlot = objectSlot;
-        this->draw = EffectSsDFire_Draw;
-        this->update = EffectSsDFire_Update;
+        this->draw = Effect_SS_Dfire_disp_mode;
+        this->update = Effect_SS_Dfire_func_proc;
         this->rTexIndex = ((s16)(play->state.frames % 4) ^ 3);
         this->rPrimColorR = 255;
         this->rPrimColorG = 255;
@@ -61,9 +61,9 @@ u32 EffectSsDFire_Init(PlayState* play, u32 index, EffectSs* this, void* initPar
     return 0;
 }
 
-static void* sTextures[] = { gDodongoFire0Tex, gDodongoFire1Tex, gDodongoFire2Tex, gDodongoFire3Tex };
+static void* dfire_txt[] = { gDodongoFire0Tex, gDodongoFire1Tex, gDodongoFire2Tex, gDodongoFire3Tex };
 
-void EffectSsDFire_Draw(PlayState* play, u32 index, EffectSs* this) {
+void Effect_SS_Dfire_disp_mode(PlayState* play, u32 index, EffectSs* this) {
     GraphicsContext* gfxCtx = play->state.gfxCtx;
     MtxF mfTrans;
     MtxF mfScale;
@@ -78,25 +78,25 @@ void EffectSsDFire_Draw(PlayState* play, u32 index, EffectSs* this) {
 
     OPEN_DISPS(gfxCtx, "../z_eff_ss_d_fire.c", 276);
 
-    if (Object_GetSlot(&play->objectCtx, OBJECT_DODONGO) >= 0) {
-        gSegments[6] = VIRTUAL_TO_PHYSICAL(objectPtr);
+    if (Object_Exchange_bank_check(&play->objectCtx, OBJECT_DODONGO) >= 0) {
+        SegmentBaseAddress[6] = VIRTUAL_TO_PHYSICAL(objectPtr);
         gSPSegment(POLY_XLU_DISP++, 0x06, objectPtr);
         scale = this->rScale / 100.0f;
-        SkinMatrix_SetTranslate(&mfTrans, this->pos.x, this->pos.y, this->pos.z);
-        SkinMatrix_SetScale(&mfScale, scale, scale, 1.0f);
-        SkinMatrix_MtxFMtxFMult(&mfTrans, &play->billboardMtxF, &mfTransBillboard);
-        SkinMatrix_MtxFMtxFMult(&mfTransBillboard, &mfScale, &mfResult);
+        Skin_Matrix_SetTranslate(&mfTrans, this->pos.x, this->pos.y, this->pos.z);
+        Skin_Matrix_SetScale(&mfScale, scale, scale, 1.0f);
+        Skin_Matrix_MulMatrix(&mfTrans, &play->billboardMtxF, &mfTransBillboard);
+        Skin_Matrix_MulMatrix(&mfTransBillboard, &mfScale, &mfResult);
 
-        mtx = SkinMatrix_MtxFToNewMtx(gfxCtx, &mfResult);
+        mtx = Skin_Matrix_to_Mtx_new(gfxCtx, &mfResult);
 
         if (mtx != NULL) {
             gSPMatrix(POLY_XLU_DISP++, mtx, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-            Gfx_SetupDL_60NoCDXlu(gfxCtx);
+            texture_z_cld_poly_xlu(gfxCtx);
             gDPSetEnvColor(POLY_XLU_DISP++, 255, 0, 0, 0);
             gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, this->rPrimColorR, this->rPrimColorG, this->rPrimColorB,
                             this->rPrimColorA);
-            gSegments[6] = VIRTUAL_TO_PHYSICAL(objectPtr);
-            gSPSegment(POLY_XLU_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(sTextures[this->rTexIndex]));
+            SegmentBaseAddress[6] = VIRTUAL_TO_PHYSICAL(objectPtr);
+            gSPSegment(POLY_XLU_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(dfire_txt[this->rTexIndex]));
             gSPDisplayList(POLY_XLU_DISP++, this->gfx);
         }
     }
@@ -104,7 +104,7 @@ void EffectSsDFire_Draw(PlayState* play, u32 index, EffectSs* this) {
     CLOSE_DISPS(gfxCtx, "../z_eff_ss_d_fire.c", 330);
 }
 
-void EffectSsDFire_Update(PlayState* play, u32 index, EffectSs* this) {
+void Effect_SS_Dfire_func_proc(PlayState* play, u32 index, EffectSs* this) {
     this->rTexIndex++;
     this->rTexIndex &= 3;
     this->rScale += this->rScaleStep;

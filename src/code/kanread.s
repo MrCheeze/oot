@@ -4,7 +4,7 @@
 .text
 
 /**
- * s32 Kanji_OffsetFromShiftJIS(s32 sjis);
+ * s32 getkadr(s32 sjis);
  *
  * Returns the offset of the glyph texture data in the file `kanji` corresponding
  * to a given 2-byte Shift-JIS codepoint. No range validity check is carried out.
@@ -21,7 +21,7 @@
  *
  * @remark Almost identical to "LeoGetKadr" from libleo.
  */
-LEAF(Kanji_OffsetFromShiftJIS)
+LEAF(getkadr)
     /* Characters with codepoints >= 0x8800 are kanji. Arrangement is regular, */
     /* so convert index directly. */
     li      a2, 0xBC
@@ -73,14 +73,14 @@ LEAF(Kanji_OffsetFromShiftJIS)
     /* returns sNonKanjiIndices[(adjusted byte2) + (adjusted byte1) * 0xBC] * FONT_CHAR_TEX_SIZE */
     sll     v0, a2, 7
     jr      ra
-END(Kanji_OffsetFromShiftJIS)
+END(getkadr)
 
 /**
  * Nearly equivalent C code (Equivalent for all valid input, will behave differently on overflow due to the use of `add` in the original):
  *
  * extern u16 sNonKanjiIndices[];
  *
- * s32 Kanji_OffsetFromShiftJIS(s32 sjis) {
+ * s32 getkadr(s32 sjis) {
  *     u32 byte1 = (u32)sjis >> 8;
  *     u32 byte2 = sjis & 0xFF;
  *

@@ -1,47 +1,47 @@
-void DemoGj_InitRubblePile5(DemoGj* this, PlayState* play) {
-    DemoGj_InitSetIndices(this, play, 5, 6, &gGanonsCastleRubble6Col);
+void Demo_Gj_Actor_init_battle2_5(DemoGj* this, PlayState* play) {
+    Demo_Gj_Actor_init_battle_common(this, play, 5, 6, &gGanonsCastleRubble6Col);
 }
 
-void func_8097A814(DemoGj* this, PlayState* play) {
-    Actor_MoveXZGravity(&this->dyna.actor);
+void Demo_Gj_battle2_5_Movement(DemoGj* this, PlayState* play) {
+    Actor_position_moveF(&this->dyna.actor);
 
     this->rotationVec.x += (s16)(kREG(70));
     this->rotationVec.y += (s16)(kREG(71) + 1000);
     this->rotationVec.z += (s16)(kREG(72) + 3000);
 
-    DemoGj_SetupRotation(this, play);
+    Demo_Gj_common_Reflect(this, play);
 }
 
-void func_8097A890(DemoGj* this, PlayState* play) {
-    if (DemoGj_IsGanondorfRisingFromRubble(this, play)) {
-        DemoGj_SetupMovement(this, play);
+void Demo_Gj_Check_StandToMove_battle2_5(DemoGj* this, PlayState* play) {
+    if (Demo_Gj_Check_StandToMove_common(this, play)) {
+        Demo_Gj_Setup_Move_common(this, play);
         this->updateMode = 12;
         this->drawConfig = 13;
     }
 }
 
-void func_8097A8DC(DemoGj* this, PlayState* play) {
-    if (DemoGj_IsGanondorfFloatingInAir(this, play)) {
-        Actor_Kill(&this->dyna.actor);
+void Demo_Gj_battle2_5_Check_MoveToStop(DemoGj* this, PlayState* play) {
+    if (Demo_Gj_Check_MoveToStop_common(this, play)) {
+        Actor_delete(&this->dyna.actor);
     }
 }
 
 // func_8097A90C
-void DemoGj_Update05(DemoGj* this, PlayState* play) {
-    DemoGj_FindGanon(this, play);
-    func_8097A890(this, play);
+void Demo_Gj_main_Stand_battle2_5(DemoGj* this, PlayState* play) {
+    Demo_Gj_Search_Boss_Ganon(this, play);
+    Demo_Gj_Check_StandToMove_battle2_5(this, play);
 }
 
 // func_8097A93C
-void DemoGj_Update12(DemoGj* this, PlayState* play) {
-    func_8097A814(this, play);
-    func_8097A8DC(this, play);
+void Demo_Gj_main_Move_battle2_5(DemoGj* this, PlayState* play) {
+    Demo_Gj_battle2_5_Movement(this, play);
+    Demo_Gj_battle2_5_Check_MoveToStop(this, play);
 }
 
-void DemoGj_DrawRubble6(DemoGj* this, PlayState* play) {
-    DemoGj_DrawCommon(this, play, gGanonsCastleRubble6DL);
+void Demo_Gj_draw_normal_battle2_5(DemoGj* this, PlayState* play) {
+    Demo_Gj_draw_normal_common(this, play, gGanonsCastleRubble6DL);
 }
 
-void DemoGj_DrawRotatedRubble6(DemoGj* this, PlayState* play) {
-    DemoGj_DrawRotated(this, play, gGanonsCastleRubble6DL);
+void Demo_Gj_draw_move_battle2_5(DemoGj* this, PlayState* play) {
+    Demo_Gj_draw_move_common(this, play, gGanonsCastleRubble6DL);
 }

@@ -9,10 +9,10 @@
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY)
 
-void EnJsjutan_Init(Actor* thisx, PlayState* play);
-void EnJsjutan_Destroy(Actor* thisx, PlayState* play);
-void EnJsjutan_Update(Actor* thisx, PlayState* play2);
-void EnJsjutan_Draw(Actor* thisx, PlayState* play2);
+void En_Jsjutan_Actor_ct(Actor* thisx, PlayState* play);
+void En_Jsjutan_Actor_dt(Actor* thisx, PlayState* play);
+void En_Jsjutan_Actor_move(Actor* thisx, PlayState* play2);
+void En_Jsjutan_Actor_draw(Actor* thisx, PlayState* play2);
 
 ActorProfile En_Jsjutan_Profile = {
     /**/ ACTOR_EN_JSJUTAN,
@@ -20,66 +20,66 @@ ActorProfile En_Jsjutan_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(EnJsjutan),
-    /**/ EnJsjutan_Init,
-    /**/ EnJsjutan_Destroy,
-    /**/ EnJsjutan_Update,
-    /**/ EnJsjutan_Draw,
+    /**/ En_Jsjutan_Actor_ct,
+    /**/ En_Jsjutan_Actor_dt,
+    /**/ En_Jsjutan_Actor_move,
+    /**/ En_Jsjutan_Actor_draw,
 };
 
 // Shadow texture. 32x64 I8.
-static u8 sShadowTex[0x800];
+static u8 js_jyutan_sahdow_txt[0x800];
 
-static Vec3s D_80A8EE10[0x90];
+static Vec3s shadow_v[0x90];
 
-static s32 sUnused[2] = { 0, 0 };
+static s32 dammy[2] = { 0, 0 };
 
 #include "assets/overlays/ovl_En_Jsjutan/z_en_jsjutan.c"
 
-void EnJsjutan_Init(Actor* thisx, PlayState* play) {
+void En_Jsjutan_Actor_ct(Actor* thisx, PlayState* play) {
     EnJsjutan* this = (EnJsjutan*)thisx;
     s32 pad;
     CollisionHeader* header = NULL;
 
     this->dyna.actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
-    DynaPolyActor_Init(&this->dyna, 0);
-    CollisionHeader_GetVirtual(&sCol, &header);
-    this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, thisx, header);
-    Actor_SetScale(thisx, 0.02f);
+    MoveBG_ct(&this->dyna, 0);
+    DynaPolyUty_bgdi_SG2KSG(&jyutan_bg_BGDataInfo, &header);
+    this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, thisx, header);
+    Actor_set_scale(thisx, 0.02f);
     this->unk_164 = true;
     this->shadowAlpha = 100.0f;
 }
 
-void EnJsjutan_Destroy(Actor* thisx, PlayState* play) {
+void En_Jsjutan_Actor_dt(Actor* thisx, PlayState* play) {
     EnJsjutan* this = (EnJsjutan*)thisx;
 
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
 }
 
-void func_80A89860(EnJsjutan* this, PlayState* play) {
+void jyutan_shadow_Y_cont(EnJsjutan* this, PlayState* play) {
     s16 i;
     Vtx* oddVtx;
     Vtx* evenVtx;
     Vec3f actorPos = this->dyna.actor.world.pos;
 
-    oddVtx = SEGMENTED_TO_VIRTUAL(gShadowOddVtx);
-    evenVtx = SEGMENTED_TO_VIRTUAL(sShadowEvenVtx);
+    oddVtx = SEGMENTED_TO_VIRTUAL(jyutan_shadow_v);
+    evenVtx = SEGMENTED_TO_VIRTUAL(jyutan_shadow2_v);
 
-    for (i = 0; i < ARRAY_COUNT(D_80A8EE10); i++, oddVtx++, evenVtx++) {
-        D_80A8EE10[i].x = oddVtx->v.ob[0];
-        D_80A8EE10[i].z = oddVtx->v.ob[2];
+    for (i = 0; i < ARRAY_COUNT(shadow_v); i++, oddVtx++, evenVtx++) {
+        shadow_v[i].x = oddVtx->v.ob[0];
+        shadow_v[i].z = oddVtx->v.ob[2];
         if (this->dyna.actor.params == ENJSJUTAN_TYPE_01) {
             oddVtx->v.ob[1] = evenVtx->v.ob[1] = 0x585;
         } else {
             this->dyna.actor.world.pos.x = oddVtx->v.ob[0] * 0.02f + actorPos.x;
             this->dyna.actor.world.pos.z = oddVtx->v.ob[2] * 0.02f + actorPos.z;
-            Actor_UpdateBgCheckInfo(play, &this->dyna.actor, 10.0f, 10.0f, 10.0f, UPDBGCHECKINFO_FLAG_2);
+            Actor_BGcheck2(play, &this->dyna.actor, 10.0f, 10.0f, 10.0f, UPDBGCHECKINFO_FLAG_2);
             oddVtx->v.ob[1] = evenVtx->v.ob[1] = this->dyna.actor.floorHeight;
             this->dyna.actor.world.pos = actorPos;
         }
     }
 }
 
-void func_80A89A6C(EnJsjutan* this, PlayState* play) {
+void jyutan_cont(EnJsjutan* this, PlayState* play) {
     u8 isPlayerOnTop = false; // sp127
     s16 i;
     s16 j;
@@ -117,11 +117,11 @@ void func_80A89A6C(EnJsjutan* this, PlayState* play) {
     u8 isInCreditsScene = false; // sp8B
 
     if (play->gameplayFrames % 2 != 0) {
-        carpetVtx = SEGMENTED_TO_VIRTUAL(sCarpetOddVtx);
-        shadowVtx = SEGMENTED_TO_VIRTUAL(gShadowOddVtx);
+        carpetVtx = SEGMENTED_TO_VIRTUAL(jyutan_v);
+        shadowVtx = SEGMENTED_TO_VIRTUAL(jyutan_shadow_v);
     } else {
-        carpetVtx = SEGMENTED_TO_VIRTUAL(sCarpetEvenVtx);
-        shadowVtx = SEGMENTED_TO_VIRTUAL(sShadowEvenVtx);
+        carpetVtx = SEGMENTED_TO_VIRTUAL(jyutan2_v);
+        shadowVtx = SEGMENTED_TO_VIRTUAL(jyutan_shadow2_v);
     }
 
     // Distance of player to carpet.
@@ -147,7 +147,7 @@ void func_80A89A6C(EnJsjutan* this, PlayState* play) {
     i = 1;
 
     // Credits scene. The magic carpet man is friends with the bean guy and the lakeside professor.
-    if ((gSaveContext.save.entranceIndex == ENTR_LON_LON_RANCH_0) && (gSaveContext.sceneLayer == 8)) {
+    if ((z_common_data.save.entranceIndex == ENTR_LON_LON_RANCH_0) && (z_common_data.sceneLayer == 8)) {
         Actor* actorProfessor;
         Actor* actorBeanGuy;
 
@@ -201,7 +201,7 @@ void func_80A89A6C(EnJsjutan* this, PlayState* play) {
     }
 
     // Fancy math to make a woobly and reactive carpet.
-    for (i = 0; i < ARRAY_COUNT(D_80A8EE10); i++, carpetVtx++, shadowVtx++) {
+    for (i = 0; i < ARRAY_COUNT(shadow_v); i++, carpetVtx++, shadowVtx++) {
         if (isPlayerOnTop) {
             // Linear distance from j-th wave to player, in XZ plane.
             dxVtx = carpetVtx->n.ob[0] - spB8;
@@ -272,7 +272,7 @@ void func_80A89A6C(EnJsjutan* this, PlayState* play) {
          * A: spA8
          * D: phi_f28
          */
-        waveform = spA8 * Math_SinS(play->gameplayFrames * 4000 + i * 10000);
+        waveform = spA8 * sin_s(play->gameplayFrames * 4000 + i * 10000);
 
         if (this->unk_174) {
             s16 phi_v1_4 = offset + waveform;
@@ -286,11 +286,11 @@ void func_80A89A6C(EnJsjutan* this, PlayState* play) {
         } else {
             carpetVtx->n.ob[1] = offset + waveform;
 
-            carpetVtx->n.ob[0] = D_80A8EE10[i].x + (s16)(waveform * 0.5f);
-            carpetVtx->n.ob[2] = D_80A8EE10[i].z + (s16)(waveform * 0.5f);
+            carpetVtx->n.ob[0] = shadow_v[i].x + (s16)(waveform * 0.5f);
+            carpetVtx->n.ob[2] = shadow_v[i].z + (s16)(waveform * 0.5f);
 
-            shadowVtx->n.ob[0] = D_80A8EE10[i].x + (s16)waveform;
-            shadowVtx->n.ob[2] = D_80A8EE10[i].z + (s16)waveform;
+            shadowVtx->n.ob[0] = shadow_v[i].x + (s16)waveform;
+            shadowVtx->n.ob[2] = shadow_v[i].z + (s16)waveform;
         }
     }
 
@@ -300,7 +300,7 @@ void func_80A89A6C(EnJsjutan* this, PlayState* play) {
         this->dyna.actor.velocity.y = 0.0f;
         this->dyna.actor.world.pos.y = this->unk_168;
 
-        dayTime = gSaveContext.save.dayTime;
+        dayTime = z_common_data.save.dayTime;
 
         if (dayTime >= CLOCK_TIME(12, 0)) {
             dayTime = 0xFFFF - dayTime;
@@ -309,10 +309,10 @@ void func_80A89A6C(EnJsjutan* this, PlayState* play) {
         this->shadowAlpha = (dayTime * 0.00275f) + 10.0f; // (1.0f / 364.0f) ?
         this->unk_170 = 1000.0f;
     } else {
-        Math_ApproachF(&this->dyna.actor.world.pos.y, this->unk_168 - 1000.0f, 1.0f, this->dyna.actor.velocity.y);
-        Math_ApproachF(&this->dyna.actor.velocity.y, 5.0f, 1.0f, 0.5f);
-        Math_ApproachF(&this->shadowAlpha, 0.0f, 1.0f, 3.0f);
-        Math_ApproachF(&this->unk_170, -5000.0f, 1.0f, 100.0f);
+        add_calc2(&this->dyna.actor.world.pos.y, this->unk_168 - 1000.0f, 1.0f, this->dyna.actor.velocity.y);
+        add_calc2(&this->dyna.actor.velocity.y, 5.0f, 1.0f, 0.5f);
+        add_calc2(&this->shadowAlpha, 0.0f, 1.0f, 3.0f);
+        add_calc2(&this->unk_170, -5000.0f, 1.0f, 100.0f);
     }
 
     carpetVtx = phi_s0_2;
@@ -322,7 +322,7 @@ void func_80A89A6C(EnJsjutan* this, PlayState* play) {
     sp108.z = 120.0f;
 
     // Fancy math to smooth each part of the wave considering its neighborhood.
-    for (i = 0; i < ARRAY_COUNT(sCarpetOddVtx); i++, carpetVtx++) {
+    for (i = 0; i < ARRAY_COUNT(jyutan_v); i++, carpetVtx++) {
         // Carpet size is 12x12.
         if ((i % 12) == 11) { // Last column.
             j = i - 1;
@@ -334,7 +334,7 @@ void func_80A89A6C(EnJsjutan* this, PlayState* play) {
 
         dyVtx = phi_s0_2[j].n.ob[1] - carpetVtx->n.ob[1];
 
-        rotX = Math_Atan2F(dzVtx, dyVtx);
+        rotX = atanf_table(dzVtx, dyVtx);
 
         if (i >= 132) { // Last row.
             j = i - 12;
@@ -344,11 +344,11 @@ void func_80A89A6C(EnJsjutan* this, PlayState* play) {
             dxVtx = phi_s0_2[j].n.ob[0] - carpetVtx->n.ob[0];
         }
 
-        rotZ = Math_Atan2F(dxVtx, dyVtx);
+        rotZ = atanf_table(dxVtx, dyVtx);
 
-        Matrix_RotateX(rotX, MTXMODE_NEW);
-        Matrix_RotateZ(rotZ, MTXMODE_APPLY);
-        Matrix_MultVec3f(&sp108, &spFC);
+        Matrix_rotateX(rotX, MTXMODE_NEW);
+        Matrix_rotateZ(rotZ, MTXMODE_APPLY);
+        Matrix_Position(&sp108, &spFC);
 
         carpetVtx->n.n[0] = spFC.x;
         carpetVtx->n.n[1] = spFC.y;
@@ -356,14 +356,14 @@ void func_80A89A6C(EnJsjutan* this, PlayState* play) {
     }
 }
 
-void EnJsjutan_Update(Actor* thisx, PlayState* play2) {
+void En_Jsjutan_Actor_move(Actor* thisx, PlayState* play2) {
     PlayState* play = play2;
 
-    thisx->shape.rot.x = Math_SinS(play->gameplayFrames * 3000) * 300.0f;
-    thisx->shape.rot.z = Math_CosS(play->gameplayFrames * 3500) * 300.0f;
+    thisx->shape.rot.x = sin_s(play->gameplayFrames * 3000) * 300.0f;
+    thisx->shape.rot.z = cos_s(play->gameplayFrames * 3500) * 300.0f;
 }
 
-void EnJsjutan_Draw(Actor* thisx, PlayState* play2) {
+void En_Jsjutan_Actor_draw(Actor* thisx, PlayState* play2) {
     EnJsjutan* this = (EnJsjutan*)thisx;
     PlayState* play = play2;
     s16 i;
@@ -378,66 +378,66 @@ void EnJsjutan_Draw(Actor* thisx, PlayState* play2) {
         this->unk_168 = thisx->world.pos.y;
         if (!this->unk_175) {
             this->unk_175 = true;
-            func_80A89860(this, play);
+            jyutan_shadow_Y_cont(this, play);
         }
     } else if (!this->unk_175) {
         this->unk_175 = true;
-        thisx->world.pos.x = Math_SinS(parent->shape.rot.y) * 60.0f + parent->world.pos.x;
+        thisx->world.pos.x = sin_s(parent->shape.rot.y) * 60.0f + parent->world.pos.x;
         thisx->world.pos.y = (parent->world.pos.y + 5.0f) - 10.0f;
-        thisx->world.pos.z = Math_CosS(parent->shape.rot.y) * 60.0f + parent->world.pos.z;
+        thisx->world.pos.z = cos_s(parent->shape.rot.y) * 60.0f + parent->world.pos.z;
         this->unk_168 = thisx->world.pos.y;
-        func_80A89860(this, play);
+        jyutan_shadow_Y_cont(this, play);
     }
 
-    func_80A89A6C(this, play);
+    jyutan_cont(this, play);
     if (this->unk_164) {
         this->unk_164 = false;
-        for (i = 0; i < ARRAY_COUNT(sShadowTex); i++) {
-            if (((u16*)sCarpetTex)[i] != 0) { // Hack to bypass ZAPD exporting textures as u64.
-                sShadowTex[i] = 0xFF;
+        for (i = 0; i < ARRAY_COUNT(js_jyutan_sahdow_txt); i++) {
+            if (((u16*)js_jyutan_txt)[i] != 0) { // Hack to bypass ZAPD exporting textures as u64.
+                js_jyutan_sahdow_txt[i] = 0xFF;
             } else {
-                sShadowTex[i] = 0;
+                js_jyutan_sahdow_txt[i] = 0;
             }
         }
     }
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
 
     gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, 0, 0, 0, (s16)this->shadowAlpha);
 
-    Matrix_Translate(thisx->world.pos.x, 3.0f, thisx->world.pos.z, MTXMODE_NEW);
-    Matrix_Scale(thisx->scale.x, 1.0f, thisx->scale.z, MTXMODE_APPLY);
+    Matrix_translate(thisx->world.pos.x, 3.0f, thisx->world.pos.z, MTXMODE_NEW);
+    Matrix_scale(thisx->scale.x, 1.0f, thisx->scale.z, MTXMODE_APPLY);
 
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_en_jsjutan.c", 782);
 
     // Draws the carpet's shadow texture.
-    gSPDisplayList(POLY_OPA_DISP++, sShadowMaterialDL);
+    gSPDisplayList(POLY_OPA_DISP++, js_jyutan_shadow_MODE);
     gDPPipeSync(POLY_OPA_DISP++);
 
     // Draws the carpet's shadow vertices. Swaps them between frames to get a smoother result.
     if (play->gameplayFrames % 2 != 0) {
-        gSPSegment(POLY_OPA_DISP++, 0x0C, gShadowOddVtx);
+        gSPSegment(POLY_OPA_DISP++, 0x0C, jyutan_shadow_v);
     } else {
-        gSPSegment(POLY_OPA_DISP++, 0x0C, sShadowEvenVtx);
+        gSPSegment(POLY_OPA_DISP++, 0x0C, jyutan_shadow2_v);
     }
-    gSPDisplayList(POLY_OPA_DISP++, sModelDL);
+    gSPDisplayList(POLY_OPA_DISP++, js_jyutan_model);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
-    Matrix_Translate(thisx->world.pos.x, this->unk_168 + 3.0f, thisx->world.pos.z, MTXMODE_NEW);
-    Matrix_Scale(thisx->scale.x, thisx->scale.y, thisx->scale.z, MTXMODE_APPLY);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
+    Matrix_translate(thisx->world.pos.x, this->unk_168 + 3.0f, thisx->world.pos.z, MTXMODE_NEW);
+    Matrix_scale(thisx->scale.x, thisx->scale.y, thisx->scale.z, MTXMODE_APPLY);
 
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_en_jsjutan.c", 805);
     // Draws the carpet's texture.
-    gSPDisplayList(POLY_OPA_DISP++, sCarpetMaterialDL);
+    gSPDisplayList(POLY_OPA_DISP++, js_jyutan_MODE);
 
     gDPPipeSync(POLY_OPA_DISP++);
 
     // Draws the carpet vertices.
     if (play->gameplayFrames % 2 != 0) {
-        gSPSegment(POLY_OPA_DISP++, 0x0C, sCarpetOddVtx);
+        gSPSegment(POLY_OPA_DISP++, 0x0C, jyutan_v);
     } else {
-        gSPSegment(POLY_OPA_DISP++, 0x0C, sCarpetEvenVtx);
+        gSPSegment(POLY_OPA_DISP++, 0x0C, jyutan2_v);
     }
-    gSPDisplayList(POLY_OPA_DISP++, sModelDL);
+    gSPDisplayList(POLY_OPA_DISP++, js_jyutan_model);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_jsjutan.c", 823);
 }

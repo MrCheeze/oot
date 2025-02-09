@@ -1,4 +1,4 @@
-void DemoIk_Type2Init(DemoIk* this, PlayState* play) {
+void Demo_Ik_inFace_Init(DemoIk* this, PlayState* play) {
     s32 pad[2];
     FlexSkeletonHeader* skeleton;
     AnimationHeader* animation;
@@ -21,50 +21,50 @@ void DemoIk_Type2Init(DemoIk* this, PlayState* play) {
             animation = &object_ik_Anim_0008DC;
     }
 
-    SkelAnime_InitFlex(play, &this->skelAnime, skeleton, NULL, this->jointTable, this->morphTable, 2);
-    Animation_Change(&this->skelAnime, animation, 1.0f, 0.0f, Animation_GetLastFrame(animation), ANIMMODE_ONCE, 0.0f);
+    Skeleton_Info2_SV_M_ct(play, &this->skelAnime, skeleton, NULL, this->jointTable, this->morphTable, 2);
+    Skeleton_Info2_init(&this->skelAnime, animation, 1.0f, 0.0f, Si2_anime_end_frame(animation), ANIMMODE_ONCE, 0.0f);
     this->actionMode = 3;
     this->drawMode = 0;
 }
 
-void DemoIk_Type2PlaySfxOnFrame(DemoIk* this, f32 frame) {
-    if (Animation_OnFrame(&this->skelAnime, frame)) {
-        Audio_PlaySfxGeneral(NA_SE_EN_IRONNACK_ARMOR_OFF_DEMO, &this->actor.projectedPos, 4,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+void Demo_Ik_inFace_SetSound_Off(DemoIk* this, f32 frame) {
+    if (Skeleton_Info_frame_check(&this->skelAnime, frame)) {
+        Nai_FxFlagEntry(NA_SE_EN_IRONNACK_ARMOR_OFF_DEMO, &this->actor.projectedPos, 4,
+                             &_dummy_one, &_dummy_one, &_dummy_zero_s8);
     }
 }
 
-void DemoIk_Type2PlaySfx(DemoIk* this) {
+void Demo_Ik_inFace_SetSound_Drop(DemoIk* this) {
     switch (this->actor.params) {
         case 3:
-            DemoIk_Type2PlaySfxOnFrame(this, 33.0f);
+            Demo_Ik_inFace_SetSound_Off(this, 33.0f);
             break;
         case 5:
-            DemoIk_Type2PlaySfxOnFrame(this, 44.0f);
+            Demo_Ik_inFace_SetSound_Off(this, 44.0f);
             break;
     }
 }
 
-void func_80983FDC(DemoIk* this) {
+void Demo_Ik_inFace_setup_Wait(DemoIk* this) {
     this->actionMode = 3;
     this->drawMode = 0;
 }
 
-void func_80983FEC(DemoIk* this, PlayState* play) {
-    DemoIk_MoveToStartPos(this, play, 4);
+void Demo_Ik_inFace_setup_Stick(DemoIk* this, PlayState* play) {
+    Demo_Ik_Set_DemoStartPosAngle(this, play, 4);
     this->actionMode = 4;
     this->drawMode = 2;
     this->skelAnime.curFrame = 0.0f;
 }
 
-void func_8098402C(DemoIk* this) {
+void Demo_Ik_inFace_setup_Drop(DemoIk* this) {
     this->actionMode = 5;
     this->drawMode = 2;
     this->skelAnime.curFrame = 0.0f;
 }
 
-void func_80984048(DemoIk* this, PlayState* play) {
-    CsCmdActorCue* cue = DemoIk_GetCue(play, 4);
+void Demo_Ik_inFace_Check_DemoMode(DemoIk* this, PlayState* play) {
+    CsCmdActorCue* cue = Demo_Ik_Get_npcdemopnt(play, 4);
 
     if (cue != NULL) {
         s32 nextCueId = cue->id;
@@ -73,16 +73,16 @@ void func_80984048(DemoIk* this, PlayState* play) {
         if (nextCueId != currentCueId) {
             switch (nextCueId) {
                 case 1:
-                    func_80983FDC(this);
+                    Demo_Ik_inFace_setup_Wait(this);
                     break;
                 case 5:
-                    func_80983FEC(this, play);
+                    Demo_Ik_inFace_setup_Stick(this, play);
                     break;
                 case 6:
-                    func_8098402C(this);
+                    Demo_Ik_inFace_setup_Drop(this);
                     break;
                 case 7:
-                    Actor_Kill(&this->actor);
+                    Actor_delete(&this->actor);
                     break;
                 default:
                     // "there is no such action"
@@ -93,33 +93,33 @@ void func_80984048(DemoIk* this, PlayState* play) {
     }
 }
 
-void DemoIk_Type2Action0(DemoIk* this, PlayState* play) {
-    func_80984048(this, play);
+void Demo_Ik_inFace_main_wait(DemoIk* this, PlayState* play) {
+    Demo_Ik_inFace_Check_DemoMode(this, play);
 }
 
-void DemoIk_Type2Action1(DemoIk* this, PlayState* play) {
-    func_80984048(this, play);
+void Demo_Ik_inFace_main_stick(DemoIk* this, PlayState* play) {
+    Demo_Ik_inFace_Check_DemoMode(this, play);
 }
 
-void DemoIk_Type2Action2(DemoIk* this, PlayState* play) {
-    DemoIk_UpdateSkelAnime(this);
-    DemoIk_Type2PlaySfx(this);
-    func_80984048(this, play);
+void Demo_Ik_inFace_main_drop(DemoIk* this, PlayState* play) {
+    Demo_Ik_Animation_Base(this);
+    Demo_Ik_inFace_SetSound_Drop(this);
+    Demo_Ik_inFace_Check_DemoMode(this, play);
 }
 
-s32 DemoIk_Type2OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+s32 Demo_Ik_inFace_before(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     DemoIk* this = (DemoIk*)thisx;
 
-    if ((limbIndex == 1) && (DemoIk_GetCurFrame(this) < 30.0f)) {
+    if ((limbIndex == 1) && (Demo_Ik_Get_anime_frame(this) < 30.0f)) {
         *dList = NULL;
     }
     return 0;
 }
 
-void DemoIk_Type2PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
+void Demo_Ik_inFace_after(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
     DemoIk* this = (DemoIk*)thisx;
     GraphicsContext* gfxCtx = play->state.gfxCtx;
-    f32 frame = DemoIk_GetCurFrame(this);
+    f32 frame = Demo_Ik_Get_anime_frame(this);
 
     OPEN_DISPS(gfxCtx, "../z_demo_ik_inFace.c", 268);
     if (limbIndex == 1 && (frame >= 30.0f)) {
@@ -145,19 +145,19 @@ void DemoIk_Type2PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s
     CLOSE_DISPS(gfxCtx, "../z_demo_ik_inFace.c", 300);
 }
 
-void DemoIk_Type2Draw(DemoIk* this, PlayState* play) {
+void Demo_Ik_inFace_draw_normal(DemoIk* this, PlayState* play) {
     s32 pad[2];
     GraphicsContext* gfxCtx = play->state.gfxCtx;
     SkelAnime* skelAnime = &this->skelAnime;
 
     OPEN_DISPS(gfxCtx, "../z_demo_ik_inFace.c", 318);
-    func_8002EBCC(&this->actor, play, 0);
-    Gfx_SetupDL_25Opa(gfxCtx);
-    Gfx_SetupDL_25Xlu(gfxCtx);
-    gSPSegment(POLY_OPA_DISP++, 0x08, DemoIk_SetColors(gfxCtx, 245, 225, 155, 30, 30, 0));
-    gSPSegment(POLY_OPA_DISP++, 0x09, DemoIk_SetColors(gfxCtx, 255, 40, 0, 40, 0, 0));
-    gSPSegment(POLY_OPA_DISP++, 0x0A, DemoIk_SetColors(gfxCtx, 255, 255, 255, 20, 40, 30));
-    SkelAnime_DrawFlexOpa(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount,
-                          DemoIk_Type2OverrideLimbDraw, DemoIk_Type2PostLimbDraw, this);
+    Actor_HiliteReflect_set_init(&this->actor, play, 0);
+    _texture_z_light_fog_prim(gfxCtx);
+    _texture_z_light_fog_prim_xlu(gfxCtx);
+    gSPSegment(POLY_OPA_DISP++, 0x08, Demo_Ik_Setcolor(gfxCtx, 245, 225, 155, 30, 30, 0));
+    gSPSegment(POLY_OPA_DISP++, 0x09, Demo_Ik_Setcolor(gfxCtx, 255, 40, 0, 40, 0, 0));
+    gSPSegment(POLY_OPA_DISP++, 0x0A, Demo_Ik_Setcolor(gfxCtx, 255, 255, 255, 20, 40, 30));
+    Si2_draw_SV(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount,
+                          Demo_Ik_inFace_before, Demo_Ik_inFace_after, this);
     CLOSE_DISPS(gfxCtx, "../z_demo_ik_inFace.c", 341);
 }

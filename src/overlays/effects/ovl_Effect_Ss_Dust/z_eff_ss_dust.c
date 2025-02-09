@@ -21,34 +21,34 @@
 #define rDrawFlags regs[11]
 #define rLifespan regs[12]
 
-u32 EffectSsDust_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
-void EffectSsDust_Update(PlayState* play, u32 index, EffectSs* this);
-void EffectSsDust_UpdateFire(PlayState* play, u32 index, EffectSs* this);
-void EffectSsDust_Draw(PlayState* play, u32 index, EffectSs* this);
+u32 Effect_SS2_Dust_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
+void Effect_SS_Dust_func_proc(PlayState* play, u32 index, EffectSs* this);
+void Effect_SS_Dust_func_proc2(PlayState* play, u32 index, EffectSs* this);
+void Effect_SS_Dust_disp_mode(PlayState* play, u32 index, EffectSs* this);
 
 EffectSsProfile Effect_Ss_Dust_Profile = {
     EFFECT_SS_DUST,
-    EffectSsDust_Init,
+    Effect_SS2_Dust_ct,
 };
 
-static EffectSsUpdateFunc sUpdateFuncs[] = {
-    EffectSsDust_Update,
-    EffectSsDust_UpdateFire,
+static EffectSsUpdateFunc move_func_tbl[] = {
+    Effect_SS_Dust_func_proc,
+    Effect_SS_Dust_func_proc2,
 };
 
-u32 EffectSsDust_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
+u32 Effect_SS2_Dust_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
     EffectSsDustInitParams* initParams = (EffectSsDustInitParams*)initParamsx;
 
-    Math_Vec3f_Copy(&this->pos, &initParams->pos);
-    Math_Vec3f_Copy(&this->velocity, &initParams->velocity);
-    Math_Vec3f_Copy(&this->accel, &initParams->accel);
+    xyz_t_move(&this->pos, &initParams->pos);
+    xyz_t_move(&this->velocity, &initParams->velocity);
+    xyz_t_move(&this->accel, &initParams->accel);
     this->gfx = SEGMENTED_TO_VIRTUAL(gEffDustDL);
     this->life = initParams->life;
-    this->update = sUpdateFuncs[initParams->updateMode];
-    this->draw = EffectSsDust_Draw;
+    this->update = move_func_tbl[initParams->updateMode];
+    this->draw = Effect_SS_Dust_disp_mode;
 
     if (initParams->drawFlags & 4) {
-        s32 randColorOffset = Rand_ZeroOne() * 20.0f - 10.0f;
+        s32 randColorOffset = fqrand() * 20.0f - 10.0f;
 
         this->rPrimColorR = initParams->primColor.r + randColorOffset;
         this->rPrimColorG = initParams->primColor.g + randColorOffset;
@@ -76,8 +76,8 @@ u32 EffectSsDust_Init(PlayState* play, u32 index, EffectSs* this, void* initPara
     return 1;
 }
 
-void EffectSsDust_Draw(PlayState* play, u32 index, EffectSs* this) {
-    static void* dustTextures[] = {
+void Effect_SS_Dust_disp_mode(PlayState* play, u32 index, EffectSs* this) {
+    static void* smoke1_txt[] = {
         gDust1Tex, gDust2Tex, gDust3Tex, gDust4Tex, gDust5Tex, gDust6Tex, gDust7Tex, gDust8Tex,
     };
     GraphicsContext* gfxCtx = play->state.gfxCtx;
@@ -92,19 +92,19 @@ void EffectSsDust_Draw(PlayState* play, u32 index, EffectSs* this) {
     OPEN_DISPS(gfxCtx, "../z_eff_ss_dust.c", 321);
 
     scale = this->rScale * 0.0025f;
-    SkinMatrix_SetTranslate(&mfTrans, this->pos.x, this->pos.y, this->pos.z);
-    SkinMatrix_SetScale(&mfScale, scale, scale, 1.0f);
-    SkinMatrix_MtxFMtxFMult(&mfTrans, &play->billboardMtxF, &mfTransBillboard);
-    SkinMatrix_MtxFMtxFMult(&mfTransBillboard, &mfScale, &mfResult);
-    gSPMatrix(POLY_XLU_DISP++, &gMtxClear, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+    Skin_Matrix_SetTranslate(&mfTrans, this->pos.x, this->pos.y, this->pos.z);
+    Skin_Matrix_SetScale(&mfScale, scale, scale, 1.0f);
+    Skin_Matrix_MulMatrix(&mfTrans, &play->billboardMtxF, &mfTransBillboard);
+    Skin_Matrix_MulMatrix(&mfTransBillboard, &mfScale, &mfResult);
+    gSPMatrix(POLY_XLU_DISP++, &Mtx_clear, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
 
-    mtx = SkinMatrix_MtxFToNewMtx(gfxCtx, &mfResult);
+    mtx = Skin_Matrix_to_Mtx_new(gfxCtx, &mfResult);
 
     if (mtx != NULL) {
         gSPMatrix(POLY_XLU_DISP++, mtx, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
         gDPPipeSync(POLY_XLU_DISP++);
-        gSPSegment(POLY_XLU_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(dustTextures[this->rTexIndex]));
-        POLY_XLU_DISP = Gfx_SetupDL(POLY_XLU_DISP, SETUPDL_0);
+        gSPSegment(POLY_XLU_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(smoke1_txt[this->rTexIndex]));
+        POLY_XLU_DISP = rcp_mode_set(POLY_XLU_DISP, SETUPDL_0);
         gDPPipeSync(POLY_XLU_DISP++);
 
         if (this->rDrawFlags & 1) {
@@ -128,9 +128,9 @@ void EffectSsDust_Draw(PlayState* play, u32 index, EffectSs* this) {
     CLOSE_DISPS(gfxCtx, "../z_eff_ss_dust.c", 389);
 }
 
-void EffectSsDust_Update(PlayState* play, u32 index, EffectSs* this) {
-    this->accel.x = (Rand_ZeroOne() * 0.4f) - 0.2f;
-    this->accel.z = (Rand_ZeroOne() * 0.4f) - 0.2f;
+void Effect_SS_Dust_func_proc(PlayState* play, u32 index, EffectSs* this) {
+    this->accel.x = (fqrand() * 0.4f) - 0.2f;
+    this->accel.z = (fqrand() * 0.4f) - 0.2f;
 
     if ((this->life <= this->rLifespan) && (this->life >= (this->rLifespan - 7))) {
         if (this->rLifespan >= 5) {
@@ -146,9 +146,9 @@ void EffectSsDust_Update(PlayState* play, u32 index, EffectSs* this) {
 }
 
 // this update mode is unused in the original game
-void EffectSsDust_UpdateFire(PlayState* play, u32 index, EffectSs* this) {
-    this->accel.x = (Rand_ZeroOne() * 0.4f) - 0.2f;
-    this->accel.z = (Rand_ZeroOne() * 0.4f) - 0.2f;
+void Effect_SS_Dust_func_proc2(PlayState* play, u32 index, EffectSs* this) {
+    this->accel.x = (fqrand() * 0.4f) - 0.2f;
+    this->accel.z = (fqrand() * 0.4f) - 0.2f;
 
     switch (this->rTexIndex) {
         case 0:

@@ -3,8 +3,8 @@
 
 // Symbol definition
 
-extern AudioTable gSampleBankTable;
-#pragma weak gSampleBankTable = sSampleBankTableHeader
+extern AudioTable AudiowaveHeaderStart;
+#pragma weak AudiowaveHeaderStart = sSampleBankTableHeader
 
 // Externs for table
 

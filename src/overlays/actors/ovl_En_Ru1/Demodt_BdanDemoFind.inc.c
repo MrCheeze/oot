@@ -1,10 +1,10 @@
 #include "z_en_ru1.h"
 #include "z64cutscene_commands.h"
 
-static u32 D_80AF1724 = 0;
+static u32 En_Ru1_In_BdanDemoFind_Dummy = 0;
 
 // clang-format off
-static CutsceneData gRutoFoundSapphireCs[] = {
+static CutsceneData En_Ru1_Data1_In_BdanDemoFind[] = {
     CS_HEADER(7, 1160),
     CS_MISC_LIST(1),
         CS_MISC(CS_MISC_STOP_CUTSCENE, 75, 627, 0x0000, 0x00000000, 0x00000000, 0xFFFFFFC0, 0x00000032, 0x00000000, 0xFFFFFFC0, 0x00000032, 0x00000000, 0x00000000, 0x00000000),

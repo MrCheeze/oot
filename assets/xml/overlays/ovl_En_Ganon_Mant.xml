@@ -1,21 +1,21 @@
 <Root>
     <File Name="ovl_En_Ganon_Mant" OutName="z_en_ganon_mant">
-        <Texture Name="gMantTex" OutName="mant" Format="rgba16" Width="32" Height="64" Offset="0x0"/>
+        <Texture Name="gn1_pat82_txt" OutName="mant" Format="rgba16" Width="32" Height="64" Offset="0x0"/>
 
-        <Texture Name="gMantUnusedTex" OutName="mant_unused" Format="rgba16" Width="32" Height="32" Offset="0x1000"/>
+        <Texture Name="gn2_boromant_txt" OutName="mant_unused" Format="rgba16" Width="32" Height="32" Offset="0x1000"/>
 
-        <Array Name="gMant1Vtx" Count="144" Offset="0x1800">
+        <Array Name="mant_v" Count="144" Offset="0x1800">
             <Vtx/>
         </Array>
 
-        <DList Name="gMantMaterialDL" Offset="0x2100"/>
+        <DList Name="gn1_mant_MODE" Offset="0x2100"/>
 
-        <!-- ! @bug gMantUnusedTex is 32x32 not 32x64, however this dlist is unused -->
-        <DList Name="gMantUnusedMaterialDL" Offset="0x2158"/>
+        <!-- ! @bug gn2_boromant_txt is 32x32 not 32x64, however this dlist is unused -->
+        <DList Name="gn2_mant_MODE" Offset="0x2158"/>
 
-        <DList Name="gMantDL" Offset="0x21B0"/>
+        <DList Name="mant_model" Offset="0x21B0"/>
 
-        <Array Name="gMant2Vtx" Count="144" Offset="0x2600">
+        <Array Name="mant2_v" Count="144" Offset="0x2600">
             <Vtx/>
         </Array>
     </File>

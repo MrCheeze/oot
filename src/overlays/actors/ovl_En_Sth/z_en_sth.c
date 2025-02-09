@@ -11,16 +11,16 @@
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY | ACTOR_FLAG_UPDATE_CULLING_DISABLED)
 
-void EnSth_Init(Actor* thisx, PlayState* play);
-void EnSth_Destroy(Actor* thisx, PlayState* play);
-void EnSth_Update(Actor* thisx, PlayState* play);
-void EnSth_Update2(Actor* thisx, PlayState* play);
-void EnSth_Draw(Actor* thisx, PlayState* play);
+void En_Sth_Actor_ct(Actor* thisx, PlayState* play);
+void En_Sth_Actor_dt(Actor* thisx, PlayState* play);
+void En_Sth_Actor_wait(Actor* thisx, PlayState* play);
+void En_Sth_Actor_move(Actor* thisx, PlayState* play);
+void En_Sth_Actor_draw(Actor* thisx, PlayState* play);
 
-void EnSth_WaitForObject(EnSth* this, PlayState* play);
-void EnSth_ParentRewardObtainedWait(EnSth* this, PlayState* play);
-void EnSth_RewardUnobtainedWait(EnSth* this, PlayState* play);
-void EnSth_ChildRewardObtainedWait(EnSth* this, PlayState* play);
+static void move_wait2(EnSth* this, PlayState* play);
+void sth_0_wait(EnSth* this, PlayState* play);
+void sth_c_orei0(EnSth* this, PlayState* play);
+void sth_1_wait(EnSth* this, PlayState* play);
 
 ActorProfile En_Sth_Profile = {
     /**/ ACTOR_EN_STH,
@@ -28,15 +28,15 @@ ActorProfile En_Sth_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(EnSth),
-    /**/ EnSth_Init,
-    /**/ EnSth_Destroy,
-    /**/ EnSth_Update,
+    /**/ En_Sth_Actor_ct,
+    /**/ En_Sth_Actor_dt,
+    /**/ En_Sth_Actor_wait,
     /**/ NULL,
 };
 
 #include "assets/overlays/ovl_En_Sth/z_en_sth.c"
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit EnSthOcInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -56,24 +56,24 @@ static ColliderCylinderInit sCylinderInit = {
     { 30, 40, 0, { 0, 0, 0 } },
 };
 
-static s16 sObjectIds[6] = {
+static s16 en_sth_shape_data[6] = {
     OBJECT_AHG, OBJECT_BOJ, OBJECT_BOJ, OBJECT_BOJ, OBJECT_BOJ, OBJECT_BOJ,
 };
 
-static FlexSkeletonHeader* sSkeletons[6] = {
+static FlexSkeletonHeader* mdl_info[6] = {
     &gHylianMan1Skel, &gHylianMan2Skel, &gHylianMan2Skel, &gHylianMan2Skel, &gHylianMan2Skel, &gHylianMan2Skel,
 };
 
-static AnimationHeader* sAnimations[6] = {
-    &sParentDanceAnim, &sChildDanceAnim, &sChildDanceAnim, &sChildDanceAnim, &sChildDanceAnim, &sChildDanceAnim,
+static AnimationHeader* soft_anime_info[6] = {
+    &sth_oya_matsu_soft_anim_tbl_info, &sth_ko_matsu_soft_anim_tbl_info, &sth_ko_matsu_soft_anim_tbl_info, &sth_ko_matsu_soft_anim_tbl_info, &sth_ko_matsu_soft_anim_tbl_info, &sth_ko_matsu_soft_anim_tbl_info,
 };
 
-static EnSthActionFunc sRewardObtainedWaitActions[6] = {
-    EnSth_ParentRewardObtainedWait, EnSth_ChildRewardObtainedWait, EnSth_ChildRewardObtainedWait,
-    EnSth_ChildRewardObtainedWait,  EnSth_ChildRewardObtainedWait, EnSth_ChildRewardObtainedWait,
+static EnSthActionFunc prc0_tbl[6] = {
+    sth_0_wait, sth_1_wait, sth_1_wait,
+    sth_1_wait,  sth_1_wait, sth_1_wait,
 };
 
-static u16 sEventFlags[6] = {
+static u16 event_tlb[6] = {
     0,
     EVENTCHKINF_MASK(EVENTCHKINF_SKULLTULA_REWARD_10),
     EVENTCHKINF_MASK(EVENTCHKINF_SKULLTULA_REWARD_20),
@@ -82,15 +82,15 @@ static u16 sEventFlags[6] = {
     EVENTCHKINF_MASK(EVENTCHKINF_SKULLTULA_REWARD_50),
 };
 
-static s16 sGetItemIds[6] = {
+static s16 item_tbl[6] = {
     GI_RUPEE_GOLD, GI_WALLET_ADULT, GI_STONE_OF_AGONY, GI_WALLET_GIANT, GI_BOMBCHUS_10, GI_HEART_PIECE,
 };
 
-void EnSth_SetupAction(EnSth* this, EnSthActionFunc actionFunc) {
+void En_Sth_actor_set_process(EnSth* this, EnSthActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
 
-void EnSth_Init(Actor* thisx, PlayState* play) {
+void En_Sth_Actor_ct(Actor* thisx, PlayState* play) {
     EnSth* this = (EnSth*)thisx;
 
     s16 objectId;
@@ -99,22 +99,22 @@ void EnSth_Init(Actor* thisx, PlayState* play) {
 
     PRINTF(VT_FGCOL(BLUE) "金スタル屋 no = %d\n" VT_RST, params); // "Gold Skulltula Shop"
     if (this->actor.params == 0) {
-        if (gSaveContext.save.info.inventory.gsTokens < 100) {
-            Actor_Kill(&this->actor);
+        if (z_common_data.save.info.inventory.gsTokens < 100) {
+            Actor_delete(&this->actor);
             // "Gold Skulltula Shop I still can't be a human"
             PRINTF("金スタル屋 まだ 人間に戻れない \n");
             return;
         }
-    } else if (gSaveContext.save.info.inventory.gsTokens < (this->actor.params * 10)) {
-        Actor_Kill(&this->actor);
+    } else if (z_common_data.save.info.inventory.gsTokens < (this->actor.params * 10)) {
+        Actor_delete(&this->actor);
         // "Gold Skulltula Shop I still can't be a human"
         PRINTF(VT_FGCOL(BLUE) "金スタル屋 まだ 人間に戻れない \n" VT_RST);
         return;
     }
 
-    objectId = sObjectIds[params];
+    objectId = en_sth_shape_data[params];
     if (objectId != OBJECT_GAMEPLAY_KEEP) {
-        objectSlot = Object_GetSlot(&play->objectCtx, objectId);
+        objectSlot = Object_Exchange_bank_check(&play->objectCtx, objectId);
     } else {
         objectSlot = 0;
     }
@@ -124,114 +124,114 @@ void EnSth_Init(Actor* thisx, PlayState* play) {
         ASSERT(0, "0", "../z_en_sth.c", 1564);
     }
     this->requiredObjectSlot = objectSlot;
-    this->drawFunc = EnSth_Draw;
-    Actor_SetScale(&this->actor, 0.01f);
-    EnSth_SetupAction(this, EnSth_WaitForObject);
+    this->drawFunc = En_Sth_Actor_draw;
+    Actor_set_scale(&this->actor, 0.01f);
+    En_Sth_actor_set_process(this, move_wait2);
     this->actor.draw = NULL;
     this->unk_2B2 = 0;
     this->actor.attentionRangeType = ATTENTION_RANGE_6;
 }
 
-void EnSth_SetupShapeColliderUpdate2AndDraw(EnSth* this, PlayState* play) {
+void sth_common_ct(EnSth* this, PlayState* play) {
     s32 pad;
 
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 36.0f);
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 36.0f);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set5(play, &this->collider, &this->actor, &EnSthOcInfoData);
     this->actor.colChkInfo.mass = MASS_IMMOVABLE;
-    this->actor.update = EnSth_Update2;
+    this->actor.update = En_Sth_Actor_move;
     this->actor.draw = this->drawFunc;
 }
 
-void EnSth_SetupAfterObjectLoaded(EnSth* this, PlayState* play) {
+void sth_0_ct(EnSth* this, PlayState* play) {
     s32 pad;
     s16* params;
 
-    EnSth_SetupShapeColliderUpdate2AndDraw(this, play);
-    gSegments[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[this->requiredObjectSlot].segment);
-    SkelAnime_InitFlex(play, &this->skelAnime, sSkeletons[this->actor.params], NULL, this->jointTable, this->morphTable,
+    sth_common_ct(this, play);
+    SegmentBaseAddress[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[this->requiredObjectSlot].segment);
+    Skeleton_Info2_SV_M_ct(play, &this->skelAnime, mdl_info[this->actor.params], NULL, this->jointTable, this->morphTable,
                        16);
-    Animation_PlayLoop(&this->skelAnime, sAnimations[this->actor.params]);
+    Skeleton_Info2_init_standard_repeat(&this->skelAnime, soft_anime_info[this->actor.params]);
 
     params = &this->actor.params;
-    this->eventFlag = sEventFlags[*params];
-    if (gSaveContext.save.info.eventChkInf[EVENTCHKINF_INDEX_SKULLTULA_REWARD] & this->eventFlag) {
-        EnSth_SetupAction(this, sRewardObtainedWaitActions[*params]);
+    this->eventFlag = event_tlb[*params];
+    if (z_common_data.save.info.eventChkInf[EVENTCHKINF_INDEX_SKULLTULA_REWARD] & this->eventFlag) {
+        En_Sth_actor_set_process(this, prc0_tbl[*params]);
     } else {
-        EnSth_SetupAction(this, EnSth_RewardUnobtainedWait);
+        En_Sth_actor_set_process(this, sth_c_orei0);
     }
 }
 
-void EnSth_Destroy(Actor* thisx, PlayState* play) {
+void En_Sth_Actor_dt(Actor* thisx, PlayState* play) {
     EnSth* this = (EnSth*)thisx;
 
-    Collider_DestroyCylinder(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider);
 }
 
-void EnSth_WaitForObject(EnSth* this, PlayState* play) {
-    if (Object_IsLoaded(&play->objectCtx, this->requiredObjectSlot)) {
+static void move_wait2(EnSth* this, PlayState* play) {
+    if (Object_Exchange_bank_dma_check(&play->objectCtx, this->requiredObjectSlot)) {
         this->actor.objectSlot = this->requiredObjectSlot;
-        this->actionFunc = EnSth_SetupAfterObjectLoaded;
+        this->actionFunc = sth_0_ct;
     }
 }
 
-void EnSth_FacePlayer(EnSth* this, PlayState* play) {
+void sth_search_furimuki(EnSth* this, PlayState* play) {
     s32 pad;
     s16 diffRot = this->actor.yawTowardsPlayer - this->actor.shape.rot.y;
 
     if (ABS(diffRot) <= 0x4000) {
-        Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 6, 0xFA0, 0x64);
+        add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 6, 0xFA0, 0x64);
         this->actor.world.rot.y = this->actor.shape.rot.y;
-        Actor_TrackPlayer(play, &this->actor, &this->headRot, &this->unk_2AC, this->actor.focus.pos);
+        eye_move2(play, &this->actor, &this->headRot, &this->unk_2AC, this->actor.focus.pos);
     } else {
         if (diffRot < 0) {
-            Math_SmoothStepToS(&this->headRot.y, -0x2000, 6, 0x1838, 0x100);
+            add_calc_short_angle2(&this->headRot.y, -0x2000, 6, 0x1838, 0x100);
         } else {
-            Math_SmoothStepToS(&this->headRot.y, 0x2000, 6, 0x1838, 0x100);
+            add_calc_short_angle2(&this->headRot.y, 0x2000, 6, 0x1838, 0x100);
         }
-        Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 0xC, 0x3E8, 0x64);
+        add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 0xC, 0x3E8, 0x64);
         this->actor.world.rot.y = this->actor.shape.rot.y;
     }
 }
 
-void EnSth_LookAtPlayer(EnSth* this, PlayState* play) {
+void sth_search_normal(EnSth* this, PlayState* play) {
     s16 diffRot = this->actor.yawTowardsPlayer - this->actor.shape.rot.y;
 
     if ((ABS(diffRot) <= 0x4300) && (this->actor.xzDistToPlayer < 100.0f)) {
-        Actor_TrackPlayer(play, &this->actor, &this->headRot, &this->unk_2AC, this->actor.focus.pos);
+        eye_move2(play, &this->actor, &this->headRot, &this->unk_2AC, this->actor.focus.pos);
     } else {
-        Math_SmoothStepToS(&this->headRot.x, 0, 6, 0x1838, 0x64);
-        Math_SmoothStepToS(&this->headRot.y, 0, 6, 0x1838, 0x64);
-        Math_SmoothStepToS(&this->unk_2AC.x, 0, 6, 0x1838, 0x64);
-        Math_SmoothStepToS(&this->unk_2AC.y, 0, 6, 0x1838, 0x64);
+        add_calc_short_angle2(&this->headRot.x, 0, 6, 0x1838, 0x64);
+        add_calc_short_angle2(&this->headRot.y, 0, 6, 0x1838, 0x64);
+        add_calc_short_angle2(&this->unk_2AC.x, 0, 6, 0x1838, 0x64);
+        add_calc_short_angle2(&this->unk_2AC.y, 0, 6, 0x1838, 0x64);
     }
 }
 
-void EnSth_RewardObtainedTalk(EnSth* this, PlayState* play) {
-    if (Actor_TextboxIsClosing(&this->actor, play)) {
+void sth_c_talk(EnSth* this, PlayState* play) {
+    if (Actor_talk_end_check(&this->actor, play)) {
         if (this->actor.params == 0) {
-            EnSth_SetupAction(this, EnSth_ParentRewardObtainedWait);
+            En_Sth_actor_set_process(this, sth_0_wait);
         } else {
-            EnSth_SetupAction(this, EnSth_ChildRewardObtainedWait);
+            En_Sth_actor_set_process(this, sth_1_wait);
         }
     }
-    EnSth_FacePlayer(this, play);
+    sth_search_furimuki(this, play);
 }
 
-void EnSth_ParentRewardObtainedWait(EnSth* this, PlayState* play) {
-    if (Actor_TalkOfferAccepted(&this->actor, play)) {
-        EnSth_SetupAction(this, EnSth_RewardObtainedTalk);
+void sth_0_wait(EnSth* this, PlayState* play) {
+    if (Actor_talk_check(&this->actor, play)) {
+        En_Sth_actor_set_process(this, sth_c_talk);
     } else {
         this->actor.textId = 0x23;
         if (this->actor.xzDistToPlayer < 100.0f) {
-            Actor_OfferTalk(&this->actor, play, 100.0f);
+            Actor_talk_request2(&this->actor, play, 100.0f);
         }
     }
-    EnSth_LookAtPlayer(this, play);
+    sth_search_normal(this, play);
 }
 
-void EnSth_GivePlayerItem(EnSth* this, PlayState* play) {
-    u16 getItemId = sGetItemIds[this->actor.params];
+void sth_c_orei2_request(EnSth* this, PlayState* play) {
+    u16 getItemId = item_tbl[this->actor.params];
 
     switch (this->actor.params) {
         case 1:
@@ -248,32 +248,32 @@ void EnSth_GivePlayerItem(EnSth* this, PlayState* play) {
             break;
     }
 
-    Actor_OfferGetItem(&this->actor, play, getItemId, 10000.0f, 50.0f);
+    Actor_carry_request_set2(&this->actor, play, getItemId, 10000.0f, 50.0f);
 }
 
-void EnSth_GiveReward(EnSth* this, PlayState* play) {
-    if (Actor_HasParent(&this->actor, play)) {
+void sth_c_orei2(EnSth* this, PlayState* play) {
+    if (Actor_carry_check(&this->actor, play)) {
         this->actor.parent = NULL;
-        EnSth_SetupAction(this, EnSth_RewardObtainedTalk);
-        gSaveContext.save.info.eventChkInf[EVENTCHKINF_INDEX_SKULLTULA_REWARD] |= this->eventFlag;
+        En_Sth_actor_set_process(this, sth_c_talk);
+        z_common_data.save.info.eventChkInf[EVENTCHKINF_INDEX_SKULLTULA_REWARD] |= this->eventFlag;
     } else {
-        EnSth_GivePlayerItem(this, play);
+        sth_c_orei2_request(this, play);
     }
-    EnSth_FacePlayer(this, play);
+    sth_search_furimuki(this, play);
 }
 
-void EnSth_RewardUnobtainedTalk(EnSth* this, PlayState* play) {
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_EVENT) && Message_ShouldAdvance(play)) {
-        Message_CloseTextbox(play);
-        EnSth_SetupAction(this, EnSth_GiveReward);
-        EnSth_GivePlayerItem(this, play);
+void sth_c_orei1(EnSth* this, PlayState* play) {
+    if ((message_check(&play->msgCtx) == TEXT_STATE_EVENT) && pad_on_check(play)) {
+        message_close(play);
+        En_Sth_actor_set_process(this, sth_c_orei2);
+        sth_c_orei2_request(this, play);
     }
-    EnSth_FacePlayer(this, play);
+    sth_search_furimuki(this, play);
 }
 
-void EnSth_RewardUnobtainedWait(EnSth* this, PlayState* play) {
-    if (Actor_TalkOfferAccepted(&this->actor, play)) {
-        EnSth_SetupAction(this, EnSth_RewardUnobtainedTalk);
+void sth_c_orei0(EnSth* this, PlayState* play) {
+    if (Actor_talk_check(&this->actor, play)) {
+        En_Sth_actor_set_process(this, sth_c_orei1);
     } else {
         if (this->actor.params == 0) {
             this->actor.textId = 0x28;
@@ -281,50 +281,50 @@ void EnSth_RewardUnobtainedWait(EnSth* this, PlayState* play) {
             this->actor.textId = 0x21;
         }
         if (this->actor.xzDistToPlayer < 100.0f) {
-            Actor_OfferTalk(&this->actor, play, 100.0f);
+            Actor_talk_request2(&this->actor, play, 100.0f);
         }
     }
-    EnSth_LookAtPlayer(this, play);
+    sth_search_normal(this, play);
 }
 
-void EnSth_ChildRewardObtainedWait(EnSth* this, PlayState* play) {
-    if (Actor_TalkOfferAccepted(&this->actor, play)) {
-        EnSth_SetupAction(this, EnSth_RewardObtainedTalk);
+void sth_1_wait(EnSth* this, PlayState* play) {
+    if (Actor_talk_check(&this->actor, play)) {
+        En_Sth_actor_set_process(this, sth_c_talk);
     } else {
-        if (gSaveContext.save.info.inventory.gsTokens < 50) {
+        if (z_common_data.save.info.inventory.gsTokens < 50) {
             this->actor.textId = 0x20;
         } else {
             this->actor.textId = 0x1F;
         }
         if (this->actor.xzDistToPlayer < 100.0f) {
-            Actor_OfferTalk(&this->actor, play, 100.0f);
+            Actor_talk_request2(&this->actor, play, 100.0f);
         }
     }
-    EnSth_LookAtPlayer(this, play);
+    sth_search_normal(this, play);
 }
 
-void EnSth_Update(Actor* thisx, PlayState* play) {
+void En_Sth_Actor_wait(Actor* thisx, PlayState* play) {
     EnSth* this = (EnSth*)thisx;
 
     this->actionFunc(this, play);
 }
 
-void EnSth_Update2(Actor* thisx, PlayState* play) {
+void En_Sth_Actor_move(Actor* thisx, PlayState* play) {
     EnSth* this = (EnSth*)thisx;
     s32 pad;
 
-    Collider_UpdateCylinder(&this->actor, &this->collider);
-    CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
-    Actor_MoveXZGravity(&this->actor);
-    Actor_UpdateBgCheckInfo(play, &this->actor, 0.0f, 0.0f, 0.0f, UPDBGCHECKINFO_FLAG_2);
-    if (SkelAnime_Update(&this->skelAnime)) {
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
+    CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
+    Actor_position_moveF(&this->actor);
+    Actor_BGcheck2(play, &this->actor, 0.0f, 0.0f, 0.0f, UPDBGCHECKINFO_FLAG_2);
+    if (Skeleton_Info2_anime_play(&this->skelAnime)) {
         this->skelAnime.curFrame = 0.0f;
     }
     this->actionFunc(this, play);
 
     // Likely an unused blink timer and eye index
     if (DECR(this->unk_2B6) == 0) {
-        this->unk_2B6 = Rand_S16Offset(0x3C, 0x3C);
+        this->unk_2B6 = get_random_timer(0x3C, 0x3C);
     }
     this->unk_2B4 = this->unk_2B6;
     if (this->unk_2B4 >= 3) {
@@ -332,7 +332,7 @@ void EnSth_Update2(Actor* thisx, PlayState* play) {
     }
 }
 
-s32 EnSth_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+static s32 before_display(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     EnSth* this = (EnSth*)thisx;
 
     s32 fidgetFrequency;
@@ -340,7 +340,7 @@ s32 EnSth_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* p
     if (limbIndex == 15) {
         rot->x += this->headRot.y;
         rot->z += this->headRot.x;
-        *dList = D_80B0A050;
+        *dList = sth_atama_model;
     }
 
     if (this->unk_2B2 & 2) {
@@ -350,29 +350,29 @@ s32 EnSth_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* p
 
     if ((limbIndex == 8) || (limbIndex == 10) || (limbIndex == 13)) {
         fidgetFrequency = limbIndex * FIDGET_FREQ_LIMB;
-        rot->y += Math_SinS(play->state.frames * (fidgetFrequency + FIDGET_FREQ_Y)) * FIDGET_AMPLITUDE;
-        rot->z += Math_CosS(play->state.frames * (fidgetFrequency + FIDGET_FREQ_Z)) * FIDGET_AMPLITUDE;
+        rot->y += sin_s(play->state.frames * (fidgetFrequency + FIDGET_FREQ_Y)) * FIDGET_AMPLITUDE;
+        rot->z += cos_s(play->state.frames * (fidgetFrequency + FIDGET_FREQ_Z)) * FIDGET_AMPLITUDE;
     }
     return 0;
 }
 
-void EnSth_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
-    static Vec3f D_80B0B49C = { 700.0f, 400.0f, 0.0f };
+static void after_display(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
+    static Vec3f pos = { 700.0f, 400.0f, 0.0f };
     EnSth* this = (EnSth*)thisx;
 
     if (limbIndex == 15) {
-        Matrix_MultVec3f(&D_80B0B49C, &this->actor.focus.pos);
+        Matrix_Position(&pos, &this->actor.focus.pos);
         if (this->actor.params != 0) { // Children
             OPEN_DISPS(play->state.gfxCtx, "../z_en_sth.c", 2079);
 
-            gSPDisplayList(POLY_OPA_DISP++, D_80B0A3C0);
+            gSPDisplayList(POLY_OPA_DISP++, sth_zura_model);
 
             CLOSE_DISPS(play->state.gfxCtx, "../z_en_sth.c", 2081);
         }
     }
 }
 
-Gfx* EnSth_AllocColorDList(GraphicsContext* play, u8 envR, u8 envG, u8 envB, u8 envA) {
+static Gfx* pa(GraphicsContext* play, u8 envR, u8 envG, u8 envB, u8 envA) {
     Gfx* dList;
 
     dList = GRAPH_ALLOC(play, 2 * sizeof(Gfx));
@@ -382,8 +382,8 @@ Gfx* EnSth_AllocColorDList(GraphicsContext* play, u8 envR, u8 envG, u8 envB, u8 
     return dList;
 }
 
-void EnSth_Draw(Actor* thisx, PlayState* play) {
-    static Color_RGB8 sShirtColors[6] = {
+void En_Sth_Actor_draw(Actor* thisx, PlayState* play) {
+    static Color_RGB8 color_table[6] = {
         { 190, 110, 0 }, { 0, 180, 110 }, { 0, 255, 80 }, { 255, 160, 60 }, { 190, 230, 250 }, { 240, 230, 120 },
     };
     EnSth* this = (EnSth*)thisx;
@@ -391,20 +391,20 @@ void EnSth_Draw(Actor* thisx, PlayState* play) {
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_sth.c", 2133);
 
-    gSegments[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[this->requiredObjectSlot].segment);
-    Gfx_SetupDL_37Opa(play->state.gfxCtx);
+    SegmentBaseAddress[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[this->requiredObjectSlot].segment);
+    _polygon_z_light_fog_prim(play->state.gfxCtx);
 
     gSPSegment(POLY_OPA_DISP++, 0x08,
-               EnSth_AllocColorDList(play->state.gfxCtx, sShirtColors[this->actor.params].r,
-                                     sShirtColors[this->actor.params].g, sShirtColors[this->actor.params].b, 255));
+               pa(play->state.gfxCtx, color_table[this->actor.params].r,
+                                     color_table[this->actor.params].g, color_table[this->actor.params].b, 255));
 
     if (this->actor.params == 0) {
-        gSPSegment(POLY_OPA_DISP++, 0x09, EnSth_AllocColorDList(play->state.gfxCtx, 190, 110, 0, 255));
+        gSPSegment(POLY_OPA_DISP++, 0x09, pa(play->state.gfxCtx, 190, 110, 0, 255));
     } else {
-        gSPSegment(POLY_OPA_DISP++, 0x09, EnSth_AllocColorDList(play->state.gfxCtx, 90, 110, 130, 255));
+        gSPSegment(POLY_OPA_DISP++, 0x09, pa(play->state.gfxCtx, 90, 110, 130, 255));
     }
-    SkelAnime_DrawFlexOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
-                          EnSth_OverrideLimbDraw, EnSth_PostLimbDraw, &this->actor);
+    Si2_draw_SV(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
+                          before_display, after_display, &this->actor);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_sth.c", 2176);
 }

@@ -8,7 +8,7 @@
 /* Non-matching builds or IDO */
 #define PAD_TO 0x60
 #define LA(reg, sym) la reg, sym
-#define BOOT_STACK_TOP sBootThreadStack + BOOT_STACK_SIZE
+#define BOOT_STACK_TOP bootStack + BOOT_STACK_SIZE
 #else
 /* EGCS */
 #define PAD_TO 0x50
@@ -46,7 +46,7 @@ LEAF(entrypoint)
 
     /* Set up stack and enter program code */
     LA(     sp, BOOT_STACK_TOP)
-    LA(     t2, bootproc)
+    LA(     t2, boot)
     jr      t2
 END(entrypoint)
 

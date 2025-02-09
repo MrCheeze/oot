@@ -5,6 +5,6 @@
 
 struct PlayState;
 
-void GetItem_Draw(struct PlayState* play, s16 drawId);
+void Draw_GetItemType(struct PlayState* play, s16 drawId);
 
 #endif

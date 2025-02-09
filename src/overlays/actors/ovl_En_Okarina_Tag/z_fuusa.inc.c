@@ -2,7 +2,7 @@
 #include "z64cutscene_commands.h"
 
 // clang-format off
-CutsceneData gWindmillSpinningFasterCs[] = {
+CutsceneData fuusa_data[] = {
     CS_HEADER(4, 360),
     CS_DESTINATION(CS_DEST_KAKARIKO_VILLAGE_DRAIN_WELL, 200, 201),
     CS_CAM_EYE_SPLINE(0, 331),

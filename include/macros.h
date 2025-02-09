@@ -125,29 +125,29 @@
 #define SYSTEM_ARENA_FREE(size, file, line) SystemArena_FreeDebug(size, file, line)
 #define LOG_UTILS_CHECK_NULL_POINTER(exp, ptr, file, line) LogUtils_CheckNullPointer(exp, ptr, file, line)
 #define LOG_UTILS_CHECK_VALID_POINTER(exp, ptr, file, line) LogUtils_CheckValidPointer(exp, ptr, file, line)
-#define GAME_ALLOC_MALLOC(alloc, size, file, line) GameAlloc_MallocDebug(alloc, size, file, line)
+#define GAME_ALLOC_MALLOC(alloc, size, file, line) gamealloc_mallocDebug(alloc, size, file, line)
 
 #else
 
-#define DMA_REQUEST_SYNC(ram, vrom, size, file, line) DmaMgr_RequestSync(ram, vrom, size)
-#define DMA_REQUEST_ASYNC(req, ram, vrom, size, unk5, queue, msg, file, line) DmaMgr_RequestAsync(req, ram, vrom, size, unk5, queue, msg)
-#define GAME_STATE_ALLOC(gameState, size, file, line) THA_AllocTailAlign16(&(gameState)->tha, size)
+#define DMA_REQUEST_SYNC(ram, vrom, size, file, line) dmacopy_fg(ram, vrom, size)
+#define DMA_REQUEST_ASYNC(req, ram, vrom, size, unk5, queue, msg, file, line) dmacopy_bg(req, ram, vrom, size, unk5, queue, msg)
+#define GAME_STATE_ALLOC(gameState, size, file, line) THA_alloc16(&(gameState)->tha, size)
 #define DEBUG_ARENA_MALLOC(size, file, line) DebugArena_Malloc(size)
 #define DEBUG_ARENA_MALLOC_R(size, file, line) DebugArena_MallocR(size)
 #define DEBUG_ARENA_FREE(size, file, line) DebugArena_Free(size)
-#define SYSTEM_ARENA_MALLOC(size, file, line) SystemArena_Malloc(size)
-#define SYSTEM_ARENA_MALLOC_R(size, file, line) SystemArena_MallocR(size)
-#define SYSTEM_ARENA_FREE(size, file, line) SystemArena_Free(size)
+#define SYSTEM_ARENA_MALLOC(size, file, line) malloc(size)
+#define SYSTEM_ARENA_MALLOC_R(size, file, line) malloc_r(size)
+#define SYSTEM_ARENA_FREE(size, file, line) free(size)
 #define LOG_UTILS_CHECK_NULL_POINTER(exp, ptr, file, line) (void)0
 #define LOG_UTILS_CHECK_VALID_POINTER(exp, ptr, file, line) (void)0
-#define GAME_ALLOC_MALLOC(alloc, size, file, line) GameAlloc_Malloc(alloc, size)
+#define GAME_ALLOC_MALLOC(alloc, size, file, line) gamealloc_malloc(alloc, size)
 
 #endif
 
 #if PLATFORM_N64 || DEBUG_FEATURES
-#define HUNGUP_AND_CRASH(file, line) Fault_AddHungupAndCrash(file, line)
+#define HUNGUP_AND_CRASH(file, line) fault_HungUp(file, line)
 #else
-#define HUNGUP_AND_CRASH(file, line) LogUtils_HungupThread(file, line)
+#define HUNGUP_AND_CRASH(file, line) _dbg_hungup(file, line)
 #endif
 
 #define MATRIX_FINALIZE_AND_LOAD(pkt, gfxCtx, file, line) \

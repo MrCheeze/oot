@@ -1,31 +1,31 @@
-void Actor_Noop(Actor* actor, PlayState* play) {
+void Cheap_non_move(Actor* actor, PlayState* play) {
 }
 
-s32 func_80035124(Actor* actor, PlayState* play) {
+s32 Cheap_mode_wait(Actor* actor, PlayState* play) {
     s32 ret = 0;
 
     switch (actor->params) {
         case 0:
-            if (Actor_HasParent(actor, play)) {
+            if (Actor_carry_check(actor, play)) {
                 actor->params = 1;
             } else if (!(actor->bgCheckFlags & BGCHECKFLAG_GROUND)) {
-                Actor_MoveXZGravity(actor);
-                Math_SmoothStepToF(&actor->speed, 0.0f, 1.0f, 0.1f, 0.0f);
+                Actor_position_moveF(actor);
+                add_calc(&actor->speed, 0.0f, 1.0f, 0.1f, 0.0f);
             } else if ((actor->bgCheckFlags & BGCHECKFLAG_GROUND_TOUCH) && (actor->velocity.y < -4.0f)) {
                 ret = 1;
             } else {
                 actor->shape.rot.x = actor->shape.rot.z = 0;
-                Actor_OfferCarry(actor, play);
+                Actor_carry_request(actor, play);
             }
             break;
         case 1:
-            if (Actor_HasNoParent(actor, play)) {
+            if (Actor_carry_end_check(actor, play)) {
                 actor->params = 0;
             }
             break;
     }
 
-    Actor_UpdateBgCheckInfo(
+    Actor_BGcheck2(
         play, actor, actor->colChkInfo.cylHeight, actor->colChkInfo.cylRadius, actor->colChkInfo.cylRadius,
         UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2 | UPDBGCHECKINFO_FLAG_3 | UPDBGCHECKINFO_FLAG_4);
 
@@ -34,27 +34,27 @@ s32 func_80035124(Actor* actor, PlayState* play) {
 
 #include "global.h"
 
-void Gfx_DrawDListOpa(PlayState* play, Gfx* dlist) {
+void Cheap_gfx_display(PlayState* play, Gfx* dlist) {
     OPEN_DISPS(play->state.gfxCtx, "../z_cheap_proc.c", 214);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_cheap_proc.c", 216);
     gSPDisplayList(POLY_OPA_DISP++, dlist);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_cheap_proc.c", 219);
 }
 
-void Gfx_DrawDListXlu(PlayState* play, Gfx* dlist) {
+void Cheap_gfx_display_xlu(PlayState* play, Gfx* dlist) {
     OPEN_DISPS(play->state.gfxCtx, "../z_cheap_proc.c", 228);
 
-    Gfx_SetupDL_25Xlu(play->state.gfxCtx);
+    _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
     MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx, "../z_cheap_proc.c", 230);
     gSPDisplayList(POLY_XLU_DISP++, dlist);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_cheap_proc.c", 233);
 }
 
-u8 func_800353E8(PlayState* play) {
+u8 pl_comb_get(PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     return player->unk_845;
@@ -65,14 +65,14 @@ u8 func_800353E8(PlayState* play) {
  * an actor if there is one. If the ID provided is -1, this will look for any actor of the
  * specified category rather than a specific ID.
  */
-Actor* Actor_FindNearby(PlayState* play, Actor* refActor, s16 actorId, u8 actorCategory, f32 range) {
+Actor* ActorSearch(PlayState* play, Actor* refActor, s16 actorId, u8 actorCategory, f32 range) {
     Actor* actor = play->actorCtx.actorLists[actorCategory].head;
 
     while (actor != NULL) {
         if (actor == refActor || ((actorId != -1) && (actor->id != actorId))) {
             actor = actor->next;
         } else {
-            if (Actor_WorldDistXYZToActor(refActor, actor) <= range) {
+            if (Actor_search_actor_distance(refActor, actor) <= range) {
                 return actor;
             } else {
                 actor = actor->next;
@@ -83,7 +83,7 @@ Actor* Actor_FindNearby(PlayState* play, Actor* refActor, s16 actorId, u8 actorC
     return NULL;
 }
 
-s32 func_800354B4(PlayState* play, Actor* actor, f32 range, s16 arg3, s16 arg4, s16 arg5) {
+s32 PlayerSwingCheck(PlayState* play, Actor* actor, f32 range, s16 arg3, s16 arg4, s16 arg5) {
     Player* player = GET_PLAYER(play);
     s16 var1;
     s16 var2;
@@ -99,7 +99,7 @@ s32 func_800354B4(PlayState* play, Actor* actor, f32 range, s16 arg3, s16 arg4, 
     }
 }
 
-void func_8003555C(PlayState* play, Vec3f* pos, Vec3f* velocity, Vec3f* accel) {
+void suna_set0(PlayState* play, Vec3f* pos, Vec3f* velocity, Vec3f* accel) {
     Color_RGBA8 color1;
     Color_RGBA8 color2;
 
@@ -112,24 +112,24 @@ void func_8003555C(PlayState* play, Vec3f* pos, Vec3f* velocity, Vec3f* accel) {
     color2.b = 50;
 
     //! @bug color1 and color2 alpha components not set before being passed on
-    EffectSsKiraKira_SpawnSmall(play, pos, velocity, accel, &color1, &color2);
+    Effect_SS_KiraKira_ct(play, pos, velocity, accel, &color1, &color2);
 }
 
-Vec3f D_80116268 = { 0.0f, -1.5f, 0.0f };
-Vec3f D_80116274 = { 0.0f, -0.2f, 0.0f };
+Vec3f kirakira_vec = { 0.0f, -1.5f, 0.0f };
+Vec3f kirakira_acc = { 0.0f, -0.2f, 0.0f };
 
-Gfx D_80116280[] = {
+Gfx Actor_change_render_mode[] = {
     gsDPSetRenderMode(G_RM_FOG_SHADE_A, AA_EN | Z_CMP | Z_UPD | IM_RD | CLR_ON_CVG | CVG_DST_WRAP | ZMODE_XLU |
                                             FORCE_BL | GBL_c2(G_BL_CLR_IN, G_BL_A_IN, G_BL_CLR_MEM, G_BL_1MA)),
     gsDPSetAlphaCompare(G_AC_THRESHOLD),
     gsSPEndDisplayList(),
 };
 
-void func_800355B8(PlayState* play, Vec3f* pos) {
-    func_8003555C(play, pos, &D_80116268, &D_80116274);
+void suna_set(PlayState* play, Vec3f* pos) {
+    suna_set0(play, pos, &kirakira_vec, &kirakira_acc);
 }
 
-u8 func_800355E4(PlayState* play, Collider* collider) {
+u8 HammerSwingCheck(PlayState* play, Collider* collider) {
     Player* player = GET_PLAYER(play);
 
     if ((collider->acFlags & AC_TYPE_PLAYER) && (player->meleeWeaponState != 0) &&
@@ -140,7 +140,7 @@ u8 func_800355E4(PlayState* play, Collider* collider) {
     }
 }
 
-u8 Actor_ApplyDamage(Actor* actor) {
+u8 hp_down(Actor* actor) {
     if (actor->colChkInfo.health <= actor->colChkInfo.damage) {
         actor->colChkInfo.health = 0;
     } else {
@@ -150,7 +150,7 @@ u8 Actor_ApplyDamage(Actor* actor) {
     return actor->colChkInfo.health;
 }
 
-void Actor_SetDropFlag(Actor* actor, ColliderElement* elem, s32 freezeFlag) {
+void Hit_bit_set(Actor* actor, ColliderElement* elem, s32 freezeFlag) {
     ColliderElement* acHitElem = elem->acHitElem;
 
     if (acHitElem == NULL) {
@@ -180,7 +180,7 @@ void Actor_SetDropFlag(Actor* actor, ColliderElement* elem, s32 freezeFlag) {
     }
 }
 
-void Actor_SetDropFlagJntSph(Actor* actor, ColliderJntSph* jntSph, s32 freezeFlag) {
+void Hit_bit_set_sph(Actor* actor, ColliderJntSph* jntSph, s32 freezeFlag) {
     ColliderElement* elem;
     ColliderElement* acHitElem;
     s32 flag;
@@ -220,23 +220,23 @@ void Actor_SetDropFlagJntSph(Actor* actor, ColliderJntSph* jntSph, s32 freezeFla
     }
 }
 
-void func_80035844(Vec3f* arg0, Vec3f* arg1, Vec3s* arg2, s32 arg3) {
+void search_position_angleXY(Vec3f* arg0, Vec3f* arg1, Vec3s* arg2, s32 arg3) {
     f32 dx = arg1->x - arg0->x;
     f32 dz = arg1->z - arg0->z;
     f32 dy = arg3 ? (arg1->y - arg0->y) : (arg0->y - arg1->y);
 
-    arg2->y = Math_Atan2S(dz, dx);
-    arg2->x = Math_Atan2S(sqrtf(SQ(dx) + SQ(dz)), dy);
+    arg2->y = atans_table(dz, dx);
+    arg2->x = atans_table(sqrtf(SQ(dx) + SQ(dz)), dy);
 }
 
 /**
  * Spawns En_Part (Dissipating Flames) actor as a child of the given actor.
  */
-Actor* func_800358DC(Actor* actor, Vec3f* spawnPos, Vec3s* spawnRot, f32* arg3, s32 timer, s16* unused, PlayState* play,
+Actor* shot_set(Actor* actor, Vec3f* spawnPos, Vec3s* spawnRot, f32* arg3, s32 timer, s16* unused, PlayState* play,
                      s16 params, Gfx* dList) {
     EnPart* spawnedEnPart;
 
-    spawnedEnPart = (EnPart*)Actor_SpawnAsChild(&play->actorCtx, actor, play, ACTOR_EN_PART, spawnPos->x, spawnPos->y,
+    spawnedEnPart = (EnPart*)Actor_info_make_child_actor(&play->actorCtx, actor, play, ACTOR_EN_PART, spawnPos->x, spawnPos->y,
                                                 spawnPos->z, spawnRot->x, spawnRot->y, actor->objectSlot, params);
     if (spawnedEnPart != NULL) {
         spawnedEnPart->actor.scale = actor->scale;
@@ -252,7 +252,7 @@ Actor* func_800358DC(Actor* actor, Vec3f* spawnPos, Vec3s* spawnRot, f32* arg3, 
     return NULL;
 }
 
-void func_800359B8(Actor* actor, s16 arg1, Vec3s* arg2) {
+void grnd_ang(Actor* actor, s16 arg1, Vec3s* arg2) {
     if (actor->floorPoly != NULL) {
         f32 floorPolyNormalX;
         f32 floorPolyNormalY;
@@ -271,14 +271,14 @@ void func_800359B8(Actor* actor, s16 arg1, Vec3s* arg2) {
         floorPolyNormalY = COLPOLY_GET_NORMAL(floorPoly->normal.y);
         floorPolyNormalZ = COLPOLY_GET_NORMAL(floorPoly->normal.z);
 
-        sp38 = Math_SinS(arg1);
-        sp34 = Math_CosS(arg1);
+        sp38 = sin_s(arg1);
+        sp34 = cos_s(arg1);
         sp28 = (-(floorPolyNormalX * sp38) - (floorPolyNormalZ * sp34));
-        arg2->x = -RAD_TO_BINANG(Math_FAtan2F(sp28 * floorPolyNormalY, 1.0f));
+        arg2->x = -RAD_TO_BINANG(fatan2(sp28 * floorPolyNormalY, 1.0f));
 
-        sp2C = Math_SinS(arg1 - 16375);
-        sp30 = Math_CosS(arg1 - 16375);
+        sp2C = sin_s(arg1 - 16375);
+        sp30 = cos_s(arg1 - 16375);
         sp24 = (-(floorPolyNormalX * sp2C) - (floorPolyNormalZ * sp30));
-        arg2->z = -RAD_TO_BINANG(Math_FAtan2F(sp24 * floorPolyNormalY, 1.0f));
+        arg2->z = -RAD_TO_BINANG(fatan2(sp24 * floorPolyNormalY, 1.0f));
     }
 }

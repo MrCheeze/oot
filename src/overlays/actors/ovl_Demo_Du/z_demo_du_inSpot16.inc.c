@@ -1,100 +1,100 @@
-void DemoDu_InitCs_GoronsRuby(DemoDu* this, PlayState* play) {
-    SkelAnime_InitFlex(play, &this->skelAnime, &gDaruniaSkel, NULL, NULL, NULL, 0);
+void Demo_Du_Actor_Cryst_Init(DemoDu* this, PlayState* play) {
+    Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &gDaruniaSkel, NULL, NULL, NULL, 0);
     this->updateIndex = CS_GORONSRUBY_SUBSCENE(0);
 }
 
 // Cutscene: Darunia gives Link the Goron's Ruby.
 // Sfx played when Darunia lands at the floor at the start of the cutscene.
-void DemoDu_CsPlaySfx_GoronLanding(DemoDu* this) {
-    Sfx_PlaySfxAtPos(&this->actor.projectedPos, NA_SE_EN_GOLON_LAND_BIG);
+void Demo_Du_Cryst_Set_LandSound(DemoDu* this) {
+    Na_StartObjectSe_F(&this->actor.projectedPos, NA_SE_EN_GOLON_LAND_BIG);
 }
 
 // Cutscene: Darunia gives Link the Goron's Ruby.
 // Sfx played when Darunia is falling at the start of the cutscene.
-void DemoDu_CsPlaySfx_DaruniaFalling(PlayState* play) {
+void Demo_Du_Cryst_Set_FallSound(PlayState* play) {
     if (play->csCtx.curFrame == 160) {
-        Sfx_PlaySfxCentered2(NA_SE_EV_OBJECT_FALL);
+        Na_StartFixSe_F(NA_SE_EV_OBJECT_FALL);
     }
 }
 
 // Cutscene: Darunia gives Link the Goron's Ruby.
-void DemoDu_CsPlaySfx_DaruniaHitsLink(PlayState* play) {
+void Demo_Du_Cryst_Set_HitlinkSound(PlayState* play) {
     Player* player = GET_PLAYER(play);
     s32 pad;
 
-    Sfx_PlaySfxAtPos(&player->actor.projectedPos, NA_SE_EN_DARUNIA_HIT_LINK);
-    Audio_PlaySfxGeneral(NA_SE_VO_LI_DAMAGE_S_KID, &player->actor.projectedPos, 4, &gSfxDefaultFreqAndVolScale,
-                         &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+    Na_StartObjectSe_F(&player->actor.projectedPos, NA_SE_EN_DARUNIA_HIT_LINK);
+    Nai_FxFlagEntry(NA_SE_VO_LI_DAMAGE_S_KID, &player->actor.projectedPos, 4, &_dummy_one,
+                         &_dummy_one, &_dummy_zero_s8);
 }
 
 // Cutscene: Darunia gives Link the Goron's Ruby.
-void DemoDu_CsPlaySfx_HitBreast(DemoDu* this) {
-    Sfx_PlaySfxAtPos(&this->actor.projectedPos, NA_SE_EN_DARUNIA_HIT_BREAST - SFX_FLAG);
+void Demo_Du_Cryst_Set_HitbreastSound(DemoDu* this) {
+    Na_StartObjectSe_F(&this->actor.projectedPos, NA_SE_EN_DARUNIA_HIT_BREAST - SFX_FLAG);
 }
 
 // Cutscene: Darunia gives Link the Goron's Ruby.
 // Sfx played when Link is escaping from the gorons at the end of the scene.
-void DemoDu_CsPlaySfx_LinkEscapeFromGorons(PlayState* play) {
+void Demo_Du_Cryst_Set_CrylinkSound(PlayState* play) {
     if (play->csCtx.curFrame == 1400) {
         Player* player = GET_PLAYER(play);
 
-        Audio_PlaySfxGeneral(NA_SE_VO_LI_FALL_L_KID, &player->actor.projectedPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        Nai_FxFlagEntry(NA_SE_VO_LI_FALL_L_KID, &player->actor.projectedPos, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
     }
 }
 
 // Cutscene: Darunia gives Link the Goron's Ruby.
 // Sfx played when Link is surprised by Darunia falling from the sky.
-void DemoDu_CsPlaySfx_LinkSurprised(PlayState* play) {
+void Demo_Du_Cryst_Set_SurpriselinkSound(PlayState* play) {
     if (play->csCtx.curFrame == 174) {
         Player* player = GET_PLAYER(play);
 
-        Audio_PlaySfxGeneral(NA_SE_VO_LI_SURPRISE_KID, &player->actor.projectedPos, 4U, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        Nai_FxFlagEntry(NA_SE_VO_LI_SURPRISE_KID, &player->actor.projectedPos, 4U, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
     }
 }
 
-void DemoDu_CsGoronsRuby_UpdateFaceTextures(DemoDu* this, PlayState* play) {
+void Demo_Du_Cryst_SetFace(DemoDu* this, PlayState* play) {
     u16* frames = &play->csCtx.curFrame;
 
     if (*frames < 260) {
-        DemoDu_UpdateEyes(this);
-        DemoDu_SetMouthTexIndex(this, 0);
+        Demo_Du_set_eye_pattern(this);
+        Demo_Du_set_mouth_Num(this, 0);
     } else if (*frames < 335) {
-        DemoDu_UpdateEyes(this);
-        DemoDu_SetMouthTexIndex(this, 3);
+        Demo_Du_set_eye_pattern(this);
+        Demo_Du_set_mouth_Num(this, 3);
     } else if (*frames < 365) {
-        DemoDu_SetEyeTexIndex(this, 3);
-        DemoDu_SetMouthTexIndex(this, 1);
+        Demo_Du_set_eye_Num(this, 3);
+        Demo_Du_set_mouth_Num(this, 1);
     } else if (*frames < 395) {
-        DemoDu_SetEyeTexIndex(this, 0);
-        DemoDu_SetMouthTexIndex(this, 3);
+        Demo_Du_set_eye_Num(this, 0);
+        Demo_Du_set_mouth_Num(this, 3);
     } else if (*frames < 410) {
-        DemoDu_UpdateEyes(this);
-        DemoDu_SetMouthTexIndex(this, 0);
+        Demo_Du_set_eye_pattern(this);
+        Demo_Du_set_mouth_Num(this, 0);
     } else {
-        DemoDu_UpdateEyes(this);
-        DemoDu_SetMouthTexIndex(this, 3);
+        Demo_Du_set_eye_pattern(this);
+        Demo_Du_set_mouth_Num(this, 3);
     }
 }
 
-void func_8096A630(DemoDu* this, PlayState* play) {
+void Birth_Dust_In_Demo_Du_Cryst_Land(DemoDu* this, PlayState* play) {
     s32 pad;
     Vec3f pos = this->actor.world.pos;
 
     pos.y += kREG(5);
-    func_80033480(play, &pos, kREG(1) + 100.0f, kREG(2) + 10, kREG(3) + 300, kREG(4), 0);
-    DemoDu_CsPlaySfx_GoronLanding(this);
+    dust_fly_set2(play, &pos, kREG(1) + 100.0f, kREG(2) + 10, kREG(3) + 300, kREG(4), 0);
+    Demo_Du_Cryst_Set_LandSound(this);
 }
 
-void DemoDu_CsGoronsRuby_SpawnDustWhenHittingLink(DemoDu* this, PlayState* play) {
-    static Vec3f dustPosOffsets[] = {
+void Birth_Dust_In_Demo_Du_Cryst(DemoDu* this, PlayState* play) {
+    static Vec3f array_offset[] = {
         { 11.0f, -11.0f, -6.0f }, { 0.0f, 14.0f, -13.0f },  { 14.0f, -2.0f, -10.0f }, { 10.0f, -6.0f, -8.0f },
         { 8.0f, 6.0f, 8.0f },     { 13.0f, 8.0f, -10.0f },  { -14.0f, 1.0f, -14.0f }, { 5.0f, 12.0f, -9.0f },
         { 11.0f, 6.0f, -7.0f },   { 14.0f, 14.0f, -14.0f },
     };
 
-    if (Animation_OnFrame(&this->skelAnime, 31.0f) || Animation_OnFrame(&this->skelAnime, 41.0f)) {
+    if (Skeleton_Info_frame_check(&this->skelAnime, 31.0f) || Skeleton_Info_frame_check(&this->skelAnime, 41.0f)) {
         s32 pad[2];
         s32 i;
         Player* player = GET_PLAYER(play);
@@ -109,17 +109,17 @@ void DemoDu_CsGoronsRuby_SpawnDustWhenHittingLink(DemoDu* this, PlayState* play)
             s32 colorDelta;
             Vec3f position;
 
-            if (Animation_OnFrame(&this->skelAnime, 31.0f)) {
-                position.x = dustPosOffsets[i + 5].x + pos->x;
-                position.y = dustPosOffsets[i + 5].y + pos->y;
-                position.z = dustPosOffsets[i + 5].z + pos->z;
+            if (Skeleton_Info_frame_check(&this->skelAnime, 31.0f)) {
+                position.x = array_offset[i + 5].x + pos->x;
+                position.y = array_offset[i + 5].y + pos->y;
+                position.z = array_offset[i + 5].z + pos->z;
             } else {
-                position.x = dustPosOffsets[i + 0].x + pos->x;
-                position.y = dustPosOffsets[i + 0].y + pos->y;
-                position.z = dustPosOffsets[i + 0].z + pos->z;
+                position.x = array_offset[i + 0].x + pos->x;
+                position.y = array_offset[i + 0].y + pos->y;
+                position.z = array_offset[i + 0].z + pos->z;
             }
 
-            colorDelta = Rand_ZeroOne() * 20.0f - 10.0f;
+            colorDelta = fqrand() * 20.0f - 10.0f;
 
             primColor.r += colorDelta;
             primColor.g += colorDelta;
@@ -128,15 +128,15 @@ void DemoDu_CsGoronsRuby_SpawnDustWhenHittingLink(DemoDu* this, PlayState* play)
             envColor.g += colorDelta;
             envColor.b += colorDelta;
 
-            func_8002829C(play, &position, &velocity, &accel, &primColor, &envColor, Rand_ZeroOne() * 40.0f + 200.0f,
+            Effect_SS_Dust_sc_cl_ct(play, &position, &velocity, &accel, &primColor, &envColor, fqrand() * 40.0f + 200.0f,
                           0);
         }
 
-        DemoDu_CsPlaySfx_DaruniaHitsLink(play);
+        Demo_Du_Cryst_Set_HitlinkSound(play);
     }
 }
 
-void DemoDu_CsGoronsRuby_DaruniaFalling(DemoDu* this, PlayState* play) {
+void Demo_Du_Cryst_Movement_Down(DemoDu* this, PlayState* play) {
     s32 pad;
     CutsceneContext* csCtx = &play->csCtx;
 
@@ -147,7 +147,7 @@ void DemoDu_CsGoronsRuby_DaruniaFalling(DemoDu* this, PlayState* play) {
         Vec3f* pos = &this->actor.world.pos;
 
         if (cue != NULL) {
-            f32 traveledPercent = Environment_LerpWeight(cue->endFrame, cue->startFrame, csCtx->curFrame);
+            f32 traveledPercent = get_parcent(cue->endFrame, cue->startFrame, csCtx->curFrame);
 
             startPos.x = cue->startPos.x;
             startPos.y = cue->startPos.y;
@@ -164,25 +164,25 @@ void DemoDu_CsGoronsRuby_DaruniaFalling(DemoDu* this, PlayState* play) {
     }
 }
 
-void DemoDu_CsGoronsRuby_AdvanceTo01(DemoDu* this, PlayState* play) {
+void Demo_Du_Cryst_Check_WaitToHide(DemoDu* this, PlayState* play) {
     this->updateIndex = CS_GORONSRUBY_SUBSCENE(1);
 }
 
-void DemoDu_CsGoronsRuby_AdvanceTo02(DemoDu* this, PlayState* play) {
+void Demo_Du_Cryst_Check_HideToDown(DemoDu* this, PlayState* play) {
     if (play->csCtx.state != CS_STATE_IDLE) {
         CsCmdActorCue* cue = play->csCtx.actorCues[2];
 
         if ((cue != NULL) && (cue->id != 1)) {
-            Animation_Change(&this->skelAnime, &gDaruniaStandUpAfterFallingAnim, 1.0f, 0.0f,
-                             Animation_GetLastFrame(&gDaruniaStandUpAfterFallingAnim), 2, 0.0f);
+            Skeleton_Info2_init(&this->skelAnime, &gDaruniaStandUpAfterFallingAnim, 1.0f, 0.0f,
+                             Si2_anime_end_frame(&gDaruniaStandUpAfterFallingAnim), 2, 0.0f);
             this->updateIndex = CS_GORONSRUBY_SUBSCENE(2);
             this->drawIndex = 1;
-            DemoDu_CsGoronsRuby_DaruniaFalling(this, play);
+            Demo_Du_Cryst_Movement_Down(this, play);
         }
     }
 }
 
-void DemoDu_CsGoronsRuby_AdvanceTo03(DemoDu* this, PlayState* play) {
+void Demo_Du_Cryst_Check_DownToLand(DemoDu* this, PlayState* play) {
     CutsceneContext* csCtx = &play->csCtx;
 
     if (csCtx->state != CS_STATE_IDLE) {
@@ -190,12 +190,12 @@ void DemoDu_CsGoronsRuby_AdvanceTo03(DemoDu* this, PlayState* play) {
 
         if ((cue != NULL) && (csCtx->curFrame >= cue->endFrame)) {
             this->updateIndex = CS_GORONSRUBY_SUBSCENE(3);
-            func_8096A630(this, play);
+            Birth_Dust_In_Demo_Du_Cryst_Land(this, play);
         }
     }
 }
 
-void DemoDu_CsGoronsRuby_AdvanceTo04(DemoDu* this, PlayState* play) {
+void Demo_Du_Cryst_Check_LandToStandup(DemoDu* this, PlayState* play) {
     if (play->csCtx.state != CS_STATE_IDLE) {
         CsCmdActorCue* cue = play->csCtx.actorCues[2];
 
@@ -205,198 +205,198 @@ void DemoDu_CsGoronsRuby_AdvanceTo04(DemoDu* this, PlayState* play) {
     }
 }
 
-void DemoDu_CsGoronsRuby_AdvanceTo05(DemoDu* this, s32 animFinished) {
+void Demo_Du_Cryst_Check_StandupToGreet(DemoDu* this, s32 animFinished) {
     if (animFinished) {
-        Animation_Change(&this->skelAnime, &gDaruniaIdleAnim, 1.0f, 0.0f, Animation_GetLastFrame(&gDaruniaIdleAnim),
+        Skeleton_Info2_init(&this->skelAnime, &gDaruniaIdleAnim, 1.0f, 0.0f, Si2_anime_end_frame(&gDaruniaIdleAnim),
                          ANIMMODE_LOOP, 0.0f);
         this->updateIndex = CS_GORONSRUBY_SUBSCENE(5);
     }
 }
 
-void DemoDu_CsGoronsRuby_AdvanceTo06(DemoDu* this, PlayState* play) {
+void Demo_Du_Cryst_Check_GreetToImpress(DemoDu* this, PlayState* play) {
     if (play->csCtx.state != CS_STATE_IDLE) {
         CsCmdActorCue* cue = play->csCtx.actorCues[2];
 
         if ((cue != NULL) && (cue->id != 3)) {
-            Animation_Change(&this->skelAnime, &gDaruniaHitBreastAnim, 1.0f, 0.0f,
-                             Animation_GetLastFrame(&gDaruniaHitBreastAnim), 2, -4.0f);
+            Skeleton_Info2_init(&this->skelAnime, &gDaruniaHitBreastAnim, 1.0f, 0.0f,
+                             Si2_anime_end_frame(&gDaruniaHitBreastAnim), 2, -4.0f);
             this->updateIndex = CS_GORONSRUBY_SUBSCENE(6);
         }
     }
 }
 
-void DemoDu_CsGoronsRuby_AdvanceTo07(DemoDu* this, s32 animFinished) {
+void Demo_Du_Cryst_Check_ImpressToThanks(DemoDu* this, s32 animFinished) {
     if (animFinished) {
-        Animation_Change(&this->skelAnime, &gDaruniaIdleAnim, 1.0f, 0.0f, Animation_GetLastFrame(&gDaruniaIdleAnim),
+        Skeleton_Info2_init(&this->skelAnime, &gDaruniaIdleAnim, 1.0f, 0.0f, Si2_anime_end_frame(&gDaruniaIdleAnim),
                          ANIMMODE_LOOP, 0.0f);
         this->updateIndex = CS_GORONSRUBY_SUBSCENE(7);
     }
 }
 
-void DemoDu_CsGoronsRuby_AdvanceTo08(DemoDu* this, PlayState* play) {
+void Demo_Du_Cryst_Check_ThanksToHit(DemoDu* this, PlayState* play) {
     if (play->csCtx.state != CS_STATE_IDLE) {
         CsCmdActorCue* cue = play->csCtx.actorCues[2];
 
         if ((cue != NULL) && (cue->id != 4)) {
-            Animation_Change(&this->skelAnime, &gDaruniaHitLinkAnim, 1.0f, 0.0f,
-                             Animation_GetLastFrame(&gDaruniaHitLinkAnim), 2, 0.0f);
+            Skeleton_Info2_init(&this->skelAnime, &gDaruniaHitLinkAnim, 1.0f, 0.0f,
+                             Si2_anime_end_frame(&gDaruniaHitLinkAnim), 2, 0.0f);
             this->updateIndex = CS_GORONSRUBY_SUBSCENE(8);
         }
     }
 }
 
-void DemoDu_CsGoronsRuby_AdvanceTo09(DemoDu* this, s32 animFinished) {
+void Demo_Du_Cryst_Check_HitToImpress2(DemoDu* this, s32 animFinished) {
     if (animFinished) {
-        Animation_Change(&this->skelAnime, &gDaruniaHitBreastAnim, 1.0f, 0.0f,
-                         Animation_GetLastFrame(&gDaruniaHitBreastAnim), 2, 0.0f);
+        Skeleton_Info2_init(&this->skelAnime, &gDaruniaHitBreastAnim, 1.0f, 0.0f,
+                         Si2_anime_end_frame(&gDaruniaHitBreastAnim), 2, 0.0f);
         this->updateIndex = CS_GORONSRUBY_SUBSCENE(9);
     }
 }
 
-void DemoDu_CsGoronsRuby_AdvanceTo10(DemoDu* this, s32 animFinished) {
+void Demo_Du_Cryst_Check_Impress2ToReady(DemoDu* this, s32 animFinished) {
     if (animFinished) {
-        Animation_Change(&this->skelAnime, &gDaruniaIdleAnim, 1.0f, 0.0f, Animation_GetLastFrame(&gDaruniaIdleAnim),
+        Skeleton_Info2_init(&this->skelAnime, &gDaruniaIdleAnim, 1.0f, 0.0f, Si2_anime_end_frame(&gDaruniaIdleAnim),
                          ANIMMODE_LOOP, 0.0f);
         this->updateIndex = CS_GORONSRUBY_SUBSCENE(10);
     }
 }
 
-void DemoDu_CsGoronsRuby_AdvanceTo11(DemoDu* this, PlayState* play) {
+void Demo_Du_Cryst_Check_ReadyToHandup(DemoDu* this, PlayState* play) {
     if (play->csCtx.state != CS_STATE_IDLE) {
         CsCmdActorCue* cue = play->csCtx.actorCues[2];
 
         if ((cue != NULL) && (cue->id != 5)) {
-            Animation_Change(&this->skelAnime, &gDaruniaItemGiveAnim, 1.0f, 0.0f,
-                             Animation_GetLastFrame(&gDaruniaItemGiveAnim), 2, 0.0f);
+            Skeleton_Info2_init(&this->skelAnime, &gDaruniaItemGiveAnim, 1.0f, 0.0f,
+                             Si2_anime_end_frame(&gDaruniaItemGiveAnim), 2, 0.0f);
             this->updateIndex = CS_GORONSRUBY_SUBSCENE(11);
         }
     }
 }
 
-void DemoDu_CsGoronsRuby_AdvanceTo12(DemoDu* this, s32 animFinished) {
+void Demo_Du_Cryst_Check_HandupToRecall(DemoDu* this, s32 animFinished) {
     if (animFinished) {
-        Animation_Change(&this->skelAnime, &gDaruniaItemGiveIdleAnim, 1.0f, 0.0f,
-                         Animation_GetLastFrame(&gDaruniaItemGiveIdleAnim), 0, 0.0f);
+        Skeleton_Info2_init(&this->skelAnime, &gDaruniaItemGiveIdleAnim, 1.0f, 0.0f,
+                         Si2_anime_end_frame(&gDaruniaItemGiveIdleAnim), 0, 0.0f);
         this->updateIndex = CS_GORONSRUBY_SUBSCENE(12);
     }
 }
 
-void DemoDu_CsGoronsRuby_AdvanceTo13(DemoDu* this, PlayState* play) {
+void Demo_Du_Cryst_Check_RecallToStop(DemoDu* this, PlayState* play) {
     if (play->csCtx.state != CS_STATE_IDLE) {
         CsCmdActorCue* cue = play->csCtx.actorCues[2];
 
         if ((cue != NULL) && (cue->id != 6)) {
-            Animation_Change(&this->skelAnime, &gDaruniaIdleAnim, 1.0f, 0.0f, Animation_GetLastFrame(&gDaruniaIdleAnim),
+            Skeleton_Info2_init(&this->skelAnime, &gDaruniaIdleAnim, 1.0f, 0.0f, Si2_anime_end_frame(&gDaruniaIdleAnim),
                              ANIMMODE_LOOP, 0.0f);
             this->updateIndex = CS_GORONSRUBY_SUBSCENE(13);
         }
     }
 }
 
-void DemoDu_UpdateCs_GR_00(DemoDu* this, PlayState* play) {
-    DemoDu_CsPlaySfx_DaruniaFalling(play);
-    DemoDu_CsGoronsRuby_AdvanceTo01(this, play);
+void Demo_Du_Actor_main_cryst_wait(DemoDu* this, PlayState* play) {
+    Demo_Du_Cryst_Set_FallSound(play);
+    Demo_Du_Cryst_Check_WaitToHide(this, play);
 }
 
-void DemoDu_UpdateCs_GR_01(DemoDu* this, PlayState* play) {
-    DemoDu_CsPlaySfx_DaruniaFalling(play);
-    DemoDu_CsPlaySfx_LinkSurprised(play);
-    DemoDu_CsGoronsRuby_AdvanceTo02(this, play);
+void Demo_Du_Actor_main_cryst_hide(DemoDu* this, PlayState* play) {
+    Demo_Du_Cryst_Set_FallSound(play);
+    Demo_Du_Cryst_Set_SurpriselinkSound(play);
+    Demo_Du_Cryst_Check_HideToDown(this, play);
 }
 
-void DemoDu_UpdateCs_GR_02(DemoDu* this, PlayState* play) {
-    DemoDu_CsGoronsRuby_DaruniaFalling(this, play);
-    DemoDu_UpdateBgCheckInfo(this, play);
-    DemoDu_CsPlaySfx_DaruniaFalling(play);
-    DemoDu_CsPlaySfx_LinkSurprised(play);
-    DemoDu_CsGoronsRuby_AdvanceTo03(this, play);
+void Demo_Du_Actor_main_cryst_down(DemoDu* this, PlayState* play) {
+    Demo_Du_Cryst_Movement_Down(this, play);
+    Demo_Du_BGcheck(this, play);
+    Demo_Du_Cryst_Set_FallSound(play);
+    Demo_Du_Cryst_Set_SurpriselinkSound(play);
+    Demo_Du_Cryst_Check_DownToLand(this, play);
 }
 
-void DemoDu_UpdateCs_GR_03(DemoDu* this, PlayState* play) {
-    DemoDu_UpdateBgCheckInfo(this, play);
-    DemoDu_CsPlaySfx_LinkSurprised(play);
-    DemoDu_CsGoronsRuby_AdvanceTo04(this, play);
+void Demo_Du_Actor_main_cryst_land(DemoDu* this, PlayState* play) {
+    Demo_Du_BGcheck(this, play);
+    Demo_Du_Cryst_Set_SurpriselinkSound(play);
+    Demo_Du_Cryst_Check_LandToStandup(this, play);
 }
 
-void DemoDu_UpdateCs_GR_04(DemoDu* this, PlayState* play) {
+void Demo_Du_Actor_main_cryst_standup(DemoDu* this, PlayState* play) {
     s32 animFinished;
 
-    DemoDu_UpdateBgCheckInfo(this, play);
-    animFinished = DemoDu_UpdateSkelAnime(this);
-    DemoDu_CsGoronsRuby_UpdateFaceTextures(this, play);
-    DemoDu_CsGoronsRuby_AdvanceTo05(this, animFinished);
+    Demo_Du_BGcheck(this, play);
+    animFinished = Demo_Du_Animation_Base(this);
+    Demo_Du_Cryst_SetFace(this, play);
+    Demo_Du_Cryst_Check_StandupToGreet(this, animFinished);
 }
 
-void DemoDu_UpdateCs_GR_05(DemoDu* this, PlayState* play) {
-    DemoDu_UpdateBgCheckInfo(this, play);
-    DemoDu_UpdateSkelAnime(this);
-    DemoDu_CsGoronsRuby_UpdateFaceTextures(this, play);
-    DemoDu_CsGoronsRuby_AdvanceTo06(this, play);
+void Demo_Du_Actor_main_cryst_greet(DemoDu* this, PlayState* play) {
+    Demo_Du_BGcheck(this, play);
+    Demo_Du_Animation_Base(this);
+    Demo_Du_Cryst_SetFace(this, play);
+    Demo_Du_Cryst_Check_GreetToImpress(this, play);
 }
 
-void DemoDu_UpdateCs_GR_06(DemoDu* this, PlayState* play) {
+void Demo_Du_Actor_main_cryst_impress(DemoDu* this, PlayState* play) {
     s32 animFinished;
 
-    DemoDu_UpdateBgCheckInfo(this, play);
-    animFinished = DemoDu_UpdateSkelAnime(this);
-    DemoDu_CsPlaySfx_HitBreast(this);
-    DemoDu_CsGoronsRuby_UpdateFaceTextures(this, play);
-    DemoDu_CsGoronsRuby_AdvanceTo07(this, animFinished);
+    Demo_Du_BGcheck(this, play);
+    animFinished = Demo_Du_Animation_Base(this);
+    Demo_Du_Cryst_Set_HitbreastSound(this);
+    Demo_Du_Cryst_SetFace(this, play);
+    Demo_Du_Cryst_Check_ImpressToThanks(this, animFinished);
 }
 
-void DemoDu_UpdateCs_GR_07(DemoDu* this, PlayState* play) {
-    DemoDu_UpdateBgCheckInfo(this, play);
-    DemoDu_UpdateSkelAnime(this);
-    DemoDu_CsGoronsRuby_UpdateFaceTextures(this, play);
-    DemoDu_CsGoronsRuby_AdvanceTo08(this, play);
+void Demo_Du_Actor_main_cryst_thanks(DemoDu* this, PlayState* play) {
+    Demo_Du_BGcheck(this, play);
+    Demo_Du_Animation_Base(this);
+    Demo_Du_Cryst_SetFace(this, play);
+    Demo_Du_Cryst_Check_ThanksToHit(this, play);
 }
 
-void DemoDu_UpdateCs_GR_08(DemoDu* this, PlayState* play) {
+void Demo_Du_Actor_main_cryst_hit(DemoDu* this, PlayState* play) {
     s32 animFinished;
 
-    DemoDu_UpdateBgCheckInfo(this, play);
-    animFinished = DemoDu_UpdateSkelAnime(this);
-    DemoDu_CsGoronsRuby_UpdateFaceTextures(this, play);
-    DemoDu_CsGoronsRuby_SpawnDustWhenHittingLink(this, play);
-    DemoDu_CsGoronsRuby_AdvanceTo09(this, animFinished);
+    Demo_Du_BGcheck(this, play);
+    animFinished = Demo_Du_Animation_Base(this);
+    Demo_Du_Cryst_SetFace(this, play);
+    Birth_Dust_In_Demo_Du_Cryst(this, play);
+    Demo_Du_Cryst_Check_HitToImpress2(this, animFinished);
 }
 
-void DemoDu_UpdateCs_GR_09(DemoDu* this, PlayState* play) {
+void Demo_Du_Actor_main_cryst_impress2(DemoDu* this, PlayState* play) {
     s32 animFinished;
 
-    DemoDu_UpdateBgCheckInfo(this, play);
-    animFinished = DemoDu_UpdateSkelAnime(this);
-    DemoDu_CsPlaySfx_HitBreast(this);
-    DemoDu_CsGoronsRuby_UpdateFaceTextures(this, play);
-    DemoDu_CsGoronsRuby_AdvanceTo10(this, animFinished);
+    Demo_Du_BGcheck(this, play);
+    animFinished = Demo_Du_Animation_Base(this);
+    Demo_Du_Cryst_Set_HitbreastSound(this);
+    Demo_Du_Cryst_SetFace(this, play);
+    Demo_Du_Cryst_Check_Impress2ToReady(this, animFinished);
 }
 
-void DemoDu_UpdateCs_GR_10(DemoDu* this, PlayState* play) {
-    DemoDu_UpdateBgCheckInfo(this, play);
-    DemoDu_UpdateSkelAnime(this);
-    DemoDu_CsGoronsRuby_UpdateFaceTextures(this, play);
-    DemoDu_CsGoronsRuby_AdvanceTo11(this, play);
+void Demo_Du_Actor_main_cryst_ready(DemoDu* this, PlayState* play) {
+    Demo_Du_BGcheck(this, play);
+    Demo_Du_Animation_Base(this);
+    Demo_Du_Cryst_SetFace(this, play);
+    Demo_Du_Cryst_Check_ReadyToHandup(this, play);
 }
 
-void DemoDu_UpdateCs_GR_11(DemoDu* this, PlayState* play) {
+void Demo_Du_Actor_main_cryst_handup(DemoDu* this, PlayState* play) {
     s32 animFinished;
 
-    DemoDu_UpdateBgCheckInfo(this, play);
-    animFinished = DemoDu_UpdateSkelAnime(this);
-    DemoDu_CsGoronsRuby_UpdateFaceTextures(this, play);
-    DemoDu_CsGoronsRuby_AdvanceTo12(this, animFinished);
+    Demo_Du_BGcheck(this, play);
+    animFinished = Demo_Du_Animation_Base(this);
+    Demo_Du_Cryst_SetFace(this, play);
+    Demo_Du_Cryst_Check_HandupToRecall(this, animFinished);
 }
 
-void DemoDu_UpdateCs_GR_12(DemoDu* this, PlayState* play) {
-    DemoDu_UpdateBgCheckInfo(this, play);
-    DemoDu_UpdateSkelAnime(this);
-    DemoDu_CsGoronsRuby_UpdateFaceTextures(this, play);
-    DemoDu_CsGoronsRuby_AdvanceTo13(this, play);
+void Demo_Du_Actor_main_cryst_recall(DemoDu* this, PlayState* play) {
+    Demo_Du_BGcheck(this, play);
+    Demo_Du_Animation_Base(this);
+    Demo_Du_Cryst_SetFace(this, play);
+    Demo_Du_Cryst_Check_RecallToStop(this, play);
 }
 
-void DemoDu_UpdateCs_GR_13(DemoDu* this, PlayState* play) {
-    DemoDu_UpdateBgCheckInfo(this, play);
-    DemoDu_UpdateSkelAnime(this);
-    DemoDu_CsGoronsRuby_UpdateFaceTextures(this, play);
-    DemoDu_CsPlaySfx_LinkEscapeFromGorons(play);
+void Demo_Du_Actor_main_cryst_stop(DemoDu* this, PlayState* play) {
+    Demo_Du_BGcheck(this, play);
+    Demo_Du_Animation_Base(this);
+    Demo_Du_Cryst_SetFace(this, play);
+    Demo_Du_Cryst_Set_CrylinkSound(play);
 }

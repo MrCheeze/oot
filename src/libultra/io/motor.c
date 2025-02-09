@@ -52,7 +52,7 @@ s32 __osMotorAccess(OSPfs* pfs, s32 vibrate) {
 }
 
 #ifndef BBPLAYER
-void _MakeMotorData(s32 channel, OSPifRam* mdata) {
+void __osMakeMotorData(s32 channel, OSPifRam* mdata) {
     u8* ptr = (u8*)mdata;
     __OSContRamReadFormat ramreadformat;
     s32 i;
@@ -127,7 +127,7 @@ s32 osMotorInit(OSMesgQueue* ctrlrqueue, OSPfs* pfs, s32 channel) {
     }
 
     if (!(pfs->status & PFS_MOTOR_INITIALIZED)) {
-        _MakeMotorData(channel, &__MotorDataBuf[channel]);
+        __osMakeMotorData(channel, &__MotorDataBuf[channel]);
     }
 
     pfs->status = PFS_MOTOR_INITIALIZED;

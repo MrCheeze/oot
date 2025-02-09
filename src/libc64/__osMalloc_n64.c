@@ -25,12 +25,12 @@
 #define CHECK_FREE_BLOCK(arena, node) (void)0
 
 // Number of allocation failures across all arenas.
-u32 gTotalAllocFailures = 0; // "Arena_failcnt"
+u32 __Arena_failcnt = 0; // "Arena_failcnt"
 
 #define CHECK_ALLOC_FAILURE(arena, ptr) \
     do {                                \
         if ((ptr) == NULL) {            \
-            gTotalAllocFailures++;      \
+            __Arena_failcnt++;      \
             (arena)->allocFailures++;   \
         }                               \
     } while (0)
@@ -56,7 +56,7 @@ void __osMallocCleanup(Arena* arena) {
     bzero(arena, sizeof(*arena));
 }
 
-s32 __osMallocIsInitialized(Arena* arena) {
+s32 __osMallocIsInitalized(Arena* arena) {
     return arena->start != NULL;
 }
 
@@ -426,7 +426,7 @@ void* __osReallocDebug(Arena* arena, void* ptr, u32 newSize, const char* file, i
     return __osRealloc(arena, ptr, newSize);
 }
 
-void ArenaImpl_GetSizes(Arena* arena, u32* outMaxFree, u32* outFree, u32* outAlloc) {
+void __osGetFreeArena(Arena* arena, u32* outMaxFree, u32* outFree, u32* outAlloc) {
     ArenaNode* iter;
 
     *outMaxFree = 0;

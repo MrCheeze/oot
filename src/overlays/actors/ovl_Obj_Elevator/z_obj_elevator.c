@@ -9,15 +9,15 @@
 
 #define FLAGS 0
 
-void ObjElevator_Init(Actor* thisx, PlayState* play);
-void ObjElevator_Destroy(Actor* thisx, PlayState* play);
-void ObjElevator_Update(Actor* thisx, PlayState* play);
-void ObjElevator_Draw(Actor* thisx, PlayState* play);
+void Obj_Elevator_actor_ct(Actor* thisx, PlayState* play);
+void Obj_Elevator_actor_dt(Actor* thisx, PlayState* play);
+void Obj_Elevator_actor_move(Actor* thisx, PlayState* play);
+void Obj_Elevator_actor_draw(Actor* thisx, PlayState* play);
 
-void func_80B92C5C(ObjElevator* this);
-void func_80B92C80(ObjElevator* this, PlayState* play);
-void func_80B92D20(ObjElevator* this);
-void func_80B92D44(ObjElevator* this, PlayState* play);
+static void mv_stop_init(ObjElevator* this);
+static void mv_stop(ObjElevator* this, PlayState* play);
+static void mv_updown_init(ObjElevator* this);
+static void mv_updown(ObjElevator* this, PlayState* play);
 
 ActorProfile Obj_Elevator_Profile = {
     /**/ ACTOR_OBJ_ELEVATOR,
@@ -25,31 +25,31 @@ ActorProfile Obj_Elevator_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_D_ELEVATOR,
     /**/ sizeof(ObjElevator),
-    /**/ ObjElevator_Init,
-    /**/ ObjElevator_Destroy,
-    /**/ ObjElevator_Update,
-    /**/ ObjElevator_Draw,
+    /**/ Obj_Elevator_actor_ct,
+    /**/ Obj_Elevator_actor_dt,
+    /**/ Obj_Elevator_actor_move,
+    /**/ Obj_Elevator_actor_draw,
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_F32(cullingVolumeDistance, 2000, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeScale, 600, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDownward, 2000, ICHAIN_STOP),
 };
 
-static f32 sScales[] = { 0.1f, 0.05f };
+static f32 scale_init[] = { 0.1f, 0.05f };
 
-void ObjElevator_SetupAction(ObjElevator* this, ObjElevatorActionFunc actionFunc) {
+static void set_moveProc(ObjElevator* this, ObjElevatorActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
 
-void func_80B92B08(ObjElevator* this, PlayState* play, CollisionHeader* collision, s32 flag) {
+static void set_dynaPoly(ObjElevator* this, PlayState* play, CollisionHeader* collision, s32 flag) {
     s16 pad1;
     CollisionHeader* colHeader = NULL;
 
-    DynaPolyActor_Init(&this->dyna, flag);
-    CollisionHeader_GetVirtual(collision, &colHeader);
-    this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
+    MoveBG_ct(&this->dyna, flag);
+    DynaPolyUty_bgdi_SG2KSG(collision, &colHeader);
+    this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
 
 #if DEBUG_FEATURES
     if (this->dyna.bgId == BG_ACTOR_MAX) {
@@ -61,30 +61,30 @@ void func_80B92B08(ObjElevator* this, PlayState* play, CollisionHeader* collisio
 #endif
 }
 
-void ObjElevator_Init(Actor* thisx, PlayState* play) {
+void Obj_Elevator_actor_ct(Actor* thisx, PlayState* play) {
     ObjElevator* this = (ObjElevator*)thisx;
     f32 temp_f0;
 
-    func_80B92B08(this, play, &object_d_elevator_Col_000360, DYNA_TRANSFORM_POS);
-    Actor_SetScale(thisx, sScales[PARAMS_GET_U(thisx->params, 0, 1)]);
-    Actor_ProcessInitChain(thisx, sInitChain);
+    set_dynaPoly(this, play, &object_d_elevator_Col_000360, DYNA_TRANSFORM_POS);
+    Actor_set_scale(thisx, scale_init[PARAMS_GET_U(thisx->params, 0, 1)]);
+    ValueSet_process(thisx, value_init);
     temp_f0 = PARAMS_GET_U(thisx->params, 8, 4);
     this->unk_16C = temp_f0 + temp_f0;
-    func_80B92C5C(this);
+    mv_stop_init(this);
     PRINTF("(Dungeon Elevator)(arg_data 0x%04x)\n", thisx->params);
 }
 
-void ObjElevator_Destroy(Actor* thisx, PlayState* play) {
+void Obj_Elevator_actor_dt(Actor* thisx, PlayState* play) {
     ObjElevator* this = (ObjElevator*)thisx;
 
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
 }
 
-void func_80B92C5C(ObjElevator* this) {
-    ObjElevator_SetupAction(this, func_80B92C80);
+static void mv_stop_init(ObjElevator* this) {
+    set_moveProc(this, mv_stop);
 }
 
-void func_80B92C80(ObjElevator* this, PlayState* play) {
+static void mv_stop(ObjElevator* this, PlayState* play) {
     f32 sub;
     Actor* thisx = &this->dyna.actor;
 
@@ -95,26 +95,26 @@ void func_80B92C80(ObjElevator* this, PlayState* play) {
         } else {
             this->unk_168 = thisx->home.pos.y;
         }
-        func_80B92D20(this);
+        mv_updown_init(this);
     }
 }
 
-void func_80B92D20(ObjElevator* this) {
-    ObjElevator_SetupAction(this, func_80B92D44);
+static void mv_updown_init(ObjElevator* this) {
+    set_moveProc(this, mv_updown);
 }
 
-void func_80B92D44(ObjElevator* this, PlayState* play) {
+static void mv_updown(ObjElevator* this, PlayState* play) {
     Actor* thisx = &this->dyna.actor;
 
-    if (fabsf(Math_SmoothStepToF(&thisx->world.pos.y, this->unk_168, 1.0f, this->unk_16C, 0.0f)) < 0.001f) {
-        Actor_PlaySfx(thisx, NA_SE_EV_FOOT_SWITCH);
-        func_80B92C5C(this);
+    if (fabsf(add_calc(&thisx->world.pos.y, this->unk_168, 1.0f, this->unk_16C, 0.0f)) < 0.001f) {
+        Actor_SE_set(thisx, NA_SE_EV_FOOT_SWITCH);
+        mv_stop_init(this);
     } else {
-        Actor_PlaySfx(thisx, NA_SE_EV_STONE_STATUE_OPEN - SFX_FLAG);
+        Actor_SE_set(thisx, NA_SE_EV_STONE_STATUE_OPEN - SFX_FLAG);
     }
 }
 
-void ObjElevator_Update(Actor* thisx, PlayState* play) {
+void Obj_Elevator_actor_move(Actor* thisx, PlayState* play) {
     ObjElevator* this = (ObjElevator*)thisx;
 
     if (this->actionFunc) {
@@ -123,6 +123,6 @@ void ObjElevator_Update(Actor* thisx, PlayState* play) {
     this->unk_170 = this->dyna.interactFlags;
 }
 
-void ObjElevator_Draw(Actor* thisx, PlayState* play) {
-    Gfx_DrawDListOpa(play, object_d_elevator_DL_000180);
+void Obj_Elevator_actor_draw(Actor* thisx, PlayState* play) {
+    Cheap_gfx_display(play, object_d_elevator_DL_000180);
 }

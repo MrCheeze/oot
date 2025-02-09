@@ -6,7 +6,7 @@
 #include "padmgr.h"
 #include "macros.h"
 
-void FrameAdvance_Init(FrameAdvanceContext* frameAdvCtx) {
+void Pause_ct(FrameAdvanceContext* frameAdvCtx) {
     frameAdvCtx->timer = 0;
     frameAdvCtx->enabled = false;
 }
@@ -19,7 +19,7 @@ void FrameAdvance_Init(FrameAdvanceContext* frameAdvCtx) {
  *
  * This function returns true when frame advance is not active (game will run normally)
  */
-s32 FrameAdvance_Update(FrameAdvanceContext* frameAdvCtx, Input* input) {
+s32 Pause_proc(FrameAdvanceContext* frameAdvCtx, Input* input) {
     if (CHECK_BTN_ALL(input->cur.button, BTN_R) && CHECK_BTN_ALL(input->press.button, BTN_DDOWN)) {
         frameAdvCtx->enabled = !frameAdvCtx->enabled;
     }

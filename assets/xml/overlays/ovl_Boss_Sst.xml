@@ -1,8 +1,8 @@
 <Root>
     <File Name="ovl_Boss_Sst" OutName="z_boss_sst">
-        <DList Name="sBodyStaticDList" Offset="0x0"/>
-        <DList Name="sHandTrailDList" Offset="0x18"/>
-        <DList Name="sIntroVanishDList" Offset="0x478"/>
-        <DList Name="sShadowDList" Offset="0x930"/>
+        <DList Name="sst_tex_change" Offset="0x0"/>
+        <DList Name="sst_blure" Offset="0x18"/>
+        <DList Name="sst_mask_model" Offset="0x478"/>
+        <DList Name="sst_dead_shadow_model" Offset="0x930"/>
     </File>
 </Root>

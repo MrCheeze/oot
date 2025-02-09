@@ -4,11 +4,11 @@
 .text
 
 /**
- *  void Mio0_Decompress(void* src, void* dst);
+ *  void slidstart(void* src, void* dst);
  *
  *  Decompress Mio0 chunk
  */
-LEAF(Mio0_Decompress)
+LEAF(slidstart)
     lw      a3, 0x08(a0)    /* compressed offset */
     lw      t9, 0x0C(a0)    /* uncompressed offset */
     lw      t8, 0x04(a0)    /* decompressed length */
@@ -61,4 +61,4 @@ next_iter:
     addi    t9, t9, 1
     addi    t3, t3, 0x12
     b       2b
-END(Mio0_Decompress)
+END(slidstart)

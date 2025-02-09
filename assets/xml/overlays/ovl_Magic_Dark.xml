@@ -1,12 +1,12 @@
 <Root>
     <File Name="ovl_Magic_Dark" OutName="z_magic_dark">
-        <Texture Name="sDiamondTex" OutName="diamond_texture" Format="i8" Width="32" Height="64" Offset="0x0"/>
+        <Texture Name="g_m_shield_txt" OutName="diamond_texture" Format="i8" Width="32" Height="64" Offset="0x0"/>
 
-        <Array Name="sDiamondVtx" Count="20" Offset="0x800">
+        <Array Name="m_shield_2_v" Count="20" Offset="0x800">
             <Vtx/>
         </Array>
 
-        <DList Name="sDiamondMaterialDL" Offset="0x940"/>
-        <DList Name="sDiamondModelDL" Offset="0x9F0"/>
+        <DList Name="m_shield_2_modelT" Offset="0x940"/>
+        <DList Name="m_shield_2_modelT2" Offset="0x9F0"/>
     </File>
 </Root>

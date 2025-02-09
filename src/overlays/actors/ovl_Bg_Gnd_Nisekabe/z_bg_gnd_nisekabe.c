@@ -12,10 +12,10 @@
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void BgGndNisekabe_Init(Actor* thisx, PlayState* play);
-void BgGndNisekabe_Destroy(Actor* thisx, PlayState* play);
-void BgGndNisekabe_Update(Actor* thisx, PlayState* play);
-void BgGndNisekabe_Draw(Actor* thisx, PlayState* play);
+void Bg_Gnd_Nisekabe_Actor_ct(Actor* thisx, PlayState* play);
+void Bg_Gnd_Nisekabe_Actor_dt(Actor* thisx, PlayState* play);
+void Bg_Gnd_Nisekabe_Actor_move(Actor* thisx, PlayState* play);
+void Bg_Gnd_Nisekabe_Actor_draw(Actor* thisx, PlayState* play);
 
 ActorProfile Bg_Gnd_Nisekabe_Profile = {
     /**/ ACTOR_BG_GND_NISEKABE,
@@ -23,23 +23,23 @@ ActorProfile Bg_Gnd_Nisekabe_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_DEMO_KEKKAI,
     /**/ sizeof(BgGndNisekabe),
-    /**/ BgGndNisekabe_Init,
-    /**/ BgGndNisekabe_Destroy,
-    /**/ BgGndNisekabe_Update,
-    /**/ BgGndNisekabe_Draw,
+    /**/ Bg_Gnd_Nisekabe_Actor_ct,
+    /**/ Bg_Gnd_Nisekabe_Actor_dt,
+    /**/ Bg_Gnd_Nisekabe_Actor_move,
+    /**/ Bg_Gnd_Nisekabe_Actor_draw,
 };
 
-void BgGndNisekabe_Init(Actor* thisx, PlayState* play) {
+void Bg_Gnd_Nisekabe_Actor_ct(Actor* thisx, PlayState* play) {
     BgGndNisekabe* this = (BgGndNisekabe*)thisx;
 
-    Actor_SetScale(&this->actor, 0.1);
+    Actor_set_scale(&this->actor, 0.1);
     this->actor.cullingVolumeDistance = 3000.0;
 }
 
-void BgGndNisekabe_Destroy(Actor* thisx, PlayState* play) {
+void Bg_Gnd_Nisekabe_Actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void BgGndNisekabe_Update(Actor* thisx, PlayState* play) {
+void Bg_Gnd_Nisekabe_Actor_move(Actor* thisx, PlayState* play) {
     BgGndNisekabe* this = (BgGndNisekabe*)thisx;
 
     if (play->actorCtx.lensActive) {
@@ -49,8 +49,8 @@ void BgGndNisekabe_Update(Actor* thisx, PlayState* play) {
     }
 }
 
-void BgGndNisekabe_Draw(Actor* thisx, PlayState* play) {
-    static Gfx* dLists[] = {
+void Bg_Gnd_Nisekabe_Actor_draw(Actor* thisx, PlayState* play) {
+    static Gfx* shape_model[] = {
         gLightTrialFakeWallDL,
         gGanonsCastleUnusedFakeWallDL,
         gGanonsCastleScrubsFakeWallDL,
@@ -59,8 +59,8 @@ void BgGndNisekabe_Draw(Actor* thisx, PlayState* play) {
     u32 index = PARAMS_GET_U(this->actor.params, 0, 8);
 
     if (CHECK_FLAG_ALL(this->actor.flags, ACTOR_FLAG_REACT_TO_LENS)) {
-        Gfx_DrawDListXlu(play, dLists[index]);
+        Cheap_gfx_display_xlu(play, shape_model[index]);
     } else {
-        Gfx_DrawDListOpa(play, dLists[index]);
+        Cheap_gfx_display(play, shape_model[index]);
     }
 }

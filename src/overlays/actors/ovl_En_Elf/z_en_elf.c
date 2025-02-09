@@ -13,47 +13,47 @@
 #define FAIRY_FLAG_TIMED (1 << 8)
 #define FAIRY_FLAG_BIG (1 << 9)
 
-void EnElf_Init(Actor* thisx, PlayState* play);
-void EnElf_Destroy(Actor* thisx, PlayState* play);
-void EnElf_Update(Actor* thisx, PlayState* play);
-void EnElf_Draw(Actor* thisx, PlayState* play);
-void func_80A053F0(Actor* thisx, PlayState* play);
-void func_80A052F4(Actor* thisx, PlayState* play);
-void func_80A05208(Actor* thisx, PlayState* play);
-void func_80A05188(Actor* thisx, PlayState* play);
-void func_80A05114(Actor* thisx, PlayState* play);
-void func_80A05040(Actor* thisx, PlayState* play);
+void En_Elf_actor_ct(Actor* thisx, PlayState* play);
+void En_Elf_actor_dt(Actor* thisx, PlayState* play);
+void En_Elf_actor_move(Actor* thisx, PlayState* play);
+void En_Elf_actor_draw(Actor* thisx, PlayState* play);
+void En_Elf_actor_move_link(Actor* thisx, PlayState* play);
+void En_Elf_actor_move_talk(Actor* thisx, PlayState* play);
+void En_Elf_actor_move_talk_naby0(Actor* thisx, PlayState* play);
+void En_Elf_actor_move_talk_saria0(Actor* thisx, PlayState* play);
+void En_Elf_actor_move_talk_saria1(Actor* thisx, PlayState* play);
+void En_Elf_actor_move_talk_saria2(Actor* thisx, PlayState* play);
 
 // Navi
-void func_80A03CF8(EnElf* this, PlayState* play);
+static void move_normal(EnElf* this, PlayState* play);
 
 // Healing Fairies
-void func_80A0329C(EnElf* this, PlayState* play);
-void func_80A03610(EnElf* this, PlayState* play);
+void move_floating(EnElf* this, PlayState* play);
+void move_runaway(EnElf* this, PlayState* play);
 
 // Healing Fairies Revive From Death
-void func_80A03990(EnElf* this, PlayState* play);
-void func_80A03814(EnElf* this, PlayState* play);
+void move_regenerate(EnElf* this, PlayState* play);
+void move_regenerate1(EnElf* this, PlayState* play);
 
 // Kokiri Fairies
-void func_80A0353C(EnElf* this, PlayState* play);
+void move_option(EnElf* this, PlayState* play);
 
 // Fairy Spawner
-void func_80A03604(EnElf* this, PlayState* play);
+static void move_stop(EnElf* this, PlayState* play);
 
 // Move(?) functions
-void func_80A0214C(EnElf* this, PlayState* play);
-void func_80A02AA4(EnElf* this, PlayState* play);
-void func_80A02A20(EnElf* this, PlayState* play);
-void func_80A02B38(EnElf* this, PlayState* play);
-void func_80A020A4(EnElf* this, PlayState* play);
-void func_80A01FE0(EnElf* this, PlayState* play);
+void floating_mode_check(EnElf* this, PlayState* play);
+void check_revise_circle2(EnElf* this, PlayState* play);
+void check_revise_circle(EnElf* this, PlayState* play);
+void check_revise_omega(EnElf* this, PlayState* play);
+void runaway_mode_check(EnElf* this, PlayState* play);
+void interest_mode_check(EnElf* this, PlayState* play);
 
 // misc
-void func_80A04414(EnElf* this, PlayState* play);
-void func_80A0461C(EnElf* this, PlayState* play);
-void EnElf_SpawnSparkles(EnElf* this, PlayState* play, s32 sparkleLife);
-void EnElf_GetCuePos(Vec3f* dest, PlayState* play, s32 cueChannel);
+void elf_egg_color_check(EnElf* this, PlayState* play);
+void check_mode_z_en_elf(EnElf* this, PlayState* play);
+void En_Elf_set_kirakira(EnElf* this, PlayState* play, s32 sparkleLife);
+void DemoEffMoveProc_global(Vec3f* dest, PlayState* play, s32 cueChannel);
 
 ActorProfile En_Elf_Profile = {
     /**/ ACTOR_EN_ELF,
@@ -61,22 +61,22 @@ ActorProfile En_Elf_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(EnElf),
-    /**/ EnElf_Init,
-    /**/ EnElf_Destroy,
-    /**/ EnElf_Update,
-    /**/ EnElf_Draw,
+    /**/ En_Elf_actor_ct,
+    /**/ En_Elf_actor_dt,
+    /**/ En_Elf_actor_move,
+    /**/ En_Elf_actor_draw,
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F_DIV1000(scale, 8, ICHAIN_STOP),
 };
 
-static Color_RGBAf sInnerColors[] = {
+static Color_RGBAf status_color[] = {
     { 255.0f, 255.0f, 255.0f, 255.0f },
     { 255.0f, 220.0f, 220.0f, 255.0f },
 };
 
-static Color_RGBAf sOuterColors[] = {
+static Color_RGBAf status_color_side[] = {
     { 255.0f, 255.0f, 255.0f, 255.0f },
     { 255.0f, 50.0f, 100.0f, 255.0f },
 };
@@ -85,23 +85,23 @@ typedef struct FairyColorFlags {
     u8 r, g, b;
 } FairyColorFlags;
 
-static FairyColorFlags sColorFlags[] = {
+static FairyColorFlags color_table[] = {
     { 0, 0, 0 }, { 1, 0, 0 }, { 1, 2, 0 }, { 1, 0, 2 }, { 0, 1, 0 }, { 2, 1, 0 }, { 0, 1, 2 },
     { 0, 0, 1 }, { 2, 0, 1 }, { 0, 2, 1 }, { 1, 1, 0 }, { 1, 0, 1 }, { 0, 1, 1 },
 };
 
-void EnElf_SetupAction(EnElf* this, EnElfActionFunc actionFunc) {
+void En_Elf_actor_set_process(EnElf* this, EnElfActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
 
-void func_80A01C38(EnElf* this, s32 arg1) {
+void En_Elf_actor_set_status(EnElf* this, s32 arg1) {
     this->unk_2A8 = arg1;
 
     switch (this->unk_2A8) {
         case 0:
             this->unk_2AE = 0x400;
             this->unk_2B0 = 0x200;
-            this->func_2C8 = func_80A02A20;
+            this->func_2C8 = check_revise_circle;
             this->unk_2C0 = 100;
             this->unk_2B4 = 5.0f;
             this->unk_2B8 = 20.0f;
@@ -110,7 +110,7 @@ void func_80A01C38(EnElf* this, s32 arg1) {
         case 12:
             this->unk_2AE = 0x400;
             this->unk_2B0 = 0x200;
-            this->func_2C8 = func_80A02A20;
+            this->func_2C8 = check_revise_circle;
             this->unk_2C0 = 100;
             this->unk_2B4 = 1.0f;
             this->unk_2B8 = 5.0f;
@@ -119,7 +119,7 @@ void func_80A01C38(EnElf* this, s32 arg1) {
         case 10:
             this->unk_2AE = 0x400;
             this->unk_2B0 = 0;
-            this->func_2C8 = func_80A02A20;
+            this->func_2C8 = check_revise_circle;
             this->unk_2B8 = 0.0f;
             this->unk_2B4 = 5.0f;
             this->skelAnime.playSpeed = 1.0f;
@@ -127,13 +127,13 @@ void func_80A01C38(EnElf* this, s32 arg1) {
         case 9:
             this->unk_2AE = 0x1000;
             this->unk_2B0 = 0x200;
-            this->func_2C8 = func_80A02A20;
+            this->func_2C8 = check_revise_circle;
             this->unk_2B4 = 3.0f;
             this->unk_2B8 = 10.0f;
             this->skelAnime.playSpeed = 1.0f;
             break;
         case 7:
-            this->func_2C8 = func_80A02A20;
+            this->func_2C8 = check_revise_circle;
             this->unk_2AE = 0x1E;
             this->unk_2C0 = 1;
             this->unk_2B4 = 0.0f;
@@ -143,7 +143,7 @@ void func_80A01C38(EnElf* this, s32 arg1) {
         case 8:
             this->unk_2AE = 0x1000;
             this->unk_2B0 = 0x200;
-            this->func_2C8 = func_80A02A20;
+            this->func_2C8 = check_revise_circle;
             this->unk_2B4 = 0.0f;
             this->unk_2B8 = 0.0f;
             this->skelAnime.playSpeed = 1.0f;
@@ -151,7 +151,7 @@ void func_80A01C38(EnElf* this, s32 arg1) {
         case 1:
             this->unk_2AE = 0x1000;
             this->unk_2B0 = 0x800;
-            this->func_2C8 = func_80A02A20;
+            this->func_2C8 = check_revise_circle;
             this->unk_2B4 = 5.0f;
             this->unk_2B8 = 7.5f;
             this->skelAnime.playSpeed = 2.0f;
@@ -159,28 +159,28 @@ void func_80A01C38(EnElf* this, s32 arg1) {
         case 2:
             this->unk_2AE = 0x400;
             this->unk_2B0 = 0x1000;
-            this->func_2C8 = func_80A02AA4;
+            this->func_2C8 = check_revise_circle2;
             this->unk_2B4 = 10.0f;
             this->unk_2B8 = 20.0f;
             this->skelAnime.playSpeed = 1.0f;
             break;
         case 3:
             this->unk_2B0 = 0x600;
-            this->func_2C8 = func_80A02B38;
+            this->func_2C8 = check_revise_omega;
             this->unk_2B8 = 1.0f;
             this->unk_2B4 = 1.0f;
             this->skelAnime.playSpeed = 1.0f;
             break;
         case 4:
             this->unk_2B0 = 0x800;
-            this->func_2C8 = func_80A02B38;
+            this->func_2C8 = check_revise_omega;
             this->unk_2B4 = 20.0f;
             this->unk_2B8 = 10.0;
             this->skelAnime.playSpeed = 2.0f;
             break;
         case 5:
             this->unk_2B0 = 0x200;
-            this->func_2C8 = func_80A02B38;
+            this->func_2C8 = check_revise_omega;
             this->unk_2B4 = 10.0f;
             this->unk_2B8 = 10.0f;
             this->skelAnime.playSpeed = 0.5f;
@@ -188,7 +188,7 @@ void func_80A01C38(EnElf* this, s32 arg1) {
         case 6:
             this->unk_2AE = 0x1000;
             this->unk_2B0 = 0x800;
-            this->func_2C8 = func_80A02A20;
+            this->func_2C8 = check_revise_circle;
             this->unk_2B4 = 60.0f;
             this->unk_2B8 = 20.0f;
             this->skelAnime.playSpeed = 2.0f;
@@ -196,7 +196,7 @@ void func_80A01C38(EnElf* this, s32 arg1) {
         case 11:
             this->unk_2AE = 0x400;
             this->unk_2B0 = 0x2000;
-            this->func_2C8 = func_80A02A20;
+            this->func_2C8 = check_revise_circle;
             this->unk_2C0 = 42;
             this->unk_2B4 = 5.0f;
             this->unk_2B8 = 1.0f;
@@ -205,14 +205,14 @@ void func_80A01C38(EnElf* this, s32 arg1) {
     }
 }
 
-s32 func_80A01F90(Vec3f* this, Vec3f* arg1, f32 arg2) {
+static s32 goto_home_check(Vec3f* this, Vec3f* arg1, f32 arg2) {
     return SQ(arg2) < (SQ(arg1->x - this->x) + SQ(arg1->z - this->z));
 }
 
-void func_80A01FE0(EnElf* this, PlayState* play) {
+void interest_mode_check(EnElf* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    if (!func_80A01F90(&this->actor.world.pos, &player->actor.world.pos, 30.0f)) {
+    if (!goto_home_check(&this->actor.world.pos, &player->actor.world.pos, 30.0f)) {
         this->unk_2B8 = 0.5f;
     } else {
         this->unk_2B8 = 2.0f;
@@ -223,29 +223,29 @@ void func_80A01FE0(EnElf* this, PlayState* play) {
     } else {
         this->unk_2A8 = 1;
         this->unk_2AC = 0x80;
-        this->unk_2B8 = Rand_ZeroFloat(1.0f) + 0.5f;
-        this->unk_2B0 = Rand_CenteredFloat(32767.0f);
-        this->func_2C8 = func_80A0214C;
+        this->unk_2B8 = rnd_f(1.0f) + 0.5f;
+        this->unk_2B0 = rnd_fx(32767.0f);
+        this->func_2C8 = floating_mode_check;
     }
 }
 
-void func_80A020A4(EnElf* this, PlayState* play) {
+void runaway_mode_check(EnElf* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    if (func_80A01F90(&this->actor.world.pos, &player->actor.world.pos, 50.0f)) {
+    if (goto_home_check(&this->actor.world.pos, &player->actor.world.pos, 50.0f)) {
         if (this->unk_2C0 > 0) {
             this->unk_2C0--;
         } else {
             this->unk_2A8 = 1;
             this->unk_2AC = 0x80;
-            this->unk_2B8 = Rand_ZeroFloat(1.0f) + 0.5f;
-            this->unk_2B0 = Rand_CenteredFloat(32767.0f);
-            this->func_2C8 = func_80A0214C;
+            this->unk_2B8 = rnd_f(1.0f) + 0.5f;
+            this->unk_2B0 = rnd_fx(32767.0f);
+            this->func_2C8 = floating_mode_check;
         }
     }
 }
 
-void func_80A0214C(EnElf* this, PlayState* play) {
+void floating_mode_check(EnElf* this, PlayState* play) {
     f32 xzDistToPlayer;
 
     if (this->unk_2C0 > 0) {
@@ -253,13 +253,13 @@ void func_80A0214C(EnElf* this, PlayState* play) {
     } else {
         xzDistToPlayer = this->actor.xzDistToPlayer;
         if (xzDistToPlayer < 50.0f) {
-            if (Rand_ZeroOne() < 0.2f) {
+            if (fqrand() < 0.2f) {
                 this->unk_2A8 = 2;
                 this->unk_2AC = 0x400;
                 this->unk_2B8 = 2.0f;
-                this->func_2C8 = func_80A020A4;
+                this->func_2C8 = runaway_mode_check;
                 this->actor.speed = 1.5f;
-                this->unk_2C0 = (s16)Rand_ZeroFloat(8.0f) + 4;
+                this->unk_2C0 = (s16)rnd_f(8.0f) + 4;
             } else {
                 this->unk_2C0 = 10;
             }
@@ -270,67 +270,67 @@ void func_80A0214C(EnElf* this, PlayState* play) {
 
             xzDistToPlayer = ((xzDistToPlayer - 50.0f) * 0.95f) + 0.05f;
 
-            if (Rand_ZeroOne() < xzDistToPlayer) {
+            if (fqrand() < xzDistToPlayer) {
                 this->unk_2A8 = 3;
                 this->unk_2AC = 0x200;
                 this->unk_2B8 = (xzDistToPlayer * 2.0f) + 1.0f;
-                this->func_2C8 = func_80A01FE0;
-                this->unk_2C0 = (s16)Rand_ZeroFloat(16.0f) + 0x10;
+                this->func_2C8 = interest_mode_check;
+                this->unk_2C0 = (s16)rnd_f(16.0f) + 0x10;
             } else {
                 this->unk_2C0 = 10;
             }
         }
     }
 
-    if (Rand_ZeroOne() < 0.1f) {
+    if (fqrand() < 0.1f) {
         this->unk_2A8 = 1;
         this->unk_2AC = 0x80;
-        this->unk_2B8 = Rand_ZeroFloat(0.5f) + 0.5f;
-        this->unk_2B0 = Rand_CenteredFloat(32767.0f);
+        this->unk_2B8 = rnd_f(0.5f) + 0.5f;
+        this->unk_2B0 = rnd_fx(32767.0f);
     }
 }
 
-void func_80A0232C(EnElf* this, PlayState* play) {
-    if (func_80A01F90(&this->unk_28C, &this->actor.world.pos, 100.0f)) {
+void elf_mode_change_floating(EnElf* this, PlayState* play) {
+    if (goto_home_check(&this->unk_28C, &this->actor.world.pos, 100.0f)) {
         this->unk_2A8 = 0;
         this->unk_2AC = 0x200;
-        this->func_2C8 = func_80A0214C;
+        this->func_2C8 = floating_mode_check;
         this->unk_2B8 = 1.5f;
     } else {
         this->func_2C8(this, play);
     }
 }
 
-f32 EnElf_GetColorValue(s32 colorFlag) {
+f32 rnd_color(s32 colorFlag) {
     switch (colorFlag) {
         case 1:
-            return Rand_ZeroFloat(55.0f) + 200.0f;
+            return rnd_f(55.0f) + 200.0f;
         case 2:
-            return Rand_ZeroFloat(255.0f);
+            return rnd_f(255.0f);
         default:
             return 0.0f;
     }
 }
 
-void EnElf_Init(Actor* thisx, PlayState* play) {
+void En_Elf_actor_ct(Actor* thisx, PlayState* play) {
     EnElf* this = (EnElf*)thisx;
     s32 pad;
     Player* player = GET_PLAYER(play);
     s32 colorConfig;
     s32 i;
 
-    Actor_ProcessInitChain(thisx, sInitChain);
-    SkelAnime_Init(play, &this->skelAnime, &gFairySkel, &gFairyAnim, this->jointTable, this->morphTable, 15);
-    ActorShape_Init(&thisx->shape, 0.0f, NULL, 15.0f);
+    ValueSet_process(thisx, value_init);
+    Skeleton_Info2_M_ct(play, &this->skelAnime, &gFairySkel, &gFairyAnim, this->jointTable, this->morphTable, 15);
+    Shape_Info_init(&thisx->shape, 0.0f, NULL, 15.0f);
     thisx->shape.shadowAlpha = 0xFF;
 
-    Lights_PointGlowSetInfo(&this->lightInfoGlow, thisx->world.pos.x, thisx->world.pos.y, thisx->world.pos.z, 255, 255,
+    Light_point2_ct(&this->lightInfoGlow, thisx->world.pos.x, thisx->world.pos.y, thisx->world.pos.z, 255, 255,
                             255, 0);
-    this->lightNodeGlow = LightContext_InsertLight(play, &play->lightCtx, &this->lightInfoGlow);
+    this->lightNodeGlow = Global_light_list_new(play, &play->lightCtx, &this->lightInfoGlow);
 
-    Lights_PointNoGlowSetInfo(&this->lightInfoNoGlow, thisx->world.pos.x, thisx->world.pos.y, thisx->world.pos.z, 255,
+    Light_point_ct(&this->lightInfoNoGlow, thisx->world.pos.x, thisx->world.pos.y, thisx->world.pos.z, 255,
                               255, 255, 0);
-    this->lightNodeNoGlow = LightContext_InsertLight(play, &play->lightCtx, &this->lightInfoNoGlow);
+    this->lightNodeNoGlow = Global_light_list_new(play, &play->lightCtx, &this->lightInfoNoGlow);
 
     this->fairyFlags = 0;
     this->disappearTimer = 600;
@@ -340,22 +340,22 @@ void EnElf_Init(Actor* thisx, PlayState* play) {
     switch (thisx->params) {
         case FAIRY_NAVI:
             thisx->room = -1;
-            EnElf_SetupAction(this, func_80A03CF8);
-            func_80A01C38(this, 0);
+            En_Elf_actor_set_process(this, move_normal);
+            En_Elf_actor_set_status(this, 0);
             this->fairyFlags |= 4;
-            thisx->update = func_80A053F0;
+            thisx->update = En_Elf_actor_move_link;
             this->elfMsg = NULL;
             this->unk_2C7 = 0x14;
 
-            if ((gSaveContext.save.info.playerData.naviTimer >= 25800) ||
-                (gSaveContext.save.info.playerData.naviTimer < 3000)) {
-                gSaveContext.save.info.playerData.naviTimer = 0;
+            if ((z_common_data.save.info.playerData.naviTimer >= 25800) ||
+                (z_common_data.save.info.playerData.naviTimer < 3000)) {
+                z_common_data.save.info.playerData.naviTimer = 0;
             }
             break;
         case FAIRY_REVIVE_BOTTLE:
             colorConfig = -1;
-            EnElf_SetupAction(this, func_80A03610);
-            this->unk_2B8 = Math_Vec3f_DistXZ(&thisx->world.pos, &player->actor.world.pos);
+            En_Elf_actor_set_process(this, move_runaway);
+            this->unk_2B8 = search_position_distanceXZ(&thisx->world.pos, &player->actor.world.pos);
             this->unk_2AC = player->actor.shape.rot.y;
             this->unk_2B0 = -0x1000;
             this->unk_28C.y = thisx->world.pos.y - player->actor.world.pos.y;
@@ -364,7 +364,7 @@ void EnElf_Init(Actor* thisx, PlayState* play) {
             break;
         case FAIRY_REVIVE_DEATH:
             colorConfig = -1;
-            EnElf_SetupAction(this, func_80A03990);
+            En_Elf_actor_set_process(this, move_regenerate);
             this->unk_2B8 = 0.0f;
             this->unk_2AC = player->actor.shape.rot.y;
             this->unk_2B0 = 0;
@@ -374,35 +374,35 @@ void EnElf_Init(Actor* thisx, PlayState* play) {
             break;
         case FAIRY_HEAL_BIG:
             this->fairyFlags |= FAIRY_FLAG_BIG;
-            thisx->shape.shadowDraw = ActorShadow_DrawWhiteCircle;
+            thisx->shape.shadowDraw = Actor_shadow_white_circle;
             FALLTHROUGH;
         case FAIRY_HEAL_TIMED:
             this->fairyFlags |= FAIRY_FLAG_TIMED;
             FALLTHROUGH;
         case FAIRY_HEAL:
             colorConfig = -1;
-            EnElf_SetupAction(this, func_80A0329C);
-            this->unk_2B4 = Rand_ZeroFloat(10.0f) + 10.0f;
+            En_Elf_actor_set_process(this, move_floating);
+            this->unk_2B4 = rnd_f(10.0f) + 10.0f;
             this->unk_2AA = 0;
-            this->unk_2AE = (s16)(Rand_ZeroFloat(1048.0f)) + 0x200;
+            this->unk_2AE = (s16)(rnd_f(1048.0f)) + 0x200;
             this->unk_28C = thisx->world.pos;
-            this->unk_2BC = Rand_CenteredFloat(32767.0f);
-            this->func_2C8 = func_80A0214C;
-            func_80A0232C(this, play);
+            this->unk_2BC = rnd_fx(32767.0f);
+            this->func_2C8 = floating_mode_check;
+            elf_mode_change_floating(this, play);
             this->unk_2C0 = 0;
             this->disappearTimer = 240;
             break;
         case FAIRY_KOKIRI:
-            colorConfig = Rand_ZeroFloat(11.99f) + 1.0f;
-            EnElf_SetupAction(this, func_80A0353C);
-            func_80A01C38(this, 0);
+            colorConfig = rnd_f(11.99f) + 1.0f;
+            En_Elf_actor_set_process(this, move_option);
+            En_Elf_actor_set_status(this, 0);
             break;
         case FAIRY_SPAWNER:
-            EnElf_SetupAction(this, func_80A03604);
-            func_80A01C38(this, 8);
+            En_Elf_actor_set_process(this, move_stop);
+            En_Elf_actor_set_status(this, 8);
 
             for (i = 0; i < 8; i++) {
-                Actor_Spawn(&play->actorCtx, play, ACTOR_EN_ELF, thisx->world.pos.x, thisx->world.pos.y - 30.0f,
+                Actor_info_make_actor(&play->actorCtx, play, ACTOR_EN_ELF, thisx->world.pos.x, thisx->world.pos.y - 30.0f,
                             thisx->world.pos.z, 0, 0, 0, FAIRY_HEAL);
             }
             break;
@@ -412,69 +412,69 @@ void EnElf_Init(Actor* thisx, PlayState* play) {
     }
 
     this->unk_2A0 = 3.0f;
-    this->innerColor = sInnerColors[0];
+    this->innerColor = status_color[0];
 
     if (colorConfig > 0) {
-        this->outerColor.r = EnElf_GetColorValue(sColorFlags[colorConfig].r);
-        this->outerColor.g = EnElf_GetColorValue(sColorFlags[colorConfig].g);
-        this->outerColor.b = EnElf_GetColorValue(sColorFlags[colorConfig].b);
+        this->outerColor.r = rnd_color(color_table[colorConfig].r);
+        this->outerColor.g = rnd_color(color_table[colorConfig].g);
+        this->outerColor.b = rnd_color(color_table[colorConfig].b);
         this->outerColor.a = 0.0f;
     } else {
-        this->innerColor = sInnerColors[-colorConfig];
-        this->outerColor = sOuterColors[-colorConfig];
+        this->innerColor = status_color[-colorConfig];
+        this->outerColor = status_color_side[-colorConfig];
     }
 }
 
-void func_80A0299C(EnElf* this, s32 arg1) {
+void down_tough(EnElf* this, s32 arg1) {
 }
 
-void func_80A029A8(EnElf* this, s16 increment) {
+void up_tough(EnElf* this, s16 increment) {
     if (this->disappearTimer < 600) {
         this->disappearTimer += increment;
     }
 }
 
-void EnElf_Destroy(Actor* thisx, PlayState* play) {
+void En_Elf_actor_dt(Actor* thisx, PlayState* play) {
     s32 pad;
     EnElf* this = (EnElf*)thisx;
 
-    LightContext_RemoveLight(play, &play->lightCtx, this->lightNodeGlow);
-    LightContext_RemoveLight(play, &play->lightCtx, this->lightNodeNoGlow);
+    Global_light_list_delete(play, &play->lightCtx, this->lightNodeGlow);
+    Global_light_list_delete(play, &play->lightCtx, this->lightNodeNoGlow);
 }
 
-void func_80A02A20(EnElf* this, PlayState* play) {
-    this->unk_28C.x = Math_SinS(this->unk_2AC) * this->unk_2B8;
-    this->unk_28C.y = Math_SinS(this->unk_2AA) * this->unk_2B4;
-    this->unk_28C.z = Math_CosS(this->unk_2AC) * this->unk_2B8;
+void check_revise_circle(EnElf* this, PlayState* play) {
+    this->unk_28C.x = sin_s(this->unk_2AC) * this->unk_2B8;
+    this->unk_28C.y = sin_s(this->unk_2AA) * this->unk_2B4;
+    this->unk_28C.z = cos_s(this->unk_2AC) * this->unk_2B8;
     this->unk_2AC += this->unk_2B0;
     this->unk_2AA += this->unk_2AE;
 }
 
-void func_80A02AA4(EnElf* this, PlayState* play) {
+void check_revise_circle2(EnElf* this, PlayState* play) {
     f32 xzScale;
 
-    xzScale = (Math_CosS(this->unk_2AA) * this->unk_2B4) + this->unk_2B8;
+    xzScale = (cos_s(this->unk_2AA) * this->unk_2B4) + this->unk_2B8;
 
-    this->unk_28C.x = Math_SinS(this->unk_2AC) * xzScale;
+    this->unk_28C.x = sin_s(this->unk_2AC) * xzScale;
     this->unk_28C.y = 0.0f;
-    this->unk_28C.z = Math_CosS(this->unk_2AC) * xzScale;
+    this->unk_28C.z = cos_s(this->unk_2AC) * xzScale;
 
     this->unk_2AC += this->unk_2B0;
     this->unk_2AA += this->unk_2AE;
 }
 
-void func_80A02B38(EnElf* this, PlayState* play) {
+void check_revise_omega(EnElf* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     this->unk_2AA = (this->unk_2AC * 2) & 0xFFFF;
-    this->unk_28C.x = Math_SinS(this->unk_2AC) * this->unk_2B8;
-    this->unk_28C.y = Math_SinS(this->unk_2AA) * this->unk_2B4;
-    this->unk_28C.z = -Math_SinS(player->actor.shape.rot.y) * this->unk_28C.x;
-    this->unk_28C.x = Math_CosS(player->actor.shape.rot.y) * this->unk_28C.x;
+    this->unk_28C.x = sin_s(this->unk_2AC) * this->unk_2B8;
+    this->unk_28C.y = sin_s(this->unk_2AA) * this->unk_2B4;
+    this->unk_28C.z = -sin_s(player->actor.shape.rot.y) * this->unk_28C.x;
+    this->unk_28C.x = cos_s(player->actor.shape.rot.y) * this->unk_28C.x;
     this->unk_2AC += this->unk_2B0;
 }
 
-void func_80A02BD8(EnElf* this, Vec3f* targetPos, f32 arg2) {
+void chase_position_y(EnElf* this, Vec3f* targetPos, f32 arg2) {
     f32 yVelTarget;
     f32 yVelDirection;
 
@@ -482,10 +482,10 @@ void func_80A02BD8(EnElf* this, Vec3f* targetPos, f32 arg2) {
     yVelDirection = (yVelTarget >= 0.0f) ? 1.0f : -1.0f;
     yVelTarget = fabsf(yVelTarget);
     yVelTarget = CLAMP(yVelTarget, 0.0f, 20.0f) * yVelDirection;
-    Math_StepToF(&this->actor.velocity.y, yVelTarget, 32.0f);
+    chase_f(&this->actor.velocity.y, yVelTarget, 32.0f);
 }
 
-void func_80A02C98(EnElf* this, Vec3f* targetPos, f32 arg2) {
+void chase_position(EnElf* this, Vec3f* targetPos, f32 arg2) {
     f32 xVelTarget;
     f32 zVelTarget;
     f32 xVelDirection;
@@ -503,61 +503,61 @@ void func_80A02C98(EnElf* this, Vec3f* targetPos, f32 arg2) {
     xVelTarget = CLAMP(xVelTarget, 0.0f, 20.0f) * xVelDirection;
     zVelTarget = CLAMP(zVelTarget, 0.0f, 20.0f) * zVelDirection;
 
-    func_80A02BD8(this, targetPos, arg2);
-    Math_StepToF(&this->actor.velocity.x, xVelTarget, 1.5f);
-    Math_StepToF(&this->actor.velocity.z, zVelTarget, 1.5f);
-    Actor_UpdatePos(&this->actor);
+    chase_position_y(this, targetPos, arg2);
+    chase_f(&this->actor.velocity.x, xVelTarget, 1.5f);
+    chase_f(&this->actor.velocity.z, zVelTarget, 1.5f);
+    Actor_position_move(&this->actor);
 }
 
-void func_80A02E30(EnElf* this, Vec3f* targetPos) {
-    func_80A02BD8(this, targetPos, 0.2f);
+void chase_position5(EnElf* this, Vec3f* targetPos) {
+    chase_position_y(this, targetPos, 0.2f);
     this->actor.velocity.x = (targetPos->x + this->unk_28C.x) - this->actor.world.pos.x;
     this->actor.velocity.z = (targetPos->z + this->unk_28C.z) - this->actor.world.pos.z;
-    Actor_UpdatePos(&this->actor);
+    Actor_position_move(&this->actor);
     this->actor.world.pos.x = targetPos->x + this->unk_28C.x;
     this->actor.world.pos.z = targetPos->z + this->unk_28C.z;
 }
 
-void func_80A02EC0(EnElf* this, Vec3f* targetPos) {
-    func_80A02BD8(this, targetPos, 0.2f);
+void chase_position2(EnElf* this, Vec3f* targetPos) {
+    chase_position_y(this, targetPos, 0.2f);
     this->actor.velocity.x = this->actor.velocity.z = 0.0f;
-    Actor_UpdatePos(&this->actor);
+    Actor_position_move(&this->actor);
     this->actor.world.pos.x = targetPos->x + this->unk_28C.x;
     this->actor.world.pos.z = targetPos->z + this->unk_28C.z;
 }
 
-void func_80A02F2C(EnElf* this, Vec3f* targetPos) {
+void chase_up_down_position(EnElf* this, Vec3f* targetPos) {
     f32 yVelTarget;
     f32 yVelDirection;
 
-    yVelTarget = (((Math_SinS(this->unk_2AA) * this->unk_2B4) + targetPos->y) - this->actor.world.pos.y) * 0.2f;
+    yVelTarget = (((sin_s(this->unk_2AA) * this->unk_2B4) + targetPos->y) - this->actor.world.pos.y) * 0.2f;
     yVelDirection = (yVelTarget >= 0.0f) ? 1.0f : -1.0f;
     this->unk_2AA += this->unk_2AE;
     yVelTarget = fabsf(yVelTarget);
     yVelTarget = CLAMP(yVelTarget, 0.0f, 20.0f) * yVelDirection;
-    Math_StepToF(&this->actor.velocity.y, yVelTarget, 1.5f);
+    chase_f(&this->actor.velocity.y, yVelTarget, 1.5f);
 }
 
-void func_80A03018(EnElf* this, PlayState* play) {
+void chase_position3(EnElf* this, PlayState* play) {
     s32 pad[2];
     Player* player = GET_PLAYER(play);
     s16 targetYaw;
     Vec3f* unk_28C = &this->unk_28C;
 
-    Math_SmoothStepToF(&this->actor.speed, this->unk_2B8, 0.2f, 0.5f, 0.01f);
+    add_calc(&this->actor.speed, this->unk_2B8, 0.2f, 0.5f, 0.01f);
 
     switch (this->unk_2A8) {
         case 0:
-            targetYaw = Math_Atan2S(-(this->actor.world.pos.z - unk_28C->z), -(this->actor.world.pos.x - unk_28C->x));
+            targetYaw = atans_table(-(this->actor.world.pos.z - unk_28C->z), -(this->actor.world.pos.x - unk_28C->x));
             break;
 
         case 3:
-            targetYaw = Math_Atan2S(-(this->actor.world.pos.z - player->actor.world.pos.z),
+            targetYaw = atans_table(-(this->actor.world.pos.z - player->actor.world.pos.z),
                                     -(this->actor.world.pos.x - player->actor.world.pos.x));
             break;
 
         case 2:
-            targetYaw = Math_Atan2S(this->actor.world.pos.z - player->actor.world.pos.z,
+            targetYaw = atans_table(this->actor.world.pos.z - player->actor.world.pos.z,
                                     this->actor.world.pos.x - player->actor.world.pos.x);
             break;
 
@@ -566,12 +566,12 @@ void func_80A03018(EnElf* this, PlayState* play) {
             break;
     }
 
-    Math_SmoothStepToS(&this->unk_2BC, targetYaw, 10, this->unk_2AC, 0x20);
+    add_calc_short_angle2(&this->unk_2BC, targetYaw, 10, this->unk_2AC, 0x20);
     this->actor.world.rot.y = this->unk_2BC;
-    Actor_MoveXZGravity(&this->actor);
+    Actor_position_moveF(&this->actor);
 }
 
-void func_80A03148(EnElf* this, Vec3f* arg1, f32 arg2, f32 arg3, f32 arg4) {
+void chase_position4(EnElf* this, Vec3f* arg1, f32 arg2, f32 arg3, f32 arg4) {
     f32 xVelTarget;
     f32 zVelTarget;
     f32 xzVelocity;
@@ -582,7 +582,7 @@ void func_80A03148(EnElf* this, Vec3f* arg1, f32 arg2, f32 arg3, f32 arg4) {
     arg4 += 0.3f;
     arg3 += 30.0f;
 
-    func_80A02BD8(this, arg1, arg4);
+    chase_position_y(this, arg1, arg4);
 
     xzVelocity = sqrtf(SQ(xVelTarget) + SQ(zVelTarget));
 
@@ -594,46 +594,46 @@ void func_80A03148(EnElf* this, Vec3f* arg1, f32 arg2, f32 arg3, f32 arg4) {
         zVelTarget *= xzVelocity;
     }
 
-    Math_StepToF(&this->actor.velocity.x, xVelTarget, 5.0f);
-    Math_StepToF(&this->actor.velocity.z, zVelTarget, 5.0f);
-    Actor_UpdatePos(&this->actor);
+    chase_f(&this->actor.velocity.x, xVelTarget, 5.0f);
+    chase_f(&this->actor.velocity.z, zVelTarget, 5.0f);
+    Actor_position_move(&this->actor);
 }
 
-void func_80A0329C(EnElf* this, PlayState* play) {
+void move_floating(EnElf* this, PlayState* play) {
     Player* refActor = GET_PLAYER(play);
     s32 pad;
     Player* player = GET_PLAYER(play);
     f32 heightDiff;
 
-    SkelAnime_Update(&this->skelAnime);
+    Skeleton_Info2_anime_play(&this->skelAnime);
 
-    if (Rand_ZeroOne() < 0.05f) {
-        this->unk_2B4 = Rand_ZeroFloat(10.0f) + 10.0f;
-        this->unk_2AE = (s16)(Rand_ZeroFloat(1024.0f)) + 0x200;
+    if (fqrand() < 0.05f) {
+        this->unk_2B4 = rnd_f(10.0f) + 10.0f;
+        this->unk_2AE = (s16)(rnd_f(1024.0f)) + 0x200;
     }
 
-    func_80A0232C(this, play);
+    elf_mode_change_floating(this, play);
     this->unk_28C.y = player->bodyPartsPos[PLAYER_BODYPART_WAIST].y;
-    func_80A02F2C(this, &this->unk_28C);
-    func_80A03018(this, play);
+    chase_up_down_position(this, &this->unk_28C);
+    chase_position3(this, play);
 
     if ((this->unk_2A8 == 2) || (this->unk_2A8 == 3)) {
-        EnElf_SpawnSparkles(this, play, 16);
+        En_Elf_set_kirakira(this, play, 16);
     }
 
-    if (Actor_HasParent(&this->actor, play)) {
-        Actor_Kill(&this->actor);
+    if (Actor_carry_check(&this->actor, play)) {
+        Actor_delete(&this->actor);
         return;
     }
 
-    if (!Player_InCsMode(play)) {
+    if (!player_demo_check(play)) {
         heightDiff = this->actor.world.pos.y - refActor->actor.world.pos.y;
 
         if ((heightDiff > 0.0f) && (heightDiff < 60.0f)) {
-            if (!func_80A01F90(&this->actor.world.pos, &refActor->actor.world.pos, 10.0f)) {
-                Health_ChangeBy(play, 128);
+            if (!goto_home_check(&this->actor.world.pos, &refActor->actor.world.pos, 10.0f)) {
+                life_meter_play(play, 128);
                 if (this->fairyFlags & FAIRY_FLAG_BIG) {
-                    Magic_Fill(play);
+                    magic_mode_check(play);
                 }
                 this->unk_2B8 = 50.0f;
                 this->unk_2AC = refActor->actor.shape.rot.y;
@@ -641,7 +641,7 @@ void func_80A0329C(EnElf* this, PlayState* play) {
                 this->unk_28C.y = 30.0f;
                 this->unk_2B4 = 0.0f;
                 this->unk_2AA = 0;
-                EnElf_SetupAction(this, func_80A03610);
+                En_Elf_actor_set_process(this, move_runaway);
                 return;
             }
         }
@@ -653,9 +653,9 @@ void func_80A0329C(EnElf* this, PlayState* play) {
                 this->disappearTimer--;
 
                 if (this->disappearTimer > -10) {
-                    Actor_SetScale(&this->actor, ((this->disappearTimer + 10) * 0.008f) * 0.1f);
+                    Actor_set_scale(&this->actor, ((this->disappearTimer + 10) * 0.008f) * 0.1f);
                 } else {
-                    Actor_Kill(&this->actor);
+                    Actor_delete(&this->actor);
                     return;
                 }
             }
@@ -663,40 +663,40 @@ void func_80A0329C(EnElf* this, PlayState* play) {
 
         if (!(this->fairyFlags & FAIRY_FLAG_BIG)) {
             // GI_MAX in this case allows the player to catch the actor in a bottle
-            Actor_OfferGetItem(&this->actor, play, GI_MAX, 80.0f, 60.0f);
+            Actor_carry_request_set2(&this->actor, play, GI_MAX, 80.0f, 60.0f);
         }
     }
 }
 
-void func_80A0353C(EnElf* this, PlayState* play) {
+void move_option(EnElf* this, PlayState* play) {
     Vec3f parentPos;
     Actor* parent;
 
-    SkelAnime_Update(&this->skelAnime);
-    func_80A02A20(this, play);
+    Skeleton_Info2_anime_play(&this->skelAnime);
+    check_revise_circle(this, play);
     parent = this->actor.parent;
 
     if ((parent != NULL) && (parent->update != NULL)) {
         parentPos = this->actor.parent->world.pos;
         parentPos.y += ((1500.0f * this->actor.scale.y) + 40.0f);
-        func_80A02C98(this, &parentPos, 0.2f);
+        chase_position(this, &parentPos, 0.2f);
     } else {
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     }
 
-    this->unk_2BC = Math_Atan2S(this->actor.velocity.z, this->actor.velocity.x);
+    this->unk_2BC = atans_table(this->actor.velocity.z, this->actor.velocity.x);
 }
 
-void func_80A03604(EnElf* this, PlayState* play) {
+static void move_stop(EnElf* this, PlayState* play) {
 }
 
-void func_80A03610(EnElf* this, PlayState* play) {
+void move_runaway(EnElf* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    SkelAnime_Update(&this->skelAnime);
-    Math_SmoothStepToF(&this->unk_2B8, 30.0f, 0.1f, 4.0f, 1.0f);
+    Skeleton_Info2_anime_play(&this->skelAnime);
+    add_calc(&this->unk_2B8, 30.0f, 0.1f, 4.0f, 1.0f);
 
-    this->unk_28C.x = Math_CosS(this->unk_2AC) * this->unk_2B8;
+    this->unk_28C.x = cos_s(this->unk_2AC) * this->unk_2B8;
     this->unk_28C.y += this->unk_2B4;
 
     switch (this->unk_2AA) {
@@ -713,33 +713,33 @@ void func_80A03610(EnElf* this, PlayState* play) {
             }
     }
 
-    this->unk_28C.z = Math_SinS(this->unk_2AC) * -this->unk_2B8;
+    this->unk_28C.z = sin_s(this->unk_2AC) * -this->unk_2B8;
     this->unk_2AC += this->unk_2B0;
-    func_80A02C98(this, &player->actor.world.pos, 0.2f);
+    chase_position(this, &player->actor.world.pos, 0.2f);
 
     if (this->unk_2B4 < 0.0f) {
         if ((this->unk_28C.y < 20.0f) && (this->unk_28C.y > 0.0f)) {
-            Actor_SetScale(&this->actor, (this->unk_28C.y * 0.008f) * 0.05f);
+            Actor_set_scale(&this->actor, (this->unk_28C.y * 0.008f) * 0.05f);
         }
     }
 
     if (this->unk_28C.y < -10.0f) {
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
         return;
     }
 
-    this->unk_2BC = Math_Atan2S(this->actor.velocity.z, this->actor.velocity.x);
-    EnElf_SpawnSparkles(this, play, 32);
-    Actor_PlaySfx(&this->actor, NA_SE_EV_FIATY_HEAL - SFX_FLAG);
+    this->unk_2BC = atans_table(this->actor.velocity.z, this->actor.velocity.x);
+    En_Elf_set_kirakira(this, play, 32);
+    Actor_SE_set(&this->actor, NA_SE_EV_FIATY_HEAL - SFX_FLAG);
 }
 
-void func_80A03814(EnElf* this, PlayState* play) {
+void move_regenerate1(EnElf* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    SkelAnime_Update(&this->skelAnime);
+    Skeleton_Info2_anime_play(&this->skelAnime);
 
     if (this->unk_28C.y > 200.0f) {
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
         return;
     }
 
@@ -759,19 +759,19 @@ void func_80A03814(EnElf* this, PlayState* play) {
         }
     }
 
-    this->unk_28C.x = Math_CosS(this->unk_2AC) * this->unk_2B8;
-    this->unk_28C.z = Math_SinS(this->unk_2AC) * -this->unk_2B8;
+    this->unk_28C.x = cos_s(this->unk_2AC) * this->unk_2B8;
+    this->unk_28C.z = sin_s(this->unk_2AC) * -this->unk_2B8;
     this->unk_2AC += this->unk_2B0;
-    func_80A02E30(this, &player->bodyPartsPos[PLAYER_BODYPART_WAIST]);
-    this->unk_2BC = Math_Atan2S(this->actor.velocity.z, this->actor.velocity.x);
-    EnElf_SpawnSparkles(this, play, 32);
-    Actor_PlaySfx(&this->actor, NA_SE_EV_FIATY_HEAL - SFX_FLAG);
+    chase_position5(this, &player->bodyPartsPos[PLAYER_BODYPART_WAIST]);
+    this->unk_2BC = atans_table(this->actor.velocity.z, this->actor.velocity.x);
+    En_Elf_set_kirakira(this, play, 32);
+    Actor_SE_set(&this->actor, NA_SE_EV_FIATY_HEAL - SFX_FLAG);
 }
 
-void func_80A03990(EnElf* this, PlayState* play) {
+void move_regenerate(EnElf* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    SkelAnime_Update(&this->skelAnime);
+    Skeleton_Info2_anime_play(&this->skelAnime);
 
     this->unk_28C.z = 0.0f;
     this->unk_28C.x = 0.0f;
@@ -779,26 +779,26 @@ void func_80A03990(EnElf* this, PlayState* play) {
     this->unk_2B4 -= 0.35f;
 
     if (this->unk_2B4 <= 0.0f) {
-        EnElf_SetupAction(this, func_80A03814);
+        En_Elf_actor_set_process(this, move_regenerate1);
         this->unk_2B0 = 0x800;
         this->unk_2AE = 0;
         this->unk_2B4 = 0.0f;
         this->unk_2B8 = 1.0f;
     }
 
-    func_80A02E30(this, &player->bodyPartsPos[PLAYER_BODYPART_WAIST]);
-    Actor_SetScale(&this->actor, (1.0f - (SQ(this->unk_2B4) * SQ(1.0f / 9.0f))) * 0.008f);
-    this->unk_2BC = Math_Atan2S(this->actor.velocity.z, this->actor.velocity.x);
-    EnElf_SpawnSparkles(this, play, 32);
-    Actor_PlaySfx(&this->actor, NA_SE_EV_FIATY_HEAL - SFX_FLAG);
+    chase_position5(this, &player->bodyPartsPos[PLAYER_BODYPART_WAIST]);
+    Actor_set_scale(&this->actor, (1.0f - (SQ(this->unk_2B4) * SQ(1.0f / 9.0f))) * 0.008f);
+    this->unk_2BC = atans_table(this->actor.velocity.z, this->actor.velocity.x);
+    En_Elf_set_kirakira(this, play, 32);
+    Actor_SE_set(&this->actor, NA_SE_EV_FIATY_HEAL - SFX_FLAG);
 }
 
-void func_80A03AB0(EnElf* this, PlayState* play) {
+void move_common_before(EnElf* this, PlayState* play) {
     if (this->fairyFlags & 4) {
-        func_80A04414(this, play);
+        elf_egg_color_check(this, play);
     }
 
-    SkelAnime_Update(&this->skelAnime);
+    Skeleton_Info2_anime_play(&this->skelAnime);
 
     if (this->func_2C8 == NULL) {
         ASSERT(0, "0", "../z_en_elf.c", 1725);
@@ -807,7 +807,7 @@ void func_80A03AB0(EnElf* this, PlayState* play) {
     this->func_2C8(this, play);
 }
 
-void EnElf_UpdateLights(EnElf* this, PlayState* play) {
+void move_common_after(EnElf* this, PlayState* play) {
     s16 glowLightRadius;
 
     glowLightRadius = 100;
@@ -819,23 +819,23 @@ void EnElf_UpdateLights(EnElf* this, PlayState* play) {
     if (this->fairyFlags & 0x20) {
         Player* player = GET_PLAYER(play);
 
-        Lights_PointNoGlowSetInfo(&this->lightInfoNoGlow, player->actor.world.pos.x,
+        Light_point_ct(&this->lightInfoNoGlow, player->actor.world.pos.x,
                                   (s16)(player->actor.world.pos.y) + 60.0f, player->actor.world.pos.z, 255, 255, 255,
                                   200);
     } else {
-        Lights_PointNoGlowSetInfo(&this->lightInfoNoGlow, this->actor.world.pos.x, this->actor.world.pos.y,
+        Light_point_ct(&this->lightInfoNoGlow, this->actor.world.pos.x, this->actor.world.pos.y,
                                   this->actor.world.pos.z, 255, 255, 255, -1);
     }
 
-    Lights_PointGlowSetInfo(&this->lightInfoGlow, this->actor.world.pos.x, this->actor.world.pos.y,
+    Light_point2_ct(&this->lightInfoGlow, this->actor.world.pos.x, this->actor.world.pos.y,
                             this->actor.world.pos.z, 255, 255, 255, glowLightRadius);
 
-    this->unk_2BC = Math_Atan2S(this->actor.velocity.z, this->actor.velocity.x);
+    this->unk_2BC = atans_table(this->actor.velocity.z, this->actor.velocity.x);
 
-    Actor_SetScale(&this->actor, this->actor.scale.x);
+    Actor_set_scale(&this->actor, this->actor.scale.x);
 }
 
-void func_80A03CF8(EnElf* this, PlayState* play) {
+static void move_normal(EnElf* this, PlayState* play) {
     Vec3f nextPos;
     Vec3f prevPos;
     Player* player = GET_PLAYER(play);
@@ -843,32 +843,32 @@ void func_80A03CF8(EnElf* this, PlayState* play) {
     f32 xScale;
     f32 distFromPlayerHat;
 
-    func_80A0461C(this, play);
-    func_80A03AB0(this, play);
+    check_mode_z_en_elf(this, play);
+    move_common_before(this, play);
 
     xScale = 0.0f;
 
     if ((play->csCtx.state != CS_STATE_IDLE) && (play->csCtx.actorCues[8] != NULL)) {
-        EnElf_GetCuePos(&nextPos, play, 8);
+        DemoEffMoveProc_global(&nextPos, play, 8);
 
         if (play->csCtx.actorCues[8]->id == 5) {
             if (1) {}
-            EnElf_SpawnSparkles(this, play, 16);
+            En_Elf_set_kirakira(this, play, 16);
         }
 
         prevPos = this->actor.world.pos;
 
         if (this->unk_2A8 == 0xA) {
-            func_80A02EC0(this, &nextPos);
+            chase_position2(this, &nextPos);
         } else {
-            func_80A02C98(this, &nextPos, 0.2f);
+            chase_position(this, &nextPos, 0.2f);
         }
 
-        if ((play->sceneId == SCENE_LINKS_HOUSE) && (gSaveContext.sceneLayer == 4)) {
+        if ((play->sceneId == SCENE_LINKS_HOUSE) && (z_common_data.sceneLayer == 4)) {
             // play dash sound effect as Navi enters Links house in the intro
             if (1) {}
             if (play->csCtx.curFrame == 55) {
-                Actor_PlaySfx(&this->actor, NA_SE_EV_FAIRY_DASH);
+                Actor_SE_set(&this->actor, NA_SE_EV_FAIRY_DASH);
             }
 
             // play dash sound effect in intervals as Navi is waking up Link in the intro
@@ -880,18 +880,18 @@ void func_80A03CF8(EnElf* this, PlayState* play) {
                 } else {
                     if (this->actor.world.pos.y < prevPos.y) {
                         this->fairyFlags |= 0x40;
-                        Actor_PlaySfx(&this->actor, NA_SE_EV_FAIRY_DASH);
+                        Actor_SE_set(&this->actor, NA_SE_EV_FAIRY_DASH);
                     }
                 }
             }
         }
     } else {
-        distFromPlayerHat = Math_Vec3f_DistXYZ(&player->bodyPartsPos[PLAYER_BODYPART_HAT], &this->actor.world.pos);
+        distFromPlayerHat = search_position_distance(&player->bodyPartsPos[PLAYER_BODYPART_HAT], &this->actor.world.pos);
 
         switch (this->unk_2A8) {
             case 7:
-                func_80A02C98(this, &player->bodyPartsPos[PLAYER_BODYPART_HAT], 1.0f - this->unk_2AE * (1.0f / 30.0f));
-                xScale = Math_Vec3f_DistXYZ(&player->bodyPartsPos[PLAYER_BODYPART_HAT], &this->actor.world.pos);
+                chase_position(this, &player->bodyPartsPos[PLAYER_BODYPART_HAT], 1.0f - this->unk_2AE * (1.0f / 30.0f));
+                xScale = search_position_distance(&player->bodyPartsPos[PLAYER_BODYPART_HAT], &this->actor.world.pos);
 
                 if (distFromPlayerHat < 7.0f) {
                     this->unk_2C0 = 0;
@@ -903,18 +903,18 @@ void func_80A03CF8(EnElf* this, PlayState* play) {
                 } else {
                     xScale = 0.008f;
                 }
-                EnElf_SpawnSparkles(this, play, 16);
+                En_Elf_set_kirakira(this, play, 16);
                 break;
             case 8:
-                func_80A02C98(this, &player->bodyPartsPos[PLAYER_BODYPART_HAT], 0.2f);
+                chase_position(this, &player->bodyPartsPos[PLAYER_BODYPART_HAT], 0.2f);
                 this->actor.world.pos = player->bodyPartsPos[PLAYER_BODYPART_HAT];
-                func_80A029A8(this, 1);
+                up_tough(this, 1);
                 break;
             case 11:
                 nextPos = player->bodyPartsPos[PLAYER_BODYPART_HAT];
                 nextPos.y += 1500.0f * this->actor.scale.y;
-                func_80A02E30(this, &nextPos);
-                EnElf_SpawnSparkles(this, play, 16);
+                chase_position5(this, &nextPos);
+                En_Elf_set_kirakira(this, play, 16);
 
                 if (this->unk_2B8 <= 19.0f) {
                     this->unk_2B8 += 1.0f;
@@ -926,29 +926,29 @@ void func_80A03CF8(EnElf* this, PlayState* play) {
 
                 if (this->unk_2C0 < 0x20) {
                     this->unk_2B0 = (this->unk_2C0 * 0xF0) + 0x200;
-                    func_80A0299C(this, 1);
+                    down_tough(this, 1);
                 }
                 break;
             case 12:
                 nextPos = GET_ACTIVE_CAM(play)->eye;
                 nextPos.y += (-2000.0f * this->actor.scale.y);
-                func_80A03148(this, &nextPos, 0.0f, 20.0f, 0.2f);
+                chase_position4(this, &nextPos, 0.0f, 20.0f, 0.2f);
                 break;
             default:
-                func_80A029A8(this, 1);
+                up_tough(this, 1);
                 nextPos = play->actorCtx.attention.naviHoverPos;
                 nextPos.y += (1500.0f * this->actor.scale.y);
                 naviHoverActor = play->actorCtx.attention.naviHoverActor;
 
                 if (naviHoverActor != NULL) {
-                    func_80A03148(this, &nextPos, 0.0f, 20.0f, 0.2f);
+                    chase_position4(this, &nextPos, 0.0f, 20.0f, 0.2f);
 
                     if (this->actor.speed >= 5.0f) {
-                        EnElf_SpawnSparkles(this, play, 16);
+                        En_Elf_set_kirakira(this, play, 16);
                     }
                 } else {
                     if ((this->timer % 32) == 0) {
-                        this->unk_2A0 = Rand_ZeroFloat(7.0f) + 3.0f;
+                        this->unk_2A0 = rnd_f(7.0f) + 3.0f;
                     }
 
                     if (this->fairyFlags & 2) {
@@ -956,19 +956,19 @@ void func_80A03CF8(EnElf* this, PlayState* play) {
                             this->fairyFlags ^= 2;
                         }
 
-                        func_80A03148(this, &nextPos, 0.0f, 20.0f, 0.2f);
-                        EnElf_SpawnSparkles(this, play, 16);
+                        chase_position4(this, &nextPos, 0.0f, 20.0f, 0.2f);
+                        En_Elf_set_kirakira(this, play, 16);
                     } else {
                         if (distFromPlayerHat > 100.0f) {
                             this->fairyFlags |= 2;
 
                             if (this->unk_2C7 == 0) {
-                                Actor_PlaySfx(&this->actor, NA_SE_EV_FAIRY_DASH);
+                                Actor_SE_set(&this->actor, NA_SE_EV_FAIRY_DASH);
                             }
 
                             this->unk_2C0 = 0x64;
                         }
-                        func_80A03148(this, &nextPos, 0.0f, this->unk_2A0, 0.2f);
+                        chase_position4(this, &nextPos, 0.0f, this->unk_2A0, 0.2f);
                     }
                 }
                 break;
@@ -980,13 +980,13 @@ void func_80A03CF8(EnElf* this, PlayState* play) {
     } else if (this->unk_2A8 == 8) {
         this->actor.scale.x = 0.0f;
     } else {
-        Math_SmoothStepToF(&this->actor.scale.x, 0.008f, 0.3f, 0.00080000004f, 0.000080000005f);
+        add_calc(&this->actor.scale.x, 0.008f, 0.3f, 0.00080000004f, 0.000080000005f);
     }
 
-    EnElf_UpdateLights(this, play);
+    move_common_after(this, play);
 }
 
-void EnElf_ChangeColor(Color_RGBAf* dest, Color_RGBAf* newColor, Color_RGBAf* curColor, f32 rate) {
+void color_morf(Color_RGBAf* dest, Color_RGBAf* newColor, Color_RGBAf* curColor, f32 rate) {
     Color_RGBAf rgbaDiff;
 
     rgbaDiff.r = (newColor->r - curColor->r);
@@ -1000,7 +1000,7 @@ void EnElf_ChangeColor(Color_RGBAf* dest, Color_RGBAf* newColor, Color_RGBAf* cu
     dest->a += (rgbaDiff.a * rate);
 }
 
-void func_80A04414(EnElf* this, PlayState* play) {
+void elf_egg_color_check(EnElf* this, PlayState* play) {
     Actor* naviHoverActor = play->actorCtx.attention.naviHoverActor;
     Player* player = GET_PLAYER(play);
     f32 transitionRate;
@@ -1011,24 +1011,24 @@ void func_80A04414(EnElf* this, PlayState* play) {
         this->unk_29C = 1.0f;
 
         if (this->unk_2C7 == 0) {
-            Actor_PlaySfx(&this->actor, NA_SE_EV_FAIRY_DASH);
+            Actor_SE_set(&this->actor, NA_SE_EV_FAIRY_DASH);
         }
 
     } else {
         if (this->unk_2C6 == 0) {
             if ((naviHoverActor == NULL) ||
-                (Math_Vec3f_DistXYZ(&this->actor.world.pos, &play->actorCtx.attention.naviHoverPos) < 50.0f)) {
+                (search_position_distance(&this->actor.world.pos, &play->actorCtx.attention.naviHoverPos) < 50.0f)) {
                 this->unk_2C6 = 1;
             }
         } else if (this->unk_29C != 0.0f) {
-            if (Math_StepToF(&this->unk_29C, 0.0f, 0.25f) != 0) {
+            if (chase_f(&this->unk_29C, 0.0f, 0.25f) != 0) {
                 this->innerColor = play->actorCtx.attention.naviInnerColor;
                 this->outerColor = play->actorCtx.attention.naviOuterColor;
             } else {
                 transitionRate = 0.25f / this->unk_29C;
-                EnElf_ChangeColor(&this->innerColor, &play->actorCtx.attention.naviInnerColor, &this->innerColor,
+                color_morf(&this->innerColor, &play->actorCtx.attention.naviInnerColor, &this->innerColor,
                                   transitionRate);
-                EnElf_ChangeColor(&this->outerColor, &play->actorCtx.attention.naviOuterColor, &this->outerColor,
+                color_morf(&this->outerColor, &play->actorCtx.attention.naviOuterColor, &this->outerColor,
                                   transitionRate);
             }
         }
@@ -1047,7 +1047,7 @@ void func_80A04414(EnElf* this, PlayState* play) {
             }
 
             if (this->unk_2C7 == 0) {
-                Actor_PlaySfx(&this->actor, sfxId);
+                Actor_SE_set(&this->actor, sfxId);
             }
 
             this->fairyFlags |= 1;
@@ -1055,7 +1055,7 @@ void func_80A04414(EnElf* this, PlayState* play) {
     }
 }
 
-void func_80A0461C(EnElf* this, PlayState* play) {
+void check_mode_z_en_elf(EnElf* this, PlayState* play) {
     s32 temp;
     Actor* naviHoverActor;
     Player* player = GET_PLAYER(play);
@@ -1090,7 +1090,7 @@ void func_80A0461C(EnElf* this, PlayState* play) {
         // However, of these three, only `SCENE_CAM_TYPE_FIXED_SHOP_VIEWPOINT` is used with `VIEWPOINT_PIVOT`,
         // so here the bit check is equivalent to checking for `SCENE_CAM_TYPE_FIXED_SHOP_VIEWPOINT`.
         if ((player->stateFlags1 & PLAYER_STATE1_10) ||
-            ((R_SCENE_CAM_TYPE & 0x10) && Play_CheckViewpoint(play, VIEWPOINT_PIVOT))) {
+            ((R_SCENE_CAM_TYPE & 0x10) && Game_play_pr_vr_switch_pr_check(play, VIEWPOINT_PIVOT))) {
             temp = 12;
             this->unk_2C0 = 100;
         } else if (naviHoverActor == NULL || naviHoverActor->category == ACTORCAT_NPC) {
@@ -1106,7 +1106,7 @@ void func_80A0461C(EnElf* this, PlayState* play) {
                             temp = 0;
                         } else {
                             if (this->unk_2C7 == 0) {
-                                Actor_PlaySfx(&this->actor, NA_SE_EV_NAVY_VANISH);
+                                Actor_SE_set(&this->actor, NA_SE_EV_NAVY_VANISH);
                             }
                             temp = 7;
                         }
@@ -1122,7 +1122,7 @@ void func_80A0461C(EnElf* this, PlayState* play) {
                             }
                         } else {
                             temp = 8;
-                            func_80A029A8(this, 10);
+                            up_tough(this, 10);
                         }
                         break;
                     case 8:
@@ -1150,17 +1150,17 @@ void func_80A0461C(EnElf* this, PlayState* play) {
                 if (!(player->stateFlags2 & PLAYER_STATE2_NAVI_ACTIVE)) {
                     temp = 7;
                     if (this->unk_2C7 == 0) {
-                        Actor_PlaySfx(&this->actor, NA_SE_EV_NAVY_VANISH);
+                        Actor_SE_set(&this->actor, NA_SE_EV_NAVY_VANISH);
                     }
                 }
                 break;
             case 8:
                 if (player->stateFlags2 & PLAYER_STATE2_NAVI_ACTIVE) {
-                    func_80A0299C(this, 0x32);
+                    down_tough(this, 0x32);
                     this->unk_2C0 = 42;
                     temp = 11;
                     if (this->unk_2C7 == 0) {
-                        Actor_PlaySfx(&this->actor, NA_SE_EV_FAIRY_DASH);
+                        Actor_SE_set(&this->actor, NA_SE_EV_FAIRY_DASH);
                     }
                 }
                 break;
@@ -1174,26 +1174,26 @@ void func_80A0461C(EnElf* this, PlayState* play) {
     }
 
     if (temp != this->unk_2A8) {
-        func_80A01C38(this, temp);
+        En_Elf_actor_set_status(this, temp);
 
         if (temp == 11) {
-            this->unk_2B8 = Math_Vec3f_DistXZ(&player->bodyPartsPos[PLAYER_BODYPART_HAT], &this->actor.world.pos);
-            this->unk_2AC = Math_Vec3f_Yaw(&this->actor.world.pos, &player->bodyPartsPos[PLAYER_BODYPART_HAT]);
+            this->unk_2B8 = search_position_distanceXZ(&player->bodyPartsPos[PLAYER_BODYPART_HAT], &this->actor.world.pos);
+            this->unk_2AC = search_position_angleY(&this->actor.world.pos, &player->bodyPartsPos[PLAYER_BODYPART_HAT]);
         }
     }
 }
 
-void EnElf_SpawnSparkles(EnElf* this, PlayState* play, s32 sparkleLife) {
-    static Vec3f sparkleVelocity = { 0.0f, -0.05f, 0.0f };
-    static Vec3f sparkleAccel = { 0.0f, -0.025f, 0.0f };
+void En_Elf_set_kirakira(EnElf* this, PlayState* play, s32 sparkleLife) {
+    static Vec3f kirakira_vec = { 0.0f, -0.05f, 0.0f };
+    static Vec3f kirakira_acc = { 0.0f, -0.025f, 0.0f };
     s32 pad;
     Vec3f sparklePos;
     Color_RGBA8 primColor;
     Color_RGBA8 envColor;
 
-    sparklePos.x = Rand_CenteredFloat(6.0f) + this->actor.world.pos.x;
-    sparklePos.y = (Rand_ZeroOne() * 6.0f) + this->actor.world.pos.y;
-    sparklePos.z = Rand_CenteredFloat(6.0f) + this->actor.world.pos.z;
+    sparklePos.x = rnd_fx(6.0f) + this->actor.world.pos.x;
+    sparklePos.y = (fqrand() * 6.0f) + this->actor.world.pos.y;
+    sparklePos.z = rnd_fx(6.0f) + this->actor.world.pos.z;
 
     primColor.r = this->innerColor.r;
     primColor.g = this->innerColor.g;
@@ -1203,21 +1203,21 @@ void EnElf_SpawnSparkles(EnElf* this, PlayState* play, s32 sparkleLife) {
     envColor.g = this->outerColor.g;
     envColor.b = this->outerColor.b;
 
-    EffectSsKiraKira_SpawnDispersed(play, &sparklePos, &sparkleVelocity, &sparkleAccel, &primColor, &envColor, 1000,
+    Effect_SS_KiraKira_sc_ct_ct(play, &sparklePos, &kirakira_vec, &kirakira_acc, &primColor, &envColor, 1000,
                                     sparkleLife);
 }
 
-void func_80A04D90(EnElf* this, PlayState* play) {
+void Elf_Shadow_Process(EnElf* this, PlayState* play) {
     s32 pad;
     s32 bgId;
 
-    this->actor.floorHeight = BgCheck_EntityRaycastDown5(play, &play->colCtx, &this->actor.floorPoly, &bgId,
+    this->actor.floorHeight = T_BGCheck_ObjGroundCheck_aiac2(play, &play->colCtx, &this->actor.floorPoly, &bgId,
                                                          &this->actor, &this->actor.world.pos);
     this->actor.shape.shadowAlpha = 50;
 }
 
 // move to talk to player
-void func_80A04DE4(EnElf* this, PlayState* play) {
+void move_talk_before(EnElf* this, PlayState* play) {
     Vec3f headCopy;
     Player* player = GET_PLAYER(play);
     Vec3f pos;
@@ -1227,151 +1227,151 @@ void func_80A04DE4(EnElf* this, PlayState* play) {
 
         if ((player->focusActor == NULL) || (&player->actor == player->focusActor) ||
             (&this->actor == player->focusActor)) {
-            pos.x = player->bodyPartsPos[PLAYER_BODYPART_HEAD].x + (Math_SinS(player->actor.shape.rot.y) * 20.0f);
+            pos.x = player->bodyPartsPos[PLAYER_BODYPART_HEAD].x + (sin_s(player->actor.shape.rot.y) * 20.0f);
             pos.y = player->bodyPartsPos[PLAYER_BODYPART_HEAD].y + 5.0f;
-            pos.z = player->bodyPartsPos[PLAYER_BODYPART_HEAD].z + (Math_CosS(player->actor.shape.rot.y) * 20.0f);
+            pos.z = player->bodyPartsPos[PLAYER_BODYPART_HEAD].z + (cos_s(player->actor.shape.rot.y) * 20.0f);
         }
 
         this->actor.focus.pos = pos;
         this->fairyFlags &= ~0x10;
     }
 
-    func_80A03AB0(this, play);
+    move_common_before(this, play);
     headCopy = this->actor.focus.pos;
 
-    func_80A03148(this, &headCopy, 0, 20.0f, 0.2f);
+    chase_position4(this, &headCopy, 0, 20.0f, 0.2f);
 
     if (this->actor.speed >= 5.0f) {
-        EnElf_SpawnSparkles(this, play, 16);
+        En_Elf_set_kirakira(this, play, 16);
     }
 
-    Math_SmoothStepToF(&this->actor.scale.x, 0.008f, 0.3f, 0.00080000004f, 0.000080000005f);
-    EnElf_UpdateLights(this, play);
+    add_calc(&this->actor.scale.x, 0.008f, 0.3f, 0.00080000004f, 0.000080000005f);
+    move_common_after(this, play);
 }
 
 // move after talking to player
-void func_80A04F94(EnElf* this, PlayState* play) {
+void move_talk_after(EnElf* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    Math_SmoothStepToS(&this->actor.shape.rot.y, this->unk_2BC, 5, 0x1000, 0x400);
+    add_calc_short_angle2(&this->actor.shape.rot.y, this->unk_2BC, 5, 0x1000, 0x400);
     this->timer++;
-    Math_StepToF(&this->unk_2A4, 1.0f, 0.05f);
-    Environment_AdjustLights(play, SQ(this->unk_2A4), player->actor.projectedPos.z + 780.0f, 0.2f, 0.5f);
+    chase_f(&this->unk_2A4, 1.0f, 0.05f);
+    set_add_light_global(play, SQ(this->unk_2A4), player->actor.projectedPos.z + 780.0f, 0.2f, 0.5f);
 }
 
 // ask to talk to saria again
-void func_80A05040(Actor* thisx, PlayState* play) {
+void En_Elf_actor_move_talk_saria2(Actor* thisx, PlayState* play) {
     EnElf* this = (EnElf*)thisx;
 
-    func_80A04DE4(this, play);
+    move_talk_before(this, play);
 
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_CHOICE) && Message_ShouldAdvance(play)) {
+    if ((message_check(&play->msgCtx) == TEXT_STATE_CHOICE) && pad_on_check(play)) {
         switch (play->msgCtx.choiceIndex) {
             case 0: // yes
-                Message_ContinueTextbox(play, QuestHint_GetSariaTextId(play));
-                this->actor.update = func_80A05114;
+                message_set2(play, get_sa_message(play));
+                this->actor.update = En_Elf_actor_move_talk_saria1;
                 break;
             case 1: // no
-                Message_CloseTextbox(play);
-                this->actor.update = func_80A053F0;
-                func_80A01C38(this, 0);
+                message_close(play);
+                this->actor.update = En_Elf_actor_move_link;
+                En_Elf_actor_set_status(this, 0);
                 this->fairyFlags &= ~0x20;
                 break;
         }
     }
 
-    func_80A04F94(this, play);
+    move_talk_after(this, play);
 }
 
-void func_80A05114(Actor* thisx, PlayState* play) {
+void En_Elf_actor_move_talk_saria1(Actor* thisx, PlayState* play) {
     EnElf* this = (EnElf*)thisx;
 
-    func_80A04DE4(this, play);
+    move_talk_before(this, play);
 
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_EVENT) && Message_ShouldAdvance(play)) {
-        Message_ContinueTextbox(play, 0xE3);
-        this->actor.update = func_80A05040;
+    if ((message_check(&play->msgCtx) == TEXT_STATE_EVENT) && pad_on_check(play)) {
+        message_set2(play, 0xE3);
+        this->actor.update = En_Elf_actor_move_talk_saria2;
     }
 
-    func_80A04F94(this, play);
+    move_talk_after(this, play);
 }
 
-void func_80A05188(Actor* thisx, PlayState* play) {
+void En_Elf_actor_move_talk_saria0(Actor* thisx, PlayState* play) {
     EnElf* this = (EnElf*)thisx;
 
-    func_80A04DE4(this, play);
+    move_talk_before(this, play);
 
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_EVENT) && Message_ShouldAdvance(play)) {
-        Message_ContinueTextbox(play, QuestHint_GetSariaTextId(play));
-        this->actor.update = func_80A05114;
+    if ((message_check(&play->msgCtx) == TEXT_STATE_EVENT) && pad_on_check(play)) {
+        message_set2(play, get_sa_message(play));
+        this->actor.update = En_Elf_actor_move_talk_saria1;
     }
 
-    func_80A04F94(this, play);
+    move_talk_after(this, play);
 }
 
 // ask to talk to navi
-void func_80A05208(Actor* thisx, PlayState* play) {
+void En_Elf_actor_move_talk_naby0(Actor* thisx, PlayState* play) {
     s32 naviTextId;
     EnElf* this = (EnElf*)thisx;
 
-    func_80A04DE4(this, play);
+    move_talk_before(this, play);
 
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_CHOICE) && Message_ShouldAdvance(play)) {
+    if ((message_check(&play->msgCtx) == TEXT_STATE_CHOICE) && pad_on_check(play)) {
         switch (play->msgCtx.choiceIndex) {
             case 0: // yes
-                naviTextId = QuestHint_GetNaviTextId(play);
+                naviTextId = get_elf_message(play);
 
                 if (naviTextId != 0) {
-                    Message_ContinueTextbox(play, naviTextId);
+                    message_set2(play, naviTextId);
                 } else {
-                    Message_ContinueTextbox(play, 0x15F);
+                    message_set2(play, 0x15F);
                 }
 
-                this->actor.update = func_80A052F4;
+                this->actor.update = En_Elf_actor_move_talk;
                 break;
             case 1: // no
-                Message_CloseTextbox(play);
-                this->actor.update = func_80A053F0;
-                func_80A01C38(this, 0);
+                message_close(play);
+                this->actor.update = En_Elf_actor_move_link;
+                En_Elf_actor_set_status(this, 0);
                 this->fairyFlags &= ~0x20;
                 break;
         }
     }
 
-    func_80A04F94(this, play);
+    move_talk_after(this, play);
 }
 
 // ask to talk to saria
-void func_80A052F4(Actor* thisx, PlayState* play) {
+void En_Elf_actor_move_talk(Actor* thisx, PlayState* play) {
     EnElf* this = (EnElf*)thisx;
 
-    func_80A04DE4(this, play);
+    move_talk_before(this, play);
 
-    if (Message_GetState(&play->msgCtx) == TEXT_STATE_CHOICE) {
-        if (Message_ShouldAdvance(play)) {
+    if (message_check(&play->msgCtx) == TEXT_STATE_CHOICE) {
+        if (pad_on_check(play)) {
             play->msgCtx.unk_E3F2 = 0xFF;
 
             switch (play->msgCtx.choiceIndex) {
                 case 0: // yes
-                    this->actor.update = func_80A05188;
-                    Message_ContinueTextbox(play, 0xE2);
+                    this->actor.update = En_Elf_actor_move_talk_saria0;
+                    message_set2(play, 0xE2);
                     break;
                 case 1: // no
-                    this->actor.update = func_80A05208;
-                    Message_ContinueTextbox(play, 0xE1);
+                    this->actor.update = En_Elf_actor_move_talk_naby0;
+                    message_set2(play, 0xE1);
                     break;
             }
         }
-    } else if (Actor_TextboxIsClosing(thisx, play)) {
-        this->actor.update = func_80A053F0;
-        func_80A01C38(this, 0);
+    } else if (Actor_talk_end_check(thisx, play)) {
+        this->actor.update = En_Elf_actor_move_link;
+        En_Elf_actor_set_status(this, 0);
         this->fairyFlags &= ~0x20;
     }
 
-    func_80A04F94(this, play);
+    move_talk_after(this, play);
 }
 
-void func_80A053F0(Actor* thisx, PlayState* play) {
+void En_Elf_actor_move_link(Actor* thisx, PlayState* play) {
     u8 unk2C7;
     s32 pad;
     Player* player = GET_PLAYER(play);
@@ -1380,15 +1380,15 @@ void func_80A053F0(Actor* thisx, PlayState* play) {
     if (player->naviTextId == 0) {
         if (player->focusActor == NULL) {
 #if DEBUG_FEATURES
-            if (((gSaveContext.save.info.playerData.naviTimer >= 600) &&
-                 (gSaveContext.save.info.playerData.naviTimer <= 3000)) ||
+            if (((z_common_data.save.info.playerData.naviTimer >= 600) &&
+                 (z_common_data.save.info.playerData.naviTimer <= 3000)) ||
                 (nREG(89) != 0))
 #else
-            if ((gSaveContext.save.info.playerData.naviTimer >= 600) &&
-                (gSaveContext.save.info.playerData.naviTimer <= 3000))
+            if ((z_common_data.save.info.playerData.naviTimer >= 600) &&
+                (z_common_data.save.info.playerData.naviTimer <= 3000))
 #endif
             {
-                player->naviTextId = QuestHint_GetNaviTextId(play);
+                player->naviTextId = get_elf_message(play);
 
                 if (player->naviTextId == 0x15F) {
                     player->naviTextId = 0;
@@ -1400,19 +1400,19 @@ void func_80A053F0(Actor* thisx, PlayState* play) {
         thisx->flags |= ACTOR_FLAG_TALK_OFFER_AUTO_ACCEPTED;
     }
 
-    if (Actor_TalkOfferAccepted(thisx, play)) {
-        func_800F4524(&gSfxDefaultPos, NA_SE_VO_SK_LAUGH, 0x20);
+    if (Actor_talk_check(thisx, play)) {
+        Na_StartFxmixSe(&_dummy_zero_f, NA_SE_VO_SK_LAUGH, 0x20);
         thisx->focus.pos = thisx->world.pos;
 
-        if (thisx->textId == QuestHint_GetNaviTextId(play)) {
+        if (thisx->textId == get_elf_message(play)) {
             this->fairyFlags |= 0x80;
-            gSaveContext.save.info.playerData.naviTimer = 3001;
+            z_common_data.save.info.playerData.naviTimer = 3001;
         }
 
         this->fairyFlags |= 0x10;
         this->fairyFlags |= 0x20;
-        thisx->update = func_80A052F4;
-        func_80A01C38(this, 3);
+        thisx->update = En_Elf_actor_move_talk;
+        En_Elf_actor_set_status(this, 3);
 
         if (this->elfMsg != NULL) {
             this->elfMsg->actor.flags |= ACTOR_FLAG_TALK;
@@ -1424,7 +1424,7 @@ void func_80A053F0(Actor* thisx, PlayState* play) {
         thisx->shape.rot.y = this->unk_2BC;
 
 #if DEBUG_FEATURES
-        // `gSaveContext.save.info.sceneFlags[127].chest` (like in the debug string) instead of `HIGH_SCORE(HS_HBA)`
+        // `z_common_data.save.info.sceneFlags[127].chest` (like in the debug string) instead of `HIGH_SCORE(HS_HBA)`
         // matches too, but, with how the `SaveContext` struct is currently defined, it is an out-of-bounds read in the
         // `sceneFlags` array. It is theorized the original `room_inf` (currently `sceneFlags`) was an array of length
         // 128, not broken up like currently into structs. Structs are currently used because they're easier to work
@@ -1435,11 +1435,11 @@ void func_80A053F0(Actor* thisx, PlayState* play) {
         }
 #endif
 
-        if (!Play_InCsMode(play)) {
-            if (gSaveContext.save.info.playerData.naviTimer < 25800) {
-                gSaveContext.save.info.playerData.naviTimer++;
+        if (!Game_play_demo_mode_check(play)) {
+            if (z_common_data.save.info.playerData.naviTimer < 25800) {
+                z_common_data.save.info.playerData.naviTimer++;
             } else if (!(this->fairyFlags & 0x80)) {
-                gSaveContext.save.info.playerData.naviTimer = 0;
+                z_common_data.save.info.playerData.naviTimer = 0;
             }
         }
     }
@@ -1448,8 +1448,8 @@ void func_80A053F0(Actor* thisx, PlayState* play) {
     this->timer++;
 
     if (this->unk_2A4 > 0.0f) {
-        Math_StepToF(&this->unk_2A4, 0.0f, 0.05f);
-        Environment_AdjustLights(play, SQ(this->unk_2A4) * this->unk_2A4, player->actor.projectedPos.z + 780.0f, 0.2f,
+        chase_f(&this->unk_2A4, 0.0f, 0.05f);
+        set_add_light_global(play, SQ(this->unk_2A4) * this->unk_2A4, player->actor.projectedPos.z + 780.0f, 0.2f,
                                  0.5f);
     }
 
@@ -1463,10 +1463,10 @@ void func_80A053F0(Actor* thisx, PlayState* play) {
         this->unk_2C7 = 1;
     }
 
-    func_80A04D90(this, play);
+    Elf_Shadow_Process(this, play);
 }
 
-void EnElf_Update(Actor* thisx, PlayState* play) {
+void En_Elf_actor_move(Actor* thisx, PlayState* play) {
     s32 pad;
     EnElf* this = (EnElf*)thisx;
 
@@ -1475,29 +1475,29 @@ void EnElf_Update(Actor* thisx, PlayState* play) {
     this->timer++;
 
     if (this->fairyFlags & FAIRY_FLAG_BIG) {
-        func_80A04D90(this, play);
+        Elf_Shadow_Process(this, play);
     }
 }
 
-s32 EnElf_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx,
+s32 before_draw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx,
                            Gfx** gfx) {
-    static Vec3f zeroVec = { 0.0f, 0.0f, 0.0f };
+    static Vec3f light_local_offset = { 0.0f, 0.0f, 0.0f };
     s32 pad;
     f32 scale;
     Vec3f mtxMult;
     EnElf* this = (EnElf*)thisx;
 
     if (limbIndex == 8) {
-        scale = ((Math_SinS(this->timer * 4096) * 0.1f) + 1.0f) * 0.012f;
+        scale = ((sin_s(this->timer * 4096) * 0.1f) + 1.0f) * 0.012f;
 
         if (this->fairyFlags & FAIRY_FLAG_BIG) {
             scale *= 2.0f;
         }
 
         scale *= (this->actor.scale.x * 124.99999f);
-        Matrix_MultVec3f(&zeroVec, &mtxMult);
-        Matrix_Translate(mtxMult.x, mtxMult.y, mtxMult.z, MTXMODE_NEW);
-        Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
+        Matrix_Position(&light_local_offset, &mtxMult);
+        Matrix_translate(mtxMult.x, mtxMult.y, mtxMult.z, MTXMODE_NEW);
+        Matrix_scale(scale, scale, scale, MTXMODE_APPLY);
     }
 
     // do not draw wings for big fairies
@@ -1510,7 +1510,7 @@ s32 EnElf_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* p
     return false;
 }
 
-void EnElf_Draw(Actor* thisx, PlayState* play) {
+void En_Elf_actor_draw(Actor* thisx, PlayState* play) {
     s32 pad;
     f32 alphaScale;
     s32 envAlpha;
@@ -1525,7 +1525,7 @@ void EnElf_Draw(Actor* thisx, PlayState* play) {
 
             OPEN_DISPS(play->state.gfxCtx, "../z_en_elf.c", 2730);
 
-            Gfx_SetupDL_27Xlu(play->state.gfxCtx);
+            texture_z(play->state.gfxCtx);
 
             envAlpha = (this->timer * 50) & 0x1FF;
             envAlpha = (envAlpha > 255) ? 511 - envAlpha : envAlpha;
@@ -1546,15 +1546,15 @@ void EnElf_Draw(Actor* thisx, PlayState* play) {
             gSPEndDisplayList(dListHead);
             gDPSetEnvColor(POLY_XLU_DISP++, (u8)this->outerColor.r, (u8)this->outerColor.g, (u8)this->outerColor.b,
                            (u8)(envAlpha * alphaScale));
-            POLY_XLU_DISP = SkelAnime_Draw(play, this->skelAnime.skeleton, this->skelAnime.jointTable,
-                                           EnElf_OverrideLimbDraw, NULL, this, POLY_XLU_DISP);
+            POLY_XLU_DISP = Si2_draw2(play, this->skelAnime.skeleton, this->skelAnime.jointTable,
+                                           before_draw, NULL, this, POLY_XLU_DISP);
 
             CLOSE_DISPS(play->state.gfxCtx, "../z_en_elf.c", 2793);
         }
     }
 }
 
-void EnElf_GetCuePos(Vec3f* dest, PlayState* play, s32 cueChannel) {
+void DemoEffMoveProc_global(Vec3f* dest, PlayState* play, s32 cueChannel) {
     Vec3f startPos;
     Vec3f endPos;
     CsCmdActorCue* cue = play->csCtx.actorCues[cueChannel];
@@ -1568,7 +1568,7 @@ void EnElf_GetCuePos(Vec3f* dest, PlayState* play, s32 cueChannel) {
     endPos.y = cue->endPos.y;
     endPos.z = cue->endPos.z;
 
-    lerp = Environment_LerpWeight(cue->endFrame, cue->startFrame, play->csCtx.curFrame);
+    lerp = get_parcent(cue->endFrame, cue->startFrame, play->csCtx.curFrame);
 
     dest->x = ((endPos.x - startPos.x) * lerp) + startPos.x;
     dest->y = ((endPos.y - startPos.y) * lerp) + startPos.y;

@@ -3,7 +3,7 @@
 /**
  * memset: sets `len` bytes to `val` starting at address `dest`.
  *
- * @see There are two other memsets in this codebase, Lib_MemSet(), MemSet()
+ * @see There are two other memsets in this codebase, mem_clear(), Memset()
  *
  * @param dest address to start at
  * @param val value to write (int, but interpreted as u8)

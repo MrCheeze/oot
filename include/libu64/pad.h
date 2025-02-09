@@ -10,22 +10,22 @@ typedef struct Input {
     /* 0x12 */ OSContPad rel; // X/Y store adjusted
 } Input; // size = 0x18
 
-void PadUtils_Init(Input* input);
-void func_800FCB70(void);
-void PadUtils_ResetPressRel(Input* input);
-u32 PadUtils_CheckCurExact(Input* input, u16 value);
-u32 PadUtils_CheckCur(Input* input, u16 key);
-u32 PadUtils_CheckPressed(Input* input, u16 key);
-u32 PadUtils_CheckReleased(Input* input, u16 key);
-u16 PadUtils_GetCurButton(Input* input);
-u16 PadUtils_GetPressButton(Input* input);
-s8 PadUtils_GetCurX(Input* input);
-s8 PadUtils_GetCurY(Input* input);
-void PadUtils_SetRelXY(Input* input, s32 x, s32 y);
-s8 PadUtils_GetRelXImpl(Input* input);
-s8 PadUtils_GetRelYImpl(Input* input);
-s8 PadUtils_GetRelX(Input* input);
-s8 PadUtils_GetRelY(Input* input);
-void PadUtils_UpdateRelXY(Input* input);
+void pad_init(Input* input);
+void pad_cleanup(void);
+void pad_flush(Input* input);
+u32 pad_push_only(Input* input, u16 value);
+u32 pad_push_also(Input* input, u16 key);
+u32 pad_on_trigger(Input* input, u16 key);
+u32 pad_off_trigger(Input* input, u16 key);
+u16 pad_button(Input* input);
+u16 pad_trigger(Input* input);
+s8 pad_physical_stick_x(Input* input);
+s8 pad_physical_stick_y(Input* input);
+void pad_set_logical_stick(Input* input, s32 x, s32 y);
+s8 pad_logical_stick_x(Input* input);
+s8 pad_logical_stick_y(Input* input);
+s8 pad_stick_x(Input* input);
+s8 pad_stick_y(Input* input);
+void pad_correct_stick(Input* input);
 
 #endif

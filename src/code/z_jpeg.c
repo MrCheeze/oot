@@ -17,8 +17,8 @@
 /**
  * Configures and schedules a JPEG decoder task and waits for it to finish.
  */
-void Jpeg_ScheduleDecoderTask(JpegContext* ctx) {
-    static OSTask sJpegTask = {
+void _ddImage(JpegContext* ctx) {
+    static OSTask jpgtlist = {
         M_NJPEGTASK,                     // type
         0,                               // flags
         NULL,                            // ucode_boot
@@ -47,28 +47,28 @@ void Jpeg_ScheduleDecoderTask(JpegContext* ctx) {
     workBuf->taskData.qTableUPtr = VIRTUAL_TO_PHYSICAL(&workBuf->qTableU);
     workBuf->taskData.qTableVPtr = VIRTUAL_TO_PHYSICAL(&workBuf->qTableV);
 
-    sJpegTask.t.flags = 0;
-    sJpegTask.t.ucode_boot = SysUcode_GetUCodeBoot();
-    sJpegTask.t.ucode_boot_size = SysUcode_GetUCodeBootSize();
-    sJpegTask.t.yield_data_ptr = workBuf->yieldData;
-    sJpegTask.t.data_ptr = (u64*)&workBuf->taskData;
+    jpgtlist.t.flags = 0;
+    jpgtlist.t.ucode_boot = ucode_GetRspBootTextStart();
+    jpgtlist.t.ucode_boot_size = ucode_GetRspBootTextSize();
+    jpgtlist.t.yield_data_ptr = workBuf->yieldData;
+    jpgtlist.t.data_ptr = (u64*)&workBuf->taskData;
 
     ctx->scTask.next = NULL;
     ctx->scTask.flags = OS_SC_NEEDS_RSP;
     ctx->scTask.msgQueue = &ctx->mq;
     ctx->scTask.msg = NULL;
     ctx->scTask.framebuffer = NULL;
-    ctx->scTask.list = sJpegTask;
+    ctx->scTask.list = jpgtlist;
 
-    osSendMesg(&gScheduler.cmdQueue, (OSMesg)&ctx->scTask, OS_MESG_BLOCK);
-    Sched_Notify(&gScheduler);
+    osSendMesg(&_sched.cmdQueue, (OSMesg)&ctx->scTask, OS_MESG_BLOCK);
+    osScKickEntryMsg(&_sched);
     osRecvMesg(&ctx->mq, NULL, OS_MESG_BLOCK);
 }
 
 /**
  * Copies a 16x16 block of decoded image data to the Z-buffer.
  */
-void Jpeg_CopyToZbuffer(u16* src, u16* zbuffer, s32 x, s32 y) {
+void _jpegdraw(u16* src, u16* zbuffer, s32 x, s32 y) {
     u16* dst = zbuffer + (((y * SCREEN_WIDTH) + x) * 16);
     s32 i;
 
@@ -101,7 +101,7 @@ void Jpeg_CopyToZbuffer(u16* src, u16* zbuffer, s32 x, s32 y) {
  * Replaces unaligned 16-bit reads with a pair of aligned reads, allowing for reading the possibly
  * unaligned values in JPEG header files.
  */
-u16 Jpeg_GetUnalignedU16(u8* ptr) {
+u16 __getShort(u8* ptr) {
     if (((uintptr_t)ptr & 1) == 0) {
         // Read the value normally if it's aligned to a 16-bit address.
         return *(u16*)ptr;
@@ -115,7 +115,7 @@ u16 Jpeg_GetUnalignedU16(u8* ptr) {
  * Parses the markers in the JPEG file, storing information such as the pointer to the image data
  * in `ctx` for later processing.
  */
-void Jpeg_ParseMarkers(u8* ptr, JpegContext* ctx) {
+void _checkMarker(u8* ptr, JpegContext* ctx) {
     u32 exit = false;
 
     ctx->dqtCount = 0;
@@ -140,39 +140,39 @@ void Jpeg_ParseMarkers(u8* ptr, JpegContext* ctx) {
                 }
                 case MARKER_APP0: {
                     // Application marker for JFIF
-                    PRINTF("MARKER_APP0 %d\n", Jpeg_GetUnalignedU16(ptr));
-                    ptr += Jpeg_GetUnalignedU16(ptr);
+                    PRINTF("MARKER_APP0 %d\n", __getShort(ptr));
+                    ptr += __getShort(ptr);
                     break;
                 }
                 case MARKER_APP1: {
                     // Application marker for EXIF
-                    PRINTF("MARKER_APP1 %d\n", Jpeg_GetUnalignedU16(ptr));
-                    ptr += Jpeg_GetUnalignedU16(ptr);
+                    PRINTF("MARKER_APP1 %d\n", __getShort(ptr));
+                    ptr += __getShort(ptr);
                     break;
                 }
                 case MARKER_APP2: {
-                    PRINTF("MARKER_APP2 %d\n", Jpeg_GetUnalignedU16(ptr));
-                    ptr += Jpeg_GetUnalignedU16(ptr);
+                    PRINTF("MARKER_APP2 %d\n", __getShort(ptr));
+                    ptr += __getShort(ptr);
                     break;
                 }
                 case MARKER_DQT: {
                     // Define Quantization Table, stored for later processing
-                    PRINTF("MARKER_DQT %d %d %02x\n", ctx->dqtCount, Jpeg_GetUnalignedU16(ptr), ptr[2]);
+                    PRINTF("MARKER_DQT %d %d %02x\n", ctx->dqtCount, __getShort(ptr), ptr[2]);
                     ctx->dqtPtr[ctx->dqtCount++] = ptr + 2;
-                    ptr += Jpeg_GetUnalignedU16(ptr);
+                    ptr += __getShort(ptr);
                     break;
                 }
                 case MARKER_DHT: {
                     // Define Huffman Table, stored for later processing
-                    PRINTF("MARKER_DHT %d %d %02x\n", ctx->dhtCount, Jpeg_GetUnalignedU16(ptr), ptr[2]);
+                    PRINTF("MARKER_DHT %d %d %02x\n", ctx->dhtCount, __getShort(ptr), ptr[2]);
                     ctx->dhtPtr[ctx->dhtCount++] = ptr + 2;
-                    ptr += Jpeg_GetUnalignedU16(ptr);
+                    ptr += __getShort(ptr);
                     break;
                 }
                 case MARKER_DRI: {
                     // Define Restart Interval
-                    PRINTF("MARKER_DRI %d\n", Jpeg_GetUnalignedU16(ptr));
-                    ptr += Jpeg_GetUnalignedU16(ptr);
+                    PRINTF("MARKER_DRI %d\n", __getShort(ptr));
+                    ptr += __getShort(ptr);
                     break;
                 }
                 case MARKER_SOF: {
@@ -188,9 +188,9 @@ void Jpeg_ParseMarkers(u8* ptr, JpegContext* ctx) {
                              "(1:Y)%d (H0=2,V0=1(422) or 2(420))%02x (quantization tables)%02x "
                              "(2:Cb)%d (H1=1,V1=1)%02x (quantization tables)%02x "
                              "(3:Cr)%d (H2=1,V2=1)%02x (quantization tables)%02x\n"),
-                           Jpeg_GetUnalignedU16(ptr),
+                           __getShort(ptr),
                            // precision, height, width, component count (assumed to be 3)
-                           ptr[2], Jpeg_GetUnalignedU16(ptr + 3), Jpeg_GetUnalignedU16(ptr + 5), ptr[7],
+                           ptr[2], __getShort(ptr + 3), __getShort(ptr + 5), ptr[7],
                            //
                            ptr[8], ptr[9], ptr[10],   // Y component
                            ptr[11], ptr[12], ptr[13], // Cb component
@@ -204,13 +204,13 @@ void Jpeg_ParseMarkers(u8* ptr, JpegContext* ctx) {
                         // component Y : V0 == 2
                         ctx->mode = 2;
                     }
-                    ptr += Jpeg_GetUnalignedU16(ptr);
+                    ptr += __getShort(ptr);
                     break;
                 }
                 case MARKER_SOS: {
                     // Start of Scan marker, indicates the start of the image data.
-                    PRINTF("MARKER_SOS %d\n", Jpeg_GetUnalignedU16(ptr));
-                    ptr += Jpeg_GetUnalignedU16(ptr);
+                    PRINTF("MARKER_SOS %d\n", __getShort(ptr));
+                    ptr += __getShort(ptr);
                     ctx->imageData = ptr;
                     break;
                 }
@@ -222,7 +222,7 @@ void Jpeg_ParseMarkers(u8* ptr, JpegContext* ctx) {
                 }
                 default: {
                     PRINTF(T("マーカー不明 %02x\n", "Unknown marker %02x\n"), ptr[-1]);
-                    ptr += Jpeg_GetUnalignedU16(ptr);
+                    ptr += __getShort(ptr);
                     break;
                 }
             }
@@ -230,7 +230,7 @@ void Jpeg_ParseMarkers(u8* ptr, JpegContext* ctx) {
     }
 }
 
-s32 Jpeg_Decode(void* data, void* zbuffer, void* work, u32 workSize) {
+s32 jpeg_decode(void* data, void* zbuffer, void* work, u32 workSize) {
     s32 y;
     s32 x;
     u32 j;
@@ -252,7 +252,7 @@ s32 Jpeg_Decode(void* data, void* zbuffer, void* work, u32 workSize) {
            527);
 
     osCreateMesgQueue(&ctx.mq, &ctx.msg, 1);
-    Sched_FlushTaskQueue();
+    nulltask();
 
     curTime = osGetTime();
     diff = curTime - time;
@@ -262,7 +262,7 @@ s32 Jpeg_Decode(void* data, void* zbuffer, void* work, u32 workSize) {
            OS_CYCLES_TO_USEC(diff) / 1000.0f);
 
     ctx.workBuf = workBuff;
-    Jpeg_ParseMarkers(data, &ctx);
+    _checkMarker(data, &ctx);
 
     curTime = osGetTime();
     diff = curTime - time;
@@ -273,17 +273,17 @@ s32 Jpeg_Decode(void* data, void* zbuffer, void* work, u32 workSize) {
 
     switch (ctx.dqtCount) {
         case 1:
-            JpegUtils_ProcessQuantizationTable(ctx.dqtPtr[0], &workBuff->qTableY, 3);
+            jpgMakeQuantTable(ctx.dqtPtr[0], &workBuff->qTableY, 3);
             break;
         case 2:
-            JpegUtils_ProcessQuantizationTable(ctx.dqtPtr[0], &workBuff->qTableY, 1);
-            JpegUtils_ProcessQuantizationTable(ctx.dqtPtr[1], &workBuff->qTableU, 1);
-            JpegUtils_ProcessQuantizationTable(ctx.dqtPtr[1], &workBuff->qTableV, 1);
+            jpgMakeQuantTable(ctx.dqtPtr[0], &workBuff->qTableY, 1);
+            jpgMakeQuantTable(ctx.dqtPtr[1], &workBuff->qTableU, 1);
+            jpgMakeQuantTable(ctx.dqtPtr[1], &workBuff->qTableV, 1);
             break;
         case 3:
-            JpegUtils_ProcessQuantizationTable(ctx.dqtPtr[0], &workBuff->qTableY, 1);
-            JpegUtils_ProcessQuantizationTable(ctx.dqtPtr[1], &workBuff->qTableU, 1);
-            JpegUtils_ProcessQuantizationTable(ctx.dqtPtr[2], &workBuff->qTableV, 1);
+            jpgMakeQuantTable(ctx.dqtPtr[0], &workBuff->qTableY, 1);
+            jpgMakeQuantTable(ctx.dqtPtr[1], &workBuff->qTableU, 1);
+            jpgMakeQuantTable(ctx.dqtPtr[2], &workBuff->qTableV, 1);
             break;
         default:
             return -1;
@@ -297,21 +297,21 @@ s32 Jpeg_Decode(void* data, void* zbuffer, void* work, u32 workSize) {
 
     switch (ctx.dhtCount) {
         case 1:
-            if (JpegUtils_ProcessHuffmanTable(ctx.dhtPtr[0], &hTables[0], workBuff->codesLengths, workBuff->codes, 4)) {
+            if (jpgMakeDHuffTable(ctx.dhtPtr[0], &hTables[0], workBuff->codesLengths, workBuff->codes, 4)) {
                 PRINTF("Error : Cant' make huffman table.\n");
             }
             break;
         case 4:
-            if (JpegUtils_ProcessHuffmanTable(ctx.dhtPtr[0], &hTables[0], workBuff->codesLengths, workBuff->codes, 1)) {
+            if (jpgMakeDHuffTable(ctx.dhtPtr[0], &hTables[0], workBuff->codesLengths, workBuff->codes, 1)) {
                 PRINTF("Error : Cant' make huffman table.\n");
             }
-            if (JpegUtils_ProcessHuffmanTable(ctx.dhtPtr[1], &hTables[1], workBuff->codesLengths, workBuff->codes, 1)) {
+            if (jpgMakeDHuffTable(ctx.dhtPtr[1], &hTables[1], workBuff->codesLengths, workBuff->codes, 1)) {
                 PRINTF("Error : Cant' make huffman table.\n");
             }
-            if (JpegUtils_ProcessHuffmanTable(ctx.dhtPtr[2], &hTables[2], workBuff->codesLengths, workBuff->codes, 1)) {
+            if (jpgMakeDHuffTable(ctx.dhtPtr[2], &hTables[2], workBuff->codesLengths, workBuff->codes, 1)) {
                 PRINTF("Error : Cant' make huffman table.\n");
             }
-            if (JpegUtils_ProcessHuffmanTable(ctx.dhtPtr[3], &hTables[3], workBuff->codesLengths, workBuff->codes, 1)) {
+            if (jpgMakeDHuffTable(ctx.dhtPtr[3], &hTables[3], workBuff->codesLengths, workBuff->codes, 1)) {
                 PRINTF("Error : Cant' make huffman table.\n");
             }
             break;
@@ -336,16 +336,16 @@ s32 Jpeg_Decode(void* data, void* zbuffer, void* work, u32 workSize) {
 
     x = y = 0;
     for (i = 0; i < 300; i += 4) {
-        if (JpegDecoder_Decode(&decoder, (u16*)workBuff->data, 4, i != 0, &state)) {
+        if (jpgLoad(&decoder, (u16*)workBuff->data, 4, i != 0, &state)) {
             PRINTF_COLOR_RED();
             PRINTF("Error : Can't decode jpeg\n");
             PRINTF_RST();
         } else {
-            Jpeg_ScheduleDecoderTask(&ctx);
+            _ddImage(&ctx);
             osInvalDCache(&workBuff->data, sizeof(workBuff->data[0]));
 
             for (j = 0; j < ARRAY_COUNT(workBuff->data); j++) {
-                Jpeg_CopyToZbuffer(workBuff->data[j], zbuffer, x, y);
+                _jpegdraw(workBuff->data[j], zbuffer, x, y);
                 x++;
 
                 if (x >= 20) {

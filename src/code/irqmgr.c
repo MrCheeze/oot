@@ -36,10 +36,10 @@
 #include "terminal.h"
 #include "versions.h"
 
-vu32 gIrqMgrResetStatus = IRQ_RESET_STATUS_IDLE;
-volatile OSTime sIrqMgrResetTime = 0;
-volatile OSTime gIrqMgrRetraceTime = 0;
-u32 sIrqMgrRetraceCount = 0;
+vu32 ResetStatus = IRQ_RESET_STATUS_IDLE;
+volatile OSTime ResetTime = 0;
+volatile OSTime RetraceTime = 0;
+u32 RetraceCount = 0;
 
 // Internal messages
 #define IRQ_RETRACE_MSG 666
@@ -61,7 +61,7 @@ u32 sIrqMgrRetraceCount = 0;
  * @param client client to register.
  * @param msgQueue message queue to send notifications of interrupts to, associated with the client.
  */
-void IrqMgr_AddClient(IrqMgr* irqMgr, IrqMgrClient* client, OSMesgQueue* msgQueue) {
+void irqmgr_AddClient(IrqMgr* irqMgr, IrqMgrClient* client, OSMesgQueue* msgQueue) {
     OSIntMask prevInt;
 
     LOG_UTILS_CHECK_NULL_POINTER("this", irqMgr, "../irqmgr.c", 96);
@@ -85,7 +85,7 @@ void IrqMgr_AddClient(IrqMgr* irqMgr, IrqMgrClient* client, OSMesgQueue* msgQueu
     }
 }
 
-void IrqMgr_RemoveClient(IrqMgr* irqMgr, IrqMgrClient* client) {
+void irqmgr_RemoveClient(IrqMgr* irqMgr, IrqMgrClient* client) {
     IrqMgrClient* iterClient = irqMgr->clients;
     IrqMgrClient* lastClient = NULL;
     OSIntMask prevInt;
@@ -117,7 +117,7 @@ void IrqMgr_RemoveClient(IrqMgr* irqMgr, IrqMgrClient* client) {
  * Send `msg` to every registered client if the message queue is not full. The message is
  * appended to the back of the queue.
  */
-void IrqMgr_SendMesgToClients(IrqMgr* irqMgr, OSMesg msg) {
+void irqmgr_SendMesgForClient(IrqMgr* irqMgr, OSMesg msg) {
     IrqMgrClient* client;
 
     for (client = irqMgr->clients; client != NULL; client = client->prev) {
@@ -136,11 +136,11 @@ void IrqMgr_SendMesgToClients(IrqMgr* irqMgr, OSMesg msg) {
  * Send `msg` to every registered client if the message queue is not full. This appears to be for
  * high-priority messages that should be jammed to the front of the queue, however a bug prevents
  * this from working in this way and the message is appended to the back of the queue as in
- * `IrqMgr_SendMesgToClients`.
+ * `irqmgr_SendMesgForClient`.
  *
- * @see IrqMgr_SendMesgToClients
+ * @see irqmgr_SendMesgForClient
  */
-void IrqMgr_JamMesgToClients(IrqMgr* irqMgr, OSMesg msg) {
+void irqmgr_JamMesgForClient(IrqMgr* irqMgr, OSMesg msg) {
     IrqMgrClient* client;
 
     for (client = irqMgr->clients; client != NULL; client = client->prev) {
@@ -150,7 +150,7 @@ void IrqMgr_JamMesgToClients(IrqMgr* irqMgr, OSMesg msg) {
                    client->queue, MQ_GET_COUNT(client->queue));
         } else {
             //! @bug The function's name suggests this would use osJamMesg rather than osSendMesg, using the
-            //! latter makes this function no different than IrqMgr_SendMesgToClients.
+            //! latter makes this function no different than irqmgr_SendMesgForClient.
             osSendMesg(client->queue, msg, OS_MESG_NOBLOCK);
         }
     }
@@ -161,12 +161,12 @@ void IrqMgr_JamMesgToClients(IrqMgr* irqMgr, OSMesg msg) {
  * 0.5s / 500ms. Updates the reset status and time before forwarding the Pre-NMI message to registered
  * clients so they may begin shutting down in advance of the reset.
  */
-void IrqMgr_HandlePreNMI(IrqMgr* irqMgr) {
+void irqmgr_HandlePreNMI(IrqMgr* irqMgr) {
     u64 preNmi = IRQ_RESET_STATUS_PRENMI; // required to match
 
-    gIrqMgrResetStatus = preNmi;
+    ResetStatus = preNmi;
     irqMgr->resetStatus = IRQ_RESET_STATUS_PRENMI;
-    sIrqMgrResetTime = irqMgr->resetTime = osGetTime();
+    ResetTime = irqMgr->resetTime = osGetTime();
 
 #if OOT_VERSION < PAL_1_0
     // Schedule a PRENMI500 message to be handled in 500ms
@@ -175,13 +175,13 @@ void IrqMgr_HandlePreNMI(IrqMgr* irqMgr) {
     // Schedule a PRENMI450 message to be handled in 450ms
     osSetTimer(&irqMgr->timer, OS_USEC_TO_CYCLES(450000), 0, &irqMgr->queue, (OSMesg)IRQ_PRENMI450_MSG);
 #endif
-    IrqMgr_JamMesgToClients(irqMgr, (OSMesg)&irqMgr->prenmiMsg);
+    irqmgr_JamMesgForClient(irqMgr, (OSMesg)&irqMgr->prenmiMsg);
 }
 
-void IrqMgr_CheckStacks(void) {
+void irqmgr_StackCheck(void) {
     PRINTF(T("irqmgr.c: PRENMIから0.5秒経過\n", "irqmgr.c: 0.5 seconds after PRENMI\n"));
 
-    if (StackCheck_Check(NULL) == STACK_STATUS_OK) {
+    if (stackcheck_check_stack(NULL) == STACK_STATUS_OK) {
         PRINTF(T("スタックは大丈夫みたいです\n", "The stack looks ok\n"));
     } else {
         PRINTF("%c", BEL);
@@ -195,38 +195,38 @@ void IrqMgr_CheckStacks(void) {
 
 #if OOT_VERSION < PAL_1_0
 
-void IrqMgr_HandlePreNMI500(IrqMgr* irqMgr) {
+void irqmgr_HandlePreNMI500(IrqMgr* irqMgr) {
     u64 nmi = IRQ_RESET_STATUS_NMI; // required to match
     u32 result;
 
-    gIrqMgrResetStatus = nmi;
+    ResetStatus = nmi;
     irqMgr->resetStatus = IRQ_RESET_STATUS_NMI;
 
-    IrqMgr_SendMesgToClients(irqMgr, (OSMesg)&irqMgr->nmiMsg);
+    irqmgr_SendMesgForClient(irqMgr, (OSMesg)&irqMgr->nmiMsg);
 
     result = osAfterPreNMI();
     if (result != 0) {
         // Schedule another PRENMI500 message to be handled in 1ms
         osSetTimer(&irqMgr->timer, OS_USEC_TO_CYCLES(1000), 0, &irqMgr->queue, (OSMesg)IRQ_PRENMI500_MSG);
     }
-    IrqMgr_CheckStacks();
+    irqmgr_StackCheck();
 }
 
 #else
 
-void IrqMgr_HandlePreNMI450(IrqMgr* irqMgr) {
+void irqmgr_HandlePreNMI450(IrqMgr* irqMgr) {
     u64 nmi = IRQ_RESET_STATUS_NMI; // required to match
 
-    gIrqMgrResetStatus = nmi;
+    ResetStatus = nmi;
     irqMgr->resetStatus = IRQ_RESET_STATUS_NMI;
 
     // Schedule a PRENMI480 message to be handled in 30ms
     osSetTimer(&irqMgr->timer, OS_USEC_TO_CYCLES(30000), 0, &irqMgr->queue, (OSMesg)IRQ_PRENMI480_MSG);
     // Send the NMI event to clients
-    IrqMgr_SendMesgToClients(irqMgr, (OSMesg)&irqMgr->nmiMsg);
+    irqmgr_SendMesgForClient(irqMgr, (OSMesg)&irqMgr->nmiMsg);
 }
 
-void IrqMgr_HandlePreNMI480(IrqMgr* irqMgr) {
+void irqmgr_HandlePreNMI480(IrqMgr* irqMgr) {
     u32 result;
 
     // Schedule a PRENMI500 message to be handled in 20ms
@@ -242,8 +242,8 @@ void IrqMgr_HandlePreNMI480(IrqMgr* irqMgr) {
     }
 }
 
-void IrqMgr_HandlePreNMI500(IrqMgr* irqMgr) {
-    IrqMgr_CheckStacks();
+void irqmgr_HandlePreNMI500(IrqMgr* irqMgr) {
+    irqmgr_StackCheck();
 }
 
 #endif
@@ -254,19 +254,19 @@ void IrqMgr_HandlePreNMI500(IrqMgr* irqMgr) {
  * Measures the time elapsed between the first and second vertical retrace and
  * dispatches vertical retrace messages to each registered Irq Client
  */
-void IrqMgr_HandleRetrace(IrqMgr* irqMgr) {
-    if (gIrqMgrRetraceTime == 0) {
+void irqmgr_HandleRetrace(IrqMgr* irqMgr) {
+    if (RetraceTime == 0) {
         if (irqMgr->retraceTime == 0) {
             irqMgr->retraceTime = osGetTime();
         } else {
-            gIrqMgrRetraceTime = osGetTime() - irqMgr->retraceTime;
+            RetraceTime = osGetTime() - irqMgr->retraceTime;
         }
     }
-    sIrqMgrRetraceCount++;
-    IrqMgr_SendMesgToClients(irqMgr, (OSMesg)&irqMgr->retraceMsg);
+    RetraceCount++;
+    irqmgr_SendMesgForClient(irqMgr, (OSMesg)&irqMgr->retraceMsg);
 }
 
-void IrqMgr_ThreadEntry(void* arg) {
+void irqmgr_Main(void* arg) {
     u32 msg = 0;
     IrqMgr* irqMgr = (IrqMgr*)arg;
     u8 exit;
@@ -283,33 +283,33 @@ void IrqMgr_ThreadEntry(void* arg) {
 #endif
 
             case IRQ_RETRACE_MSG:
-                IrqMgr_HandleRetrace(irqMgr);
+                irqmgr_HandleRetrace(irqMgr);
                 break;
 
             case IRQ_PRENMI_MSG:
                 PRINTF("PRE_NMI_MSG\n");
                 PRINTF(T("スケジューラ：PRE_NMIメッセージを受信\n", "Scheduler: Receives PRE_NMI message\n"));
-                IrqMgr_HandlePreNMI(irqMgr);
+                irqmgr_HandlePreNMI(irqMgr);
                 break;
 
 #if OOT_VERSION >= PAL_1_0
             case IRQ_PRENMI450_MSG:
                 PRINTF("PRENMI450_MSG\n");
                 PRINTF(T("スケジューラ：PRENMI450メッセージを受信\n", "Scheduler: Receives PRENMI450 message\n"));
-                IrqMgr_HandlePreNMI450(irqMgr);
+                irqmgr_HandlePreNMI450(irqMgr);
                 break;
 
             case IRQ_PRENMI480_MSG:
                 PRINTF("PRENMI480_MSG\n");
                 PRINTF(T("スケジューラ：PRENMI480メッセージを受信\n", "Scheduler: Receives PRENMI480 message\n"));
-                IrqMgr_HandlePreNMI480(irqMgr);
+                irqmgr_HandlePreNMI480(irqMgr);
                 break;
 #endif
 
             case IRQ_PRENMI500_MSG:
                 PRINTF("PRENMI500_MSG\n");
                 PRINTF(T("スケジューラ：PRENMI500メッセージを受信\n", "Scheduler: Receives PRENMI500 message\n"));
-                IrqMgr_HandlePreNMI500(irqMgr);
+                irqmgr_HandlePreNMI500(irqMgr);
                 exit = true;
                 break;
 
@@ -326,7 +326,7 @@ void IrqMgr_ThreadEntry(void* arg) {
     PRINTF(T("ＩＲＱマネージャスレッド実行終了\n", "End of IRQ manager thread execution\n"));
 }
 
-void IrqMgr_Init(IrqMgr* irqMgr, void* stack, OSPri pri, u8 retraceCount) {
+void CreateIRQManager(IrqMgr* irqMgr, void* stack, OSPri pri, u8 retraceCount) {
     LOG_UTILS_CHECK_NULL_POINTER("this", irqMgr, "../irqmgr.c", 346);
     LOG_UTILS_CHECK_NULL_POINTER("stack", stack, "../irqmgr.c", 347);
 
@@ -341,6 +341,6 @@ void IrqMgr_Init(IrqMgr* irqMgr, void* stack, OSPri pri, u8 retraceCount) {
     osCreateMesgQueue(&irqMgr->queue, irqMgr->msgBuf, ARRAY_COUNT(irqMgr->msgBuf));
     osSetEventMesg(OS_EVENT_PRENMI, &irqMgr->queue, (OSMesg)IRQ_PRENMI_MSG);
     osViSetEvent(&irqMgr->queue, (OSMesg)IRQ_RETRACE_MSG, retraceCount);
-    osCreateThread(&irqMgr->thread, THREAD_ID_IRQMGR, IrqMgr_ThreadEntry, irqMgr, stack, pri);
+    osCreateThread(&irqMgr->thread, THREAD_ID_IRQMGR, irqmgr_Main, irqMgr, stack, pri);
     osStartThread(&irqMgr->thread);
 }

@@ -12,65 +12,65 @@
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_CAN_PRESS_SWITCHES)
 
-void EnRu1_Init(Actor* thisx, PlayState* play);
-void EnRu1_Destroy(Actor* thisx, PlayState* play);
-void EnRu1_Update(Actor* thisx, PlayState* play);
-void EnRu1_Draw(Actor* thisx, PlayState* play);
+void En_Ru1_Actor_ct(Actor* thisx, PlayState* play);
+void En_Ru1_Actor_dt(Actor* thisx, PlayState* play);
+void En_Ru1_Actor_main(Actor* thisx, PlayState* play);
+void En_Ru1_Actor_draw(Actor* thisx, PlayState* play);
 
-void func_80AEC0B4(EnRu1* this, PlayState* play);
-void func_80AEC100(EnRu1* this, PlayState* play);
-void func_80AEC130(EnRu1* this, PlayState* play);
-void func_80AEC17C(EnRu1* this, PlayState* play);
-void func_80AEC1D4(EnRu1* this, PlayState* play);
-void func_80AEC244(EnRu1* this, PlayState* play);
-void func_80AEC2C0(EnRu1* this, PlayState* play);
-void func_80AECA94(EnRu1* this, PlayState* play);
-void func_80AECAB4(EnRu1* this, PlayState* play);
-void func_80AECAD4(EnRu1* this, PlayState* play);
-void func_80AECB18(EnRu1* this, PlayState* play);
-void func_80AECB60(EnRu1* this, PlayState* play);
-void func_80AECBB8(EnRu1* this, PlayState* play);
-void func_80AECC1C(EnRu1* this, PlayState* play);
-void func_80AECC84(EnRu1* this, PlayState* play);
-void func_80AED304(EnRu1* this, PlayState* play);
-void func_80AED324(EnRu1* this, PlayState* play);
-void func_80AED344(EnRu1* this, PlayState* play);
-void func_80AED374(EnRu1* this, PlayState* play);
-void func_80AED3A4(EnRu1* this, PlayState* play);
-void func_80AED3E0(EnRu1* this, PlayState* play);
-void func_80AED414(EnRu1* this, PlayState* play);
-void func_80AEF29C(EnRu1* this, PlayState* play);
-void func_80AEF2AC(EnRu1* this, PlayState* play);
-void func_80AEF2D0(EnRu1* this, PlayState* play);
-void func_80AEF354(EnRu1* this, PlayState* play);
-void func_80AEF3A8(EnRu1* this, PlayState* play);
-void func_80AEEBD4(EnRu1* this, PlayState* play);
-void func_80AEEC5C(EnRu1* this, PlayState* play);
-void func_80AEECF0(EnRu1* this, PlayState* play);
-void func_80AEED58(EnRu1* this, PlayState* play);
-void func_80AEEDCC(EnRu1* this, PlayState* play);
-void func_80AEEE34(EnRu1* this, PlayState* play);
-void func_80AEEE9C(EnRu1* this, PlayState* play);
-void func_80AEEF08(EnRu1* this, PlayState* play);
-void func_80AEEF5C(EnRu1* this, PlayState* play);
-void func_80AEF9D8(EnRu1* this, PlayState* play);
-void func_80AEFA2C(EnRu1* this, PlayState* play);
-void func_80AEFAAC(EnRu1* this, PlayState* play);
-void func_80AEFB04(EnRu1* this, PlayState* play);
-void func_80AEFB68(EnRu1* this, PlayState* play);
-void func_80AEFCE8(EnRu1* this, PlayState* play);
-void func_80AEFBC8(EnRu1* this, PlayState* play);
-void func_80AEFC24(EnRu1* this, PlayState* play);
-void func_80AEFECC(EnRu1* this, PlayState* play);
-void func_80AEFF40(EnRu1* this, PlayState* play);
+void En_Ru1_Cryst_Actor_main_kiss(EnRu1* this, PlayState* play);
+void En_Ru1_Cryst_Actor_main_jump(EnRu1* this, PlayState* play);
+void En_Ru1_Cryst_Actor_main_float(EnRu1* this, PlayState* play);
+void En_Ru1_Cryst_Actor_main_approach(EnRu1* this, PlayState* play);
+void En_Ru1_Cryst_Actor_main_sink(EnRu1* this, PlayState* play);
+void En_Ru1_Cryst_Actor_main_leave(EnRu1* this, PlayState* play);
+void En_Ru1_Cryst_Actor_main_brake(EnRu1* this, PlayState* play);
+void En_Ru1_Bdan00_Actor_main_wait(EnRu1* this, PlayState* play);
+void En_Ru1_Bdan00_Actor_main_hide(EnRu1* this, PlayState* play);
+void En_Ru1_Bdan00_Actor_main_refuse(EnRu1* this, PlayState* play);
+void En_Ru1_Bdan00_Actor_main_turn(EnRu1* this, PlayState* play);
+void En_Ru1_Bdan00_Actor_main_run_accel(EnRu1* this, PlayState* play);
+void En_Ru1_Bdan00_Actor_main_run_move(EnRu1* this, PlayState* play);
+void En_Ru1_Bdan00_Actor_main_step(EnRu1* this, PlayState* play);
+void En_Ru1_Bdan00_Actor_main_disappear(EnRu1* this, PlayState* play);
+void En_Ru1_Bdanboss_Actor_main_wait(EnRu1* this, PlayState* play);
+void En_Ru1_Bdanboss_Actor_main_hide(EnRu1* this, PlayState* play);
+void En_Ru1_Bdanboss_Actor_main_up(EnRu1* this, PlayState* play);
+void En_Ru1_Bdanboss_Actor_main_irritate(EnRu1* this, PlayState* play);
+void En_Ru1_Bdanboss_Actor_main_correct(EnRu1* this, PlayState* play);
+void En_Ru1_Bdanboss_Actor_main_greet(EnRu1* this, PlayState* play);
+void En_Ru1_Bdanboss_Actor_main_fly(EnRu1* this, PlayState* play);
+void En_Ru1_Option_Actor_main_wait(EnRu1* this, PlayState* play);
+void En_Ru1_Option_Actor_main_hide(EnRu1* this, PlayState* play);
+void En_Ru1_Option_Actor_main_greet(EnRu1* this, PlayState* play);
+void En_Ru1_Option_Actor_main_greeting(EnRu1* this, PlayState* play);
+void En_Ru1_Option_Actor_main_sitdown(EnRu1* this, PlayState* play);
+void En_Ru1_Option_Actor_main_alone_stop(EnRu1* this, PlayState* play);
+void En_Ru1_Option_Actor_main_alone_move(EnRu1* this, PlayState* play);
+void En_Ru1_Option_Actor_main_alone_float(EnRu1* this, PlayState* play);
+void En_Ru1_Option_Actor_main_alone_sink(EnRu1* this, PlayState* play);
+void En_Ru1_Option_Actor_main_curry(EnRu1* this, PlayState* play);
+void En_Ru1_Option_Actor_main_strech(EnRu1* this, PlayState* play);
+void En_Ru1_Option_Actor_main_alpha(EnRu1* this, PlayState* play);
+void En_Ru1_Option_Actor_main_cheer(EnRu1* this, PlayState* play);
+void En_Ru1_Option_Actor_main_hurry(EnRu1* this, PlayState* play);
+void En_Ru1_Option_Actor_main_standup(EnRu1* this, PlayState* play);
+void En_Ru1_Option_Actor_main_errand(EnRu1* this, PlayState* play);
+void En_Ru1_Option_Actor_main_handup(EnRu1* this, PlayState* play);
+void En_Ru1_Option_Actor_main_handdown(EnRu1* this, PlayState* play);
+void En_Ru1_Option_Actor_main_order(EnRu1* this, PlayState* play);
+void En_Ru1_Option_Actor_main_search_stand(EnRu1* this, PlayState* play);
+void En_Ru1_Option_Actor_main_waitlink(EnRu1* this, PlayState* play);
+void En_Ru1_Option_Actor_main_scream(EnRu1* this, PlayState* play);
+void En_Ru1_Spot07_main_stand(EnRu1* this, PlayState* play);
+void En_Ru1_Spot07_main_greet(EnRu1* this, PlayState* play);
 
-void func_80AF0278(EnRu1* this, PlayState* play, s32 limbIndex, Vec3s* rot);
+void En_Ru1_turn_link(EnRu1* this, PlayState* play, s32 limbIndex, Vec3s* rot);
 
-void EnRu1_DrawNothing(EnRu1* this, PlayState* play);
-void EnRu1_DrawOpa(EnRu1* this, PlayState* play);
-void EnRu1_DrawXlu(EnRu1* this, PlayState* play);
+void En_Ru1_Actor_draw_none(EnRu1* this, PlayState* play);
+void En_Ru1_Actor_draw_normal(EnRu1* this, PlayState* play);
+void En_Ru1_Actor_draw_alpha(EnRu1* this, PlayState* play);
 
-static ColliderCylinderInitType1 sCylinderInit1 = {
+static ColliderCylinderInitType1 En_Ru1_Option_OcInfoData_forStand = {
     {
         COL_MATERIAL_HIT0,
         AT_NONE,
@@ -82,7 +82,7 @@ static ColliderCylinderInitType1 sCylinderInit1 = {
     { 25, 80, 0, { 0 } },
 };
 
-static ColliderCylinderInitType1 sCylinderInit2 = {
+static ColliderCylinderInitType1 En_Ru1_Option_OcInfoData_forOption = {
     {
         COL_MATERIAL_HIT0,
         AT_ON | AT_TYPE_PLAYER,
@@ -94,12 +94,12 @@ static ColliderCylinderInitType1 sCylinderInit2 = {
     { 20, 30, 0, { 0 } },
 };
 
-static void* sEyeTextures[] = {
+static void* en_ru1_eye[] = {
     gRutoChildEyeOpenTex,     gRutoChildEyeHalfTex,  gRutoChildEyeClosedTex,
     gRutoChildEyeRollLeftTex, gRutoChildEyeHalf2Tex, gRutoChildEyeHalfWithBlushTex,
 };
 
-static void* sMouthTextures[] = {
+static void* en_ru1_mouth[] = {
     gRutoChildMouthClosedTex,
     gRutoChildMouthFrownTex,
     gRutoChildMouthOpenTex,
@@ -111,75 +111,75 @@ static void* sMouthTextures[] = {
 
 #include "Demodt_BdanDemoFind.inc.c"
 
-void func_80AEAC10(EnRu1* this, PlayState* play) {
+void En_Ru1_Option_Excute_Corect_forStand(EnRu1* this, PlayState* play) {
     s32 pad[5];
 
-    Collider_UpdateCylinder(&this->actor, &this->collider);
-    CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
+    CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
 }
 
-void func_80AEAC54(EnRu1* this, PlayState* play) {
+void En_Ru1_Option_Excute_Corect_forOption(EnRu1* this, PlayState* play) {
     s32 pad[5];
 
-    Collider_UpdateCylinder(&this->actor, &this->collider2);
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider2);
     if (this->unk_34C != 0) {
-        CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider2.base);
+        CollisionCheck_setOC(play, &play->colChkCtx, &this->collider2.base);
     } else if (this->actor.xzDistToPlayer > 32.0f) {
         this->unk_34C = 1;
     }
 }
 
-void func_80AEACDC(EnRu1* this, PlayState* play) {
+void En_Ru1_Option_Excute_Attck_forOption(EnRu1* this, PlayState* play) {
     s32 pad[5];
 
-    Collider_UpdateCylinder(&this->actor, &this->collider2);
-    CollisionCheck_SetAT(play, &play->colChkCtx, &this->collider2.base);
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider2);
+    CollisionCheck_setAT(play, &play->colChkCtx, &this->collider2.base);
 }
 
-void func_80AEAD20(Actor* thisx, PlayState* play) {
+void En_Ru1_Option_ct_forCorect(Actor* thisx, PlayState* play) {
     EnRu1* this = (EnRu1*)thisx;
 
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinderType1(play, &this->collider, &this->actor, &sCylinderInit1);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set3(play, &this->collider, &this->actor, &En_Ru1_Option_OcInfoData_forStand);
 
-    Collider_InitCylinder(play, &this->collider2);
-    Collider_SetCylinderType1(play, &this->collider2, &this->actor, &sCylinderInit2);
+    ClObjPipe_ct(play, &this->collider2);
+    ClObjPipe_set3(play, &this->collider2, &this->actor, &En_Ru1_Option_OcInfoData_forOption);
 }
 
-void EnRu1_DestroyColliders(EnRu1* this, PlayState* play) {
-    Collider_DestroyCylinder(play, &this->collider);
-    Collider_DestroyCylinder(play, &this->collider2);
+void En_Ru1_Option_dt_forCorect(EnRu1* this, PlayState* play) {
+    ClObjPipe_dt(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider2);
 }
 
-void func_80AEADD8(EnRu1* this) {
+void En_Ru1_Option_Reset_Corect_forOption(EnRu1* this) {
     this->unk_34C = 0;
 }
 
-u8 func_80AEADE0(EnRu1* this) {
+u8 En_Ru1_GetUpper_arg_data(EnRu1* this) {
     u8 params = PARAMS_GET_U(this->actor.params, 8, 8);
 
     return params;
 }
 
-u8 func_80AEADF0(EnRu1* this) {
+u8 En_Ru1_GetLower_arg_data(EnRu1* this) {
     u8 params = PARAMS_GET_U(this->actor.params, 0, 8);
 
     return params;
 }
 
-void EnRu1_Destroy(Actor* thisx, PlayState* play) {
+void En_Ru1_Actor_dt(Actor* thisx, PlayState* play) {
     EnRu1* this = (EnRu1*)thisx;
 
-    EnRu1_DestroyColliders(this, play);
+    En_Ru1_Option_dt_forCorect(this, play);
 }
 
-void EnRu1_UpdateEyes(EnRu1* this) {
+void En_Ru1_set_eye_pattern(EnRu1* this) {
     s32 pad[3];
     s16* blinkTimer = &this->blinkTimer;
     s16* eyeIndex = &this->eyeIndex;
 
     if (DECR(*blinkTimer) == 0) {
-        *blinkTimer = Rand_S16Offset(60, 60);
+        *blinkTimer = get_random_timer(60, 60);
     }
 
     *eyeIndex = *blinkTimer;
@@ -188,43 +188,43 @@ void EnRu1_UpdateEyes(EnRu1* this) {
     }
 }
 
-void EnRu1_SetEyeIndex(EnRu1* this, s16 eyeIndex) {
+void En_Ru1_set_eye_Num(EnRu1* this, s16 eyeIndex) {
     this->eyeIndex = eyeIndex;
 }
 
-void EnRu1_SetMouthIndex(EnRu1* this, s16 mouthIndex) {
+void En_Ru1_set_mouth_Num(EnRu1* this, s16 mouthIndex) {
     this->mouthIndex = mouthIndex;
 }
 
-void func_80AEAECC(EnRu1* this, PlayState* play) {
+void En_Ru1_BGcheck(EnRu1* this, PlayState* play) {
     f32* velocityY = &this->actor.velocity.y;
     f32 velocityYHeld = *velocityY;
 
     *velocityY = -4.0f;
-    Actor_UpdateBgCheckInfo(play, &this->actor, 19.0f, 25.0f, 30.0f,
+    Actor_BGcheck2(play, &this->actor, 19.0f, 25.0f, 30.0f,
                             UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_1 | UPDBGCHECKINFO_FLAG_2);
     *velocityY = velocityYHeld;
 }
 
-s32 EnRu1_IsCsStateIdle(PlayState* play) {
+s32 En_Ru1_Check_EndDemoMode(PlayState* play) {
     if (play->csCtx.state == CS_STATE_IDLE) {
         return true;
     }
     return false;
 }
 
-CsCmdActorCue* EnRu1_GetCue(PlayState* play, s32 cueChannel) {
+CsCmdActorCue* En_Ru1_Get_npcdemopnt(PlayState* play, s32 cueChannel) {
     s32 pad[2];
     CsCmdActorCue* cue = NULL;
 
-    if (!EnRu1_IsCsStateIdle(play)) {
+    if (!En_Ru1_Check_EndDemoMode(play)) {
         cue = play->csCtx.actorCues[cueChannel];
     }
     return cue;
 }
 
-s32 func_80AEAFA0(PlayState* play, u16 cueId, s32 cueChannel) {
-    CsCmdActorCue* cue = EnRu1_GetCue(play, cueChannel);
+s32 En_Ru1_Check_npcdemopnt(PlayState* play, u16 cueId, s32 cueChannel) {
+    CsCmdActorCue* cue = En_Ru1_Get_npcdemopnt(play, cueChannel);
 
     if ((cue != NULL) && (cue->id == cueId)) {
         return true;
@@ -232,8 +232,8 @@ s32 func_80AEAFA0(PlayState* play, u16 cueId, s32 cueChannel) {
     return false;
 }
 
-s32 func_80AEAFE0(PlayState* play, u16 cueId, s32 cueChannel) {
-    CsCmdActorCue* cue = EnRu1_GetCue(play, cueChannel);
+s32 En_Ru1_Check2_npcdemopnt(PlayState* play, u16 cueId, s32 cueChannel) {
+    CsCmdActorCue* cue = En_Ru1_Get_npcdemopnt(play, cueChannel);
 
     if ((cue != NULL) && (cue->id != cueId)) {
         return true;
@@ -241,7 +241,7 @@ s32 func_80AEAFE0(PlayState* play, u16 cueId, s32 cueChannel) {
     return false;
 }
 
-s32 func_80AEB020(EnRu1* this, PlayState* play) {
+s32 En_Ru1_Search_Ru1(EnRu1* this, PlayState* play) {
     Actor* actorIt = play->actorCtx.actorLists[ACTORCAT_NPC].head;
     EnRu1* someEnRu1;
 
@@ -259,7 +259,7 @@ s32 func_80AEB020(EnRu1* this, PlayState* play) {
     return false;
 }
 
-BgBdanObjects* EnRu1_FindSwitch(PlayState* play) {
+BgBdanObjects* En_Ru1_Search_Stand_Actor(PlayState* play) {
     Actor* actorIt = play->actorCtx.actorLists[ACTORCAT_BG].head;
 
     while (actorIt != NULL) {
@@ -273,13 +273,13 @@ BgBdanObjects* EnRu1_FindSwitch(PlayState* play) {
     return NULL;
 }
 
-void func_80AEB0EC(EnRu1* this, s32 cameraSetting) {
+void En_Ru1_SetConect_inStand(EnRu1* this, s32 cameraSetting) {
     if (this->unk_28C != NULL) {
         this->unk_28C->cameraSetting = cameraSetting;
     }
 }
 
-s32 func_80AEB104(EnRu1* this) {
+s32 En_Ru1_CheckConect_inStand(EnRu1* this) {
     if (this->unk_28C != NULL) {
         return this->unk_28C->cameraSetting;
     } else {
@@ -287,7 +287,7 @@ s32 func_80AEB104(EnRu1* this) {
     }
 }
 
-Actor* func_80AEB124(PlayState* play) {
+Actor* En_Ru1_Search_Juwel_Actor(PlayState* play) {
     Actor* actorIt = play->actorCtx.actorLists[ACTORCAT_BOSS].head;
 
     while (actorIt != NULL) {
@@ -299,12 +299,12 @@ Actor* func_80AEB124(PlayState* play) {
     return NULL;
 }
 
-int func_80AEB174(PlayState* play) {
-    return (Message_GetState(&play->msgCtx) == TEXT_STATE_EVENT) && Message_ShouldAdvance(play);
+int En_Ru1_ConversationAndPad_Trigger(PlayState* play) {
+    return (message_check(&play->msgCtx) == TEXT_STATE_EVENT) && pad_on_check(play);
 }
 
-s32 func_80AEB1B4(PlayState* play) {
-    return Message_GetState(&play->msgCtx) == TEXT_STATE_CLOSING;
+s32 En_Ru1_ConversationEnd(PlayState* play) {
+    return message_check(&play->msgCtx) == TEXT_STATE_CLOSING;
 }
 
 #if DEBUG_FEATURES
@@ -317,20 +317,20 @@ void func_80AEB1D8(EnRu1* this) {
     this->actor.speed = 0.0f;
     this->actor.gravity = 0.0f;
     this->actor.minVelocityY = 0.0f;
-    func_80AEB0EC(this, 0);
+    En_Ru1_SetConect_inStand(this, 0);
 }
 
 void func_80AEB220(EnRu1* this, PlayState* play) {
-    if ((EnRu1_IsCsStateIdle(play)) && (this->actor.params == 0xA)) {
+    if ((En_Ru1_Check_EndDemoMode(play)) && (this->actor.params == 0xA)) {
         func_80AEB1D8(this);
     }
 }
 #endif
 
-void func_80AEB264(EnRu1* this, AnimationHeader* animation, u8 arg2, f32 morphFrames, s32 arg4) {
+void En_Ru1_Change_Anime(EnRu1* this, AnimationHeader* animation, u8 arg2, f32 morphFrames, s32 arg4) {
     s32 pad[2];
     AnimationHeader* animHeader = SEGMENTED_TO_VIRTUAL(animation);
-    f32 frameCount = Animation_GetLastFrame(animHeader);
+    f32 frameCount = Si2_anime_end_frame(animHeader);
     f32 playbackSpeed;
     f32 unk0;
     f32 fc;
@@ -345,29 +345,29 @@ void func_80AEB264(EnRu1* this, AnimationHeader* animation, u8 arg2, f32 morphFr
         playbackSpeed = -1.0f;
     }
 
-    Animation_Change(&this->skelAnime, animHeader, playbackSpeed, unk0, fc, arg2, morphFrames);
+    Skeleton_Info2_init(&this->skelAnime, animHeader, playbackSpeed, unk0, fc, arg2, morphFrames);
 }
 
-s32 EnRu1_UpdateSkelAnime(EnRu1* this) {
+s32 En_Ru1_Animation_Base(EnRu1* this) {
     // why?
     if (this->action != 32) {
-        return SkelAnime_Update(&this->skelAnime);
+        return Skeleton_Info2_anime_play(&this->skelAnime);
     } else {
-        return SkelAnime_Update(&this->skelAnime);
+        return Skeleton_Info2_anime_play(&this->skelAnime);
     }
 }
 
-void func_80AEB364(EnRu1* this, PlayState* play) {
+void En_Ru1_Movement_byAnimation(EnRu1* this, PlayState* play) {
     this->skelAnime.movementFlags |= ANIM_FLAG_UPDATE_XZ;
-    AnimTaskQueue_AddActorMovement(play, &this->actor, &this->skelAnime, 1.0f);
+    Skeleton_Proc_Anime_Move_init(play, &this->actor, &this->skelAnime, 1.0f);
 }
 
-void func_80AEB3A4(EnRu1* this, PlayState* play) {
+void En_Ru1_Start_Movement_byAnimation(EnRu1* this, PlayState* play) {
     this->skelAnime.movementFlags |= ANIM_FLAG_UPDATE_XZ;
-    func_80AEB364(this, play);
+    En_Ru1_Movement_byAnimation(this, play);
 }
 
-void func_80AEB3CC(EnRu1* this) {
+void En_Ru1_End_Movement_byAnimation(EnRu1* this) {
     this->skelAnime.movementFlags &= ~ANIM_FLAG_UPDATE_XZ;
 }
 
@@ -389,90 +389,66 @@ void func_80AEB3CC(EnRu1* this) {
 
 #include "z_en_ru1_inSwitch.inc.c"
 
-static EnRu1ActionFunc sActionFuncs[] = {
-    func_80AEC0B4, func_80AEC100, func_80AEC130, func_80AEC17C, func_80AEC1D4, func_80AEC244, func_80AEC2C0,
-    func_80AECA94, func_80AECAB4, func_80AECAD4, func_80AECB18, func_80AECB60, func_80AECBB8, func_80AECC1C,
-    func_80AECC84, func_80AED304, func_80AED324, func_80AED344, func_80AED374, func_80AED3A4, func_80AED3E0,
-    func_80AED414, func_80AEF29C, func_80AEF2AC, func_80AEF2D0, func_80AEF354, func_80AEF3A8, func_80AEEBD4,
-    func_80AEEC5C, func_80AEECF0, func_80AEED58, func_80AEEDCC, func_80AEEE34, func_80AEEE9C, func_80AEEF08,
-    func_80AEEF5C, func_80AEF9D8, func_80AEFA2C, func_80AEFAAC, func_80AEFB04, func_80AEFB68, func_80AEFCE8,
-    func_80AEFBC8, func_80AEFC24, func_80AEFECC, func_80AEFF40,
-};
-
-static EnRu1PreLimbDrawFunc sPreLimbDrawFuncs[] = {
-    func_80AF0278,
-};
-
-static Vec3f sMultVec = { 0.0f, 10.0f, 0.0f };
-
-static EnRu1DrawFunc sDrawFuncs[] = {
-    EnRu1_DrawNothing,
-    EnRu1_DrawOpa,
-    EnRu1_DrawXlu,
-};
-
-ActorProfile En_Ru1_Profile = {
-    /**/ ACTOR_EN_RU1,
-    /**/ ACTORCAT_NPC,
-    /**/ FLAGS,
-    /**/ OBJECT_RU1,
-    /**/ sizeof(EnRu1),
-    /**/ EnRu1_Init,
-    /**/ EnRu1_Destroy,
-    /**/ EnRu1_Update,
-    /**/ EnRu1_Draw,
-};
-
 #if DEBUG_FEATURES
 void func_80AF0050(EnRu1* this, PlayState* play) {
-    func_80AEB264(this, &gRutoChildWait2Anim, 0, 0, 0);
+    En_Ru1_Change_Anime(this, &gRutoChildWait2Anim, 0, 0, 0);
     this->action = 36;
     this->roomNum1 = this->actor.room;
-    this->unk_28C = EnRu1_FindSwitch(play);
+    this->unk_28C = En_Ru1_Search_Stand_Actor(play);
     this->actor.room = -1;
 }
 #endif
 
-void EnRu1_Update(Actor* thisx, PlayState* play) {
+void En_Ru1_Actor_main(Actor* thisx, PlayState* play) {
+    static EnRu1ActionFunc proc[] = {
+        En_Ru1_Cryst_Actor_main_kiss, En_Ru1_Cryst_Actor_main_jump, En_Ru1_Cryst_Actor_main_float, En_Ru1_Cryst_Actor_main_approach, En_Ru1_Cryst_Actor_main_sink, En_Ru1_Cryst_Actor_main_leave, En_Ru1_Cryst_Actor_main_brake,
+        En_Ru1_Bdan00_Actor_main_wait, En_Ru1_Bdan00_Actor_main_hide, En_Ru1_Bdan00_Actor_main_refuse, En_Ru1_Bdan00_Actor_main_turn, En_Ru1_Bdan00_Actor_main_run_accel, En_Ru1_Bdan00_Actor_main_run_move, En_Ru1_Bdan00_Actor_main_step,
+        En_Ru1_Bdan00_Actor_main_disappear, En_Ru1_Bdanboss_Actor_main_wait, En_Ru1_Bdanboss_Actor_main_hide, En_Ru1_Bdanboss_Actor_main_up, En_Ru1_Bdanboss_Actor_main_irritate, En_Ru1_Bdanboss_Actor_main_correct, En_Ru1_Bdanboss_Actor_main_greet,
+        En_Ru1_Bdanboss_Actor_main_fly, En_Ru1_Option_Actor_main_wait, En_Ru1_Option_Actor_main_hide, En_Ru1_Option_Actor_main_greet, En_Ru1_Option_Actor_main_greeting, En_Ru1_Option_Actor_main_sitdown, En_Ru1_Option_Actor_main_alone_stop,
+        En_Ru1_Option_Actor_main_alone_move, En_Ru1_Option_Actor_main_alone_float, En_Ru1_Option_Actor_main_alone_sink, En_Ru1_Option_Actor_main_curry, En_Ru1_Option_Actor_main_strech, En_Ru1_Option_Actor_main_alpha, En_Ru1_Option_Actor_main_cheer,
+        En_Ru1_Option_Actor_main_hurry, En_Ru1_Option_Actor_main_standup, En_Ru1_Option_Actor_main_errand, En_Ru1_Option_Actor_main_handup, En_Ru1_Option_Actor_main_handdown, En_Ru1_Option_Actor_main_order, En_Ru1_Option_Actor_main_search_stand,
+        En_Ru1_Option_Actor_main_waitlink, En_Ru1_Option_Actor_main_scream, En_Ru1_Spot07_main_stand, En_Ru1_Spot07_main_greet,
+    };
+
     EnRu1* this = (EnRu1*)thisx;
 
-    if (this->action < 0 || this->action >= ARRAY_COUNT(sActionFuncs) || sActionFuncs[this->action] == NULL) {
+    if (this->action < 0 || this->action >= ARRAY_COUNT(proc) || proc[this->action] == NULL) {
         // "Main mode is improper!"
         PRINTF(VT_FGCOL(RED) "メインモードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
         return;
     }
 
-    sActionFuncs[this->action](this, play);
+    proc[this->action](this, play);
 }
 
-void EnRu1_Init(Actor* thisx, PlayState* play) {
+void En_Ru1_Actor_ct(Actor* thisx, PlayState* play) {
     s32 pad;
     EnRu1* this = (EnRu1*)thisx;
 
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 30.0f);
-    SkelAnime_InitFlex(play, &this->skelAnime, &gRutoChildSkel, NULL, this->jointTable, this->morphTable, 17);
-    func_80AEAD20(&this->actor, play);
-    switch (func_80AEADF0(this)) {
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 30.0f);
+    Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &gRutoChildSkel, NULL, this->jointTable, this->morphTable, 17);
+    En_Ru1_Option_ct_forCorect(&this->actor, play);
+    switch (En_Ru1_GetLower_arg_data(this)) {
         case 0:
-            func_80AECDA0(this, play);
+            En_Ru1_Actor_Bdanboss_Init(this, play);
             break;
         case 1:
-            func_80AEB3DC(this, play);
+            En_Ru1_Actor_Spot08_Init(this, play);
             break;
         case 2:
-            func_80AEC320(this, play);
+            En_Ru1_Actor_Ban00_Init(this, play);
             break;
         case 3:
-            func_80AED44C(this, play);
+            En_Ru1_Actor_Option_Init(this, play);
             break;
         case 4:
-            func_80AEFC54(this, play);
+            En_Ru1_Actor_Stand_Init(this, play);
             break;
         case 5:
-            func_80AEFD38(this, play);
+            En_Ru1_Actor_Spot07_Init(this, play);
             break;
         case 6:
-            func_80AEFF94(this, play);
+            En_Ru1_Actor_Switch_Init(this, play);
             break;
 #if DEBUG_FEATURES
         case 10:
@@ -480,14 +456,14 @@ void EnRu1_Init(Actor* thisx, PlayState* play) {
             break;
 #endif
         default:
-            Actor_Kill(&this->actor);
+            Actor_delete(&this->actor);
             // "Relevant arge_data = %d unacceptable"
-            PRINTF("該当 arge_data = %d 無し\n", func_80AEADF0(this));
+            PRINTF("該当 arge_data = %d 無し\n", En_Ru1_GetLower_arg_data(this));
             break;
     }
 }
 
-void func_80AF0278(EnRu1* this, PlayState* play, s32 limbIndex, Vec3s* rot) {
+void En_Ru1_turn_link(EnRu1* this, PlayState* play, s32 limbIndex, Vec3s* rot) {
     Vec3s* torsoRot = &this->interactInfo.torsoRot;
     Vec3s* headRot = &this->interactInfo.headRot;
 
@@ -503,28 +479,34 @@ void func_80AF0278(EnRu1* this, PlayState* play, s32 limbIndex, Vec3s* rot) {
     }
 }
 
-s32 EnRu1_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx,
+s32 En_Ru1_Actor_before_draw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx,
                            Gfx** gfx) {
+    static EnRu1PreLimbDrawFunc proc[] = {
+        En_Ru1_turn_link,
+    };
+
     EnRu1* this = (EnRu1*)thisx;
 
-    if ((this->unk_290 < 0) || (this->unk_290 > 0) || (*sPreLimbDrawFuncs[this->unk_290] == NULL)) {
+    if ((this->unk_290 < 0) || (this->unk_290 > 0) || (*proc[this->unk_290] == NULL)) {
         // "Neck rotation mode is improper!"
         PRINTF(VT_FGCOL(RED) "首回しモードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
     } else {
-        sPreLimbDrawFuncs[this->unk_290](this, play, limbIndex, rot);
+        proc[this->unk_290](this, play, limbIndex, rot);
     }
     return false;
 }
 
-void EnRu1_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx, Gfx** gfx) {
+void En_Ru1_Actor_after_draw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx, Gfx** gfx) {
+    static Vec3f pos = { 0.0f, 10.0f, 0.0f };
+
     EnRu1* this = (EnRu1*)thisx;
 
     if (limbIndex == RUTO_CHILD_HEAD) {
         Vec3f vec1;
         Vec3f vec2;
 
-        vec1 = sMultVec;
-        Matrix_MultVec3f(&vec1, &vec2);
+        vec1 = pos;
+        Matrix_Position(&vec1, &vec2);
         this->actor.focus.pos.x = vec2.x;
         this->actor.focus.pos.y = vec2.y;
         this->actor.focus.pos.z = vec2.z;
@@ -534,66 +516,84 @@ void EnRu1_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot,
     }
 }
 
-void EnRu1_DrawNothing(EnRu1* this, PlayState* play) {
+void En_Ru1_Actor_draw_none(EnRu1* this, PlayState* play) {
 }
 
-void EnRu1_DrawOpa(EnRu1* this, PlayState* play) {
+void En_Ru1_Actor_draw_normal(EnRu1* this, PlayState* play) {
     s32 pad[2];
     s16 eyeIndex = this->eyeIndex;
-    void* eyeTex = sEyeTextures[eyeIndex];
+    void* eyeTex = en_ru1_eye[eyeIndex];
     s16 mouthIndex = this->mouthIndex;
     SkelAnime* skelAnime = &this->skelAnime;
-    void* mouthTex = sMouthTextures[mouthIndex];
+    void* mouthTex = en_ru1_mouth[mouthIndex];
     s32 pad1;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_ru1.c", 1282);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
 
     gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(eyeTex));
     gSPSegment(POLY_OPA_DISP++, 0x09, SEGMENTED_TO_VIRTUAL(eyeTex));
     gSPSegment(POLY_OPA_DISP++, 0x09, SEGMENTED_TO_VIRTUAL(mouthTex));
     gDPSetEnvColor(POLY_OPA_DISP++, 0, 0, 0, 255);
-    gSPSegment(POLY_OPA_DISP++, 0x0C, &D_80116280[2]);
+    gSPSegment(POLY_OPA_DISP++, 0x0C, &Actor_change_render_mode[2]);
 
-    POLY_OPA_DISP = SkelAnime_DrawFlex(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount,
-                                       EnRu1_OverrideLimbDraw, EnRu1_PostLimbDraw, this, POLY_OPA_DISP);
+    POLY_OPA_DISP = Si2_draw2_SV(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount,
+                                       En_Ru1_Actor_before_draw, En_Ru1_Actor_after_draw, this, POLY_OPA_DISP);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_ru1.c", 1309);
 }
 
-void EnRu1_DrawXlu(EnRu1* this, PlayState* play) {
+void En_Ru1_Actor_draw_alpha(EnRu1* this, PlayState* play) {
     s32 pad[2];
     s16 eyeIndex = this->eyeIndex;
-    void* eyeTex = sEyeTextures[eyeIndex];
+    void* eyeTex = en_ru1_eye[eyeIndex];
     s16 mouthIndex = this->mouthIndex;
     SkelAnime* skelAnime = &this->skelAnime;
-    void* mouthTex = sMouthTextures[mouthIndex];
+    void* mouthTex = en_ru1_mouth[mouthIndex];
     s32 pad1;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_ru1.c", 1324);
 
-    Gfx_SetupDL_25Xlu(play->state.gfxCtx);
+    _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
 
     gSPSegment(POLY_XLU_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(eyeTex));
     gSPSegment(POLY_XLU_DISP++, 0x09, SEGMENTED_TO_VIRTUAL(eyeTex));
     gSPSegment(POLY_XLU_DISP++, 0x09, SEGMENTED_TO_VIRTUAL(mouthTex));
     gDPSetEnvColor(POLY_XLU_DISP++, 0, 0, 0, this->alpha);
-    gSPSegment(POLY_XLU_DISP++, 0x0C, &D_80116280[0]);
+    gSPSegment(POLY_XLU_DISP++, 0x0C, &Actor_change_render_mode[0]);
 
-    POLY_XLU_DISP = SkelAnime_DrawFlex(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount,
-                                       EnRu1_OverrideLimbDraw, NULL, this, POLY_XLU_DISP);
+    POLY_XLU_DISP = Si2_draw2_SV(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount,
+                                       En_Ru1_Actor_before_draw, NULL, this, POLY_XLU_DISP);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_ru1.c", 1353);
 }
 
-void EnRu1_Draw(Actor* thisx, PlayState* play) {
+void En_Ru1_Actor_draw(Actor* thisx, PlayState* play) {
+    static EnRu1DrawFunc proc[] = {
+        En_Ru1_Actor_draw_none,
+        En_Ru1_Actor_draw_normal,
+        En_Ru1_Actor_draw_alpha,
+    };
+
     EnRu1* this = (EnRu1*)thisx;
 
-    if (this->drawConfig < 0 || this->drawConfig >= ARRAY_COUNT(sDrawFuncs) || sDrawFuncs[this->drawConfig] == NULL) {
+    if (this->drawConfig < 0 || this->drawConfig >= ARRAY_COUNT(proc) || proc[this->drawConfig] == NULL) {
         // "Draw mode is improper!"
         PRINTF(VT_FGCOL(RED) "描画モードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
         return;
     }
-    sDrawFuncs[this->drawConfig](this, play);
+    proc[this->drawConfig](this, play);
 }
+
+ActorProfile En_Ru1_Profile = {
+    /**/ ACTOR_EN_RU1,
+    /**/ ACTORCAT_NPC,
+    /**/ FLAGS,
+    /**/ OBJECT_RU1,
+    /**/ sizeof(EnRu1),
+    /**/ En_Ru1_Actor_ct,
+    /**/ En_Ru1_Actor_dt,
+    /**/ En_Ru1_Actor_main,
+    /**/ En_Ru1_Actor_draw,
+};

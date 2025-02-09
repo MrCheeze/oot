@@ -1,29 +1,29 @@
-void DemoEc_InitCuccoLady(DemoEc* this, PlayState* play) {
-    DemoEc_UseDrawObject(this, play);
-    DemoEc_InitSkelAnime(this, play, &gCuccoLadySkel);
-    DemoEc_UseAnimationObject(this, play);
-    DemoEc_ChangeAnimation(this, &gDemoEcCuccoLadyAnim, 0, 0.0f, false);
-    func_8096D5D4(this, play);
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 30.0f);
+void Demo_Ec_main_init_Ane(DemoEc* this, PlayState* play) {
+    Demo_Ec_Change_ShapeBank(this, play);
+    Demo_Ec_Setup_Mdl(this, play, &gCuccoLadySkel);
+    Demo_Ec_Change_AnimeBank(this, play);
+    Demo_Ec_Change_Anime(this, &gDemoEcCuccoLadyAnim, 0, 0.0f, false);
+    Demo_Ec_Start_Movement_byAnimation(this, play);
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 30.0f);
     this->updateMode = EC_UPDATE_CUCCO_LADY;
     this->drawConfig = EC_DRAW_CUCCO_LADY;
 }
 
-void DemoEc_UpdateCuccoLady(DemoEc* this, PlayState* play) {
-    DemoEc_UpdateSkelAnime(this);
-    func_8096D594(this, play);
-    DemoEc_UpdateEyes(this);
-    DemoEc_UpdateBgFlags(this, play);
+void Demo_Ec_main_Ane_Wait(DemoEc* this, PlayState* play) {
+    Demo_Ec_Animation_Base(this);
+    Demo_Ec_Movement_byAnimation_CorrectNone(this, play);
+    Demo_Ec_set_eye_pattern(this);
+    Demo_Ec_BGcheck(this, play);
 }
 
-void DemoEc_DrawCuccoLady(DemoEc* this, PlayState* play) {
-    static void* eyeTextures[] = {
+void Demo_Ec_draw_normal_Ane(DemoEc* this, PlayState* play) {
+    static void* Demo_Ec_inAne_eye[] = {
         gCuccoLadyEyeOpenTex,
         gCuccoLadyEyeHalfTex,
         gCuccoLadyEyeClosedTex,
     };
     s32 eyeTexIndex = this->eyeTexIndex;
-    void* eyeTexture = eyeTextures[eyeTexIndex];
+    void* eyeTexture = Demo_Ec_inAne_eye[eyeTexIndex];
 
-    DemoEc_DrawSkeleton(this, play, eyeTexture, NULL, NULL, NULL);
+    Demo_Ec_draw_normal_1(this, play, eyeTexture, NULL, NULL, NULL);
 }

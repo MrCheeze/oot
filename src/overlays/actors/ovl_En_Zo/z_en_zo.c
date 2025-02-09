@@ -16,21 +16,21 @@ typedef enum EnZoEffectType {
     /* 3 */ ENZO_EFFECT_BUBBLE
 } EnZoEffectType;
 
-void EnZo_Init(Actor* thisx, PlayState* play);
-void EnZo_Destroy(Actor* thisx, PlayState* play);
-void EnZo_Update(Actor* thisx, PlayState* play);
-void EnZo_Draw(Actor* thisx, PlayState* play);
+void En_Zo_actor_ct(Actor* thisx, PlayState* play);
+void En_Zo_actor_dt(Actor* thisx, PlayState* play);
+void En_Zo_actor_move(Actor* thisx, PlayState* play);
+void En_Zo_actor_draw(Actor* thisx, PlayState* play);
 
 // Actions
-void EnZo_Standing(EnZo* this, PlayState* play);
-void EnZo_Submerged(EnZo* this, PlayState* play);
-void EnZo_Surface(EnZo* this, PlayState* play);
-void EnZo_TreadWater(EnZo* this, PlayState* play);
-void EnZo_Dive(EnZo* this, PlayState* play);
+void zo_wait(EnZo* this, PlayState* play);
+void zo_wait_deep(EnZo* this, PlayState* play);
+void zo_float(EnZo* this, PlayState* play);
+void zo_wait_surface(EnZo* this, PlayState* play);
+void zo_dive(EnZo* this, PlayState* play);
 
 #include "z_en_zo_eff.inc.c"
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit ZoClPipeData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -50,7 +50,7 @@ static ColliderCylinderInit sCylinderInit = {
     { 26, 64, 0, { 0, 0, 0 } },
 };
 
-static CollisionCheckInfoInit2 sColChkInit = { 0, 0, 0, 0, MASS_IMMOVABLE };
+static CollisionCheckInfoInit2 ZoStatusData = { 0, 0, 0, 0, MASS_IMMOVABLE };
 
 ActorProfile En_Zo_Profile = {
     /**/ ACTOR_EN_ZO,
@@ -58,10 +58,10 @@ ActorProfile En_Zo_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_ZO,
     /**/ sizeof(EnZo),
-    /**/ EnZo_Init,
-    /**/ EnZo_Destroy,
-    /**/ EnZo_Update,
-    /**/ EnZo_Draw,
+    /**/ En_Zo_actor_ct,
+    /**/ En_Zo_actor_dt,
+    /**/ En_Zo_actor_move,
+    /**/ En_Zo_actor_draw,
 };
 
 typedef enum EnZoAnimation {
@@ -75,7 +75,7 @@ typedef enum EnZoAnimation {
     /* 7 */ ENZO_ANIM_7
 } EnZoAnimation;
 
-static AnimationInfo sAnimationInfo[] = {
+static AnimationInfo animetbl[] = {
     { &gZoraIdleAnim, 1.0f, 0.0f, -1.0f, ANIMMODE_LOOP, -8.0f },
     { &gZoraIdleAnim, 1.0f, 0.0f, -1.0f, ANIMMODE_LOOP, 0.0f },
     { &gZoraSurfaceAnim, 0.0f, 1.0f, 1.0f, ANIMMODE_ONCE, 0.0f },
@@ -86,8 +86,8 @@ static AnimationInfo sAnimationInfo[] = {
     { &gZoraOpenArmsAnim, 1.0f, 0.0f, -1.0f, ANIMMODE_LOOP, -8.0f },
 };
 
-u16 EnZo_GetTextId(PlayState* play, Actor* thisx) {
-    u16 textId = MaskReaction_GetTextId(play, MASK_REACTION_SET_ZORA);
+u16 zo_set_message(PlayState* play, Actor* thisx) {
+    u16 textId = get_mask_message(play, MASK_REACTION_SET_ZORA);
 
     if (textId != 0) {
         return textId;
@@ -171,8 +171,8 @@ u16 EnZo_GetTextId(PlayState* play, Actor* thisx) {
     return 0x4006;
 }
 
-s16 EnZo_UpdateTalkState(PlayState* play, Actor* thisx) {
-    switch (Message_GetState(&play->msgCtx)) {
+s16 zo_end_message(PlayState* play, Actor* thisx) {
+    switch (message_check(&play->msgCtx)) {
         case TEXT_STATE_NONE:
         case TEXT_STATE_DONE_HAS_NEXT:
         case TEXT_STATE_DONE_FADING:
@@ -198,20 +198,20 @@ s16 EnZo_UpdateTalkState(PlayState* play, Actor* thisx) {
             return NPC_TALK_STATE_IDLE;
 
         case TEXT_STATE_CHOICE:
-            switch (Message_ShouldAdvance(play)) {
+            switch (pad_on_check(play)) {
                 case 0:
                     return NPC_TALK_STATE_TALKING;
                 default:
                     if (thisx->textId == 0x400C) {
                         thisx->textId = (play->msgCtx.choiceIndex == 0) ? 0x400D : 0x400E;
-                        Message_ContinueTextbox(play, thisx->textId);
+                        message_set2(play, thisx->textId);
                     }
                     break;
             }
             return NPC_TALK_STATE_TALKING;
 
         case TEXT_STATE_EVENT:
-            switch (Message_ShouldAdvance(play)) {
+            switch (pad_on_check(play)) {
                 case 0:
                     return NPC_TALK_STATE_TALKING;
                 default:
@@ -223,34 +223,34 @@ s16 EnZo_UpdateTalkState(PlayState* play, Actor* thisx) {
     return NPC_TALK_STATE_TALKING;
 }
 
-void EnZo_Blink(EnZo* this) {
+static void eye_paci2(EnZo* this) {
     if (DECR(this->blinkTimer) == 0) {
         this->eyeTexture++;
         if (this->eyeTexture >= 3) {
-            this->blinkTimer = Rand_S16Offset(30, 30);
+            this->blinkTimer = get_random_timer(30, 30);
             this->eyeTexture = 0;
         }
     }
 }
 
-void EnZo_Dialog(EnZo* this, PlayState* play) {
+void zo_sub_action(EnZo* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     this->interactInfo.trackPos = player->actor.world.pos;
-    if (this->actionFunc == EnZo_Standing) {
+    if (this->actionFunc == zo_wait) {
         // Look down at link if child, look up if adult
         this->interactInfo.yOffset = !LINK_IS_ADULT ? 10.0f : -10.0f;
     } else {
         this->interactInfo.trackPos.y = this->actor.world.pos.y;
     }
-    Npc_TrackPoint(&this->actor, &this->interactInfo, 11, this->trackingMode);
+    eye_moveM(&this->actor, &this->interactInfo, 11, this->trackingMode);
     if (this->canSpeak == true) {
-        Npc_UpdateTalking(play, &this->actor, &this->interactInfo.talkState, this->dialogRadius, EnZo_GetTextId,
-                          EnZo_UpdateTalkState);
+        npc_talk(play, &this->actor, &this->interactInfo.talkState, this->dialogRadius, zo_set_message,
+                          zo_end_message);
     }
 }
 
-s32 EnZo_PlayerInProximity(EnZo* this, PlayState* play) {
+static s32 pl_approach_check(EnZo* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     Vec3f surfacePos;
     f32 yDist;
@@ -260,7 +260,7 @@ s32 EnZo_PlayerInProximity(EnZo* this, PlayState* play) {
     surfacePos.y = this->actor.world.pos.y + this->actor.depthInWater;
     surfacePos.z = this->actor.world.pos.z;
 
-    hDist = Math_Vec3f_DistXZ(&surfacePos, &player->actor.world.pos);
+    hDist = search_position_distanceXZ(&surfacePos, &player->actor.world.pos);
     yDist = fabsf(player->actor.world.pos.y - surfacePos.y);
 
     if (hDist < 240.0f && yDist < 80.0f) {
@@ -269,13 +269,13 @@ s32 EnZo_PlayerInProximity(EnZo* this, PlayState* play) {
     return 0;
 }
 
-void EnZo_SetAnimation(EnZo* this) {
-    s32 animId = ARRAY_COUNT(sAnimationInfo);
+void zo_chg_anime(EnZo* this) {
+    s32 animId = ARRAY_COUNT(animetbl);
 
     if (this->skelAnime.animation == &gZoraHandsOnHipsTappingFootAnim ||
         this->skelAnime.animation == &gZoraOpenArmsAnim) {
         if (this->interactInfo.talkState == NPC_TALK_STATE_IDLE) {
-            if (this->actionFunc == EnZo_Standing) {
+            if (this->actionFunc == zo_wait) {
                 animId = ENZO_ANIM_0;
             } else {
                 animId = ENZO_ANIM_3;
@@ -293,8 +293,8 @@ void EnZo_SetAnimation(EnZo* this) {
         animId = ENZO_ANIM_7;
     }
 
-    if (animId != ARRAY_COUNT(sAnimationInfo)) {
-        Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, animId);
+    if (animId != ARRAY_COUNT(animetbl)) {
+        npc_anime_ct(&this->skelAnime, animetbl, animId);
         if (animId == ENZO_ANIM_3) {
             this->skelAnime.curFrame = this->skelAnime.endFrame;
             this->skelAnime.playSpeed = 0.0f;
@@ -302,51 +302,51 @@ void EnZo_SetAnimation(EnZo* this) {
     }
 }
 
-void EnZo_Init(Actor* thisx, PlayState* play) {
+void En_Zo_actor_ct(Actor* thisx, PlayState* play) {
     EnZo* this = (EnZo*)thisx;
 
-    ActorShape_Init(&this->actor.shape, 0.0f, NULL, 0.0f);
-    SkelAnime_InitFlex(play, &this->skelAnime, &gZoraSkel, NULL, this->jointTable, this->morphTable, 20);
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
-    CollisionCheck_SetInfo2(&this->actor.colChkInfo, NULL, &sColChkInit);
+    Shape_Info_init(&this->actor.shape, 0.0f, NULL, 0.0f);
+    Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &gZoraSkel, NULL, this->jointTable, this->morphTable, 20);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set5(play, &this->collider, &this->actor, &ZoClPipeData);
+    CollisionCheck_Status_set3(&this->actor.colChkInfo, NULL, &ZoStatusData);
 
     if (LINK_IS_ADULT && (PARAMS_GET_U(this->actor.params, 0, 6) == 8)) {
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
         return;
     }
 
-    Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENZO_ANIM_2);
-    Actor_SetScale(&this->actor, 0.01f);
+    npc_anime_ct(&this->skelAnime, animetbl, ENZO_ANIM_2);
+    Actor_set_scale(&this->actor, 0.01f);
     this->actor.attentionRangeType = ATTENTION_RANGE_6;
     this->dialogRadius = this->collider.dim.radius + 30.0f;
     this->trackingMode = NPC_TRACKING_NONE;
     this->canSpeak = false;
     this->interactInfo.talkState = NPC_TALK_STATE_IDLE;
-    Actor_UpdateBgCheckInfo(play, &this->actor, this->collider.dim.height * 0.5f, this->collider.dim.radius, 0.0f,
+    Actor_BGcheck2(play, &this->actor, this->collider.dim.height * 0.5f, this->collider.dim.radius, 0.0f,
                             UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
 
     if (this->actor.depthInWater < 54.0f || PARAMS_GET_U(this->actor.params, 0, 6) == 8) {
-        this->actor.shape.shadowDraw = ActorShadow_DrawCircle;
+        this->actor.shape.shadowDraw = Actor_shadow_circle;
         this->actor.shape.shadowScale = 24.0f;
-        Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENZO_ANIM_1);
+        npc_anime_ct(&this->skelAnime, animetbl, ENZO_ANIM_1);
         this->canSpeak = true;
         this->alpha = 255.0f;
-        this->actionFunc = EnZo_Standing;
+        this->actionFunc = zo_wait;
     } else {
         this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
-        this->actionFunc = EnZo_Submerged;
+        this->actionFunc = zo_wait_deep;
     }
 }
 
-void EnZo_Destroy(Actor* thisx, PlayState* play) {
+void En_Zo_actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void EnZo_Standing(EnZo* this, PlayState* play) {
+void zo_wait(EnZo* this, PlayState* play) {
     s16 angle;
 
-    Actor_UpdateFidgetTables(play, this->fidgetTableY, this->fidgetTableZ, 20);
-    EnZo_SetAnimation(this);
+    program_wait(play, this->fidgetTableY, this->fidgetTableZ, 20);
+    zo_chg_anime(this);
     if (this->interactInfo.talkState != NPC_TALK_STATE_IDLE) {
         this->trackingMode = NPC_TRACKING_FULL_BODY;
         return;
@@ -354,7 +354,7 @@ void EnZo_Standing(EnZo* this, PlayState* play) {
 
     angle = ABS((s16)((f32)this->actor.yawTowardsPlayer - (f32)this->actor.shape.rot.y));
     if (angle < 0x4718) {
-        if (EnZo_PlayerInProximity(this, play)) {
+        if (pl_approach_check(this, play)) {
             this->trackingMode = NPC_TRACKING_HEAD_AND_TORSO;
         } else {
             this->trackingMode = NPC_TRACKING_NONE;
@@ -364,56 +364,56 @@ void EnZo_Standing(EnZo* this, PlayState* play) {
     }
 }
 
-void EnZo_Submerged(EnZo* this, PlayState* play) {
-    if (EnZo_PlayerInProximity(this, play)) {
-        this->actionFunc = EnZo_Surface;
+void zo_wait_deep(EnZo* this, PlayState* play) {
+    if (pl_approach_check(this, play)) {
+        this->actionFunc = zo_float;
         this->actor.velocity.y = 4.0f;
     }
 }
 
-void EnZo_Surface(EnZo* this, PlayState* play) {
+void zo_float(EnZo* this, PlayState* play) {
     if (this->actor.depthInWater < 54.0f) {
-        Actor_PlaySfx(&this->actor, NA_SE_EV_OUT_OF_WATER);
-        EnZo_SpawnSplashes(this);
-        Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENZO_ANIM_3);
+        Actor_SE_set(&this->actor, NA_SE_EV_OUT_OF_WATER);
+        set_mizu_effect(this);
+        npc_anime_ct(&this->skelAnime, animetbl, ENZO_ANIM_3);
         this->actor.flags |= ACTOR_FLAG_ATTENTION_ENABLED;
-        this->actionFunc = EnZo_TreadWater;
+        this->actionFunc = zo_wait_surface;
         this->actor.velocity.y = 0.0f;
         this->alpha = 255.0f;
     } else if (this->actor.depthInWater < 80.0f) {
-        Math_ApproachF(&this->actor.velocity.y, 2.0f, 0.4f, 0.6f);
-        Math_ApproachF(&this->alpha, 255.0f, 0.3f, 10.0f);
+        add_calc2(&this->actor.velocity.y, 2.0f, 0.4f, 0.6f);
+        add_calc2(&this->alpha, 255.0f, 0.3f, 10.0f);
     }
 }
 
-void EnZo_TreadWater(EnZo* this, PlayState* play) {
-    Actor_UpdateFidgetTables(play, this->fidgetTableY, this->fidgetTableZ, 20);
-    if (Animation_OnFrame(&this->skelAnime, this->skelAnime.endFrame)) {
+void zo_wait_surface(EnZo* this, PlayState* play) {
+    program_wait(play, this->fidgetTableY, this->fidgetTableZ, 20);
+    if (Skeleton_Info_frame_check(&this->skelAnime, this->skelAnime.endFrame)) {
         this->canSpeak = true;
         this->trackingMode = NPC_TRACKING_FULL_BODY;
         this->skelAnime.playSpeed = 0.0f;
     }
-    EnZo_SetAnimation(this);
+    zo_chg_anime(this);
 
-    Math_ApproachF(&this->actor.velocity.y, this->actor.depthInWater < 54.0f ? -0.6f : 0.6f, 0.3f, 0.2f);
+    add_calc2(&this->actor.velocity.y, this->actor.depthInWater < 54.0f ? -0.6f : 0.6f, 0.3f, 0.2f);
     if (this->rippleTimer != 0) {
         this->rippleTimer--;
         if ((this->rippleTimer == 3) || (this->rippleTimer == 6)) {
-            EnZo_TreadWaterRipples(this, 0.2f, 1.0f, 200);
+            set_hamon_effect(this, 0.2f, 1.0f, 200);
         }
     } else {
-        EnZo_TreadWaterRipples(this, 0.2f, 1.0f, 200);
+        set_hamon_effect(this, 0.2f, 1.0f, 200);
         this->rippleTimer = 12;
     }
 
-    if (EnZo_PlayerInProximity(this, play) != 0) {
-        this->timeToDive = Rand_S16Offset(40, 40);
+    if (pl_approach_check(this, play) != 0) {
+        this->timeToDive = get_random_timer(40, 40);
     } else if (DECR(this->timeToDive) == 0) {
         f32 startFrame;
-        Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENZO_ANIM_4);
+        npc_anime_ct(&this->skelAnime, animetbl, ENZO_ANIM_4);
         this->canSpeak = false;
         this->trackingMode = NPC_TRACKING_NONE;
-        this->actionFunc = EnZo_Dive;
+        this->actionFunc = zo_dive;
         startFrame = this->skelAnime.startFrame;
         this->skelAnime.startFrame = this->skelAnime.endFrame;
         this->skelAnime.curFrame = this->skelAnime.endFrame;
@@ -422,10 +422,10 @@ void EnZo_TreadWater(EnZo* this, PlayState* play) {
     }
 }
 
-void EnZo_Dive(EnZo* this, PlayState* play) {
-    if (Animation_OnFrame(&this->skelAnime, this->skelAnime.endFrame)) {
-        Actor_PlaySfx(&this->actor, NA_SE_EV_DIVE_WATER);
-        EnZo_SpawnSplashes(this);
+void zo_dive(EnZo* this, PlayState* play) {
+    if (Skeleton_Info_frame_check(&this->skelAnime, this->skelAnime.endFrame)) {
+        Actor_SE_set(&this->actor, NA_SE_EV_DIVE_WATER);
+        set_mizu_effect(this);
         this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
         this->actor.velocity.y = -4.0f;
         this->skelAnime.playSpeed = 0.0f;
@@ -436,108 +436,108 @@ void EnZo_Dive(EnZo* this, PlayState* play) {
     }
 
     if (this->actor.depthInWater > 80.0f || this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) {
-        Math_ApproachF(&this->actor.velocity.y, -1.0f, 0.4f, 0.6f);
-        Math_ApproachF(&this->alpha, 0.0f, 0.3f, 10.0f);
+        add_calc2(&this->actor.velocity.y, -1.0f, 0.4f, 0.6f);
+        add_calc2(&this->alpha, 0.0f, 0.3f, 10.0f);
     }
 
     if ((s16)this->alpha == 0) {
-        Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENZO_ANIM_2);
+        npc_anime_ct(&this->skelAnime, animetbl, ENZO_ANIM_2);
         this->actor.world.pos = this->actor.home.pos;
         this->alpha = 0.0f;
-        this->actionFunc = EnZo_Submerged;
+        this->actionFunc = zo_wait_deep;
     }
 }
 
-void EnZo_Update(Actor* thisx, PlayState* play) {
+void En_Zo_actor_move(Actor* thisx, PlayState* play) {
     EnZo* this = (EnZo*)thisx;
     u32 pad;
     Vec3f pos;
 
     if ((s32)this->alpha != 0) {
-        SkelAnime_Update(&this->skelAnime);
-        EnZo_Blink(this);
+        Skeleton_Info2_anime_play(&this->skelAnime);
+        eye_paci2(this);
     }
 
-    Actor_MoveXZGravity(thisx);
-    Actor_UpdateBgCheckInfo(play, thisx, this->collider.dim.radius, this->collider.dim.height * 0.25f, 0.0f,
+    Actor_position_moveF(thisx);
+    Actor_BGcheck2(play, thisx, this->collider.dim.radius, this->collider.dim.height * 0.25f, 0.0f,
                             UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
     this->actionFunc(this, play);
-    EnZo_Dialog(this, play);
+    zo_sub_action(this, play);
 
     // Spawn air bubbles
     if (play->state.frames & 8) {
         pos = this->actor.world.pos;
 
-        pos.y += (Rand_ZeroOne() - 0.5f) * 10.0f + 18.0f;
-        pos.x += (Rand_ZeroOne() - 0.5f) * 28.0f;
-        pos.z += (Rand_ZeroOne() - 0.5f) * 28.0f;
-        EnZo_SpawnBubble(this, &pos);
+        pos.y += (fqrand() - 0.5f) * 10.0f + 18.0f;
+        pos.x += (fqrand() - 0.5f) * 28.0f;
+        pos.z += (fqrand() - 0.5f) * 28.0f;
+        zo_eff_bubble_ct(this, &pos);
     }
 
     if ((s32)this->alpha != 0) {
-        Collider_UpdateCylinder(thisx, &this->collider);
-        CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
+        CollisionCheck_Uty_ActorWorldPosSetPipeC(thisx, &this->collider);
+        CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
     }
 
-    EnZo_UpdateEffectsRipples(this);
-    EnZo_UpdateEffectsBubbles(this);
-    EnZo_UpdateEffectsSplashes(this);
+    zo_eff_hamon_mv(this);
+    zo_eff_bubble_mv(this);
+    zo_eff_mizu_mv(this);
 }
 
-s32 EnZo_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx, Gfx** gfx) {
+static s32 before_display(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx, Gfx** gfx) {
     EnZo* this = (EnZo*)thisx;
     Vec3s limbRot;
 
     if (limbIndex == 15) {
-        Matrix_Translate(1800.0f, 0.0f, 0.0f, MTXMODE_APPLY);
+        Matrix_translate(1800.0f, 0.0f, 0.0f, MTXMODE_APPLY);
         limbRot = this->interactInfo.headRot;
-        Matrix_RotateX(BINANG_TO_RAD_ALT(limbRot.y), MTXMODE_APPLY);
-        Matrix_RotateZ(BINANG_TO_RAD_ALT(limbRot.x), MTXMODE_APPLY);
-        Matrix_Translate(-1800.0f, 0.0f, 0.0f, MTXMODE_APPLY);
+        Matrix_rotateX(BINANG_TO_RAD_ALT(limbRot.y), MTXMODE_APPLY);
+        Matrix_rotateZ(BINANG_TO_RAD_ALT(limbRot.x), MTXMODE_APPLY);
+        Matrix_translate(-1800.0f, 0.0f, 0.0f, MTXMODE_APPLY);
     }
 
     if (limbIndex == 8) {
         limbRot = this->interactInfo.torsoRot;
-        Matrix_RotateX(BINANG_TO_RAD_ALT(-limbRot.y), MTXMODE_APPLY);
-        Matrix_RotateZ(BINANG_TO_RAD_ALT(limbRot.x), MTXMODE_APPLY);
+        Matrix_rotateX(BINANG_TO_RAD_ALT(-limbRot.y), MTXMODE_APPLY);
+        Matrix_rotateZ(BINANG_TO_RAD_ALT(limbRot.x), MTXMODE_APPLY);
     }
 
     if ((limbIndex == 8) || (limbIndex == 9) || (limbIndex == 12)) {
-        rot->y += Math_SinS(this->fidgetTableY[limbIndex]) * FIDGET_AMPLITUDE;
-        rot->z += Math_CosS(this->fidgetTableZ[limbIndex]) * FIDGET_AMPLITUDE;
+        rot->y += sin_s(this->fidgetTableY[limbIndex]) * FIDGET_AMPLITUDE;
+        rot->z += cos_s(this->fidgetTableZ[limbIndex]) * FIDGET_AMPLITUDE;
     }
 
     return 0;
 }
 
-void EnZo_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx, Gfx** gfx) {
+static void after_display(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx, Gfx** gfx) {
     EnZo* this = (EnZo*)thisx;
     Vec3f vec = { 0.0f, 600.0f, 0.0f };
 
     if (limbIndex == 15) {
-        Matrix_MultVec3f(&vec, &this->actor.focus.pos);
+        Matrix_Position(&vec, &this->actor.focus.pos);
     }
 }
 
-void EnZo_Draw(Actor* thisx, PlayState* play) {
+void En_Zo_actor_draw(Actor* thisx, PlayState* play) {
     EnZo* this = (EnZo*)thisx;
     void* eyeTextures[] = { gZoraEyeOpenTex, gZoraEyeHalfTex, gZoraEyeClosedTex };
 
-    Matrix_Push();
-    EnZo_DrawEffectsRipples(this, play);
-    EnZo_DrawEffectsBubbles(this, play);
-    EnZo_DrawEffectsSplashes(this, play);
-    Matrix_Pop();
+    Matrix_push();
+    zo_eff_hamon_dr(this, play);
+    zo_eff_bubble_dr(this, play);
+    zo_eff_mizu_dr(this, play);
+    Matrix_pull();
 
     if ((s32)this->alpha != 0) {
         OPEN_DISPS(play->state.gfxCtx, "../z_en_zo.c", 1008);
 
         if (this->alpha == 255.0f) {
             gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(eyeTextures[this->eyeTexture]));
-            func_80034BA0(play, &this->skelAnime, EnZo_OverrideLimbDraw, EnZo_PostLimbDraw, thisx, this->alpha);
+            no_clarity(play, &this->skelAnime, before_display, after_display, thisx, this->alpha);
         } else {
             gSPSegment(POLY_XLU_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(eyeTextures[this->eyeTexture]));
-            func_80034CC4(play, &this->skelAnime, EnZo_OverrideLimbDraw, EnZo_PostLimbDraw, thisx, this->alpha);
+            clarity(play, &this->skelAnime, before_display, after_display, thisx, this->alpha);
         }
 
         CLOSE_DISPS(play->state.gfxCtx, "../z_en_zo.c", 1025);

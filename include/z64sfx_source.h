@@ -14,8 +14,8 @@ typedef struct SfxSource {
 
 #define SFX_SOURCE_COUNT 16
 
-void SfxSource_InitAll(struct PlayState* play);
-void SfxSource_UpdateAll(struct PlayState* play);
-void SfxSource_PlaySfxAtFixedWorldPos(struct PlayState* play, Vec3f* worldPos, s32 duration, u16 sfxId);
+void Effect_SE_Info_ct(struct PlayState* play);
+void Effect_SE_Info_proc(struct PlayState* play);
+void Effect_SE_Info_new(struct PlayState* play, Vec3f* worldPos, s32 duration, u16 sfxId);
 
 #endif

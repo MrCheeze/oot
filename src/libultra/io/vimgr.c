@@ -57,15 +57,15 @@ void osCreateViManager(OSPri pri) {
 }
 
 void viMgrMain(void* arg) {
-    static u16 viRetrace;
+    static u16 retrace;
     OSDevMgr* dm;
     u32 addTime;
     OSIoMesg* mb = NULL;
     u32 first = 0;
 
-    viRetrace = __osViGetCurrentContext()->retraceCount;
-    if (viRetrace == 0) {
-        viRetrace = 1;
+    retrace = __osViGetCurrentContext()->retraceCount;
+    if (retrace == 0) {
+        retrace = 1;
     }
 
     dm = (OSDevMgr*)arg;
@@ -75,13 +75,13 @@ void viMgrMain(void* arg) {
         switch (mb->hdr.type) {
             case OS_MESG_TYPE_VRETRACE:
                 __osViSwapContext();
-                viRetrace--;
-                if (viRetrace == 0) {
+                retrace--;
+                if (retrace == 0) {
                     OSViContext* ctx = __osViGetCurrentContext();
                     if (ctx->mq) {
                         osSendMesg(ctx->mq, ctx->msg, OS_MESG_NOBLOCK);
                     }
-                    viRetrace = ctx->retraceCount;
+                    retrace = ctx->retraceCount;
                 }
 
                 __osViIntrCount++;

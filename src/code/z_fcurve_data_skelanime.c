@@ -18,7 +18,7 @@
  * If the interpolation count for a property is 0, the value of the property is copied from the next number in the
  * constant data; there are no gaps for nonzero interpolation count.
  * If the interpolation count N for a property is larger than 0, the next N elements of the interpolation data array
- * are used to interpolate the value of the property, using Curve_Interpolate.
+ * are used to interpolate the value of the property, using FcurveData_Calc.
  *
  * Curve limbs may use LOD:
  * - lower detail draws only the first displaylist
@@ -28,7 +28,7 @@
 #include "global.h"
 #include "z64curve.h"
 
-void SkelCurve_Clear(SkelCurve* skelCurve) {
+void FcSkeletonInfo_allClear(SkelCurve* skelCurve) {
     skelCurve->limbCount = 0;
     skelCurve->skeleton = NULL;
     skelCurve->animation = NULL;
@@ -44,7 +44,7 @@ void SkelCurve_Clear(SkelCurve* skelCurve) {
  *
  * @return bool always true
  */
-s32 SkelCurve_Init(PlayState* play, SkelCurve* skelCurve, CurveSkeletonHeader* skeletonHeaderSeg,
+s32 FcSkeletonInfo_ct(PlayState* play, SkelCurve* skelCurve, CurveSkeletonHeader* skeletonHeaderSeg,
                    CurveAnimationHeader* animation) {
     SkelCurveLimb** limbs;
     CurveSkeletonHeader* skeletonHeader = SEGMENTED_TO_VIRTUAL(skeletonHeaderSeg);
@@ -62,13 +62,13 @@ s32 SkelCurve_Init(PlayState* play, SkelCurve* skelCurve, CurveSkeletonHeader* s
 /**
  * Frees the joint table.
  */
-void SkelCurve_Destroy(PlayState* play, SkelCurve* skelCurve) {
+void FcSkeletonInfo_dt(PlayState* play, SkelCurve* skelCurve) {
     if (skelCurve->jointTable != NULL) {
         ZELDA_ARENA_FREE(skelCurve->jointTable, "../z_fcurve_data_skelanime.c", 146);
     }
 }
 
-void SkelCurve_SetAnim(SkelCurve* skelCurve, CurveAnimationHeader* animation, f32 arg2, f32 endFrame, f32 curFrame,
+void FcSkeletonInfo_init(SkelCurve* skelCurve, CurveAnimationHeader* animation, f32 arg2, f32 endFrame, f32 curFrame,
                        f32 playSpeed) {
     skelCurve->unk_0C = arg2 - skelCurve->playSpeed;
     skelCurve->endFrame = endFrame;
@@ -92,7 +92,7 @@ typedef enum SkelCurveVecType {
  *
  * @return bool true when the animation has finished.
  */
-s32 SkelCurve_Update(PlayState* play, SkelCurve* skelCurve) {
+s32 FcSkeletonInfo_play(PlayState* play, SkelCurve* skelCurve) {
     s16* jointData;
     u8* knotCounts;
     CurveAnimationHeader* animation;
@@ -131,7 +131,7 @@ s32 SkelCurve_Update(PlayState* play, SkelCurve* skelCurve) {
                     *jointData = transformValue;
                     constantData++;
                 } else {
-                    transformValue = Curve_Interpolate(skelCurve->curFrame, startKnot, *knotCounts);
+                    transformValue = FcurveData_Calc(skelCurve->curFrame, startKnot, *knotCounts);
                     startKnot += *knotCounts;
                     if (vecType == SKELCURVE_VEC_TYPE_SCALE) {
                         // Rescaling allows for more refined scaling using an s16
@@ -156,13 +156,13 @@ s32 SkelCurve_Update(PlayState* play, SkelCurve* skelCurve) {
 /**
  * Recursively draws limbs with appropriate properties.
  */
-void SkelCurve_DrawLimb(PlayState* play, s32 limbIndex, SkelCurve* skelCurve, OverrideCurveLimbDraw overrideLimbDraw,
+void FcSkeletonInfo_draw_child(PlayState* play, s32 limbIndex, SkelCurve* skelCurve, OverrideCurveLimbDraw overrideLimbDraw,
                         PostCurveLimbDraw postLimbDraw, s32 lod, void* data) {
     SkelCurveLimb* limb = SEGMENTED_TO_VIRTUAL(skelCurve->skeleton[limbIndex]);
 
     OPEN_DISPS(play->state.gfxCtx, "../z_fcurve_data_skelanime.c", 279);
 
-    Matrix_Push();
+    Matrix_push();
 
     if ((overrideLimbDraw == NULL) ||
         ((overrideLimbDraw != NULL) && overrideLimbDraw(play, skelCurve, limbIndex, data))) {
@@ -184,8 +184,8 @@ void SkelCurve_DrawLimb(PlayState* play, s32 limbIndex, SkelCurve* skelCurve, Ov
         pos.y = jointData[1];
         pos.z = jointData[2];
 
-        Matrix_TranslateRotateZYX(&pos, &rot);
-        Matrix_Scale(scale.x, scale.y, scale.z, MTXMODE_APPLY);
+        Matrix_softcv3_mult(&pos, &rot);
+        Matrix_scale(scale.x, scale.y, scale.z, MTXMODE_APPLY);
 
         if (lod == 0) {
             s32 pad1;
@@ -218,21 +218,21 @@ void SkelCurve_DrawLimb(PlayState* play, s32 limbIndex, SkelCurve* skelCurve, Ov
     }
 
     if (limb->child != LIMB_DONE) {
-        SkelCurve_DrawLimb(play, limb->child, skelCurve, overrideLimbDraw, postLimbDraw, lod, data);
+        FcSkeletonInfo_draw_child(play, limb->child, skelCurve, overrideLimbDraw, postLimbDraw, lod, data);
     }
 
-    Matrix_Pop();
+    Matrix_pull();
 
     if (limb->sibling != LIMB_DONE) {
-        SkelCurve_DrawLimb(play, limb->sibling, skelCurve, overrideLimbDraw, postLimbDraw, lod, data);
+        FcSkeletonInfo_draw_child(play, limb->sibling, skelCurve, overrideLimbDraw, postLimbDraw, lod, data);
     }
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_fcurve_data_skelanime.c", 371);
 }
 
-void SkelCurve_Draw(Actor* actor, PlayState* play, SkelCurve* skelCurve, OverrideCurveLimbDraw overrideLimbDraw,
+void FcSkeletonInfo_draw(Actor* actor, PlayState* play, SkelCurve* skelCurve, OverrideCurveLimbDraw overrideLimbDraw,
                     PostCurveLimbDraw postLimbDraw, s32 lod, void* data) {
     if (skelCurve->jointTable != NULL) {
-        SkelCurve_DrawLimb(play, 0, skelCurve, overrideLimbDraw, postLimbDraw, lod, data);
+        FcSkeletonInfo_draw_child(play, 0, skelCurve, overrideLimbDraw, postLimbDraw, lod, data);
     }
 }

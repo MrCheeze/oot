@@ -107,7 +107,7 @@ void DebugArena_Display(void) {
 #endif
 
 void DebugArena_GetSizes(u32* outMaxFree, u32* outFree, u32* outAlloc) {
-    ArenaImpl_GetSizes(&sDebugArena, outMaxFree, outFree, outAlloc);
+    __osGetFreeArena(&sDebugArena, outMaxFree, outFree, outAlloc);
 }
 
 void DebugArena_Check(void) {
@@ -129,5 +129,5 @@ void DebugArena_Cleanup(void) {
 }
 
 s32 DebugArena_IsInitialized(void) {
-    return __osMallocIsInitialized(&sDebugArena);
+    return __osMallocIsInitalized(&sDebugArena);
 }

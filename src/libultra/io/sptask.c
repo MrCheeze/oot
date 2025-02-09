@@ -5,10 +5,10 @@
         ptr = (void*)osVirtualToPhysical(ptr); \
     }
 
-static OSTask sTmpTask;
+static OSTask tmp_task;
 
 OSTask* _VirtualToPhysicalTask(OSTask* intp) {
-    OSTask* tp = &sTmpTask;
+    OSTask* tp = &tmp_task;
 
     bcopy(intp, tp, sizeof(OSTask));
 

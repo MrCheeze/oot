@@ -37,37 +37,37 @@ typedef struct MapMarkDataOverlay {
 
 // The Following arrays must be defined as const in z_lmap_mark.c to appear in rodata
 
-static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 sLoadTextureBlock_siz[] = {
+static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 custom_SIZ[] = {
     G_IM_SIZ_4b,
     G_IM_SIZ_8b,
     G_IM_SIZ_16b,
     G_IM_SIZ_32b,
 };
-static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 sLoadTextureBlock_siz_LOAD_BLOCK[] = {
+static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 custom_LOAD_BLOCK[] = {
     G_IM_SIZ_4b_LOAD_BLOCK,
     G_IM_SIZ_8b_LOAD_BLOCK,
     G_IM_SIZ_16b_LOAD_BLOCK,
     G_IM_SIZ_32b_LOAD_BLOCK,
 };
-static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 sLoadTextureBlock_siz_INCR[] = {
+static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 custom_INCR[] = {
     G_IM_SIZ_4b_INCR,
     G_IM_SIZ_8b_INCR,
     G_IM_SIZ_16b_INCR,
     G_IM_SIZ_32b_INCR,
 };
-static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 sLoadTextureBlock_siz_SHIFT[] = {
+static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 custom_SHIFT[] = {
     G_IM_SIZ_4b_SHIFT,
     G_IM_SIZ_8b_SHIFT,
     G_IM_SIZ_16b_SHIFT,
     G_IM_SIZ_32b_SHIFT,
 };
-static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 sLoadTextureBlock_siz_BYTES[] = {
+static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 custom_BYTES[] = {
     G_IM_SIZ_4b_BYTES,
     G_IM_SIZ_8b_BYTES,
     G_IM_SIZ_16b_BYTES,
     G_IM_SIZ_32b_BYTES,
 };
-static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 sLoadTextureBlock_siz_LINE_BYTES[] = {
+static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 custom_LINE_BYTES[] = {
     G_IM_SIZ_4b_LINE_BYTES,
     G_IM_SIZ_8b_LINE_BYTES,
     G_IM_SIZ_16b_LINE_BYTES,
@@ -80,44 +80,44 @@ static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 sLoadTextureBlock_siz_LINE_BY
  */
 #define gDPLoadTextureBlock_Runtime(pkt, timg, fmt, siz, width, height, pal, cms, cmt, masks, maskt, shifts, shiftt)   \
     _DW({                                                                                                              \
-        gDPSetTextureImage(pkt, fmt, sLoadTextureBlock_siz_LOAD_BLOCK[siz], 1, timg);                                  \
-        gDPSetTile(pkt, fmt, sLoadTextureBlock_siz_LOAD_BLOCK[siz], 0, 0, G_TX_LOADTILE, 0, cmt, maskt, shiftt, cms,   \
+        gDPSetTextureImage(pkt, fmt, custom_LOAD_BLOCK[siz], 1, timg);                                  \
+        gDPSetTile(pkt, fmt, custom_LOAD_BLOCK[siz], 0, 0, G_TX_LOADTILE, 0, cmt, maskt, shiftt, cms,   \
                    masks, shifts);                                                                                     \
         gDPLoadSync(pkt);                                                                                              \
         gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0,                                                                         \
-                     (((width) * (height) + sLoadTextureBlock_siz_INCR[siz]) >> sLoadTextureBlock_siz_SHIFT[siz]) - 1, \
-                     CALC_DXT(width, sLoadTextureBlock_siz_BYTES[siz]));                                               \
+                     (((width) * (height) + custom_INCR[siz]) >> custom_SHIFT[siz]) - 1, \
+                     CALC_DXT(width, custom_BYTES[siz]));                                               \
         gDPPipeSync(pkt);                                                                                              \
-        gDPSetTile(pkt, fmt, sLoadTextureBlock_siz[siz], (((width)*sLoadTextureBlock_siz_LINE_BYTES[siz]) + 7) >> 3,   \
+        gDPSetTile(pkt, fmt, custom_SIZ[siz], (((width)*custom_LINE_BYTES[siz]) + 7) >> 3,   \
                    0, G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks, shifts);                                   \
         gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0, ((width)-1) << G_TEXTURE_IMAGE_FRAC,                                \
                        ((height)-1) << G_TEXTURE_IMAGE_FRAC);                                                          \
     })
 #endif
 
-MapMarkInfo sMapMarkInfoTable[] = {
+MapMarkInfo MarkData[] = {
     { gMapChestIconTex, G_IM_FMT_RGBA, G_IM_SIZ_16b, 8, 8, 32, 32, 1 << 10, 1 << 10 }, // Chest Icon
     { gMapBossIconTex, G_IM_FMT_IA, G_IM_SIZ_8b, 8, 8, 32, 32, 1 << 10, 1 << 10 },     // Boss Skull Icon
 };
 
-static MapMarkDataOverlay sMapMarkDataOvl = {
-    NULL, ROM_FILE(ovl_map_mark_data), _ovl_map_mark_dataSegmentStart, _ovl_map_mark_dataSegmentEnd, gMapMarkDataTable,
+static MapMarkDataOverlay my_dlftbl = {
+    NULL, ROM_FILE(ovl_map_mark_data), _ovl_map_mark_dataSegmentStart, _ovl_map_mark_dataSegmentEnd, MarkPos,
 };
 
-static MapMarkData** sLoadedMarkDataTable;
+static MapMarkData** markpos_p;
 
-void MapMark_Init(PlayState* play) {
-    MapMarkDataOverlay* overlay = &sMapMarkDataOvl;
+void MapMarkInit(PlayState* play) {
+    MapMarkDataOverlay* overlay = &my_dlftbl;
     u32 overlaySize = (uintptr_t)overlay->vramEnd - (uintptr_t)overlay->vramStart;
 
     overlay->loadedRamAddr = GAME_STATE_ALLOC(&play->state, overlaySize, "../z_map_mark.c", 235);
     LOG_UTILS_CHECK_NULL_POINTER("dlftbl->allocp", overlay->loadedRamAddr, "../z_map_mark.c", 236);
 
-    Overlay_Load(overlay->file.vromStart, overlay->file.vromEnd, overlay->vramStart, overlay->vramEnd,
+    LoadFragmentFix2(overlay->file.vromStart, overlay->file.vromEnd, overlay->vramStart, overlay->vramEnd,
                  overlay->loadedRamAddr);
 
-    sLoadedMarkDataTable = gMapMarkDataTable;
-    sLoadedMarkDataTable =
+    markpos_p = MarkPos;
+    markpos_p =
         (void*)(uintptr_t)((overlay->vramTable != NULL)
                                ? (void*)((uintptr_t)overlay->vramTable -
                                          (intptr_t)((uintptr_t)overlay->vramStart - (uintptr_t)overlay->loadedRamAddr))
@@ -125,42 +125,42 @@ void MapMark_Init(PlayState* play) {
 
 #if PLATFORM_N64
     if ((B_80121220 != NULL) && (B_80121220->unk_2C != NULL)) {
-        B_80121220->unk_2C(&sLoadedMarkDataTable);
+        B_80121220->unk_2C(&markpos_p);
     }
 #endif
 }
 
-void MapMark_ClearPointers(PlayState* play) {
+void MapMarkCleanup(PlayState* play) {
 #if PLATFORM_N64
     if ((B_80121220 != NULL) && (B_80121220->unk_30 != NULL)) {
-        B_80121220->unk_30(&sLoadedMarkDataTable);
+        B_80121220->unk_30(&markpos_p);
     }
 #endif
 
-    sMapMarkDataOvl.loadedRamAddr = NULL;
-    sLoadedMarkDataTable = NULL;
+    my_dlftbl.loadedRamAddr = NULL;
+    markpos_p = NULL;
 }
 
-void MapMark_DrawForDungeon(PlayState* play) {
+void MapMarkDraw(PlayState* play) {
     InterfaceContext* interfaceCtx;
     MapMarkIconData* mapMarkIconData;
     MapMarkPoint* markPoint;
     MapMarkInfo* markInfo;
-    u16 dungeon = gSaveContext.mapIndex;
+    u16 dungeon = z_common_data.mapIndex;
     s32 i;
     s32 rectLeft;
     s32 rectTop;
 
     interfaceCtx = &play->interfaceCtx;
 
-    if ((gMapData != NULL) && (play->interfaceCtx.mapRoomNum >= gMapData->dgnMinimapCount[dungeon])) {
+    if ((map_exp_data_tbl_p != NULL) && (play->interfaceCtx.mapRoomNum >= map_exp_data_tbl_p->dgnMinimapCount[dungeon])) {
         PRINTF(VT_COL(RED, WHITE) T("部屋番号がオーバーしてるで,ヤバイで %d/%d  \nMapMarkDraw の処理を中断します\n",
                                     "Room number exceeded, yikes %d/%d  \nMapMarkDraw processing interrupted\n"),
-               VT_RST, play->interfaceCtx.mapRoomNum, gMapData->dgnMinimapCount[dungeon]);
+               VT_RST, play->interfaceCtx.mapRoomNum, map_exp_data_tbl_p->dgnMinimapCount[dungeon]);
         return;
     }
 
-    mapMarkIconData = &sLoadedMarkDataTable[dungeon][interfaceCtx->mapRoomNum][0];
+    mapMarkIconData = &markpos_p[dungeon][interfaceCtx->mapRoomNum][0];
 
     OPEN_DISPS(play->state.gfxCtx, "../z_map_mark.c", 303);
 
@@ -176,8 +176,8 @@ void MapMark_DrawForDungeon(PlayState* play) {
 
         markPoint = &mapMarkIconData->points[0];
         for (i = 0; i < mapMarkIconData->count; i++) {
-            if ((mapMarkIconData->markType != MAP_MARK_CHEST) || !Flags_GetTreasure(play, markPoint->chestFlag)) {
-                markInfo = &sMapMarkInfoTable[mapMarkIconData->markType];
+            if ((mapMarkIconData->markType != MAP_MARK_CHEST) || !Actor_Environment_Tbox_Check(play, markPoint->chestFlag)) {
+                markInfo = &MarkData[mapMarkIconData->markType];
 
                 gDPPipeSync(OVERLAY_DISP++);
                 gDPLoadTextureBlock_Runtime(OVERLAY_DISP++, markInfo->texture, markInfo->imageFormat,
@@ -199,7 +199,7 @@ void MapMark_DrawForDungeon(PlayState* play) {
     CLOSE_DISPS(play->state.gfxCtx, "../z_map_mark.c", 339);
 }
 
-void MapMark_Draw(PlayState* play) {
+void MapMarkDisplay(PlayState* play) {
     switch (play->sceneId) {
         case SCENE_DEKU_TREE:
         case SCENE_DODONGOS_CAVERN:
@@ -216,7 +216,7 @@ void MapMark_Draw(PlayState* play) {
         case SCENE_JABU_JABU_BOSS:
         case SCENE_FOREST_TEMPLE_BOSS:
         case SCENE_FIRE_TEMPLE_BOSS:
-            MapMark_DrawForDungeon(play);
+            MapMarkDraw(play);
             break;
     }
 }

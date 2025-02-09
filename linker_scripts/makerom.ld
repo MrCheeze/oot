@@ -7,7 +7,7 @@ _bootSegmentBssStart_HI = _bootSegmentBssStart >> 16;
 
 _bootSegmentBssSize_HI = _bootSegmentBssSize >> 16;
 
-bootproc_HI = bootproc >> 16;
+boot_HI = boot >> 16;
 
-BOOT_STACK_TOP    = (sBootThreadStack + BOOT_STACK_SIZE);
+BOOT_STACK_TOP    = (bootStack + BOOT_STACK_SIZE);
 BOOT_STACK_TOP_HI = BOOT_STACK_TOP >> 16;

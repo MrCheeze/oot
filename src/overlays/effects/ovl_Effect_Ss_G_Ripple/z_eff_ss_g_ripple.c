@@ -20,16 +20,16 @@
 #define rEnvColorA regs[10]
 #define rLifespan regs[11]
 
-u32 EffectSsGRipple_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
-void EffectSsGRipple_Draw(PlayState* play, u32 index, EffectSs* this);
-void EffectSsGRipple_Update(PlayState* play, u32 index, EffectSs* this);
+u32 Effect_SS2_G_Ripple_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
+void Effect_SS_G_Ripple_disp_mode(PlayState* play, u32 index, EffectSs* this);
+void Effect_SS_G_Ripple_func_proc(PlayState* play, u32 index, EffectSs* this);
 
 EffectSsProfile Effect_Ss_G_Ripple_Profile = {
     EFFECT_SS_G_RIPPLE,
-    EffectSsGRipple_Init,
+    Effect_SS2_G_Ripple_ct,
 };
 
-u32 EffectSsGRipple_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
+u32 Effect_SS2_G_Ripple_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
     s32 pad;
     Vec3f zeroVec = { 0.0f, 0.0f, 0.0f };
     WaterBox* waterBox;
@@ -41,8 +41,8 @@ u32 EffectSsGRipple_Init(PlayState* play, u32 index, EffectSs* this, void* initP
     this->gfx = SEGMENTED_TO_VIRTUAL(gEffWaterRippleDL);
     this->life = initParams->life + 20;
     this->flags = 0;
-    this->draw = EffectSsGRipple_Draw;
-    this->update = EffectSsGRipple_Update;
+    this->draw = Effect_SS_G_Ripple_disp_mode;
+    this->update = Effect_SS_G_Ripple_func_proc;
     this->rRadius = initParams->radius;
     this->rRadiusMax = initParams->radiusMax;
     this->rLifespan = initParams->life;
@@ -54,12 +54,12 @@ u32 EffectSsGRipple_Init(PlayState* play, u32 index, EffectSs* this, void* initP
     this->rEnvColorG = 255;
     this->rEnvColorB = 255;
     this->rEnvColorA = 255;
-    this->rWaterBoxNum = WaterBox_GetSurface2(play, &play->colCtx, &initParams->pos, 3.0f, &waterBox);
+    this->rWaterBoxNum = T_BGCheck_WaterGetIndex(play, &play->colCtx, &initParams->pos, 3.0f, &waterBox);
 
     return 1;
 }
 
-void EffectSsGRipple_DrawRipple(PlayState* play2, EffectSs* this, void* segment) {
+void effect_disp_mode_sub_non_softsprite(PlayState* play2, EffectSs* this, void* segment) {
     PlayState* play = play2;
     f32 radius;
     GraphicsContext* gfxCtx = play->state.gfxCtx;
@@ -79,15 +79,15 @@ void EffectSsGRipple_DrawRipple(PlayState* play2, EffectSs* this, void* segment)
         yPos = this->pos.y;
     }
 
-    SkinMatrix_SetTranslate(&mfTrans, this->pos.x, yPos, this->pos.z);
-    SkinMatrix_SetScale(&mfScale, radius, radius, radius);
-    SkinMatrix_MtxFMtxFMult(&mfTrans, &mfScale, &mfResult);
+    Skin_Matrix_SetTranslate(&mfTrans, this->pos.x, yPos, this->pos.z);
+    Skin_Matrix_SetScale(&mfScale, radius, radius, radius);
+    Skin_Matrix_MulMatrix(&mfTrans, &mfScale, &mfResult);
 
-    mtx = SkinMatrix_MtxFToNewMtx(gfxCtx, &mfResult);
+    mtx = Skin_Matrix_to_Mtx_new(gfxCtx, &mfResult);
 
     if (mtx != NULL) {
         gSPMatrix(POLY_XLU_DISP++, mtx, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-        Gfx_SetupDL_60NoCDXlu(gfxCtx);
+        texture_z_cld_poly_xlu(gfxCtx);
         gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, this->rPrimColorR, this->rPrimColorG, this->rPrimColorB,
                         this->rPrimColorA);
         gDPSetEnvColor(POLY_XLU_DISP++, this->rEnvColorR, this->rEnvColorG, this->rEnvColorB, this->rEnvColorA);
@@ -99,27 +99,27 @@ void EffectSsGRipple_DrawRipple(PlayState* play2, EffectSs* this, void* segment)
     CLOSE_DISPS(gfxCtx, "../z_eff_ss_g_ripple.c", 247);
 }
 
-void EffectSsGRipple_Draw(PlayState* play, u32 index, EffectSs* this) {
+void Effect_SS_G_Ripple_disp_mode(PlayState* play, u32 index, EffectSs* this) {
     if (this->rLifespan == 0) {
-        EffectSsGRipple_DrawRipple(play, this, gEffWaterRippleTex);
+        effect_disp_mode_sub_non_softsprite(play, this, gEffWaterRippleTex);
     }
 }
 
-void EffectSsGRipple_Update(PlayState* play, u32 index, EffectSs* this) {
+void Effect_SS_G_Ripple_func_proc(PlayState* play, u32 index, EffectSs* this) {
     f32 radius;
     f32 primAlpha;
     f32 envAlpha;
 
     if (DECR(this->rLifespan) == 0) {
         radius = this->rRadius;
-        Math_SmoothStepToF(&radius, this->rRadiusMax, 0.2f, 30.0f, 1.0f);
+        add_calc(&radius, this->rRadiusMax, 0.2f, 30.0f, 1.0f);
         this->rRadius = radius;
 
         primAlpha = this->rPrimColorA;
         envAlpha = this->rEnvColorA;
 
-        Math_SmoothStepToF(&primAlpha, 0.0f, 0.2f, 15.0f, 7.0f);
-        Math_SmoothStepToF(&envAlpha, 0.0f, 0.2f, 15.0f, 7.0f);
+        add_calc(&primAlpha, 0.0f, 0.2f, 15.0f, 7.0f);
+        add_calc(&envAlpha, 0.0f, 0.2f, 15.0f, 7.0f);
 
         this->rPrimColorA = primAlpha;
         this->rEnvColorA = envAlpha;

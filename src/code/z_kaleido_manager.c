@@ -4,20 +4,20 @@
 #define KALEIDO_OVERLAY(name, nameString) \
     { NULL, ROM_FILE(ovl_##name), _ovl_##name##SegmentStart, _ovl_##name##SegmentEnd, 0, nameString, }
 
-KaleidoMgrOverlay gKaleidoMgrOverlayTable[] = {
+KaleidoMgrOverlay KaleidoArea_dlftbl[] = {
     KALEIDO_OVERLAY(kaleido_scope, "kaleido_scope"),
     KALEIDO_OVERLAY(player_actor, "player_actor"),
 };
 
-void* sKaleidoAreaPtr = NULL;
-KaleidoMgrOverlay* gKaleidoMgrCurOvl = NULL;
-u8 gBossMarkState = 0;
+void* KaleidoArea_allocp = NULL;
+KaleidoMgrOverlay* KaleidoArea_visit = NULL;
+u8 LargeMapMark_MarkScaleMode = 0;
 
-void KaleidoManager_LoadOvl(KaleidoMgrOverlay* ovl) {
-    LOG_UTILS_CHECK_NULL_POINTER("KaleidoArea_allocp", sKaleidoAreaPtr, "../z_kaleido_manager.c", 99);
+void KaleidoArea_DoLink(KaleidoMgrOverlay* ovl) {
+    LOG_UTILS_CHECK_NULL_POINTER("KaleidoArea_allocp", KaleidoArea_allocp, "../z_kaleido_manager.c", 99);
 
-    ovl->loadedRamAddr = sKaleidoAreaPtr;
-    Overlay_Load(ovl->file.vromStart, ovl->file.vromEnd, ovl->vramStart, ovl->vramEnd, ovl->loadedRamAddr);
+    ovl->loadedRamAddr = KaleidoArea_allocp;
+    LoadFragmentFix2(ovl->file.vromStart, ovl->file.vromEnd, ovl->vramStart, ovl->vramEnd, ovl->loadedRamAddr);
 
     PRINTF_COLOR_GREEN();
     PRINTF("OVL(k):Seg:%08x-%08x Ram:%08x-%08x Off:%08x %s\n", ovl->vramStart, ovl->vramEnd, ovl->loadedRamAddr,
@@ -26,25 +26,25 @@ void KaleidoManager_LoadOvl(KaleidoMgrOverlay* ovl) {
     PRINTF_RST();
 
     ovl->offset = (uintptr_t)ovl->loadedRamAddr - (uintptr_t)ovl->vramStart;
-    gKaleidoMgrCurOvl = ovl;
+    KaleidoArea_visit = ovl;
 }
 
-void KaleidoManager_ClearOvl(KaleidoMgrOverlay* ovl) {
+void KaleidoArea_DoUnlink(KaleidoMgrOverlay* ovl) {
     if (ovl->loadedRamAddr != NULL) {
         ovl->offset = 0;
         bzero(ovl->loadedRamAddr, (uintptr_t)ovl->vramEnd - (uintptr_t)ovl->vramStart);
         ovl->loadedRamAddr = NULL;
-        gKaleidoMgrCurOvl = NULL;
+        KaleidoArea_visit = NULL;
     }
 }
 
-void KaleidoManager_Init(PlayState* play) {
+void KaleidoArea_init(PlayState* play) {
     s32 largestSize = 0;
     s32 size;
     u32 i;
 
-    for (i = 0; i < ARRAY_COUNT(gKaleidoMgrOverlayTable); i++) {
-        size = (uintptr_t)gKaleidoMgrOverlayTable[i].vramEnd - (uintptr_t)gKaleidoMgrOverlayTable[i].vramStart;
+    for (i = 0; i < ARRAY_COUNT(KaleidoArea_dlftbl); i++) {
+        size = (uintptr_t)KaleidoArea_dlftbl[i].vramEnd - (uintptr_t)KaleidoArea_dlftbl[i].vramStart;
         if (size > largestSize) {
             largestSize = size;
         }
@@ -55,39 +55,39 @@ void KaleidoManager_Init(PlayState* play) {
            largestSize);
     PRINTF_RST();
 
-    sKaleidoAreaPtr = GAME_STATE_ALLOC(&play->state, largestSize, "../z_kaleido_manager.c", 150);
-    LOG_UTILS_CHECK_NULL_POINTER("KaleidoArea_allocp", sKaleidoAreaPtr, "../z_kaleido_manager.c", 151);
+    KaleidoArea_allocp = GAME_STATE_ALLOC(&play->state, largestSize, "../z_kaleido_manager.c", 150);
+    LOG_UTILS_CHECK_NULL_POINTER("KaleidoArea_allocp", KaleidoArea_allocp, "../z_kaleido_manager.c", 151);
 
     PRINTF_COLOR_GREEN();
-    PRINTF("KaleidoArea %08x - %08x\n", sKaleidoAreaPtr, (uintptr_t)sKaleidoAreaPtr + largestSize);
+    PRINTF("KaleidoArea %08x - %08x\n", KaleidoArea_allocp, (uintptr_t)KaleidoArea_allocp + largestSize);
     PRINTF_RST();
 
-    gKaleidoMgrCurOvl = NULL;
+    KaleidoArea_visit = NULL;
 }
 
-void KaleidoManager_Destroy(void) {
-    if (gKaleidoMgrCurOvl != NULL) {
-        KaleidoManager_ClearOvl(gKaleidoMgrCurOvl);
-        gKaleidoMgrCurOvl = NULL;
+void KaleidoArea_cleanup(void) {
+    if (KaleidoArea_visit != NULL) {
+        KaleidoArea_DoUnlink(KaleidoArea_visit);
+        KaleidoArea_visit = NULL;
     }
 
-    sKaleidoAreaPtr = NULL;
+    KaleidoArea_allocp = NULL;
 }
 
 // NOTE: this function looks messed up and probably doesn't work how it was intended to
-void* KaleidoManager_GetRamAddr(void* vram) {
-    KaleidoMgrOverlay* iter = gKaleidoMgrCurOvl;
+void* KaleidoArea_dllcnv(void* vram) {
+    KaleidoMgrOverlay* iter = KaleidoArea_visit;
     KaleidoMgrOverlay* ovl = iter;
 
     if (ovl == NULL) {
         u32 i;
 
-        iter = &gKaleidoMgrOverlayTable[0];
-        for (i = 0; i < ARRAY_COUNT(gKaleidoMgrOverlayTable); i++) {
+        iter = &KaleidoArea_dlftbl[0];
+        for (i = 0; i < ARRAY_COUNT(KaleidoArea_dlftbl); i++) {
             if (((uintptr_t)vram >= (uintptr_t)iter->vramStart) && ((uintptr_t)iter->vramEnd >= (uintptr_t)vram)) {
-                KaleidoManager_LoadOvl(iter);
+                KaleidoArea_DoLink(iter);
                 ovl = iter;
-                goto KaleidoManager_GetRamAddr_end;
+                goto KaleidoArea_dllcnv_end;
             }
             //! @bug Probably missing iter++ here
         }
@@ -96,7 +96,7 @@ void* KaleidoManager_GetRamAddr(void* vram) {
         return NULL;
     }
 
-KaleidoManager_GetRamAddr_end:
+KaleidoArea_dllcnv_end:
     if ((ovl == NULL) || ((uintptr_t)vram < (uintptr_t)ovl->vramStart) ||
         ((uintptr_t)vram >= (uintptr_t)ovl->vramEnd)) {
         return NULL;

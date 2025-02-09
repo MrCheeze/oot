@@ -1,6 +1,6 @@
 #include "global.h"
 
-u16 sMaskReactionSetTextIds[MASK_REACTION_SET_MAX][PLAYER_MASK_MAX] = {
+u16 mask_mestbl[MASK_REACTION_SET_MAX][PLAYER_MASK_MAX] = {
     // MASK_REACTION_SET_CARPENTER_BOSS
     { 0x0000, 0x7124, 0x7127, 0x7126, 0x7125, 0x7127, 0x7124, 0x7125, 0x7127 },
 
@@ -182,8 +182,8 @@ u16 sMaskReactionSetTextIds[MASK_REACTION_SET_MAX][PLAYER_MASK_MAX] = {
     { 0x0000, 0x7104, 0x7105, 0x7107, 0x7105, 0x710C, 0x7105, 0x7107, 0x7107 },
 };
 
-u16 MaskReaction_GetTextId(PlayState* play, u32 maskReactionSet) {
-    u8 currentMask = Player_GetMask(play);
+u16 get_mask_message(PlayState* play, u32 maskReactionSet) {
+    u8 currentMask = mask_check(play);
 
-    return sMaskReactionSetTextIds[maskReactionSet][currentMask];
+    return mask_mestbl[maskReactionSet][currentMask];
 }

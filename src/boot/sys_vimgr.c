@@ -1,16 +1,16 @@
 #include "global.h"
 #include "terminal.h"
 
-s8 D_80009430 = 1;
-vu8 gViConfigBlack = true;
-u8 gViConfigAdditionalScanLines = 0;
-u32 gViConfigFeatures = OS_VI_DITHER_FILTER_ON | OS_VI_GAMMA_OFF;
-f32 gViConfigXScale = 1.0;
-f32 gViConfigYScale = 1.0;
+s8 vidirty = 1;
+vu8 __viblack = true;
+u8 viextendvstart = 0;
+u32 vispecial = OS_VI_DITHER_FILTER_ON | OS_VI_GAMMA_OFF;
+f32 vixscale = 1.0;
+f32 viyscale = 1.0;
 
-void ViConfig_UpdateVi(u32 black) {
+void viBlack(u32 black) {
     if (black) {
-        // Black the screen on next call to ViConfig_UpdateBlack, skip most VI configuration
+        // Black the screen on next call to viRetrace, skip most VI configuration
 
         PRINTF(VT_COL(YELLOW, BLACK) "osViSetYScale1(%f);\n" VT_RST, 1.0f);
 
@@ -23,31 +23,31 @@ void ViConfig_UpdateVi(u32 black) {
         // (see section 30.4.3 VI Processing with PreNMI Events in the N64 Programming Manual)
         osViSetYScale(1.0f);
     } else {
-        osViSetMode(&gViConfigMode);
+        osViSetMode(&vimode);
 
-        if (gViConfigAdditionalScanLines != 0) {
-            osViExtendVStart(gViConfigAdditionalScanLines);
+        if (viextendvstart != 0) {
+            osViExtendVStart(viextendvstart);
         }
 
-        if (gViConfigFeatures != 0) {
-            osViSetSpecialFeatures(gViConfigFeatures);
+        if (vispecial != 0) {
+            osViSetSpecialFeatures(vispecial);
         }
 
-        if (gViConfigXScale != 1.0f) {
-            osViSetXScale(gViConfigXScale);
+        if (vixscale != 1.0f) {
+            osViSetXScale(vixscale);
         }
 
-        if (gViConfigYScale != 1.0f) {
-            PRINTF(VT_COL(YELLOW, BLACK) "osViSetYScale3(%f);\n" VT_RST, gViConfigYScale);
-            osViSetYScale(gViConfigYScale);
+        if (viyscale != 1.0f) {
+            PRINTF(VT_COL(YELLOW, BLACK) "osViSetYScale3(%f);\n" VT_RST, viyscale);
+            osViSetYScale(viyscale);
         }
     }
 
-    gViConfigBlack = black;
+    __viblack = black;
 }
 
-void ViConfig_UpdateBlack(void) {
-    if (gViConfigBlack) {
+void viRetrace(void) {
+    if (__viblack) {
         osViBlack(true);
     } else {
         osViBlack(false);

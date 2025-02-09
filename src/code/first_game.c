@@ -1,18 +1,18 @@
 #include "global.h"
 
-void Setup_InitImpl(SetupState* this) {
+void exit_game(SetupState* this) {
     PRINTF(T("ゼルダ共通データ初期化\n", "Zelda common data initialization\n"));
-    SaveContext_Init();
+    z_common_data_init();
     this->state.running = false;
-    SET_NEXT_GAMESTATE(&this->state, ConsoleLogo_Init, ConsoleLogoState);
+    SET_NEXT_GAMESTATE(&this->state, title_init, ConsoleLogoState);
 }
 
-void Setup_Destroy(GameState* thisx) {
+void first_game_cleanup(GameState* thisx) {
 }
 
-void Setup_Init(GameState* thisx) {
+void first_game_init(GameState* thisx) {
     SetupState* this = (SetupState*)thisx;
 
-    this->state.destroy = Setup_Destroy;
-    Setup_InitImpl(this);
+    this->state.destroy = first_game_cleanup;
+    exit_game(this);
 }

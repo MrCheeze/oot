@@ -3,15 +3,15 @@
 
 #include "z64math.h"
 
-f32 OLib_Vec3fDist(Vec3f* a, Vec3f* b);
-f32 OLib_Vec3fDistXZ(Vec3f* a, Vec3f* b);
-f32 OLib_ClampMinDist(f32 val, f32 min);
-f32 OLib_ClampMaxDist(f32 val, f32 max);
-Vec3f OLib_Vec3fDistNormalize(Vec3f* a, Vec3f* b);
-Vec3f OLib_VecGeoToVec3f(VecGeo* geo);
-VecSph OLib_Vec3fToVecSph(Vec3f* vec);
-VecGeo OLib_Vec3fToVecGeo(Vec3f* vec);
-VecGeo OLib_Vec3fDiffToVecGeo(Vec3f* a, Vec3f* b);
-Vec3f OLib_Vec3fDiffRad(Vec3f* a, Vec3f* b);
+f32 distance_between(Vec3f* a, Vec3f* b);
+f32 distance_2d(Vec3f* a, Vec3f* b);
+f32 never_zero(f32 val, f32 min);
+f32 limiter(f32 val, f32 max);
+Vec3f unitvector_by_2pos(Vec3f* a, Vec3f* b);
+Vec3f sglobe2world(VecGeo* geo);
+VecSph world2spolar(Vec3f* vec);
+VecGeo world2sglobe(Vec3f* vec);
+VecGeo sglobe_by_2pos(Vec3f* a, Vec3f* b);
+Vec3f radianxy_by_2pos(Vec3f* a, Vec3f* b);
 
 #endif

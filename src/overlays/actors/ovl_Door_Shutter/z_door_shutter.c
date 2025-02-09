@@ -28,26 +28,26 @@
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void DoorShutter_Init(Actor* thisx, PlayState* play2);
-void DoorShutter_Destroy(Actor* thisx, PlayState* play);
-void DoorShutter_Update(Actor* thisx, PlayState* play);
-void DoorShutter_Draw(Actor* thisx, PlayState* play);
+void Door_Shutter_actor_ct(Actor* thisx, PlayState* play2);
+void Door_Shutter_actor_dt(Actor* thisx, PlayState* play);
+void Door_Shutter_actor_move(Actor* thisx, PlayState* play);
+void Door_Shutter_actor_draw(Actor* thisx, PlayState* play);
 
-void DoorShutter_RequestQuakeAndRumble(PlayState* play, s16 quakeY, s16 quakeDuration, s16 camId);
-void DoorShutter_WaitForObject(DoorShutter* this, PlayState* play);
-void DoorShutter_WaitClear(DoorShutter* this, PlayState* play);
-void DoorShutter_Unopenable(DoorShutter* this, PlayState* play);
-void DoorShutter_Idle(DoorShutter* this, PlayState* play);
-void DoorShutter_BarAndWaitSwitchFlag(DoorShutter* this, PlayState* play);
-void DoorShutter_UnbarredCheckSwitchFlag(DoorShutter* this, PlayState* play);
-void DoorShutter_Open(DoorShutter* this, PlayState* play);
-void DoorShutter_Unbar(DoorShutter* this, PlayState* play);
-void DoorShutter_Close(DoorShutter* this, PlayState* play);
-void DoorShutter_JabuDoorClose(DoorShutter* this, PlayState* play);
-void DoorShutter_WaitPlayerSurprised(DoorShutter* this, PlayState* play);
-void DoorShutter_GohmaBlockFall(DoorShutter* this, PlayState* play);
-void DoorShutter_GohmaBlockBounce(DoorShutter* this, PlayState* play);
-void DoorShutter_PhantomGanonBarsRaise(DoorShutter* this, PlayState* play);
+void door_jisin(PlayState* play, s16 quakeY, s16 quakeDuration, s16 camId);
+static void move_dma_wait(DoorShutter* this, PlayState* play);
+static void move_room_clear_wait(DoorShutter* this, PlayState* play);
+void move_non(DoorShutter* this, PlayState* play);
+static void move_wait(DoorShutter* this, PlayState* play);
+void move_switch_wait(DoorShutter* this, PlayState* play);
+void move_switch_close_wait(DoorShutter* this, PlayState* play);
+static void move_open(DoorShutter* this, PlayState* play);
+void move_switch_open(DoorShutter* this, PlayState* play);
+static void move_close(DoorShutter* this, PlayState* play);
+void move_bdan_close(DoorShutter* this, PlayState* play);
+static void move_demo_wait(DoorShutter* this, PlayState* play);
+void move_goma_door_down(DoorShutter* this, PlayState* play);
+void move_goma_door_wait(DoorShutter* this, PlayState* play);
+void move_fhg_saku(DoorShutter* this, PlayState* play);
 
 ActorProfile Door_Shutter_Profile = {
     /**/ ACTOR_DOOR_SHUTTER,
@@ -55,10 +55,10 @@ ActorProfile Door_Shutter_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(DoorShutter),
-    /**/ DoorShutter_Init,
-    /**/ DoorShutter_Destroy,
-    /**/ DoorShutter_Update,
-    /**/ DoorShutter_Draw,
+    /**/ Door_Shutter_actor_ct,
+    /**/ Door_Shutter_actor_dt,
+    /**/ Door_Shutter_actor_move,
+    /**/ Door_Shutter_actor_draw,
 };
 
 typedef enum DoorShutterGfxType {
@@ -85,7 +85,7 @@ typedef enum DoorShutterGfxType {
 } DoorShutterGfxType;
 
 typedef enum DoorShutterStyleType {
-    /* -1 */ DOORSHUTTER_STYLE_FROM_SCENE = -1, // Style is taken from `sSceneInfo`
+    /* -1 */ DOORSHUTTER_STYLE_FROM_SCENE = -1, // Style is taken from `scene_door_shutter_status`
     /*  0 */ DOORSHUTTER_STYLE_PHANTOM_GANON,
     /*  1 */ DOORSHUTTER_STYLE_GOHMA_BLOCK,
     /*  2 */ DOORSHUTTER_STYLE_DEKU_TREE,
@@ -111,7 +111,7 @@ typedef struct DoorShutterStyleInfo {
     u8 gfxType2;
 } DoorShutterStyleInfo;
 
-static DoorShutterStyleInfo sStyleInfo[] = {
+static DoorShutterStyleInfo door_shutter_shape_data[] = {
     /* DOORSHUTTER_STYLE_PHANTOM_GANON */
     {
         OBJECT_GND,
@@ -225,7 +225,7 @@ typedef struct DoorShutterGfxInfo {
     /* 0x000B */ u8 rangeY;
 } DoorShutterGfxInfo;
 
-static DoorShutterGfxInfo sGfxInfo[] = {
+static DoorShutterGfxInfo door_shutter_shape_info[] = {
     { gDTDungeonDoor1DL, gDoorMetalBarsDL, 130, 12, 20, 15 }, // DOORSHUTTER_GFX_DEKU_TREE_1
     { gDTDungeonDoor2DL, gDoorMetalBarsDL, 130, 12, 20, 15 }, // DOORSHUTTER_GFX_DEKU_TREE_2
     { gDodongoDoorDL, gDodongoBarsDL, 240, 14, 70, 15 },      // DOORSHUTTER_GFX_DODONGOS_CAVERN
@@ -256,7 +256,7 @@ static DoorShutterGfxInfo sGfxInfo[] = {
     { object_ouke_haka_DL_0000C0, gDoorMetalBarsDL, 130, 12, 20, 15 }, // DOORSHUTTER_GFX_ROYAL_FAMILYS_TOMB
 };
 
-static s8 sTypeStyles[] = {
+static s8 door_shutter_status[] = {
     DOORSHUTTER_STYLE_FROM_SCENE,    // SHUTTER
     DOORSHUTTER_STYLE_FROM_SCENE,    // SHUTTER_FRONT_CLEAR
     DOORSHUTTER_STYLE_FROM_SCENE,    // SHUTTER_FRONT_SWITCH
@@ -271,7 +271,7 @@ static s8 sTypeStyles[] = {
     DOORSHUTTER_STYLE_FROM_SCENE,    // SHUTTER_KEY_LOCKED
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F(scale, 1, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDistance, 4000, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeScale, 100, ICHAIN_CONTINUE),
@@ -283,7 +283,7 @@ typedef struct DoorShutterSceneInfo {
     u8 styleType;
 } DoorShutterSceneInfo;
 
-static DoorShutterSceneInfo sSceneInfo[] = {
+static DoorShutterSceneInfo scene_door_shutter_status[] = {
     { SCENE_DEKU_TREE, DOORSHUTTER_STYLE_DEKU_TREE },
     { SCENE_DODONGOS_CAVERN, DOORSHUTTER_STYLE_DODONGOS_CAVERN },
     { SCENE_DODONGOS_CAVERN_BOSS, DOORSHUTTER_STYLE_DODONGOS_CAVERN },
@@ -320,7 +320,7 @@ typedef struct DoorShutterBossDoorInfo {
     u8 texIndex;
 } DoorShutterBossDoorInfo;
 
-static DoorShutterBossDoorInfo sBossDoorInfo[] = {
+static DoorShutterBossDoorInfo scene_door_shutter_texture[] = {
     { SCENE_FIRE_TEMPLE, SCENE_FIRE_TEMPLE_BOSS, DOORSHUTTER_BOSSDOORTEX_FIRE },
     { SCENE_WATER_TEMPLE, SCENE_WATER_TEMPLE_BOSS, DOORSHUTTER_BOSSDOORTEX_WATER },
     { SCENE_SHADOW_TEMPLE, SCENE_SHADOW_TEMPLE_BOSS, DOORSHUTTER_BOSSDOORTEX_SHADOW },
@@ -330,12 +330,12 @@ static DoorShutterBossDoorInfo sBossDoorInfo[] = {
     { -1, -1, DOORSHUTTER_BOSSDOORTEX_0 },
 };
 
-static Gfx* sJabuDoorDLists[] = {
+static Gfx* bdan_shape_data[] = {
     gJabuDoorSection1DL, gJabuDoorSection2DL, gJabuDoorSection7DL, gJabuDoorSection4DL,
     gJabuDoorSection5DL, gJabuDoorSection4DL, gJabuDoorSection3DL, gJabuDoorSection2DL,
 };
 
-static void* sBossDoorTextures[] = {
+static void* boss_shutter_texture[] = {
     gBossDoorDefaultTex,      // DOORSHUTTER_BOSSDOORTEX_0
     gBossDoorFireTex,         // DOORSHUTTER_BOSSDOORTEX_FIRE
     gBossDoorWaterTex,        // DOORSHUTTER_BOSSDOORTEX_WATER
@@ -345,7 +345,7 @@ static void* sBossDoorTextures[] = {
     gBossDoorSpiritTex,       // DOORSHUTTER_BOSSDOORTEX_SPIRIT
 };
 
-void DoorShutter_SetupAction(DoorShutter* this, DoorShutterActionFunc actionFunc) {
+void Door_Shutter_actor_set_process(DoorShutter* this, DoorShutterActionFunc actionFunc) {
     this->actionFunc = actionFunc;
     this->actionTimer = 0;
 }
@@ -358,11 +358,11 @@ void DoorShutter_SetupAction(DoorShutter* this, DoorShutterActionFunc actionFunc
  *
  * @return true if the door is barred
  */
-s32 DoorShutter_SetupDoor(DoorShutter* this, PlayState* play) {
+s32 type_check_set(DoorShutter* this, PlayState* play) {
     TransitionActorEntry* transitionEntry = &play->transitionActors.list[GET_TRANSITION_ACTOR_INDEX(&this->dyna.actor)];
     s8 frontRoom = transitionEntry->sides[0].room;
     s32 doorType = this->doorType;
-    DoorShutterStyleInfo* styleInfo = &sStyleInfo[this->styleType];
+    DoorShutterStyleInfo* styleInfo = &door_shutter_shape_data[this->styleType];
 
     if (doorType != SHUTTER_KEY_LOCKED) {
         if (frontRoom == transitionEntry->sides[1].room) {
@@ -384,29 +384,29 @@ s32 DoorShutter_SetupDoor(DoorShutter* this, PlayState* play) {
     this->gfxType = (doorType == SHUTTER) ? styleInfo->gfxType1 : styleInfo->gfxType2;
 
     if (doorType == SHUTTER_FRONT_CLEAR) {
-        if (!Flags_GetClear(play, this->dyna.actor.room)) {
-            DoorShutter_SetupAction(this, DoorShutter_WaitClear);
+        if (!Actor_Environment_room_clear_Check(play, this->dyna.actor.room)) {
+            Door_Shutter_actor_set_process(this, move_room_clear_wait);
             this->barsClosedAmount = 1.0f;
             return true;
         }
     } else if (doorType == SHUTTER_FRONT_SWITCH || doorType == SHUTTER_FRONT_SWITCH_BACK_CLEAR) {
-        if (!Flags_GetSwitch(play, DOORSHUTTER_GET_SWITCH_FLAG(&this->dyna.actor))) {
-            DoorShutter_SetupAction(this, DoorShutter_BarAndWaitSwitchFlag);
+        if (!Actor_Environment_sw_Check(play, DOORSHUTTER_GET_SWITCH_FLAG(&this->dyna.actor))) {
+            Door_Shutter_actor_set_process(this, move_switch_wait);
             this->barsClosedAmount = 1.0f;
             return true;
         } else {
-            DoorShutter_SetupAction(this, DoorShutter_UnbarredCheckSwitchFlag);
+            Door_Shutter_actor_set_process(this, move_switch_close_wait);
             return false;
         }
     } else if (doorType == SHUTTER_BACK_LOCKED) {
-        DoorShutter_SetupAction(this, DoorShutter_Unopenable);
+        Door_Shutter_actor_set_process(this, move_non);
         return false;
     }
-    DoorShutter_SetupAction(this, DoorShutter_Idle);
+    Door_Shutter_actor_set_process(this, move_wait);
     return false;
 }
 
-void DoorShutter_Init(Actor* thisx, PlayState* play2) {
+void Door_Shutter_actor_ct(Actor* thisx, PlayState* play2) {
     DoorShutter* this = (DoorShutter*)thisx;
     PlayState* play = play2;
     s32 styleType;
@@ -414,16 +414,16 @@ void DoorShutter_Init(Actor* thisx, PlayState* play2) {
     s32 objectSlot;
     s32 i;
 
-    Actor_ProcessInitChain(&this->dyna.actor, sInitChain);
+    ValueSet_process(&this->dyna.actor, value_init);
     this->dyna.actor.home.pos.z = this->dyna.actor.shape.yOffset;
-    DynaPolyActor_Init(&this->dyna, 0);
+    MoveBG_ct(&this->dyna, 0);
     this->doorType = DOORSHUTTER_GET_TYPE(&this->dyna.actor);
 
-    styleType = sTypeStyles[this->doorType];
+    styleType = door_shutter_status[this->doorType];
     if (styleType < 0) {
         DoorShutterSceneInfo* sceneInfo;
 
-        for (sceneInfo = &sSceneInfo[0], i = 0; i < ARRAY_COUNT(sSceneInfo) - 1; i++, sceneInfo++) {
+        for (sceneInfo = &scene_door_shutter_status[0], i = 0; i < ARRAY_COUNT(scene_door_shutter_status) - 1; i++, sceneInfo++) {
             if (play->sceneId == sceneInfo->sceneId) {
                 break;
             }
@@ -432,7 +432,7 @@ void DoorShutter_Init(Actor* thisx, PlayState* play2) {
     } else if (styleType == DOORSHUTTER_STYLE_BOSS_DOOR) {
         DoorShutterBossDoorInfo* bossDoorInfo;
 
-        for (bossDoorInfo = &sBossDoorInfo[0], i = 0; i < ARRAY_COUNT(sBossDoorInfo) - 1; i++, bossDoorInfo++) {
+        for (bossDoorInfo = &scene_door_shutter_texture[0], i = 0; i < ARRAY_COUNT(scene_door_shutter_texture) - 1; i++, bossDoorInfo++) {
             if (play->sceneId == bossDoorInfo->dungeonSceneId || play->sceneId == bossDoorInfo->bossSceneId) {
                 break;
             }
@@ -441,33 +441,33 @@ void DoorShutter_Init(Actor* thisx, PlayState* play2) {
     } else { // DOORSHUTTER_STYLE_PHANTOM_GANON, DOORSHUTTER_STYLE_GOHMA_BLOCK
         this->dyna.actor.room = -1;
     }
-    if (this->requiredObjectSlot = objectSlot = Object_GetSlot(&play->objectCtx, sStyleInfo[styleType].objectId),
+    if (this->requiredObjectSlot = objectSlot = Object_Exchange_bank_check(&play->objectCtx, door_shutter_shape_data[styleType].objectId),
         (s8)objectSlot < 0) {
-        Actor_Kill(&this->dyna.actor);
+        Actor_delete(&this->dyna.actor);
         return;
     }
-    DoorShutter_SetupAction(this, DoorShutter_WaitForObject);
+    Door_Shutter_actor_set_process(this, move_dma_wait);
 
     this->styleType = styleType;
     if (this->doorType == SHUTTER_KEY_LOCKED || this->doorType == SHUTTER_BOSS) {
-        if (!Flags_GetSwitch(play, DOORSHUTTER_GET_SWITCH_FLAG(&this->dyna.actor))) {
+        if (!Actor_Environment_sw_Check(play, DOORSHUTTER_GET_SWITCH_FLAG(&this->dyna.actor))) {
             this->unlockTimer = 10;
         }
-        Actor_SetFocus(&this->dyna.actor, 60.0f);
+        Actor_world_to_eye(&this->dyna.actor, 60.0f);
     } else if (styleType == DOORSHUTTER_STYLE_JABU_JABU) {
-        Actor_SetScale(&this->dyna.actor, 0.1f);
+        Actor_set_scale(&this->dyna.actor, 0.1f);
         this->jabuDoorClosedAmount = 100;
         this->dyna.actor.cullingVolumeScale = 200.0f;
-        Actor_SetFocus(&this->dyna.actor, 0.0f);
+        Actor_world_to_eye(&this->dyna.actor, 0.0f);
     } else {
-        Actor_SetFocus(&this->dyna.actor, 60.0f);
+        Actor_world_to_eye(&this->dyna.actor, 60.0f);
     }
 }
 
-void DoorShutter_Destroy(Actor* thisx, PlayState* play) {
+void Door_Shutter_actor_dt(Actor* thisx, PlayState* play) {
     DoorShutter* this = (DoorShutter*)thisx;
 
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
     if (this->dyna.actor.room >= 0) {
         s32 transitionActorId = GET_TRANSITION_ACTOR_INDEX(&this->dyna.actor);
 
@@ -475,29 +475,29 @@ void DoorShutter_Destroy(Actor* thisx, PlayState* play) {
     }
 }
 
-void DoorShutter_WaitForObject(DoorShutter* this, PlayState* play) {
-    if (Object_IsLoaded(&play->objectCtx, this->requiredObjectSlot)) {
+static void move_dma_wait(DoorShutter* this, PlayState* play) {
+    if (Object_Exchange_bank_dma_check(&play->objectCtx, this->requiredObjectSlot)) {
         this->dyna.actor.objectSlot = this->requiredObjectSlot;
         if (this->doorType == SHUTTER_PG_BARS || this->doorType == SHUTTER_GOHMA_BLOCK) {
             // Init dynapoly for shutters of the type that uses it
             CollisionHeader* colHeader = NULL;
 
-            Actor_SetObjectDependency(play, &this->dyna.actor);
-            this->gfxType = sStyleInfo[this->styleType].gfxType1;
-            CollisionHeader_GetVirtual((this->doorType == SHUTTER_GOHMA_BLOCK) ? &gGohmaDoorCol : &gPhantomGanonBarsCol,
+            Actor_set_segment(play, &this->dyna.actor);
+            this->gfxType = door_shutter_shape_data[this->styleType].gfxType1;
+            DynaPolyUty_bgdi_SG2KSG((this->doorType == SHUTTER_GOHMA_BLOCK) ? &gGohmaDoorCol : &gPhantomGanonBarsCol,
                                        &colHeader);
-            this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
+            this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
             if (this->doorType == SHUTTER_GOHMA_BLOCK) {
                 this->dyna.actor.velocity.y = 0.0f;
                 this->dyna.actor.gravity = -2.0f;
-                Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_SLIDE_DOOR_CLOSE);
-                DoorShutter_SetupAction(this, DoorShutter_GohmaBlockFall);
+                Actor_SE_set(&this->dyna.actor, NA_SE_EV_SLIDE_DOOR_CLOSE);
+                Door_Shutter_actor_set_process(this, move_goma_door_down);
             } else {
-                DoorShutter_SetupAction(this, DoorShutter_PhantomGanonBarsRaise);
+                Door_Shutter_actor_set_process(this, move_fhg_saku);
                 this->isActive = 7;
             }
         } else {
-            DoorShutter_SetupDoor(this, play);
+            type_check_set(this, play);
         }
     }
 }
@@ -507,7 +507,7 @@ void DoorShutter_WaitForObject(DoorShutter* this, PlayState* play) {
  * (perpendicular to the door's left-right, and negative if the player is behind),
  * or returns the max float value if the player is too far left/right (`maxDistSides`) or above/below (`maxDistY`).
  */
-f32 DoorShutter_GetPlayerDistance(PlayState* play, DoorShutter* this, f32 offsetY, f32 maxDistSides, f32 maxDistY) {
+static f32 player_distance_check(PlayState* play, DoorShutter* this, f32 offsetY, f32 maxDistSides, f32 maxDistY) {
     s32 pad;
     Vec3f playerPos;
     Vec3f relPlayerPos;
@@ -517,7 +517,7 @@ f32 DoorShutter_GetPlayerDistance(PlayState* play, DoorShutter* this, f32 offset
     playerPos.y = player->actor.world.pos.y + offsetY;
     playerPos.z = player->actor.world.pos.z;
 
-    Actor_WorldToActorCoords(&this->dyna.actor, &relPlayerPos, &playerPos);
+    Actor_search_position_project_distanceXZ(&this->dyna.actor, &relPlayerPos, &playerPos);
 
     if (fabsf(relPlayerPos.x) > maxDistSides || fabsf(relPlayerPos.y) > maxDistY) {
         return MAXFLOAT;
@@ -531,13 +531,13 @@ f32 DoorShutter_GetPlayerDistance(PlayState* play, DoorShutter* this, f32 offset
  * Returns 1 if the player is near and is facing the front of the door.
  * Returns -1 if the player is near and is facing the back of the door.
  */
-s32 DoorShutter_GetPlayerSide(DoorShutter* this, PlayState* play) {
+static s32 player_door_open_pos_check(DoorShutter* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    if (!Player_InCsMode(play)) {
-        DoorShutterGfxInfo* gfxInfo = &sGfxInfo[this->gfxType];
+    if (!player_demo_check(play)) {
+        DoorShutterGfxInfo* gfxInfo = &door_shutter_shape_info[this->gfxType];
         f32 playerDistForwards =
-            DoorShutter_GetPlayerDistance(play, this, (this->gfxType != DOORSHUTTER_GFX_JABU_JABU) ? 0.0f : 80.0f,
+            player_distance_check(play, this, (this->gfxType != DOORSHUTTER_GFX_JABU_JABU) ? 0.0f : 80.0f,
                                           gfxInfo->rangeSides, gfxInfo->rangeY);
 
         if (fabsf(playerDistForwards) < 50.0f) {
@@ -565,14 +565,14 @@ s32 DoorShutter_GetPlayerSide(DoorShutter* this, PlayState* play) {
  * Either the permanent room clear flag or temporary room clear flag may be set to unbar the door.
  * When that happens, the permanent room clear flag is set.
  */
-void DoorShutter_WaitClear(DoorShutter* this, PlayState* play) {
-    if (Flags_GetClear(play, this->dyna.actor.room) || Flags_GetTempClear(play, this->dyna.actor.room)) {
-        Flags_SetClear(play, this->dyna.actor.room);
-        DoorShutter_SetupAction(this, DoorShutter_Unbar);
-        OnePointCutscene_Attention(play, &this->dyna.actor);
-        OnePointCutscene_Attention(play, &GET_PLAYER(play)->actor);
+static void move_room_clear_wait(DoorShutter* this, PlayState* play) {
+    if (Actor_Environment_room_clear_Check(play, this->dyna.actor.room) || Actor_Environment_no_enemy_Check(play, this->dyna.actor.room)) {
+        Actor_Environment_room_clear_On(play, this->dyna.actor.room);
+        Door_Shutter_actor_set_process(this, move_switch_open);
+        makeActorAttentionDemo(play, &this->dyna.actor);
+        makeActorAttentionDemo(play, &GET_PLAYER(play)->actor);
         this->actionTimer = -100;
-    } else if (DoorShutter_GetPlayerSide(this, play) != 0) {
+    } else if (player_door_open_pos_check(this, play) != 0) {
         Player* player = GET_PLAYER(play);
 
         player->naviTextId = -0x202;
@@ -582,7 +582,7 @@ void DoorShutter_WaitClear(DoorShutter* this, PlayState* play) {
 /**
  * The door cannot be interacted with.
  */
-void DoorShutter_Unopenable(DoorShutter* this, PlayState* play) {
+void move_non(DoorShutter* this, PlayState* play) {
 }
 
 /**
@@ -592,32 +592,32 @@ void DoorShutter_Unopenable(DoorShutter* this, PlayState* play) {
  *
  * Opening either a locked door or a boss door sets the switch flag taken from actor params.
  */
-void DoorShutter_Idle(DoorShutter* this, PlayState* play) {
+static void move_wait(DoorShutter* this, PlayState* play) {
     if (this->isActive) {
-        DoorShutter_SetupAction(this, DoorShutter_Open);
+        Door_Shutter_actor_set_process(this, move_open);
         this->dyna.actor.velocity.y = 0.0f;
         if (this->unlockTimer != 0) {
-            Flags_SetSwitch(play, DOORSHUTTER_GET_SWITCH_FLAG(&this->dyna.actor));
+            Actor_Environment_sw_On(play, DOORSHUTTER_GET_SWITCH_FLAG(&this->dyna.actor));
             if (this->doorType != SHUTTER_BOSS) {
-                gSaveContext.save.info.inventory.dungeonKeys[gSaveContext.mapIndex] -= 1;
-                Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_CHAIN_KEY_UNLOCK);
+                z_common_data.save.info.inventory.dungeonKeys[z_common_data.mapIndex] -= 1;
+                Actor_SE_set(&this->dyna.actor, NA_SE_EV_CHAIN_KEY_UNLOCK);
             } else {
-                Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_CHAIN_KEY_UNLOCK_B);
+                Actor_SE_set(&this->dyna.actor, NA_SE_EV_CHAIN_KEY_UNLOCK_B);
             }
         }
     } else {
-        s32 doorDirection = DoorShutter_GetPlayerSide(this, play);
+        s32 doorDirection = player_door_open_pos_check(this, play);
 
         if (doorDirection != 0) {
             Player* player = GET_PLAYER(play);
 
             if (this->unlockTimer != 0) {
                 if (this->doorType == SHUTTER_BOSS) {
-                    if (!CHECK_DUNGEON_ITEM(DUNGEON_BOSS_KEY, gSaveContext.mapIndex)) {
+                    if (!CHECK_DUNGEON_ITEM(DUNGEON_BOSS_KEY, z_common_data.mapIndex)) {
                         player->naviTextId = -0x204;
                         return;
                     }
-                } else if (gSaveContext.save.info.inventory.dungeonKeys[gSaveContext.mapIndex] <= 0) {
+                } else if (z_common_data.save.info.inventory.dungeonKeys[z_common_data.mapIndex] <= 0) {
                     player->naviTextId = -0x203;
                     return;
                 }
@@ -630,23 +630,23 @@ void DoorShutter_Idle(DoorShutter* this, PlayState* play) {
     }
 }
 
-void DoorShutter_InitOpeningDoorCam(DoorShutter* this, PlayState* play) {
+void open_camera_set(DoorShutter* this, PlayState* play) {
     // The actor category is never changed from ACTORCAT_DOOR, this condition always passes
     if (this->dyna.actor.category == ACTORCAT_DOOR) {
         Player* player = GET_PLAYER(play);
         s32 savedGfxType = this->gfxType;
         s32 doorCamTimer2 = 15;
 
-        if (DoorShutter_SetupDoor(this, play)) {
+        if (type_check_set(this, play)) {
             doorCamTimer2 = 32;
         }
 
-        // Restore action, gfxType and barsClosedAmount after the DoorShutter_SetupDoor call
-        DoorShutter_SetupAction(this, DoorShutter_Open);
+        // Restore action, gfxType and barsClosedAmount after the type_check_set call
+        Door_Shutter_actor_set_process(this, move_open);
         this->gfxType = savedGfxType;
         this->barsClosedAmount = 0.0f;
 
-        Camera_ChangeDoorCam(play->cameraPtrs[CAM_ID_MAIN], &this->dyna.actor, player->cv.slidingDoorBgCamIndex, 0.0f,
+        setDoorCameraInfo(play->cameraPtrs[CAM_ID_MAIN], &this->dyna.actor, player->cv.slidingDoorBgCamIndex, 0.0f,
                              12, doorCamTimer2, 10);
     }
 }
@@ -658,23 +658,23 @@ void DoorShutter_InitOpeningDoorCam(DoorShutter* this, PlayState* play) {
  * On the first call of opening the door (determined based on y velocity being 0 for non-jabu doors),
  * also changes the camera appropriately.
  */
-s32 DoorShutter_UpdateOpening(DoorShutter* this, PlayState* play) {
+s32 open_check_set(DoorShutter* this, PlayState* play) {
     if (this->gfxType != DOORSHUTTER_GFX_JABU_JABU) {
         if (this->dyna.actor.velocity.y == 0.0f) {
-            Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_SLIDE_DOOR_OPEN);
-            DoorShutter_InitOpeningDoorCam(this, play);
+            Actor_SE_set(&this->dyna.actor, NA_SE_EV_SLIDE_DOOR_OPEN);
+            open_camera_set(this, play);
         }
-        Math_StepToF(&this->dyna.actor.velocity.y, 15.0f, 3.0f);
-        if (Math_StepToF(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y + 200.0f,
+        chase_f(&this->dyna.actor.velocity.y, 15.0f, 3.0f);
+        if (chase_f(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y + 200.0f,
                          this->dyna.actor.velocity.y)) {
             return true;
         }
     } else {
         if (this->jabuDoorClosedAmount == 100) {
-            Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_BUYODOOR_OPEN);
-            DoorShutter_InitOpeningDoorCam(this, play);
+            Actor_SE_set(&this->dyna.actor, NA_SE_EV_BUYODOOR_OPEN);
+            open_camera_set(this, play);
         }
-        if (Math_StepToS(&this->jabuDoorClosedAmount, 0, 10)) {
+        if (chase_s(&this->jabuDoorClosedAmount, 0, 10)) {
             return true;
         }
     }
@@ -688,24 +688,24 @@ s32 DoorShutter_UpdateOpening(DoorShutter* this, PlayState* play) {
  *
  * @return true if the door is fully barred or fully unbarred.
  */
-s32 DoorShutter_UpdateBarsClosed(DoorShutter* this, PlayState* play, f32 barsClosedAmountTarget) {
+s32 yari_check_set(DoorShutter* this, PlayState* play, f32 barsClosedAmountTarget) {
     if (this->barsClosedAmount == (1.0f - barsClosedAmountTarget)) {
         if (this->gfxType != DOORSHUTTER_GFX_JABU_JABU) {
             if (barsClosedAmountTarget == 1.0f) {
-                Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_METALDOOR_CLOSE);
+                Actor_SE_set(&this->dyna.actor, NA_SE_EV_METALDOOR_CLOSE);
             } else {
-                Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_METALDOOR_OPEN);
+                Actor_SE_set(&this->dyna.actor, NA_SE_EV_METALDOOR_OPEN);
             }
         } else {
             if (barsClosedAmountTarget == 1.0f) {
-                Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_BUYOSHUTTER_CLOSE);
+                Actor_SE_set(&this->dyna.actor, NA_SE_EV_BUYOSHUTTER_CLOSE);
             } else {
-                Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_BUYOSHUTTER_OPEN);
+                Actor_SE_set(&this->dyna.actor, NA_SE_EV_BUYOSHUTTER_OPEN);
             }
         }
     }
 
-    if (Math_StepToF(&this->barsClosedAmount, barsClosedAmountTarget, 0.2f)) {
+    if (chase_f(&this->barsClosedAmount, barsClosedAmountTarget, 0.2f)) {
         return true;
     } else {
         return false;
@@ -715,14 +715,14 @@ s32 DoorShutter_UpdateBarsClosed(DoorShutter* this, PlayState* play, f32 barsClo
 /**
  * Bar the door and keep it barred until the switch flag taken from the params is set.
  */
-void DoorShutter_BarAndWaitSwitchFlag(DoorShutter* this, PlayState* play) {
-    if (DoorShutter_UpdateBarsClosed(this, play, 1.0f)) {
-        if (Flags_GetSwitch(play, DOORSHUTTER_GET_SWITCH_FLAG(&this->dyna.actor))) {
-            DoorShutter_SetupAction(this, DoorShutter_Unbar);
-            OnePointCutscene_Attention(play, &this->dyna.actor);
+void move_switch_wait(DoorShutter* this, PlayState* play) {
+    if (yari_check_set(this, play, 1.0f)) {
+        if (Actor_Environment_sw_Check(play, DOORSHUTTER_GET_SWITCH_FLAG(&this->dyna.actor))) {
+            Door_Shutter_actor_set_process(this, move_switch_open);
+            makeActorAttentionDemo(play, &this->dyna.actor);
             this->actionTimer = -100;
         } else {
-            if (DoorShutter_GetPlayerSide(this, play) != 0) {
+            if (player_door_open_pos_check(this, play) != 0) {
                 Player* player = GET_PLAYER(play);
 
                 player->naviTextId = (play->sceneId == SCENE_JABU_JABU) ? -0x20B : -0x202;
@@ -737,11 +737,11 @@ void DoorShutter_BarAndWaitSwitchFlag(DoorShutter* this, PlayState* play) {
  * Effectively, this action is only used for switch-flag-barred door types.
  * Its purpose is to check the switch flag is still set after the door has been unbarred.
  */
-void DoorShutter_UnbarredCheckSwitchFlag(DoorShutter* this, PlayState* play) {
-    if (!this->isActive && !Flags_GetSwitch(play, DOORSHUTTER_GET_SWITCH_FLAG(&this->dyna.actor))) {
-        DoorShutter_SetupAction(this, DoorShutter_BarAndWaitSwitchFlag);
+void move_switch_close_wait(DoorShutter* this, PlayState* play) {
+    if (!this->isActive && !Actor_Environment_sw_Check(play, DOORSHUTTER_GET_SWITCH_FLAG(&this->dyna.actor))) {
+        Door_Shutter_actor_set_process(this, move_switch_wait);
     } else {
-        DoorShutter_Idle(this, play);
+        move_wait(this, play);
     }
 }
 
@@ -750,23 +750,23 @@ void DoorShutter_UnbarredCheckSwitchFlag(DoorShutter* this, PlayState* play) {
  *
  * The door closes once the player is far enough from the door.
  */
-void DoorShutter_Open(DoorShutter* this, PlayState* play) {
-    if (DECR(this->unlockTimer) == 0 && play->roomCtx.status == 0 && DoorShutter_UpdateOpening(this, play)) {
+static void move_open(DoorShutter* this, PlayState* play) {
+    if (DECR(this->unlockTimer) == 0 && play->roomCtx.status == 0 && open_check_set(this, play)) {
         if (this->dyna.actor.xzDistToPlayer > ((this->doorType == SHUTTER_BOSS) ? 20.0f : 50.0f)) {
-            if (DoorShutter_SetupDoor(this, play)) {
+            if (type_check_set(this, play)) {
                 // Close faster if the door is barred behind the player
                 this->dyna.actor.velocity.y = 30.0f;
             }
             if (this->gfxType != DOORSHUTTER_GFX_JABU_JABU) {
-                Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_SLIDE_DOOR_CLOSE);
-                DoorShutter_SetupAction(this, DoorShutter_Close);
+                Actor_SE_set(&this->dyna.actor, NA_SE_EV_SLIDE_DOOR_CLOSE);
+                Door_Shutter_actor_set_process(this, move_close);
             } else {
-                Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_BUYODOOR_CLOSE);
+                Actor_SE_set(&this->dyna.actor, NA_SE_EV_BUYODOOR_CLOSE);
                 if ((this->doorType == SHUTTER_FRONT_SWITCH || this->doorType == SHUTTER_FRONT_SWITCH_BACK_CLEAR) &&
-                    !Flags_GetSwitch(play, DOORSHUTTER_GET_SWITCH_FLAG(&this->dyna.actor))) {
-                    Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_BUYOSHUTTER_CLOSE);
+                    !Actor_Environment_sw_Check(play, DOORSHUTTER_GET_SWITCH_FLAG(&this->dyna.actor))) {
+                    Actor_SE_set(&this->dyna.actor, NA_SE_EV_BUYOSHUTTER_CLOSE);
                 }
-                DoorShutter_SetupAction(this, DoorShutter_JabuDoorClose);
+                Door_Shutter_actor_set_process(this, move_bdan_close);
             }
         }
     }
@@ -775,25 +775,25 @@ void DoorShutter_Open(DoorShutter* this, PlayState* play) {
 /**
  * The door is being unbarred.
  */
-void DoorShutter_Unbar(DoorShutter* this, PlayState* play) {
+void move_switch_open(DoorShutter* this, PlayState* play) {
     if (this->actionTimer != 0) {
         if (this->actionTimer < 0) {
             if (play->state.frames % 2 != 0) {
                 this->actionTimer++;
             }
-            if (this->dyna.actor.category == func_8005B198() || this->actionTimer == 0) {
+            if (this->dyna.actor.category == getAttentionDemoPart() || this->actionTimer == 0) {
                 this->actionTimer = 5;
             }
         } else {
             this->actionTimer--;
         }
-    } else if (DoorShutter_UpdateBarsClosed(this, play, 0.0f)) {
+    } else if (yari_check_set(this, play, 0.0f)) {
         if (!(this->doorType == SHUTTER || this->doorType == SHUTTER_FRONT_CLEAR)) {
-            DoorShutter_SetupAction(this, DoorShutter_UnbarredCheckSwitchFlag);
+            Door_Shutter_actor_set_process(this, move_switch_close_wait);
         } else {
-            DoorShutter_SetupAction(this, DoorShutter_Idle);
+            Door_Shutter_actor_set_process(this, move_wait);
         }
-        func_800F5B58();
+        Na_StopMiddleBossBgm();
     }
 }
 
@@ -802,14 +802,14 @@ void DoorShutter_Unbar(DoorShutter* this, PlayState* play) {
  *
  * The previous room is unloaded.
  */
-void DoorShutter_SetupClosed(DoorShutter* this, PlayState* play) {
+void room_change_set(DoorShutter* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     s8 room = this->dyna.actor.room;
 
     if (this->dyna.actor.room >= 0) {
         Vec3f relPlayerPos;
 
-        Actor_WorldToActorCoords(&this->dyna.actor, &relPlayerPos, &player->actor.world.pos);
+        Actor_search_position_project_distanceXZ(&this->dyna.actor, &relPlayerPos, &player->actor.world.pos);
         this->dyna.actor.room = play->transitionActors.list[GET_TRANSITION_ACTOR_INDEX(&this->dyna.actor)]
                                     .sides[(relPlayerPos.z < 0.0f) ? 0 : 1]
                                     .room;
@@ -820,78 +820,78 @@ void DoorShutter_SetupClosed(DoorShutter* this, PlayState* play) {
             play->roomCtx.prevRoom = tempRoom;
             play->roomCtx.activeBufPage ^= 1;
         }
-        Room_FinishRoomChange(play, &play->roomCtx);
-        Play_SetupRespawnPoint(play, RESPAWN_MODE_DOWN,
+        Room_Info_old_room_clear(play, &play->roomCtx);
+        Game_play_restart_set(play, RESPAWN_MODE_DOWN,
                                PLAYER_PARAMS(PLAYER_START_MODE_MOVE_FORWARD_SLOW, PLAYER_START_BG_CAM_DEFAULT));
     }
     this->isActive = false;
     this->dyna.actor.velocity.y = 0.0f;
-    if (DoorShutter_SetupDoor(this, play) && !(player->stateFlags1 & PLAYER_STATE1_CARRYING_ACTOR)) {
+    if (type_check_set(this, play) && !(player->stateFlags1 & PLAYER_STATE1_CARRYING_ACTOR)) {
         // The door is barred behind the player
-        DoorShutter_SetupAction(this, DoorShutter_WaitPlayerSurprised);
-        Player_SetCsActionWithHaltedActors(play, NULL, PLAYER_CSACTION_2);
+        Door_Shutter_actor_set_process(this, move_demo_wait);
+        player_demo_mode_set(play, NULL, PLAYER_CSACTION_2);
     }
 }
 
 /**
  * The door is being closed by sliding downwards to its initial position.
  */
-void DoorShutter_Close(DoorShutter* this, PlayState* play) {
+static void move_close(DoorShutter* this, PlayState* play) {
     s32 quakeIndex;
 
     if (this->dyna.actor.velocity.y < 20.0f) {
-        Math_StepToF(&this->dyna.actor.velocity.y, 20.0f, 8.0f);
+        chase_f(&this->dyna.actor.velocity.y, 20.0f, 8.0f);
     }
-    if (Math_StepToF(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y, this->dyna.actor.velocity.y)) {
+    if (chase_f(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y, this->dyna.actor.velocity.y)) {
         if (this->dyna.actor.velocity.y > 20.0f) {
             this->dyna.actor.floorHeight = this->dyna.actor.home.pos.y;
-            Actor_SpawnFloorDustRing(play, &this->dyna.actor, &this->dyna.actor.world.pos, 45.0f, 10, 8.0f, 500, 10,
+            _dust_ground_set(play, &this->dyna.actor, &this->dyna.actor.world.pos, 45.0f, 10, 8.0f, 500, 10,
                                      false);
         }
-        Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_STONE_BOUND);
-        quakeIndex = Quake_Request(Play_GetCamera(play, CAM_ID_MAIN), 3);
-        Quake_SetSpeed(quakeIndex, -32536);
-        Quake_SetPerturbations(quakeIndex, 2, 0, 0, 0);
-        Quake_SetDuration(quakeIndex, 10);
-        Rumble_Request(this->dyna.actor.xyzDistToPlayerSq, 180, 20, 100);
-        DoorShutter_SetupClosed(this, play);
+        Actor_SE_set(&this->dyna.actor, NA_SE_EV_STONE_BOUND);
+        quakeIndex = startQuake(Gama_play_get_camera(play, CAM_ID_MAIN), 3);
+        setSpeedQuake(quakeIndex, -32536);
+        setScaleQuake(quakeIndex, 2, 0, 0, 0);
+        setTimerQuake(quakeIndex, 10);
+        z_vibctl2_vib_setQ(this->dyna.actor.xyzDistToPlayerSq, 180, 20, 100);
+        room_change_set(this, play);
     }
 }
 
 /**
  * The Jabu door is being closed.
  */
-void DoorShutter_JabuDoorClose(DoorShutter* this, PlayState* play) {
-    if (Math_StepToS(&this->jabuDoorClosedAmount, 100, 10)) {
-        DoorShutter_SetupClosed(this, play);
+void move_bdan_close(DoorShutter* this, PlayState* play) {
+    if (chase_s(&this->jabuDoorClosedAmount, 100, 10)) {
+        room_change_set(this, play);
     }
 }
 
-void DoorShutter_WaitPlayerSurprised(DoorShutter* this, PlayState* play) {
+static void move_demo_wait(DoorShutter* this, PlayState* play) {
     if (this->actionTimer++ > 30) {
-        Player_SetCsActionWithHaltedActors(play, NULL, PLAYER_CSACTION_7);
-        DoorShutter_SetupDoor(this, play);
+        player_demo_mode_set(play, NULL, PLAYER_CSACTION_7);
+        type_check_set(this, play);
     }
 }
 
-void DoorShutter_GohmaBlockFall(DoorShutter* this, PlayState* play) {
-    Actor_MoveXZGravity(&this->dyna.actor);
-    Actor_UpdateBgCheckInfo(play, &this->dyna.actor, 0.0f, 0.0f, 0.0f, UPDBGCHECKINFO_FLAG_2);
+void move_goma_door_down(DoorShutter* this, PlayState* play) {
+    Actor_position_moveF(&this->dyna.actor);
+    Actor_BGcheck2(play, &this->dyna.actor, 0.0f, 0.0f, 0.0f, UPDBGCHECKINFO_FLAG_2);
     if (this->dyna.actor.bgCheckFlags & BGCHECKFLAG_GROUND) {
-        DoorShutter_SetupAction(this, DoorShutter_GohmaBlockBounce);
+        Door_Shutter_actor_set_process(this, move_goma_door_wait);
         if (!GET_EVENTCHKINF(EVENTCHKINF_BEGAN_GOHMA_BATTLE)) {
             BossGoma* parent = (BossGoma*)this->dyna.actor.parent;
 
             this->isActive = 10;
-            Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_STONE_BOUND);
-            DoorShutter_RequestQuakeAndRumble(play, 2, 10, parent->subCamId);
-            Actor_SpawnFloorDustRing(play, &this->dyna.actor, &this->dyna.actor.world.pos, 70.0f, 20, 8.0f, 500, 10,
+            Actor_SE_set(&this->dyna.actor, NA_SE_EV_STONE_BOUND);
+            door_jisin(play, 2, 10, parent->subCamId);
+            _dust_ground_set(play, &this->dyna.actor, &this->dyna.actor.world.pos, 70.0f, 20, 8.0f, 500, 10,
                                      true);
         }
     }
 }
 
-void DoorShutter_GohmaBlockBounce(DoorShutter* this, PlayState* play) {
+void move_goma_door_wait(DoorShutter* this, PlayState* play) {
     f32 bounceFactor;
 
     // Bounce a bit (unnoticeable in-game)
@@ -902,71 +902,71 @@ void DoorShutter_GohmaBlockBounce(DoorShutter* this, PlayState* play) {
     }
 }
 
-void DoorShutter_PhantomGanonBarsRaise(DoorShutter* this, PlayState* play) {
+void move_fhg_saku(DoorShutter* this, PlayState* play) {
     f32 targetOffsetY;
 
     PRINTF("FHG SAKU START !!\n");
     DECR(this->isActive);
     targetOffsetY = (this->isActive % 2 != 0) ? -3.0f : 0.0f;
-    Math_SmoothStepToF(&this->dyna.actor.world.pos.y, -34.0f + targetOffsetY, 1.0f, 20.0f, 0.0f);
+    add_calc(&this->dyna.actor.world.pos.y, -34.0f + targetOffsetY, 1.0f, 20.0f, 0.0f);
     PRINTF("FHG SAKU END !!\n");
 }
 
-void DoorShutter_Update(Actor* thisx, PlayState* play) {
+void Door_Shutter_actor_move(Actor* thisx, PlayState* play) {
     DoorShutter* this = (DoorShutter*)thisx;
     Player* player = GET_PLAYER(play);
 
     if (!(player->stateFlags1 & (PLAYER_STATE1_TALKING | PLAYER_STATE1_DEAD | PLAYER_STATE1_10 | PLAYER_STATE1_28)) ||
-        (this->actionFunc == DoorShutter_WaitForObject)) {
+        (this->actionFunc == move_dma_wait)) {
         this->actionFunc(this, play);
     }
 }
 
-Gfx* DoorShutter_DrawJabuJabuDoor(PlayState* play, DoorShutter* this, Gfx* gfx) {
+Gfx* bdan_shutter_draw(PlayState* play, DoorShutter* this, Gfx* gfx) {
     MtxF mtx;
     f32 angle = 0.0f;
     f32 yScale = this->jabuDoorClosedAmount * 0.01f;
     s32 i;
 
-    Matrix_Get(&mtx);
+    Matrix_get(&mtx);
 
-    for (i = 0; i < ARRAY_COUNT(sJabuDoorDLists); i++) {
-        Matrix_RotateZ(angle, MTXMODE_APPLY);
+    for (i = 0; i < ARRAY_COUNT(bdan_shape_data); i++) {
+        Matrix_rotateZ(angle, MTXMODE_APPLY);
 
         if (i % 2 == 0) {
-            Matrix_Translate(0.0f, 800.0f, 0.0f, MTXMODE_APPLY);
+            Matrix_translate(0.0f, 800.0f, 0.0f, MTXMODE_APPLY);
         } else if (i == 1 || i == 7) {
-            Matrix_Translate(0.0f, 848.52f, 0.0f, MTXMODE_APPLY);
+            Matrix_translate(0.0f, 848.52f, 0.0f, MTXMODE_APPLY);
         } else {
-            Matrix_Translate(0.0f, 989.94f, 0.0f, MTXMODE_APPLY);
+            Matrix_translate(0.0f, 989.94f, 0.0f, MTXMODE_APPLY);
         }
 
         if (this->jabuDoorClosedAmount != 100) {
-            Matrix_Scale(1.0f, yScale, 1.0f, MTXMODE_APPLY);
+            Matrix_scale(1.0f, yScale, 1.0f, MTXMODE_APPLY);
         }
 
         MATRIX_FINALIZE_AND_LOAD(gfx++, play->state.gfxCtx, "../z_door_shutter.c", 1991);
-        gSPDisplayList(gfx++, sJabuDoorDLists[i]);
+        gSPDisplayList(gfx++, bdan_shape_data[i]);
 
-        angle -= 2 * M_PI / ARRAY_COUNT(sJabuDoorDLists);
+        angle -= 2 * M_PI / ARRAY_COUNT(bdan_shape_data);
 
-        Matrix_Put(&mtx);
+        Matrix_put(&mtx);
     }
     return gfx;
 }
 
-s32 DoorShutter_ShouldDraw(DoorShutter* this, PlayState* play) {
+s32 door_draw_check(DoorShutter* this, PlayState* play) {
     s32 relYawTowardsPlayer;
     s32 relYawTowardsViewEye;
 
-    if (Player_InCsMode(play)) {
+    if (player_demo_check(play)) {
         return true;
     }
 
     // Return true if the view eye and the player are on the same side of the door
 
     relYawTowardsViewEye =
-        (s16)(Actor_WorldYawTowardPoint(&this->dyna.actor, &play->view.eye) - this->dyna.actor.shape.rot.y);
+        (s16)(Actor_search_position_angleY(&this->dyna.actor, &play->view.eye) - this->dyna.actor.shape.rot.y);
     relYawTowardsPlayer = (s16)(this->dyna.actor.yawTowardsPlayer - this->dyna.actor.shape.rot.y);
     relYawTowardsViewEye = ABS(relYawTowardsViewEye);
     relYawTowardsPlayer = ABS(relYawTowardsPlayer);
@@ -979,7 +979,7 @@ s32 DoorShutter_ShouldDraw(DoorShutter* this, PlayState* play) {
     }
 }
 
-void DoorShutter_Draw(Actor* thisx, PlayState* play) {
+void Door_Shutter_actor_draw(Actor* thisx, PlayState* play) {
     DoorShutter* this = (DoorShutter*)thisx;
 
     if (1) {}
@@ -989,7 +989,7 @@ void DoorShutter_Draw(Actor* thisx, PlayState* play) {
     //! from drawing until initialization is complete. However if the required object is the same as the
     //! object dependency listed in the actor profile (gameplay_keep in this case), the check will pass even though
     //! initialization has not completed. When this happens, it will try to draw the display list of the
-    //! first entry in `sGfxInfo`, which will likely crash the game.
+    //! first entry in `door_shutter_shape_info`, which will likely crash the game.
     //! This only matters in very specific scenarios, when the door is unculled on the first possible frame
     //! after spawning. It will try to draw without having run update yet.
     //!
@@ -997,23 +997,23 @@ void DoorShutter_Draw(Actor* thisx, PlayState* play) {
     //! the profile for the actor, and only set draw after initialization is complete.
 
     if (this->dyna.actor.objectSlot == this->requiredObjectSlot &&
-        (this->styleType == DOORSHUTTER_STYLE_PHANTOM_GANON || DoorShutter_ShouldDraw(this, play))) {
+        (this->styleType == DOORSHUTTER_STYLE_PHANTOM_GANON || door_draw_check(this, play))) {
         s32 pad[2];
-        DoorShutterGfxInfo* gfxInfo = &sGfxInfo[this->gfxType];
+        DoorShutterGfxInfo* gfxInfo = &door_shutter_shape_info[this->gfxType];
 
         OPEN_DISPS(play->state.gfxCtx, "../z_door_shutter.c", 2048);
 
-        Gfx_SetupDL_25Opa(play->state.gfxCtx);
+        _texture_z_light_fog_prim(play->state.gfxCtx);
 
         if (this->gfxType == DOORSHUTTER_GFX_JABU_JABU) {
-            POLY_OPA_DISP = DoorShutter_DrawJabuJabuDoor(play, this, POLY_OPA_DISP);
+            POLY_OPA_DISP = bdan_shutter_draw(play, this, POLY_OPA_DISP);
             if (this->barsClosedAmount != 0.0f) {
                 f32 scale = (this->jabuDoorClosedAmount * 0.01f) * this->barsClosedAmount;
 
-                Gfx_SetupDL_25Opa(play->state.gfxCtx);
+                _texture_z_light_fog_prim(play->state.gfxCtx);
                 gDPSetEnvColor(POLY_OPA_DISP++, 0, 0, 0, 255.0f * scale); // no purpose?
-                Matrix_Translate(0, 0, gfxInfo->barsOffsetZ, MTXMODE_APPLY);
-                Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
+                Matrix_translate(0, 0, gfxInfo->barsOffsetZ, MTXMODE_APPLY);
+                Matrix_scale(scale, scale, scale, MTXMODE_APPLY);
                 MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_door_shutter.c", 2069);
                 gSPDisplayList(POLY_OPA_DISP++, gfxInfo->barsDL);
             }
@@ -1024,21 +1024,21 @@ void DoorShutter_Draw(Actor* thisx, PlayState* play) {
 
                 if (play->roomCtx.prevRoom.num >= 0 ||
                     transitionEntry->sides[0].room == transitionEntry->sides[1].room) {
-                    s32 yaw = Math_Vec3f_Yaw(&play->view.eye, &this->dyna.actor.world.pos);
+                    s32 yaw = search_position_angleY(&play->view.eye, &this->dyna.actor.world.pos);
 
                     if (ABS((s16)(this->dyna.actor.shape.rot.y - yaw)) < 0x4000) {
-                        Matrix_RotateY(M_PI, MTXMODE_APPLY);
+                        Matrix_rotateY(M_PI, MTXMODE_APPLY);
                     }
                 } else if (this->dyna.actor.room == transitionEntry->sides[0].room) {
-                    Matrix_RotateY(M_PI, MTXMODE_APPLY);
+                    Matrix_rotateY(M_PI, MTXMODE_APPLY);
                 }
             } else if (this->doorType == SHUTTER_BOSS) {
-                gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(sBossDoorTextures[this->bossDoorTexIndex]));
+                gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(boss_shutter_texture[this->bossDoorTexIndex]));
             }
             MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_door_shutter.c", 2109);
             gSPDisplayList(POLY_OPA_DISP++, gfxInfo->doorDL);
             if (this->barsClosedAmount != 0.0f && gfxInfo->barsDL != NULL) {
-                Matrix_Translate(0, gfxInfo->barsOpenOffsetY * (1.0f - this->barsClosedAmount), gfxInfo->barsOffsetZ,
+                Matrix_translate(0, gfxInfo->barsOpenOffsetY * (1.0f - this->barsClosedAmount), gfxInfo->barsOffsetZ,
                                  MTXMODE_APPLY);
                 MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_door_shutter.c", 2119);
                 gSPDisplayList(POLY_OPA_DISP++, gfxInfo->barsDL);
@@ -1046,8 +1046,8 @@ void DoorShutter_Draw(Actor* thisx, PlayState* play) {
         }
 
         if (this->unlockTimer != 0) {
-            Matrix_Scale(0.01f, 0.01f, 0.025f, MTXMODE_APPLY);
-            Actor_DrawDoorLock(
+            Matrix_scale(0.01f, 0.01f, 0.025f, MTXMODE_APPLY);
+            key_draw(
                 play, this->unlockTimer,
                 (this->doorType == SHUTTER_BOSS)
                     ? DOORLOCK_BOSS
@@ -1058,11 +1058,11 @@ void DoorShutter_Draw(Actor* thisx, PlayState* play) {
     }
 }
 
-void DoorShutter_RequestQuakeAndRumble(PlayState* play, s16 quakeY, s16 quakeDuration, s16 camId) {
-    s16 quakeIndex = Quake_Request(Play_GetCamera(play, camId), QUAKE_TYPE_3);
+void door_jisin(PlayState* play, s16 quakeY, s16 quakeDuration, s16 camId) {
+    s16 quakeIndex = startQuake(Gama_play_get_camera(play, camId), QUAKE_TYPE_3);
 
-    Rumble_Override(0.0f, 180, 20, 100);
-    Quake_SetSpeed(quakeIndex, 20000);
-    Quake_SetPerturbations(quakeIndex, quakeY, 0, 0, 0);
-    Quake_SetDuration(quakeIndex, quakeDuration);
+    z_vibctl2_vib_force_set(0.0f, 180, 20, 100);
+    setSpeedQuake(quakeIndex, 20000);
+    setScaleQuake(quakeIndex, quakeY, 0, 0, 0);
+    setTimerQuake(quakeIndex, quakeDuration);
 }

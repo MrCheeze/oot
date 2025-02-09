@@ -1,8 +1,8 @@
 <Root>
     <File Name="ovl_Demo_Shd" OutName="z_demo_shd">
 
-    <DList Name="D_809932D0" Offset="0x1C50"/>
-    <DList Name="D_80993390" Offset="0x1D10"/>
-    <DList Name="D_809934B8" Offset="0x1E38"/>
+    <DList Name="demo_shd_stoker_modelT0" Offset="0x1C50"/>
+    <DList Name="demo_shd_stoker_modelT1" Offset="0x1D10"/>
+    <DList Name="demo_shd_stoker_modelT2" Offset="0x1E38"/>
     </File>
 </Root>

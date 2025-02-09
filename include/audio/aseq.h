@@ -208,7 +208,7 @@
 // Hardcoded Instruments
 #define FONTANY_INSTR_SFX          126
 #define FONTANY_INSTR_DRUM         127
-// Instruments implemented in gWaveSamples
+// Instruments implemented in WAVEMEM_TABLE
 #define FONTANY_INSTR_SAWTOOTH     128
 #define FONTANY_INSTR_TRIANGLE     129
 #define FONTANY_INSTR_SINE         130

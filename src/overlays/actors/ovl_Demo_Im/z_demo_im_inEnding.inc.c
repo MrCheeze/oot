@@ -1,11 +1,11 @@
-void func_80987018(DemoIm* this, PlayState* play) {
-    DemoIm_ChangeAnim(this, &gImpaIdleAnim, ANIMMODE_LOOP, 0.0f, false);
+void Demo_Im_Ending_Init(DemoIm* this, PlayState* play) {
+    Demo_Im_Change_Anime(this, &gImpaIdleAnim, ANIMMODE_LOOP, 0.0f, false);
     this->action = 27;
     this->drawConfig = 0;
     this->actor.shape.shadowAlpha = 0;
 }
 
-void func_80987064(DemoIm* this) {
+void Demo_Im_inEnding_Set_Alpha(DemoIm* this) {
     f32* unk_268 = &this->unk_268;
     f32 temp;
     s32 alpha = 255;
@@ -20,32 +20,32 @@ void func_80987064(DemoIm* this) {
     }
 }
 
-void func_809870F0(DemoIm* this, PlayState* play) {
-    func_80985200(this, play, 5);
+void Demo_Im_inEnding_setup_Appear(DemoIm* this, PlayState* play) {
+    Demo_Im_Set_StartPos_npcdemopnt(this, play, 5);
     this->action = 28;
     this->drawConfig = 2;
 }
 
-void func_80987128(DemoIm* this) {
+void Demo_Im_inEnding_check_AppearToStand(DemoIm* this) {
     if (this->unk_268 >= kREG(17) + 10.0f) {
         this->action = 29;
         this->drawConfig = 1;
     }
 }
 
-void func_80987174(DemoIm* this) {
-    DemoIm_ChangeAnim(this, &object_im_Anim_0101C8, ANIMMODE_ONCE, -8.0f, false);
+void Demo_Im_inEnding_setup_Lookup(DemoIm* this) {
+    Demo_Im_Change_Anime(this, &object_im_Anim_0101C8, ANIMMODE_ONCE, -8.0f, false);
     this->action = 30;
 }
 
-void func_809871B4(DemoIm* this, s32 arg1) {
+void Demo_Im_inEnding_Check_Animation_Lookup(DemoIm* this, s32 arg1) {
     if (arg1 != 0) {
-        DemoIm_ChangeAnim(this, &object_im_Anim_00FB10, ANIMMODE_LOOP, 0.0f, false);
+        Demo_Im_Change_Anime(this, &object_im_Anim_00FB10, ANIMMODE_LOOP, 0.0f, false);
     }
 }
 
-void func_809871E8(DemoIm* this, PlayState* play) {
-    CsCmdActorCue* cue = DemoIm_GetCue(play, 5);
+void Demo_Im_inEnding_Check_DemoMode(DemoIm* this, PlayState* play) {
+    CsCmdActorCue* cue = Demo_Im_Get_npcdemopnt(play, 5);
 
     if (cue != NULL) {
         u32 nextCueId = cue->id;
@@ -54,10 +54,10 @@ void func_809871E8(DemoIm* this, PlayState* play) {
         if (nextCueId != currentCueId) {
             switch (nextCueId) {
                 case 12:
-                    func_809870F0(this, play);
+                    Demo_Im_inEnding_setup_Appear(this, play);
                     break;
                 case 13:
-                    func_80987174(this);
+                    Demo_Im_inEnding_setup_Lookup(this);
                     break;
                 default:
                     PRINTF("Demo_Im_inEnding_Check_DemoMode:そんな動作は無い!!!!!!!!\n");
@@ -67,30 +67,30 @@ void func_809871E8(DemoIm* this, PlayState* play) {
     }
 }
 
-void func_80987288(DemoIm* this, PlayState* play) {
-    func_809871E8(this, play);
+void Demo_Im_inEnding_main_wait(DemoIm* this, PlayState* play) {
+    Demo_Im_inEnding_Check_DemoMode(this, play);
 }
 
-void func_809872A8(DemoIm* this, PlayState* play) {
-    DemoIm_UpdateBgCheckInfo(this, play);
-    DemoIm_UpdateSkelAnime(this);
-    func_80984BE0(this);
-    func_80987064(this);
-    func_80987128(this);
+void Demo_Im_inEnding_main_alpha(DemoIm* this, PlayState* play) {
+    Demo_Im_BGcheck(this, play);
+    Demo_Im_Animation_Base(this);
+    Demo_Im_set_eye_pattern(this);
+    Demo_Im_inEnding_Set_Alpha(this);
+    Demo_Im_inEnding_check_AppearToStand(this);
 }
 
-void func_809872F0(DemoIm* this, PlayState* play) {
-    DemoIm_UpdateBgCheckInfo(this, play);
-    DemoIm_UpdateSkelAnime(this);
-    func_80984BE0(this);
-    func_809871E8(this, play);
+void Demo_Im_inEnding_main_stand(DemoIm* this, PlayState* play) {
+    Demo_Im_BGcheck(this, play);
+    Demo_Im_Animation_Base(this);
+    Demo_Im_set_eye_pattern(this);
+    Demo_Im_inEnding_Check_DemoMode(this, play);
 }
 
-void func_80987330(DemoIm* this, PlayState* play) {
+void Demo_Im_inEnding_main_lookup(DemoIm* this, PlayState* play) {
     s32 sp1C;
 
-    DemoIm_UpdateBgCheckInfo(this, play);
-    sp1C = DemoIm_UpdateSkelAnime(this);
-    func_80984BE0(this);
-    func_809871B4(this, sp1C);
+    Demo_Im_BGcheck(this, play);
+    sp1C = Demo_Im_Animation_Base(this);
+    Demo_Im_set_eye_pattern(this);
+    Demo_Im_inEnding_Check_Animation_Lookup(this, sp1C);
 }

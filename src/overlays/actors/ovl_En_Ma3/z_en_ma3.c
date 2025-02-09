@@ -12,16 +12,16 @@
     (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY | ACTOR_FLAG_UPDATE_CULLING_DISABLED | \
      ACTOR_FLAG_DRAW_CULLING_DISABLED)
 
-void EnMa3_Init(Actor* thisx, PlayState* play);
-void EnMa3_Destroy(Actor* thisx, PlayState* play);
-void EnMa3_Update(Actor* thisx, PlayState* play);
-void EnMa3_Draw(Actor* thisx, PlayState* play);
+void En_Ma3_Actor_ct(Actor* thisx, PlayState* play);
+void En_Ma3_Actor_dt(Actor* thisx, PlayState* play);
+void En_Ma3_Actor_move(Actor* thisx, PlayState* play);
+void En_Ma3_Actor_draw(Actor* thisx, PlayState* play);
 
-void func_80AA2E54(EnMa3* this, PlayState* play);
-s32 func_80AA2EC8(EnMa3* this, PlayState* play);
-s32 func_80AA2F28(EnMa3* this);
-void EnMa3_UpdateEyes(EnMa3* this);
-void func_80AA3200(EnMa3* this, PlayState* play);
+void ma3_eye_move(EnMa3* this, PlayState* play);
+s32 ma3_appearance_check(EnMa3* this, PlayState* play);
+s32 ma3_eye_control_sing(EnMa3* this);
+void ma3_eye_control(EnMa3* this);
+void ma3_wait(EnMa3* this, PlayState* play);
 
 ActorProfile En_Ma3_Profile = {
     /**/ ACTOR_EN_MA3,
@@ -29,13 +29,13 @@ ActorProfile En_Ma3_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_MA2,
     /**/ sizeof(EnMa3),
-    /**/ EnMa3_Init,
-    /**/ EnMa3_Destroy,
-    /**/ EnMa3_Update,
-    /**/ EnMa3_Draw,
+    /**/ En_Ma3_Actor_ct,
+    /**/ En_Ma3_Actor_dt,
+    /**/ En_Ma3_Actor_move,
+    /**/ En_Ma3_Actor_draw,
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit EnMaAtInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -55,7 +55,7 @@ static ColliderCylinderInit sCylinderInit = {
     { 18, 46, 0, { 0, 0, 0 } },
 };
 
-static CollisionCheckInfoInit2 sColChkInfoInit = { 0, 0, 0, 0, MASS_IMMOVABLE };
+static CollisionCheckInfoInit2 MaStatusData = { 0, 0, 0, 0, MASS_IMMOVABLE };
 
 typedef enum EnMa3Animation {
     /* 0 */ ENMA3_ANIM_0,
@@ -65,13 +65,13 @@ typedef enum EnMa3Animation {
     /* 4 */ ENMA3_ANIM_4
 } EnMa3Animation;
 
-static AnimationFrameCountInfo sAnimationInfo[] = {
+static AnimationFrameCountInfo anime_ct_data[] = {
     { &gMalonAdultIdleAnim, 1.0f, ANIMMODE_LOOP, 0.0f },       { &gMalonAdultIdleAnim, 1.0f, ANIMMODE_LOOP, -10.0f },
     { &gMalonAdultStandStillAnim, 1.0f, ANIMMODE_LOOP, 0.0f }, { &gMalonAdultSingAnim, 1.0f, ANIMMODE_LOOP, 0.0f },
     { &gMalonAdultSingAnim, 1.0f, ANIMMODE_LOOP, -10.0f },
 };
 
-u16 EnMa3_GetTextId(PlayState* play, Actor* thisx) {
+u16 ma3_set_message(PlayState* play, Actor* thisx) {
     Player* player = GET_PLAYER(play);
 
     if (!GET_INFTABLE(INFTABLE_B8)) {
@@ -79,10 +79,10 @@ u16 EnMa3_GetTextId(PlayState* play, Actor* thisx) {
     }
 
     if (GET_EVENTINF(EVENTINF_HORSES_0A)) {
-        gSaveContext.timerSeconds = gSaveContext.timerSeconds;
+        z_common_data.timerSeconds = z_common_data.timerSeconds;
         thisx->flags |= ACTOR_FLAG_TALK_OFFER_AUTO_ACCEPTED;
 
-        if (((void)0, gSaveContext.timerSeconds) > 210) {
+        if (((void)0, z_common_data.timerSeconds) > 210) {
             return 0x208E;
         }
 
@@ -90,11 +90,11 @@ u16 EnMa3_GetTextId(PlayState* play, Actor* thisx) {
             HIGH_SCORE(HS_HORSE_RACE) = 180;
         }
 
-        if (!GET_EVENTCHKINF(EVENTCHKINF_HORSE_RACE_COW_UNLOCK) && (((void)0, gSaveContext.timerSeconds) < 50)) {
+        if (!GET_EVENTCHKINF(EVENTCHKINF_HORSE_RACE_COW_UNLOCK) && (((void)0, z_common_data.timerSeconds) < 50)) {
             return 0x208F;
         }
 
-        if (HIGH_SCORE(HS_HORSE_RACE) > ((void)0, gSaveContext.timerSeconds)) {
+        if (HIGH_SCORE(HS_HORSE_RACE) > ((void)0, z_common_data.timerSeconds)) {
             return 0x2012;
         }
 
@@ -102,7 +102,7 @@ u16 EnMa3_GetTextId(PlayState* play, Actor* thisx) {
     }
 
     if (!(player->stateFlags1 & PLAYER_STATE1_23) &&
-        (Actor_FindNearby(play, thisx, ACTOR_EN_HORSE, 1, 1200.0f) == NULL)) {
+        (ActorSearch(play, thisx, ACTOR_EN_HORSE, 1, 1200.0f) == NULL)) {
         return 0x2001;
     }
 
@@ -113,30 +113,30 @@ u16 EnMa3_GetTextId(PlayState* play, Actor* thisx) {
     return 0x2003;
 }
 
-s16 EnMa3_UpdateTalkState(PlayState* play, Actor* thisx) {
+s16 ma3_end_message(PlayState* play, Actor* thisx) {
     s16 talkState = NPC_TALK_STATE_TALKING;
 
-    switch (Message_GetState(&play->msgCtx)) {
+    switch (message_check(&play->msgCtx)) {
         case TEXT_STATE_EVENT:
-            if (Message_ShouldAdvance(play)) {
+            if (pad_on_check(play)) {
                 play->nextEntranceIndex = ENTR_LON_LON_RANCH_0;
-                gSaveContext.nextCutsceneIndex = 0xFFF0;
+                z_common_data.nextCutsceneIndex = 0xFFF0;
                 play->transitionType = TRANS_TYPE_CIRCLE(TCA_STARBURST, TCC_BLACK, TCS_FAST);
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 SET_EVENTINF(EVENTINF_HORSES_0A);
-                gSaveContext.timerState = TIMER_STATE_UP_FREEZE;
+                z_common_data.timerState = TIMER_STATE_UP_FREEZE;
             }
             break;
         case TEXT_STATE_CHOICE:
-            if (Message_ShouldAdvance(play)) {
+            if (pad_on_check(play)) {
                 SET_INFTABLE(INFTABLE_B9);
                 if (play->msgCtx.choiceIndex == 0) {
                     if (GET_EVENTCHKINF(EVENTCHKINF_HORSE_RACE_COW_UNLOCK)) {
-                        Message_ContinueTextbox(play, 0x2091);
+                        message_set2(play, 0x2091);
                     } else if (HIGH_SCORE(HS_HORSE_RACE) == 0) {
-                        Message_ContinueTextbox(play, 0x2092);
+                        message_set2(play, 0x2092);
                     } else {
-                        Message_ContinueTextbox(play, 0x2090);
+                        message_set2(play, 0x2090);
                     }
                 }
             }
@@ -152,15 +152,15 @@ s16 EnMa3_UpdateTalkState(PlayState* play, Actor* thisx) {
                     FALLTHROUGH;
                 case 0x2004:
                 case 0x2012:
-                    if (HIGH_SCORE(HS_HORSE_RACE) > gSaveContext.timerSeconds) {
-                        HIGH_SCORE(HS_HORSE_RACE) = gSaveContext.timerSeconds;
+                    if (HIGH_SCORE(HS_HORSE_RACE) > z_common_data.timerSeconds) {
+                        HIGH_SCORE(HS_HORSE_RACE) = z_common_data.timerSeconds;
                     }
                     FALLTHROUGH;
                 case 0x208E:
                     CLEAR_EVENTINF(EVENTINF_HORSES_0A);
                     thisx->flags &= ~ACTOR_FLAG_TALK_OFFER_AUTO_ACCEPTED;
                     talkState = NPC_TALK_STATE_IDLE;
-                    gSaveContext.timerState = TIMER_STATE_STOP;
+                    z_common_data.timerState = TIMER_STATE_STOP;
                     break;
                 case 0x2002:
                     SET_INFTABLE(INFTABLE_B9);
@@ -187,7 +187,7 @@ s16 EnMa3_UpdateTalkState(PlayState* play, Actor* thisx) {
     return talkState;
 }
 
-void func_80AA2E54(EnMa3* this, PlayState* play) {
+void ma3_eye_move(EnMa3* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     s16 trackingMode;
 
@@ -199,10 +199,10 @@ void func_80AA2E54(EnMa3* this, PlayState* play) {
 
     this->interactInfo.trackPos = player->actor.world.pos;
     this->interactInfo.yOffset = 0.0f;
-    Npc_TrackPoint(&this->actor, &this->interactInfo, 0, trackingMode);
+    eye_moveM(&this->actor, &this->interactInfo, 0, trackingMode);
 }
 
-s32 func_80AA2EC8(EnMa3* this, PlayState* play) {
+s32 ma3_appearance_check(EnMa3* this, PlayState* play) {
     if (LINK_IS_CHILD) {
         return 2;
     }
@@ -215,7 +215,7 @@ s32 func_80AA2EC8(EnMa3* this, PlayState* play) {
     return 0;
 }
 
-s32 func_80AA2F28(EnMa3* this) {
+s32 ma3_eye_control_sing(EnMa3* this) {
     if (this->skelAnime.animation != &gMalonAdultSingAnim) {
         return 0;
     }
@@ -230,60 +230,60 @@ s32 func_80AA2F28(EnMa3* this) {
     return 1;
 }
 
-void EnMa3_UpdateEyes(EnMa3* this) {
-    if ((!func_80AA2F28(this)) && (DECR(this->blinkTimer) == 0)) {
+void ma3_eye_control(EnMa3* this) {
+    if ((!ma3_eye_control_sing(this)) && (DECR(this->blinkTimer) == 0)) {
         this->eyeIndex++;
         if (this->eyeIndex >= 3) {
-            this->blinkTimer = Rand_S16Offset(30, 30);
+            this->blinkTimer = get_random_timer(30, 30);
             this->eyeIndex = 0;
         }
     }
 }
 
-void EnMa3_ChangeAnim(EnMa3* this, s32 index) {
-    f32 frameCount = Animation_GetLastFrame(sAnimationInfo[index].animation);
+void ma3_anime_ct(EnMa3* this, s32 index) {
+    f32 frameCount = Si2_anime_end_frame(anime_ct_data[index].animation);
 
-    Animation_Change(&this->skelAnime, sAnimationInfo[index].animation, 1.0f, 0.0f, frameCount,
-                     sAnimationInfo[index].mode, sAnimationInfo[index].morphFrames);
+    Skeleton_Info2_init(&this->skelAnime, anime_ct_data[index].animation, 1.0f, 0.0f, frameCount,
+                     anime_ct_data[index].mode, anime_ct_data[index].morphFrames);
 }
 
-void EnMa3_Init(Actor* thisx, PlayState* play) {
+void En_Ma3_Actor_ct(Actor* thisx, PlayState* play) {
     EnMa3* this = (EnMa3*)thisx;
     s32 pad;
 
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 18.0f);
-    SkelAnime_InitFlex(play, &this->skelAnime, &gMalonAdultSkel, NULL, NULL, NULL, 0);
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
-    CollisionCheck_SetInfo2(&this->actor.colChkInfo, DamageTable_Get(22), &sColChkInfoInit);
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 18.0f);
+    Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &gMalonAdultSkel, NULL, NULL, NULL, 0);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set5(play, &this->collider, &this->actor, &EnMaAtInfoData);
+    CollisionCheck_Status_set3(&this->actor.colChkInfo, CollisionBtlTbl_get(22), &MaStatusData);
 
-    switch (func_80AA2EC8(this, play)) {
+    switch (ma3_appearance_check(this, play)) {
         case 0:
-            EnMa3_ChangeAnim(this, ENMA3_ANIM_0);
-            this->actionFunc = func_80AA3200;
+            ma3_anime_ct(this, ENMA3_ANIM_0);
+            this->actionFunc = ma3_wait;
             break;
         case 1:
-            EnMa3_ChangeAnim(this, ENMA3_ANIM_0);
-            this->actionFunc = func_80AA3200;
+            ma3_anime_ct(this, ENMA3_ANIM_0);
+            this->actionFunc = ma3_wait;
             break;
         case 2:
-            Actor_Kill(&this->actor);
+            Actor_delete(&this->actor);
             return;
     }
 
-    Actor_UpdateBgCheckInfo(play, &this->actor, 0.0f, 0.0f, 0.0f, UPDBGCHECKINFO_FLAG_2);
-    Actor_SetScale(&this->actor, 0.01f);
+    Actor_BGcheck2(play, &this->actor, 0.0f, 0.0f, 0.0f, UPDBGCHECKINFO_FLAG_2);
+    Actor_set_scale(&this->actor, 0.01f);
     this->interactInfo.talkState = NPC_TALK_STATE_IDLE;
 }
 
-void EnMa3_Destroy(Actor* thisx, PlayState* play) {
+void En_Ma3_Actor_dt(Actor* thisx, PlayState* play) {
     EnMa3* this = (EnMa3*)thisx;
 
-    SkelAnime_Free(&this->skelAnime, play);
-    Collider_DestroyCylinder(play, &this->collider);
+    Skeleton_Info_dt(&this->skelAnime, play);
+    ClObjPipe_dt(play, &this->collider);
 }
 
-void func_80AA3200(EnMa3* this, PlayState* play) {
+void ma3_wait(EnMa3* this, PlayState* play) {
     if (this->interactInfo.talkState == NPC_TALK_STATE_ACTION) {
         this->actor.flags &= ~ACTOR_FLAG_TALK_OFFER_AUTO_ACCEPTED;
         this->interactInfo.talkState = NPC_TALK_STATE_IDLE;
@@ -291,13 +291,13 @@ void func_80AA3200(EnMa3* this, PlayState* play) {
 }
 
 #if OOT_PAL_N64
-// Same as Npc_UpdateTalking, but with an additional check for the subtimer state
-s32 EnMa3_UpdateTalking(PlayState* play, Actor* actor, s16* talkState, f32 interactRange, NpcGetTextIdFunc getTextId,
+// Same as npc_talk, but with an additional check for the subtimer state
+s32 En_Ma3_Actor_moveTalking(PlayState* play, Actor* actor, s16* talkState, f32 interactRange, NpcGetTextIdFunc getTextId,
                         NpcUpdateTalkStateFunc updateTalkState) {
     s16 x;
     s16 y;
 
-    if (Actor_TalkOfferAccepted(actor, play)) {
+    if (Actor_talk_check(actor, play)) {
         *talkState = NPC_TALK_STATE_TALKING;
         return true;
     }
@@ -307,17 +307,17 @@ s32 EnMa3_UpdateTalking(PlayState* play, Actor* actor, s16* talkState, f32 inter
         return false;
     }
 
-    Actor_GetScreenPos(play, actor, &x, &y);
+    Actor_display_position_set(play, actor, &x, &y);
     if ((x < 0) || (x > SCREEN_WIDTH) || (y < 0) || (y > SCREEN_HEIGHT)) {
         // Actor is offscreen
         return false;
     }
 
-    if ((gSaveContext.subTimerState != 0) && (gSaveContext.subTimerSeconds < 6)) {
+    if ((z_common_data.subTimerState != 0) && (z_common_data.subTimerSeconds < 6)) {
         return false;
     }
 
-    if (!Actor_OfferTalk(actor, play, interactRange)) {
+    if (!Actor_talk_request2(actor, play, interactRange)) {
         return false;
     }
 
@@ -327,41 +327,41 @@ s32 EnMa3_UpdateTalking(PlayState* play, Actor* actor, s16* talkState, f32 inter
 }
 #endif
 
-void EnMa3_Update(Actor* thisx, PlayState* play) {
+void En_Ma3_Actor_move(Actor* thisx, PlayState* play) {
     EnMa3* this = (EnMa3*)thisx;
     s32 pad;
 
-    Collider_UpdateCylinder(&this->actor, &this->collider);
-    CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
-    SkelAnime_Update(&this->skelAnime);
-    EnMa3_UpdateEyes(this);
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
+    CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
+    Skeleton_Info2_anime_play(&this->skelAnime);
+    ma3_eye_control(this);
     this->actionFunc(this, play);
-    func_80AA2E54(this, play);
+    ma3_eye_move(this, play);
 
 #if !OOT_PAL_N64
-    Npc_UpdateTalking(play, &this->actor, &this->interactInfo.talkState, this->collider.dim.radius + 150.0f,
-                      EnMa3_GetTextId, EnMa3_UpdateTalkState);
+    npc_talk(play, &this->actor, &this->interactInfo.talkState, this->collider.dim.radius + 150.0f,
+                      ma3_set_message, ma3_end_message);
 #else
-    EnMa3_UpdateTalking(play, &this->actor, &this->interactInfo.talkState, this->collider.dim.radius + 150.0f,
-                        EnMa3_GetTextId, EnMa3_UpdateTalkState);
+    En_Ma3_Actor_moveTalking(play, &this->actor, &this->interactInfo.talkState, this->collider.dim.radius + 150.0f,
+                        ma3_set_message, ma3_end_message);
 #endif
 
 #if OOT_VERSION >= PAL_1_0
     if (this->interactInfo.talkState == NPC_TALK_STATE_IDLE) {
         if (this->isNotSinging) {
             // Turn on singing
-            Audio_ToggleMalonSinging(false);
+            Na_SetMuteBgm(false);
             this->isNotSinging = false;
         }
     } else if (!this->isNotSinging) {
         // Turn off singing
-        Audio_ToggleMalonSinging(true);
+        Na_SetMuteBgm(true);
         this->isNotSinging = true;
     }
 #endif
 }
 
-s32 EnMa3_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+static s32 before_display(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     EnMa3* this = (EnMa3*)thisx;
     Vec3s limbRot;
 
@@ -369,33 +369,33 @@ s32 EnMa3_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* p
         *dList = NULL;
     }
     if (limbIndex == MALON_ADULT_LIMB_HEAD) {
-        Matrix_Translate(1400.0f, 0.0f, 0.0f, MTXMODE_APPLY);
+        Matrix_translate(1400.0f, 0.0f, 0.0f, MTXMODE_APPLY);
         limbRot = this->interactInfo.headRot;
-        Matrix_RotateX(BINANG_TO_RAD_ALT(limbRot.y), MTXMODE_APPLY);
-        Matrix_RotateZ(BINANG_TO_RAD_ALT(limbRot.x), MTXMODE_APPLY);
-        Matrix_Translate(-1400.0f, 0.0f, 0.0f, MTXMODE_APPLY);
+        Matrix_rotateX(BINANG_TO_RAD_ALT(limbRot.y), MTXMODE_APPLY);
+        Matrix_rotateZ(BINANG_TO_RAD_ALT(limbRot.x), MTXMODE_APPLY);
+        Matrix_translate(-1400.0f, 0.0f, 0.0f, MTXMODE_APPLY);
     }
     if (limbIndex == MALON_ADULT_LIMB_CHEST_AND_NECK) {
         limbRot = this->interactInfo.torsoRot;
-        Matrix_RotateY(BINANG_TO_RAD_ALT(-limbRot.y), MTXMODE_APPLY);
-        Matrix_RotateX(BINANG_TO_RAD_ALT(-limbRot.x), MTXMODE_APPLY);
+        Matrix_rotateY(BINANG_TO_RAD_ALT(-limbRot.y), MTXMODE_APPLY);
+        Matrix_rotateX(BINANG_TO_RAD_ALT(-limbRot.x), MTXMODE_APPLY);
     }
     if ((limbIndex == MALON_ADULT_LIMB_CHEST_AND_NECK) || (limbIndex == MALON_ADULT_LIMB_LEFT_SHOULDER) ||
         (limbIndex == MALON_ADULT_LIMB_RIGHT_SHOULDER)) {
-        rot->y += Math_SinS(this->unk_212[limbIndex].y) * 200.0f;
-        rot->z += Math_CosS(this->unk_212[limbIndex].z) * 200.0f;
+        rot->y += sin_s(this->unk_212[limbIndex].y) * 200.0f;
+        rot->z += cos_s(this->unk_212[limbIndex].z) * 200.0f;
     }
     return false;
 }
 
-void EnMa3_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
+static void after_display(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
     EnMa3* this = (EnMa3*)thisx;
     Vec3f vec = { 900.0f, 0.0f, 0.0f };
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_ma3.c", 927);
 
     if (limbIndex == MALON_ADULT_LIMB_HEAD) {
-        Matrix_MultVec3f(&vec, &this->actor.focus.pos);
+        Matrix_Position(&vec, &this->actor.focus.pos);
     }
 
     if ((limbIndex == MALON_ADULT_LIMB_LEFT_HAND) && (this->skelAnime.animation == &gMalonAdultStandStillAnim)) {
@@ -405,9 +405,9 @@ void EnMa3_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot,
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_ma3.c", 950);
 }
 
-void EnMa3_Draw(Actor* thisx, PlayState* play) {
-    static void* sMouthTextures[] = { gMalonAdultMouthNeutralTex, gMalonAdultMouthSadTex, gMalonAdultMouthHappyTex };
-    static void* sEyeTextures[] = { gMalonAdultEyeOpenTex, gMalonAdultEyeHalfTex, gMalonAdultEyeClosedTex };
+void En_Ma3_Actor_draw(Actor* thisx, PlayState* play) {
+    static void* mouth_txt[] = { gMalonAdultMouthNeutralTex, gMalonAdultMouthSadTex, gMalonAdultMouthHappyTex };
+    static void* eye_txt[] = { gMalonAdultEyeOpenTex, gMalonAdultEyeHalfTex, gMalonAdultEyeClosedTex };
     EnMa3* this = (EnMa3*)thisx;
     Camera* activeCam;
     f32 distFromCamEye;
@@ -416,15 +416,15 @@ void EnMa3_Draw(Actor* thisx, PlayState* play) {
     OPEN_DISPS(play->state.gfxCtx, "../z_en_ma3.c", 978);
 
     activeCam = GET_ACTIVE_CAM(play);
-    distFromCamEye = Math_Vec3f_DistXZ(&this->actor.world.pos, &activeCam->eye);
-    Audio_UpdateMalonSinging(distFromCamEye, NA_BGM_LONLON);
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    distFromCamEye = search_position_distanceXZ(&this->actor.world.pos, &activeCam->eye);
+    Na_SetObjectBgmDistance(distFromCamEye, NA_BGM_LONLON);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
 
-    gSPSegment(POLY_OPA_DISP++, 0x09, SEGMENTED_TO_VIRTUAL(sMouthTextures[this->mouthIndex]));
-    gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(sEyeTextures[this->eyeIndex]));
+    gSPSegment(POLY_OPA_DISP++, 0x09, SEGMENTED_TO_VIRTUAL(mouth_txt[this->mouthIndex]));
+    gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(eye_txt[this->eyeIndex]));
 
-    SkelAnime_DrawFlexOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
-                          EnMa3_OverrideLimbDraw, EnMa3_PostLimbDraw, this);
+    Si2_draw_SV(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
+                          before_display, after_display, this);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_ma3.c", 1013);
 }

@@ -1,16 +1,16 @@
-void EnNb_CrawlspaceSpawnCheck(EnNb* this, PlayState* play) {
+void En_Nb_Stand_Init(EnNb* this, PlayState* play) {
     if (!GET_EVENTCHKINF(EVENTCHKINF_95) && LINK_IS_CHILD) {
-        EnNb_UpdatePath(this, play);
+        En_Nb_Init_path_info(this, play);
 
         // looking into crawlspace
         if (!GET_EVENTCHKINF(EVENTCHKINF_94)) {
-            EnNb_SetCurrentAnim(this, &gNabooruKneeingAtCrawlspaceAnim, 0, 0.0f, 0);
+            En_Nb_Change_Anime(this, &gNabooruKneeingAtCrawlspaceAnim, 0, 0.0f, 0);
             this->action = NB_CROUCH_CRAWLSPACE;
             this->drawMode = NB_DRAW_DEFAULT;
         } else {
             s32 pad;
 
-            EnNb_SetCurrentAnim(this, &gNabooruStandingHandsOnHipsAnim, 0, 0.0f, 0);
+            En_Nb_Change_Anime(this, &gNabooruStandingHandsOnHipsAnim, 0, 0.0f, 0);
             this->headTurnFlag = 1;
             this->actor.flags |= ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY;
             this->actor.world.pos = this->finalPos;
@@ -18,11 +18,11 @@ void EnNb_CrawlspaceSpawnCheck(EnNb* this, PlayState* play) {
             this->drawMode = NB_DRAW_DEFAULT;
         }
     } else {
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     }
 }
 
-void func_80AB359C(EnNb* this) {
+void En_Nb_inStand_Movement(EnNb* this) {
     PosRot* world = &this->actor.world;
     Vec3f* initialPos = &this->initialPos;
     Vec3f* finalPos = &this->finalPos;
@@ -36,7 +36,7 @@ void func_80AB359C(EnNb* this) {
     temp_t1 += 25;
 
     if (temp_t1 >= this->movementTimer) {
-        lerp = Environment_LerpWeightAccelDecel(temp_t1, 0, this->movementTimer, 3, 3);
+        lerp = get_parcent_forAccelBrake(temp_t1, 0, this->movementTimer, 3, 3);
 
         world->pos.x = initialPos->x + (lerp * (finalPos->x - initialPos->x));
         world->pos.y = initialPos->y + (lerp * (finalPos->y - initialPos->y));
@@ -44,11 +44,11 @@ void func_80AB359C(EnNb* this) {
     }
 }
 
-void EnNb_SetNoticeSFX(EnNb* this) {
-    Sfx_PlaySfxAtPos(&this->actor.projectedPos, NA_SE_VO_NB_NOTICE);
+void En_Nb_inStand_Set_NoticeSound(EnNb* this) {
+    Na_StartObjectSe_F(&this->actor.projectedPos, NA_SE_VO_NB_NOTICE);
 }
 
-s32 EnNb_GetNoticedStatus(EnNb* this, PlayState* play) {
+s32 En_Nb_inStand_Search_Link(EnNb* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     f32 playerX = player->actor.world.pos.x;
     f32 playerZ = player->actor.world.pos.z;
@@ -62,43 +62,43 @@ s32 EnNb_GetNoticedStatus(EnNb* this, PlayState* play) {
     }
 }
 
-void func_80AB36DC(EnNb* this, PlayState* play) {
+void En_Nb_inStand_SetAngle_forMoving(EnNb* this, PlayState* play) {
     u16 moveTime = this->movementTimer;
 
     if ((((u16)((u16)(kREG(17) + 25) - 4))) > moveTime) {
         s16 invScale = 4 - moveTime;
 
         if (invScale > 0) {
-            Math_SmoothStepToS(&this->actor.shape.rot.y, this->pathYaw, invScale, 6200, 100);
+            add_calc_short_angle2(&this->actor.shape.rot.y, this->pathYaw, invScale, 6200, 100);
         }
     } else {
         s16 invScale = (u16)(kREG(17) + 25) - moveTime;
 
         if (invScale > 0) {
-            Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.home.rot.y, invScale, 6200, 100);
+            add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.home.rot.y, invScale, 6200, 100);
         }
     }
 }
 
-void EnNb_CheckNoticed(EnNb* this, PlayState* play) {
-    if (EnNb_GetNoticedStatus(this, play)) {
-        EnNb_SetCurrentAnim(this, &gNabooruStandingToWalkingTransitionAnim, 2, -8.0f, 0);
+void En_Nb_inStand_check_WaitToUp(EnNb* this, PlayState* play) {
+    if (En_Nb_inStand_Search_Link(this, play)) {
+        En_Nb_Change_Anime(this, &gNabooruStandingToWalkingTransitionAnim, 2, -8.0f, 0);
         this->action = NB_NOTICE_PLAYER;
-        EnNb_SetNoticeSFX(this);
+        En_Nb_inStand_Set_NoticeSound(this);
     }
 }
 
-void EnNb_SetupIdleCrawlspace(EnNb* this, s32 animFinished) {
+void En_Nb_inStand_check_UpToBlocking(EnNb* this, s32 animFinished) {
     if (animFinished) {
-        EnNb_SetCurrentAnim(this, &gNabooruStandingHandsOnHipsAnim, 0, -8.0f, 0);
+        En_Nb_Change_Anime(this, &gNabooruStandingHandsOnHipsAnim, 0, -8.0f, 0);
         this->headTurnFlag = 1;
         this->actor.flags |= ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY;
         this->action = NB_IDLE_CRAWLSPACE;
     }
 }
 
-void func_80AB3838(EnNb* this, PlayState* play) {
-    if (Actor_TalkOfferAccepted(&this->actor, play)) {
+void En_Nb_inStand_check_BlockingToBlocking_greet(EnNb* this, PlayState* play) {
+    if (Actor_talk_check(&this->actor, play)) {
         s32 pad;
 
         this->action = NB_IN_DIALOG;
@@ -111,18 +111,18 @@ void func_80AB3838(EnNb* this, PlayState* play) {
             this->actor.textId = 0x6024;
         }
 
-        Actor_OfferTalkNearColChkInfoCylinder(&this->actor, play);
+        Actor_talk_request(&this->actor, play);
     }
 }
 
-void EnNb_SetupPathMovement(EnNb* this, PlayState* play) {
-    EnNb_SetCurrentAnim(this, &gNabooruStandingToWalkingTransitionAnim, 2, -8.0f, 0);
+void En_Nb_inStand_Setup_Blocking_greetToMoving(EnNb* this, PlayState* play) {
+    En_Nb_Change_Anime(this, &gNabooruStandingToWalkingTransitionAnim, 2, -8.0f, 0);
     SET_EVENTCHKINF(EVENTCHKINF_94);
     this->action = NB_IN_PATH;
     this->actor.flags &= ~(ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY);
 }
 
-void EnNb_SetTextIdAsChild(EnNb* this, PlayState* play) {
+void En_Nb_inStand_check_Blocking_greetToBranch(EnNb* this, PlayState* play) {
     s32 pad;
     u8 choiceIndex;
     s32 pad1;
@@ -130,9 +130,9 @@ void EnNb_SetTextIdAsChild(EnNb* this, PlayState* play) {
 
     textId = this->actor.textId;
 
-    if (Message_GetState(&play->msgCtx) == TEXT_STATE_CLOSING) {
+    if (message_check(&play->msgCtx) == TEXT_STATE_CLOSING) {
         if (textId == 0x6025) {
-            EnNb_SetupPathMovement(this, play);
+            En_Nb_inStand_Setup_Blocking_greetToMoving(this, play);
         } else {
             if (textId == 0x6027) {
                 SET_INFTABLE(INFTABLE_16C);
@@ -140,7 +140,7 @@ void EnNb_SetTextIdAsChild(EnNb* this, PlayState* play) {
             this->action = NB_IDLE_CRAWLSPACE;
         }
         this->actor.flags &= ~(ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY);
-    } else if ((Message_GetState(&play->msgCtx) == TEXT_STATE_CHOICE) && Message_ShouldAdvance(play)) {
+    } else if ((message_check(&play->msgCtx) == TEXT_STATE_CHOICE) && pad_on_check(play)) {
         choiceIndex = play->msgCtx.choiceIndex;
 
         if (textId == 0x601D) {
@@ -174,110 +174,110 @@ void EnNb_SetTextIdAsChild(EnNb* this, PlayState* play) {
             }
         }
 
-        Message_ContinueTextbox(play, this->actor.textId);
+        message_set2(play, this->actor.textId);
     }
 }
 
-void func_80AB3A7C(EnNb* this, PlayState* play, s32 animFinished) {
+void En_Nb_inStand_check_MovingToWelcome(EnNb* this, PlayState* play, s32 animFinished) {
     u16 movementTimer = this->movementTimer;
 
     if ((u16)(kREG(17) + 25) > movementTimer) {
         if (animFinished) {
-            EnNb_SetCurrentAnim(this, &gNabooruWalkingAnim, 0, 0.0f, 0);
+            En_Nb_Change_Anime(this, &gNabooruWalkingAnim, 0, 0.0f, 0);
         }
     } else {
-        EnNb_SetCurrentAnim(this, &gNabooruStandingHandsOnHipsAnim, 0, -8.0f, 0);
+        En_Nb_Change_Anime(this, &gNabooruStandingHandsOnHipsAnim, 0, -8.0f, 0);
         this->action = NB_IDLE_AFTER_TALK;
     }
 }
 
-void func_80AB3B04(EnNb* this, PlayState* play) {
-    if (Actor_TalkOfferAccepted(&this->actor, play)) {
+void En_Nb_inStand_check_WelcomeToWelcome_greet(EnNb* this, PlayState* play) {
+    if (Actor_talk_check(&this->actor, play)) {
         s32 pad;
 
         this->action = NB_ACTION_30;
     } else {
         this->actor.flags |= ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY;
-        this->actor.textId = MaskReaction_GetTextId(play, MASK_REACTION_SET_NABOORU);
+        this->actor.textId = get_mask_message(play, MASK_REACTION_SET_NABOORU);
 
         if (this->actor.textId == 0) {
             this->actor.textId = 0x6026;
         }
 
-        Actor_OfferTalkNearColChkInfoCylinder(&this->actor, play);
+        Actor_talk_request(&this->actor, play);
     }
 }
 
-void func_80AB3B7C(EnNb* this, PlayState* play) {
-    if (Message_GetState(&play->msgCtx) == TEXT_STATE_CLOSING) {
+void En_Nb_inStand_check_Welcome_greetToWelcome(EnNb* this, PlayState* play) {
+    if (message_check(&play->msgCtx) == TEXT_STATE_CLOSING) {
         this->action = NB_IDLE_AFTER_TALK;
         this->actor.flags &= ~(ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY);
     }
 }
 
-void EnNb_WaitForNotice(EnNb* this, PlayState* play) {
-    func_80AB1284(this, play);
-    EnNb_UpdateCollider(this, play);
-    EnNb_UpdateSkelAnime(this);
-    EnNb_UpdateEyes(this);
-    EnNb_CheckNoticed(this, play);
+void En_Nb_inStand_main_wait(EnNb* this, PlayState* play) {
+    En_Nb_BGcheck(this, play);
+    En_Nb_Excute_Corect(this, play);
+    En_Nb_Animation_Base(this);
+    En_Nb_set_eye_pattern(this);
+    En_Nb_inStand_check_WaitToUp(this, play);
 }
 
-void EnNb_StandUpAfterNotice(EnNb* this, PlayState* play) {
+void En_Nb_inStand_main_up(EnNb* this, PlayState* play) {
     s32 animFinished;
 
-    func_80AB1284(this, play);
-    EnNb_UpdateCollider(this, play);
-    animFinished = EnNb_UpdateSkelAnime(this);
-    EnNb_UpdateEyes(this);
-    EnNb_SetupIdleCrawlspace(this, animFinished);
+    En_Nb_BGcheck(this, play);
+    En_Nb_Excute_Corect(this, play);
+    animFinished = En_Nb_Animation_Base(this);
+    En_Nb_set_eye_pattern(this);
+    En_Nb_inStand_check_UpToBlocking(this, animFinished);
 }
 
-void EnNb_BlockCrawlspace(EnNb* this, PlayState* play) {
-    func_80AB1284(this, play);
-    EnNb_UpdateCollider(this, play);
-    func_80AB0FBC(this, play);
-    EnNb_UpdateSkelAnime(this);
-    EnNb_UpdateEyes(this);
-    func_80AB3838(this, play);
+void En_Nb_inStand_main_blocking(EnNb* this, PlayState* play) {
+    En_Nb_BGcheck(this, play);
+    En_Nb_Excute_Corect(this, play);
+    En_Nb_Calc_turn_link(this, play);
+    En_Nb_Animation_Base(this);
+    En_Nb_set_eye_pattern(this);
+    En_Nb_inStand_check_BlockingToBlocking_greet(this, play);
 }
 
-void EnNb_InitCrawlspaceDialogue(EnNb* this, PlayState* play) {
-    func_80AB1284(this, play);
-    EnNb_UpdateCollider(this, play);
-    func_80AB0FBC(this, play);
-    EnNb_UpdateSkelAnime(this);
-    EnNb_UpdateEyes(this);
-    EnNb_SetTextIdAsChild(this, play);
+void En_Nb_inStand_main_blocking_greet(EnNb* this, PlayState* play) {
+    En_Nb_BGcheck(this, play);
+    En_Nb_Excute_Corect(this, play);
+    En_Nb_Calc_turn_link(this, play);
+    En_Nb_Animation_Base(this);
+    En_Nb_set_eye_pattern(this);
+    En_Nb_inStand_check_Blocking_greetToBranch(this, play);
 }
 
-void EnNb_FollowPath(EnNb* this, PlayState* play) {
+void En_Nb_inStand_main_moving(EnNb* this, PlayState* play) {
     s32 animFinished;
 
-    func_80AB359C(this);
-    func_80AB1284(this, play);
-    EnNb_UpdateCollider(this, play);
-    func_80AB36DC(this, play);
-    func_80AB10C4(this);
-    animFinished = EnNb_UpdateSkelAnime(this);
-    EnNb_UpdateEyes(this);
-    func_80AB3A7C(this, play, animFinished);
+    En_Nb_inStand_Movement(this);
+    En_Nb_BGcheck(this, play);
+    En_Nb_Excute_Corect(this, play);
+    En_Nb_inStand_SetAngle_forMoving(this, play);
+    En_Nb_Calc_turn_front(this);
+    animFinished = En_Nb_Animation_Base(this);
+    En_Nb_set_eye_pattern(this);
+    En_Nb_inStand_check_MovingToWelcome(this, play, animFinished);
 }
 
-void func_80AB3DB0(EnNb* this, PlayState* play) {
-    func_80AB1284(this, play);
-    EnNb_UpdateCollider(this, play);
-    func_80AB0FBC(this, play);
-    EnNb_UpdateSkelAnime(this);
-    EnNb_UpdateEyes(this);
-    func_80AB3B04(this, play);
+void En_Nb_inStand_main_welcome(EnNb* this, PlayState* play) {
+    En_Nb_BGcheck(this, play);
+    En_Nb_Excute_Corect(this, play);
+    En_Nb_Calc_turn_link(this, play);
+    En_Nb_Animation_Base(this);
+    En_Nb_set_eye_pattern(this);
+    En_Nb_inStand_check_WelcomeToWelcome_greet(this, play);
 }
 
-void func_80AB3E10(EnNb* this, PlayState* play) {
-    func_80AB1284(this, play);
-    EnNb_UpdateCollider(this, play);
-    func_80AB1040(this, play);
-    EnNb_UpdateSkelAnime(this);
-    EnNb_UpdateEyes(this);
-    func_80AB3B7C(this, play);
+void En_Nb_inStand_main_welcome_greet(EnNb* this, PlayState* play) {
+    En_Nb_BGcheck(this, play);
+    En_Nb_Excute_Corect(this, play);
+    En_Nb_Calc_turn_link2(this, play);
+    En_Nb_Animation_Base(this);
+    En_Nb_set_eye_pattern(this);
+    En_Nb_inStand_check_Welcome_greetToWelcome(this, play);
 }

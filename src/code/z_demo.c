@@ -36,33 +36,115 @@
 
 #include "assets/scenes/misc/hakaana_ouke/hakaana_ouke_scene.h"
 
-u16 sCurTextId = 0;
-u16 sCurOcarinaAction = 0;
+u16 MESSAGE_BAK = 0;
+u16 OKAMESSAGE_BAK = 0;
 
 typedef void (*CutsceneHandler)(PlayState*, CutsceneContext*);
 
-void CutsceneHandler_DoNothing(PlayState* play, CutsceneContext* csCtx);
-void CutsceneHandler_StartManual(PlayState* play, CutsceneContext* csCtx);
-void CutsceneHandler_StartScript(PlayState* play, CutsceneContext* csCtx);
-void CutsceneHandler_RunScript(PlayState* play, CutsceneContext* csCtx);
-void CutsceneHandler_StopManual(PlayState* play, CutsceneContext* csCtx);
-void CutsceneHandler_StopScript(PlayState* play, CutsceneContext* csCtx);
+void Demo_play_non_proc(PlayState* play, CutsceneContext* csCtx);
+void Demo_play_start_proc(PlayState* play, CutsceneContext* csCtx);
+void Tool_Demo_play_start_proc(PlayState* play, CutsceneContext* csCtx);
+void Demo_play_demo_proc(PlayState* play, CutsceneContext* csCtx);
+void Demo_play_end_proc(PlayState* play, CutsceneContext* csCtx);
+void Tool_Demo_play_end_proc(PlayState* play, CutsceneContext* csCtx);
 
-CutsceneHandler sManualCutsceneHandlers[] = {
-    CutsceneHandler_DoNothing,   // CS_STATE_IDLE
-    CutsceneHandler_StartManual, // CS_STATE_START
-    CutsceneHandler_DoNothing,   // CS_STATE_RUN
-    CutsceneHandler_StopManual,  // CS_STATE_STOP
-    CutsceneHandler_DoNothing,   // CS_STATE_RUN_UNSTOPPABLE
-};
+void Demo_play_select_trig(PlayState* play, CutsceneContext* csCtx);
 
-CutsceneHandler sScriptedCutsceneHandlers[] = {
-    CutsceneHandler_DoNothing,   // CS_STATE_IDLE
-    CutsceneHandler_StartScript, // CS_STATE_START
-    CutsceneHandler_RunScript,   // CS_STATE_RUN
-    CutsceneHandler_StopScript,  // CS_STATE_STOP
-    CutsceneHandler_RunScript,   // CS_STATE_RUN_UNSTOPPABLE
-};
+#if DEBUG_FEATURES
+void Cutscene_DrawDebugInfo(PlayState* play, Gfx** dlist, CutsceneContext* csCtx) {
+    GfxPrint printer;
+    s32 pad[2];
+
+    gfxprint_init(&printer);
+    gfxprint_open(&printer, *dlist);
+
+    gfxprint_locate8x8(&printer, 22, 25);
+    gfxprint_color(&printer, 255, 255, 55, 32);
+    gfxprint_printf(&printer, "%s", "FLAME ");
+    gfxprint_color(&printer, 255, 255, 255, 32);
+    gfxprint_printf(&printer, "%06d", csCtx->curFrame);
+    gfxprint_color(&printer, 50, 255, 255, 60);
+    gfxprint_locate8x8(&printer, 4, 26);
+    gfxprint_printf(&printer, "%s", "SKIP=(START) or (Cursole Right)");
+
+    *dlist = gfxprint_close(&printer);
+    gfxprint_cleanup(&printer);
+}
+#endif
+
+void Demo_play_ct(PlayState* play, CutsceneContext* csCtx) {
+    csCtx->state = CS_STATE_IDLE;
+    csCtx->timer = 0.0f;
+}
+
+void Demo_play_start(PlayState* play, CutsceneContext* csCtx) {
+    csCtx->state = CS_STATE_START;
+    csCtx->playerCue = NULL;
+}
+
+void Demo_play_end(PlayState* play, CutsceneContext* csCtx) {
+    if (csCtx->state != CS_STATE_RUN_UNSTOPPABLE) {
+        csCtx->state = CS_STATE_STOP;
+    }
+}
+
+void Demo_play_move(PlayState* play, CutsceneContext* csCtx) {
+    static CutsceneHandler demo_play_proc[] = {
+        Demo_play_non_proc,   // CS_STATE_IDLE
+        Demo_play_start_proc, // CS_STATE_START
+        Demo_play_non_proc,   // CS_STATE_RUN
+        Demo_play_end_proc,  // CS_STATE_STOP
+        Demo_play_non_proc,   // CS_STATE_RUN_UNSTOPPABLE
+    };
+
+    if (z_common_data.save.cutsceneIndex < 0xFFF0) {
+        demo_play_proc[csCtx->state](play, csCtx);
+    }
+}
+
+void Tool_Demo_play_move(PlayState* play, CutsceneContext* csCtx) {
+    static CutsceneHandler demo_play_proc[] = {
+        Demo_play_non_proc,   // CS_STATE_IDLE
+        Tool_Demo_play_start_proc, // CS_STATE_START
+        Demo_play_demo_proc,   // CS_STATE_RUN
+        Tool_Demo_play_end_proc,  // CS_STATE_STOP
+        Demo_play_demo_proc,   // CS_STATE_RUN_UNSTOPPABLE
+    };
+
+#if DEBUG_FEATURES
+    {
+        Input* input = &play->state.input[0];
+
+        if (CHECK_BTN_ALL(input->press.button, BTN_DLEFT) && (csCtx->state == CS_STATE_IDLE) && IS_CUTSCENE_LAYER) {
+            DEMOCAM_SW = false;
+            z_common_data.save.cutsceneIndex = 0xFFFD;
+            z_common_data.cutsceneTrigger = 1;
+        }
+
+        if (CHECK_BTN_ALL(input->press.button, BTN_DUP) && (csCtx->state == CS_STATE_IDLE) && IS_CUTSCENE_LAYER &&
+            !debug_camera_sw) {
+            DEMOCAM_SW = true;
+            z_common_data.save.cutsceneIndex = 0xFFFD;
+            z_common_data.cutsceneTrigger = 1;
+        }
+    }
+#endif
+
+    if ((z_common_data.cutsceneTrigger != 0) && (play->transitionTrigger == TRANS_TRIGGER_START)) {
+        z_common_data.cutsceneTrigger = 0;
+    }
+
+    if ((z_common_data.cutsceneTrigger != 0) && (csCtx->state == CS_STATE_IDLE)) {
+        PRINTF(T("\nデモ開始要求 発令！", "\nDemo start request issued!"));
+        z_common_data.save.cutsceneIndex = 0xFFFD;
+        z_common_data.cutsceneTrigger = 1;
+    }
+
+    if (z_common_data.save.cutsceneIndex >= 0xFFF0) {
+        Demo_play_select_trig(play, csCtx);
+        demo_play_proc[csCtx->state](play, csCtx);
+    }
+}
 
 typedef enum TitleDemoDestination {
     /* 0 */ TITLE_DEMO_SPIRIT_TEMPLE,
@@ -70,7 +152,7 @@ typedef enum TitleDemoDestination {
     /* 2 */ TITLE_DEMO_GANONDORF_HORSE
 } TitleDemoDestination;
 
-u8 sTitleDemoDestination = TITLE_DEMO_SPIRIT_TEMPLE;
+u8 E_title_demono = TITLE_DEMO_SPIRIT_TEMPLE;
 
 typedef struct EntranceCutscene {
     /* 0x00 */ u16 entrance;      // entrance index upon which the cutscene should trigger
@@ -79,7 +161,7 @@ typedef struct EntranceCutscene {
     /* 0x04 */ void* script;      // cutscene script that should run
 } EntranceCutscene;               // size = 0x8
 
-EntranceCutscene sEntranceCutsceneTable[] = {
+EntranceCutscene SSKTbl[] = {
     { ENTR_HYRULE_FIELD_3, 2, EVENTCHKINF_A0, gHyruleFieldIntroCs },
     { ENTR_DEATH_MOUNTAIN_TRAIL_0, 2, EVENTCHKINF_A1, gDMTIntroCs },
     { ENTR_KAKARIKO_VILLAGE_0, 2, EVENTCHKINF_A3, gKakarikoVillageIntroCs },
@@ -116,139 +198,57 @@ EntranceCutscene sEntranceCutsceneTable[] = {
     { ENTR_KOKIRI_FOREST_12, 2, EVENTCHKINF_C6, gKokiriForestDekuSproutPart3Cs },
 };
 
-void* sCutscenesUnknownList[] = {
+void* romdatatbl[] = {
     gDekuTreeIntroCs,     gJabuIntroCs,    gDcOpeningCs, gSpiritBossNabooruKnuckleDefeatCs,
     gIceCavernSerenadeCs, gTowerBarrierCs,
 };
 
 // Stores the frame the relevant cam data was last applied on
-u16 gCamAtSplinePointsAppliedFrame;
-u16 gCamEyePointAppliedFrame;
-u16 gCamAtPointAppliedFrame;
+u16 start_flame_bak2;
+u16 start_flame_bak3;
+u16 start_flame_bak4;
 
 #pragma increment_block_number "gc-eu:0 gc-eu-mq:0 gc-jp:188 gc-jp-ce:188 gc-jp-mq:0 gc-us:188 gc-us-mq:0" \
                                "ntsc-1.0:128 ntsc-1.1:80 ntsc-1.2:80 pal-1.0:80 pal-1.1:80 hiratsu3:188"
 
 // Cam ID to return to when a scripted cutscene is finished
-s16 sReturnToCamId;
+s16 active_camera_bak;
 
 // Setting this to false will skip applying changes to the camera from the current cutscene script.
 // It is set to true in most normal situations, only changed to false for debugging purposes.
-u8 gUseCutsceneCam;
+u8 DEMOCAM_SW;
 
-s16 sQuakeIndex;
+s16 quake_no;
 
-void Cutscene_SetupScripted(PlayState* play, CutsceneContext* csCtx);
-
-#if DEBUG_FEATURES
-void Cutscene_DrawDebugInfo(PlayState* play, Gfx** dlist, CutsceneContext* csCtx) {
-    GfxPrint printer;
-    s32 pad[2];
-
-    GfxPrint_Init(&printer);
-    GfxPrint_Open(&printer, *dlist);
-
-    GfxPrint_SetPos(&printer, 22, 25);
-    GfxPrint_SetColor(&printer, 255, 255, 55, 32);
-    GfxPrint_Printf(&printer, "%s", "FLAME ");
-    GfxPrint_SetColor(&printer, 255, 255, 255, 32);
-    GfxPrint_Printf(&printer, "%06d", csCtx->curFrame);
-    GfxPrint_SetColor(&printer, 50, 255, 255, 60);
-    GfxPrint_SetPos(&printer, 4, 26);
-    GfxPrint_Printf(&printer, "%s", "SKIP=(START) or (Cursole Right)");
-
-    *dlist = GfxPrint_Close(&printer);
-    GfxPrint_Destroy(&printer);
-}
-#endif
-
-void Cutscene_InitContext(PlayState* play, CutsceneContext* csCtx) {
-    csCtx->state = CS_STATE_IDLE;
-    csCtx->timer = 0.0f;
+void Demo_play_non_proc(PlayState* play, CutsceneContext* csCtx) {
 }
 
-void Cutscene_StartManual(PlayState* play, CutsceneContext* csCtx) {
-    csCtx->state = CS_STATE_START;
-    csCtx->playerCue = NULL;
+u32 counter_set(PlayState* play, CutsceneContext* csCtx, f32 target) {
+    return chase_f(&csCtx->timer, target, 0.1f);
 }
 
-void Cutscene_StopManual(PlayState* play, CutsceneContext* csCtx) {
-    if (csCtx->state != CS_STATE_RUN_UNSTOPPABLE) {
-        csCtx->state = CS_STATE_STOP;
-    }
-}
+void Demo_play_start_proc(PlayState* play, CutsceneContext* csCtx) {
+    alpha_change(HUD_VISIBILITY_NOTHING);
+    shrink_window_setval(32);
 
-void Cutscene_UpdateManual(PlayState* play, CutsceneContext* csCtx) {
-    if (gSaveContext.save.cutsceneIndex < 0xFFF0) {
-        sManualCutsceneHandlers[csCtx->state](play, csCtx);
-    }
-}
-
-void Cutscene_UpdateScripted(PlayState* play, CutsceneContext* csCtx) {
-#if DEBUG_FEATURES
-    {
-        Input* input = &play->state.input[0];
-
-        if (CHECK_BTN_ALL(input->press.button, BTN_DLEFT) && (csCtx->state == CS_STATE_IDLE) && IS_CUTSCENE_LAYER) {
-            gUseCutsceneCam = false;
-            gSaveContext.save.cutsceneIndex = 0xFFFD;
-            gSaveContext.cutsceneTrigger = 1;
-        }
-
-        if (CHECK_BTN_ALL(input->press.button, BTN_DUP) && (csCtx->state == CS_STATE_IDLE) && IS_CUTSCENE_LAYER &&
-            !gDebugCamEnabled) {
-            gUseCutsceneCam = true;
-            gSaveContext.save.cutsceneIndex = 0xFFFD;
-            gSaveContext.cutsceneTrigger = 1;
-        }
-    }
-#endif
-
-    if ((gSaveContext.cutsceneTrigger != 0) && (play->transitionTrigger == TRANS_TRIGGER_START)) {
-        gSaveContext.cutsceneTrigger = 0;
-    }
-
-    if ((gSaveContext.cutsceneTrigger != 0) && (csCtx->state == CS_STATE_IDLE)) {
-        PRINTF(T("\nデモ開始要求 発令！", "\nDemo start request issued!"));
-        gSaveContext.save.cutsceneIndex = 0xFFFD;
-        gSaveContext.cutsceneTrigger = 1;
-    }
-
-    if (gSaveContext.save.cutsceneIndex >= 0xFFF0) {
-        Cutscene_SetupScripted(play, csCtx);
-        sScriptedCutsceneHandlers[csCtx->state](play, csCtx);
-    }
-}
-
-void CutsceneHandler_DoNothing(PlayState* play, CutsceneContext* csCtx) {
-}
-
-u32 Cutscene_StepTimer(PlayState* play, CutsceneContext* csCtx, f32 target) {
-    return Math_StepToF(&csCtx->timer, target, 0.1f);
-}
-
-void CutsceneHandler_StartManual(PlayState* play, CutsceneContext* csCtx) {
-    Interface_ChangeHudVisibilityMode(HUD_VISIBILITY_NOTHING);
-    Letterbox_SetSizeTarget(32);
-
-    if (Cutscene_StepTimer(play, csCtx, 1.0f)) {
-        Audio_SetCutsceneFlag(1);
+    if (counter_set(play, csCtx, 1.0f)) {
+        Na_SetMessageStatusFlag(1);
         csCtx->state++; // CS_STATE_RUN
     }
 }
 
-void CutsceneHandler_StartScript(PlayState* play, CutsceneContext* csCtx) {
-    CutsceneHandler_RunScript(play, csCtx);
-    Interface_ChangeHudVisibilityMode(HUD_VISIBILITY_NOTHING);
-    Letterbox_SetSizeTarget(32);
+void Tool_Demo_play_start_proc(PlayState* play, CutsceneContext* csCtx) {
+    Demo_play_demo_proc(play, csCtx);
+    alpha_change(HUD_VISIBILITY_NOTHING);
+    shrink_window_setval(32);
 
-    if (Cutscene_StepTimer(play, csCtx, 1.0f)) {
-        Audio_SetCutsceneFlag(1);
+    if (counter_set(play, csCtx, 1.0f)) {
+        Na_SetMessageStatusFlag(1);
         csCtx->state++; // CS_STATE_RUN
     }
 }
 
-void CutsceneCmd_Misc(PlayState* play, CutsceneContext* csCtx, CsCmdMisc* cmd) {
+void Demo_kankyo_proc(PlayState* play, CutsceneContext* csCtx, CsCmdMisc* cmd) {
     Player* player = GET_PLAYER(play);
     f32 lerp;
     u8 isFirstFrame = false;
@@ -258,7 +258,7 @@ void CutsceneCmd_Misc(PlayState* play, CutsceneContext* csCtx, CsCmdMisc* cmd) {
         return;
     }
 
-    lerp = Environment_LerpWeight(cmd->endFrame - 1, cmd->startFrame, csCtx->curFrame);
+    lerp = get_parcent(cmd->endFrame - 1, cmd->startFrame, csCtx->curFrame);
 
     if (csCtx->curFrame == cmd->startFrame) {
         isFirstFrame = true;
@@ -267,29 +267,29 @@ void CutsceneCmd_Misc(PlayState* play, CutsceneContext* csCtx, CsCmdMisc* cmd) {
     switch (cmd->type) {
         case CS_MISC_RAIN:
             if (isFirstFrame) {
-                Audio_SetNatureAmbienceChannelIO(NATURE_CHANNEL_RAIN, CHANNEL_IO_PORT_4, 0x3F);
-                Audio_SetNatureAmbienceChannelIO(NATURE_CHANNEL_RAIN, CHANNEL_IO_PORT_1, 1);
+                Na_ControlNaturalSound(NATURE_CHANNEL_RAIN, CHANNEL_IO_PORT_4, 0x3F);
+                Na_ControlNaturalSound(NATURE_CHANNEL_RAIN, CHANNEL_IO_PORT_1, 1);
                 play->envCtx.precipitation[PRECIP_RAIN_MAX] = 20;
             }
             break;
 
         case CS_MISC_LIGHTNING:
             if (isFirstFrame) {
-                Audio_SetNatureAmbienceChannelIO(NATURE_CHANNEL_LIGHTNING, CHANNEL_IO_PORT_0, 0);
-                Environment_AddLightningBolts(play, 3);
-                gLightningStrike.state = LIGHTNING_STRIKE_START;
+                Na_ControlNaturalSound(NATURE_CHANNEL_LIGHTNING, CHANNEL_IO_PORT_0, 0);
+                thunder_start(play, 3);
+                Eleki.state = LIGHTNING_STRIKE_START;
             }
             break;
 
         case CS_MISC_SET_CSFLAG_0:
             if (isFirstFrame) {
-                CutsceneFlags_Set(play, 0);
+                eventbit_set(play, 0);
 
                 // Because this check uses an entrance index, the Door of Time will only open
                 // after entering Temple of Time from the front entrance.
                 // This is not an issue in the context of normal gameplay.
-                if (gSaveContext.save.entranceIndex == ENTR_TEMPLE_OF_TIME_0) {
-                    CutsceneFlags_Set(play, 2);
+                if (z_common_data.save.entranceIndex == ENTR_TEMPLE_OF_TIME_0) {
+                    eventbit_set(play, 2);
                 }
             }
             break;
@@ -324,7 +324,7 @@ void CutsceneCmd_Misc(PlayState* play, CutsceneContext* csCtx, CsCmdMisc* cmd) {
             break;
 
         case CS_MISC_SET_CSFLAG_1:
-            CutsceneFlags_Set(play, 1);
+            eventbit_set(play, 1);
             break;
 
         case CS_MISC_DEKU_TREE_DEATH:
@@ -333,7 +333,7 @@ void CutsceneCmd_Misc(PlayState* play, CutsceneContext* csCtx, CsCmdMisc* cmd) {
             }
 
             if (csCtx->curFrame == 783) {
-                Sfx_PlaySfxCentered(NA_SE_EV_DEKU_DEATH);
+                Na_StartSystemSe_F(NA_SE_EV_DEKU_DEATH);
             } else if (csCtx->curFrame == 717) {
                 play->roomCtx.drawParams[0] = 0;
             }
@@ -349,7 +349,7 @@ void CutsceneCmd_Misc(PlayState* play, CutsceneContext* csCtx, CsCmdMisc* cmd) {
 
         case CS_MISC_TRIFORCE_FLASH:
             if (play->roomCtx.drawParams[1] == 0) {
-                Sfx_PlaySfxCentered(NA_SE_EV_TRIFORCE_FLASH);
+                Na_StartSystemSe_F(NA_SE_EV_TRIFORCE_FLASH);
             }
 
             if (play->roomCtx.drawParams[1] < 255) {
@@ -359,28 +359,28 @@ void CutsceneCmd_Misc(PlayState* play, CutsceneContext* csCtx, CsCmdMisc* cmd) {
 
         case CS_MISC_SET_LOCKED_VIEWPOINT:
             if (isFirstFrame) {
-                Play_SetViewpoint(play, VIEWPOINT_LOCKED);
+                Game_play_pr_vr_switch_pr_set(play, VIEWPOINT_LOCKED);
             }
             break;
 
         case CS_MISC_SHOW_TITLE_CARD:
             if (isFirstFrame) {
-                TitleCard_InitPlaceName(play, &play->actorCtx.titleCtx, player->giObjectSegment, 160, 120, 144, 24, 20);
+                Actor_Name_Disp_Set2(play, &play->actorCtx.titleCtx, player->giObjectSegment, 160, 120, 144, 24, 20);
             }
             break;
 
         case CS_MISC_QUAKE_START:
             if (isFirstFrame) {
-                sQuakeIndex = Quake_Request(GET_ACTIVE_CAM(play), QUAKE_TYPE_6);
-                Quake_SetSpeed(sQuakeIndex, 0x7FFF);
-                Quake_SetPerturbations(sQuakeIndex, 4, 0, 1000, 0);
-                Quake_SetDuration(sQuakeIndex, 800);
+                quake_no = startQuake(GET_ACTIVE_CAM(play), QUAKE_TYPE_6);
+                setSpeedQuake(quake_no, 0x7FFF);
+                setScaleQuake(quake_no, 4, 0, 1000, 0);
+                setTimerQuake(quake_no, 800);
             }
             break;
 
         case CS_MISC_QUAKE_STOP:
             if (isFirstFrame) {
-                Quake_RemoveRequest(sQuakeIndex);
+                stopQuake(quake_no);
             }
             break;
 
@@ -388,13 +388,13 @@ void CutsceneCmd_Misc(PlayState* play, CutsceneContext* csCtx, CsCmdMisc* cmd) {
             play->envCtx.precipitation[PRECIP_RAIN_MAX] = 0;
             play->envCtx.stormRequest = STORM_REQUEST_STOP;
 
-            if (gSaveContext.save.dayTime < CLOCK_TIME(7, 0)) {
-                gSaveContext.save.dayTime += 30;
+            if (z_common_data.save.dayTime < CLOCK_TIME(7, 0)) {
+                z_common_data.save.dayTime += 30;
             }
 
             if (play->envCtx.precipitation[PRECIP_RAIN_CUR] == 0) {
-                gWeatherMode = WEATHER_MODE_CLEAR;
-                Audio_SetNatureAmbienceChannelIO(NATURE_CHANNEL_RAIN, CHANNEL_IO_PORT_1, 0);
+                E_wether_flg = WEATHER_MODE_CLEAR;
+                Na_ControlNaturalSound(NATURE_CHANNEL_RAIN, CHANNEL_IO_PORT_1, 0);
             }
             break;
 
@@ -411,17 +411,17 @@ void CutsceneCmd_Misc(PlayState* play, CutsceneContext* csCtx, CsCmdMisc* cmd) {
             break;
 
         case CS_MISC_VISMONO_BLACK_AND_WHITE:
-            gVisMonoColor.r = 255;
-            gVisMonoColor.g = 255;
-            gVisMonoColor.b = 255;
-            gVisMonoColor.a = 255;
+            z_play_vismono_color.r = 255;
+            z_play_vismono_color.g = 255;
+            z_play_vismono_color.b = 255;
+            z_play_vismono_color.a = 255;
             break;
 
         case CS_MISC_VISMONO_SEPIA:
-            gVisMonoColor.r = 255;
-            gVisMonoColor.g = 180;
-            gVisMonoColor.b = 100;
-            gVisMonoColor.a = 255.0f * lerp;
+            z_play_vismono_color.r = 255;
+            z_play_vismono_color.g = 180;
+            z_play_vismono_color.b = 100;
+            z_play_vismono_color.a = 255.0f * lerp;
             break;
 
         case CS_MISC_HIDE_ROOM:
@@ -429,20 +429,20 @@ void CutsceneCmd_Misc(PlayState* play, CutsceneContext* csCtx, CsCmdMisc* cmd) {
             break;
 
         case CS_MISC_TIME_ADVANCE_TO_NIGHT:
-            gSaveContext.save.dayTime += 30;
+            z_common_data.save.dayTime += 30;
 
-            if ((gSaveContext.save.dayTime) >= CLOCK_TIME(19, 0)) {
-                gSaveContext.save.dayTime = CLOCK_TIME(19, 0) - 1;
+            if ((z_common_data.save.dayTime) >= CLOCK_TIME(19, 0)) {
+                z_common_data.save.dayTime = CLOCK_TIME(19, 0) - 1;
             }
             break;
 
         case CS_MISC_SET_TIME_BASED_LIGHT_SETTING:
-            if ((gSaveContext.save.dayTime < CLOCK_TIME(4, 30)) || (gSaveContext.save.dayTime >= CLOCK_TIME(6, 30))) {
-                if ((gSaveContext.save.dayTime >= CLOCK_TIME(6, 30)) &&
-                    (gSaveContext.save.dayTime < CLOCK_TIME(16, 0))) {
+            if ((z_common_data.save.dayTime < CLOCK_TIME(4, 30)) || (z_common_data.save.dayTime >= CLOCK_TIME(6, 30))) {
+                if ((z_common_data.save.dayTime >= CLOCK_TIME(6, 30)) &&
+                    (z_common_data.save.dayTime < CLOCK_TIME(16, 0))) {
                     play->envCtx.lightSettingOverride = 1;
-                } else if ((gSaveContext.save.dayTime >= CLOCK_TIME(16, 0)) &&
-                           (gSaveContext.save.dayTime <= CLOCK_TIME(18, 30))) {
+                } else if ((z_common_data.save.dayTime >= CLOCK_TIME(16, 0)) &&
+                           (z_common_data.save.dayTime <= CLOCK_TIME(18, 30))) {
                     play->envCtx.lightSettingOverride = 2;
                 } else {
                     play->envCtx.lightSettingOverride = 3;
@@ -475,11 +475,11 @@ void CutsceneCmd_Misc(PlayState* play, CutsceneContext* csCtx, CsCmdMisc* cmd) {
             break;
 
         case CS_MISC_SET_CSFLAG_3:
-            CutsceneFlags_Set(play, 3);
+            eventbit_set(play, 3);
             break;
 
         case CS_MISC_SET_CSFLAG_4:
-            CutsceneFlags_Set(play, 4);
+            eventbit_set(play, 4);
             break;
 
         case CS_MISC_SANDSTORM_FILL:
@@ -487,49 +487,49 @@ void CutsceneCmd_Misc(PlayState* play, CutsceneContext* csCtx, CsCmdMisc* cmd) {
                 play->envCtx.sandstormState = SANDSTORM_FILL;
             }
 
-            Sfx_PlaySfxCentered2(NA_SE_EV_SAND_STORM - SFX_FLAG);
+            Na_StartFixSe_F(NA_SE_EV_SAND_STORM - SFX_FLAG);
             break;
 
         case CS_MISC_SUNSSONG_START:
-            gSaveContext.sunsSongState = SUNSSONG_START;
+            z_common_data.sunsSongState = SUNSSONG_START;
             break;
 
         case CS_MISC_FREEZE_TIME:
             if (IS_DAY) {
-                gSaveContext.save.dayTime -= gTimeSpeed;
+                z_common_data.save.dayTime -= E_day_time_plus;
             } else {
                 // doubled to compensate for time moving twice as fast at night
-                gSaveContext.save.dayTime -= gTimeSpeed * 2;
+                z_common_data.save.dayTime -= E_day_time_plus * 2;
             }
             break;
 
         case CS_MISC_LONG_SCARECROW_SONG:
-            AudioOcarina_PlayLongScarecrowSong();
+            Na_AutoPlayUserOcarinaMelody();
             csCtx->curFrame = cmd->startFrame - 1; // the cutscene runs forever
             break;
     }
 }
 
-void CutsceneCmd_SetLightSetting(PlayState* play, CutsceneContext* csCtx, CsCmdLightSetting* cmd) {
+void Demo_kcolor_proc(PlayState* play, CutsceneContext* csCtx, CsCmdLightSetting* cmd) {
     if (csCtx->curFrame == cmd->startFrame) {
         play->envCtx.lightSettingOverride = cmd->settingPlusOne - 1;
         play->envCtx.lightBlend = 1.0f;
     }
 }
 
-void CutsceneCmd_StartSequence(PlayState* play, CutsceneContext* csCtx, CsCmdStartSeq* cmd) {
+void Demo_bgm_proc(PlayState* play, CutsceneContext* csCtx, CsCmdStartSeq* cmd) {
     if (csCtx->curFrame == cmd->startFrame) {
-        Audio_PlaySequenceInCutscene(cmd->seqIdPlusOne - 1);
+        Na_StartDemoBgm(cmd->seqIdPlusOne - 1);
     }
 }
 
-void CutsceneCmd_StopSequence(PlayState* play, CutsceneContext* csCtx, CsCmdStopSeq* cmd) {
+void Demo_bgmstop_proc(PlayState* play, CutsceneContext* csCtx, CsCmdStopSeq* cmd) {
     if (csCtx->curFrame == cmd->startFrame) {
-        Audio_StopSequenceInCutscene(cmd->seqIdPlusOne - 1);
+        Na_StopDemoBgm(cmd->seqIdPlusOne - 1);
     }
 }
 
-void CutsceneCmd_FadeOutSequence(PlayState* play, CutsceneContext* csCtx, CsCmdFadeOutSeq* cmd) {
+void Demo_bgm_fade_proc(PlayState* play, CutsceneContext* csCtx, CsCmdFadeOutSeq* cmd) {
     u8 fadeOutDuration;
 
     if ((csCtx->curFrame == cmd->startFrame) && (csCtx->curFrame < cmd->endFrame)) {
@@ -543,13 +543,13 @@ void CutsceneCmd_FadeOutSequence(PlayState* play, CutsceneContext* csCtx, CsCmdF
     }
 }
 
-void CutsceneCmd_RumbleController(PlayState* play, CutsceneContext* csCtx, CsCmdRumble* cmd) {
+void Demo_vib_proc(PlayState* play, CutsceneContext* csCtx, CsCmdRumble* cmd) {
     if (csCtx->curFrame == cmd->startFrame) {
-        Rumble_Request(0.0f, cmd->sourceStrength, cmd->duration, cmd->decreaseRate);
+        z_vibctl2_vib_setQ(0.0f, cmd->sourceStrength, cmd->duration, cmd->decreaseRate);
     }
 }
 
-void CutsceneCmd_SetTime(PlayState* play, CutsceneContext* csCtx, CsCmdTime* cmd) {
+void Demo_timeset_proc(PlayState* play, CutsceneContext* csCtx, CsCmdTime* cmd) {
     s16 hours;
     s16 minutes;
 
@@ -557,103 +557,103 @@ void CutsceneCmd_SetTime(PlayState* play, CutsceneContext* csCtx, CsCmdTime* cmd
         hours = (cmd->hour * 60.0f) / (24.0f * 60.0f / 0x10000);
         minutes = (cmd->minute + 1) / (24.0f * 60.0f / 0x10000);
 
-        gSaveContext.save.dayTime = hours + minutes;
-        gSaveContext.skyboxTime = hours + minutes;
+        z_common_data.save.dayTime = hours + minutes;
+        z_common_data.skyboxTime = hours + minutes;
     }
 }
 
-void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDestination* cmd) {
+void Demo_Scene_Change(PlayState* play, CutsceneContext* csCtx, CsCmdDestination* cmd) {
     Player* player = GET_PLAYER(play);
     s32 titleDemoSkipped = false;
 
-    if ((gSaveContext.gameMode != GAMEMODE_NORMAL) && (gSaveContext.gameMode != GAMEMODE_END_CREDITS) &&
+    if ((z_common_data.gameMode != GAMEMODE_NORMAL) && (z_common_data.gameMode != GAMEMODE_END_CREDITS) &&
         (play->sceneId != SCENE_HYRULE_FIELD) && (csCtx->curFrame > 20) &&
         (CHECK_BTN_ALL(play->state.input[0].press.button, BTN_A) ||
          CHECK_BTN_ALL(play->state.input[0].press.button, BTN_B) ||
          CHECK_BTN_ALL(play->state.input[0].press.button, BTN_START)) &&
-        (gSaveContext.fileNum != 0xFEDC) && (play->transitionTrigger == TRANS_TRIGGER_OFF)) {
-        Audio_PlaySfxGeneral(NA_SE_SY_PIECE_OF_HEART, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        (z_common_data.fileNum != 0xFEDC) && (play->transitionTrigger == TRANS_TRIGGER_OFF)) {
+        Nai_FxFlagEntry(NA_SE_SY_PIECE_OF_HEART, &_dummy_zero_f, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
         titleDemoSkipped = true;
     }
 
     if ((csCtx->curFrame == cmd->startFrame) || titleDemoSkipped ||
         (DEBUG_FEATURES && (csCtx->curFrame > 20) && CHECK_BTN_ALL(play->state.input[0].press.button, BTN_START) &&
-         (gSaveContext.fileNum != 0xFEDC))) {
+         (z_common_data.fileNum != 0xFEDC))) {
         csCtx->state = CS_STATE_RUN_UNSTOPPABLE;
-        Audio_SetCutsceneFlag(0);
-        gSaveContext.cutsceneTransitionControl = 1;
+        Na_SetMessageStatusFlag(0);
+        z_common_data.cutsceneTransitionControl = 1;
 
         PRINTF(T("\n分岐先指定！！=[%d]番", "\nBranch destination specified!!=[%d]"), cmd->destination);
 
         // `forceRisingButtonAlphas` has a secondary purpose, which is to signal to the title screen actor
         // that it should display immediately. This occurs when a title screen cutscene that is not the main
         // hyrule field scene is skipped.
-        if ((gSaveContext.gameMode != GAMEMODE_NORMAL) && (csCtx->curFrame != cmd->startFrame)) {
-            gSaveContext.forceRisingButtonAlphas = true;
+        if ((z_common_data.gameMode != GAMEMODE_NORMAL) && (csCtx->curFrame != cmd->startFrame)) {
+            z_common_data.forceRisingButtonAlphas = true;
         }
 
-        gSaveContext.save.cutsceneIndex = 0;
+        z_common_data.save.cutsceneIndex = 0;
 
         switch (cmd->destination) {
             case CS_DEST_CUTSCENE_MAP_GANON_HORSE:
                 play->nextEntranceIndex = ENTR_CUTSCENE_MAP_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF1;
+                z_common_data.save.cutsceneIndex = 0xFFF1;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
             case CS_DEST_CUTSCENE_MAP_THREE_GODDESSES:
                 play->nextEntranceIndex = ENTR_CUTSCENE_MAP_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF0;
+                z_common_data.save.cutsceneIndex = 0xFFF0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FILL_WHITE;
                 break;
 
             case CS_DEST_GERUDO_VALLEY_DIN_PART_1:
                 play->nextEntranceIndex = ENTR_GERUDO_VALLEY_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF1;
+                z_common_data.save.cutsceneIndex = 0xFFF1;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FILL_WHITE;
                 break;
 
             case CS_DEST_DEATH_MOUNTAIN_TRAIL_NAYRU:
                 play->nextEntranceIndex = ENTR_DEATH_MOUNTAIN_TRAIL_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF0;
+                z_common_data.save.cutsceneIndex = 0xFFF0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FILL_WHITE;
                 break;
 
             case CS_DEST_KOKIRI_FOREST_FARORE:
                 play->nextEntranceIndex = ENTR_KOKIRI_FOREST_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF0;
+                z_common_data.save.cutsceneIndex = 0xFFF0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FILL_WHITE;
                 break;
 
             case CS_DEST_CUTSCENE_MAP_TRIFORCE_CREATION:
                 play->nextEntranceIndex = ENTR_CUTSCENE_MAP_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF2;
+                z_common_data.save.cutsceneIndex = 0xFFF2;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FILL_WHITE;
                 break;
 
             case CS_DEST_KOKIRI_FOREST_RECEIVE_KOKIRI_EMERALD:
                 play->nextEntranceIndex = ENTR_KOKIRI_FOREST_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF2;
+                z_common_data.save.cutsceneIndex = 0xFFF2;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_INSTANT;
                 break;
 
             case CS_DEST_TEMPLE_OF_TIME_FROM_MASTER_SWORD:
-                gSaveContext.save.info.fw.set = 0;
-                gSaveContext.respawn[RESPAWN_MODE_TOP].data = 0;
+                z_common_data.save.info.fw.set = 0;
+                z_common_data.respawn[RESPAWN_MODE_TOP].data = 0;
 
                 if (!GET_EVENTCHKINF(EVENTCHKINF_45)) {
                     SET_EVENTCHKINF(EVENTCHKINF_45);
                     play->nextEntranceIndex = ENTR_CUTSCENE_MAP_0;
                     play->transitionTrigger = TRANS_TRIGGER_START;
-                    gSaveContext.save.cutsceneIndex = 0xFFF3;
+                    z_common_data.save.cutsceneIndex = 0xFFF3;
                     play->transitionType = TRANS_TYPE_INSTANT;
                 } else {
                     if (!IS_CUTSCENE_LAYER) {
@@ -667,27 +667,27 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
                     play->nextEntranceIndex = ENTR_TEMPLE_OF_TIME_2;
                     play->transitionTrigger = TRANS_TRIGGER_START;
                     play->transitionType = TRANS_TYPE_FADE_WHITE;
-                    gSaveContext.nextTransitionType = TRANS_TYPE_FADE_WHITE;
+                    z_common_data.nextTransitionType = TRANS_TYPE_FADE_WHITE;
                 }
                 break;
 
             case CS_DEST_GERUDO_VALLEY_DIN_PART_2:
                 play->nextEntranceIndex = ENTR_GERUDO_VALLEY_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF0;
+                z_common_data.save.cutsceneIndex = 0xFFF0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FILL_BROWN;
                 break;
 
             case CS_DEST_LINKS_HOUSE_INTRO:
                 play->nextEntranceIndex = ENTR_LINKS_HOUSE_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF0;
+                z_common_data.save.cutsceneIndex = 0xFFF0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
             case CS_DEST_KOKIRI_FOREST_INTRO:
                 play->nextEntranceIndex = ENTR_KOKIRI_FOREST_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF3;
+                z_common_data.save.cutsceneIndex = 0xFFF3;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_WHITE;
                 break;
@@ -702,7 +702,7 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
                 play->nextEntranceIndex = ENTR_ZORAS_FOUNTAIN_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
-                gSaveContext.nextTransitionType = TRANS_TYPE_FADE_BLACK;
+                z_common_data.nextTransitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
             case CS_DEST_KOKIRI_FOREST_FROM_KOKIRI_EMERALD:
@@ -714,21 +714,21 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
             case CS_DEST_TEMPLE_OF_TIME_KOKIRI_EMERALD_RESTORED:
                 play->nextEntranceIndex = ENTR_TEMPLE_OF_TIME_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF4;
+                z_common_data.save.cutsceneIndex = 0xFFF4;
                 play->transitionType = TRANS_TYPE_FADE_WHITE;
                 break;
 
             case CS_DEST_TEMPLE_OF_TIME_GORON_RUBY_RESTORED:
                 play->nextEntranceIndex = ENTR_TEMPLE_OF_TIME_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF5;
+                z_common_data.save.cutsceneIndex = 0xFFF5;
                 play->transitionType = TRANS_TYPE_FADE_WHITE;
                 break;
 
             case CS_DEST_TEMPLE_OF_TIME_ZORAS_SAPPHIRE_RESTORED:
                 play->nextEntranceIndex = ENTR_TEMPLE_OF_TIME_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF6;
+                z_common_data.save.cutsceneIndex = 0xFFF6;
                 play->transitionType = TRANS_TYPE_FADE_WHITE;
                 break;
 
@@ -739,35 +739,35 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
                 play->nextEntranceIndex = ENTR_TEMPLE_OF_TIME_4;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
-                gSaveContext.nextTransitionType = TRANS_TYPE_FADE_BLACK;
+                z_common_data.nextTransitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
             case CS_DEST_DEATH_MOUNTAIN_TRAIL:
                 play->nextEntranceIndex = ENTR_DEATH_MOUNTAIN_TRAIL_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK_FAST;
-                gSaveContext.save.cutsceneIndex = 0x8000;
+                z_common_data.save.cutsceneIndex = 0x8000;
                 break;
 
             case CS_DEST_LAKE_HYLIA_WATER_RESTORED:
                 play->nextEntranceIndex = ENTR_LAKE_HYLIA_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF0;
+                z_common_data.save.cutsceneIndex = 0xFFF0;
                 play->transitionType = TRANS_TYPE_FADE_WHITE;
                 break;
 
             case CS_DEST_DESERT_COLOSSUS_REQUIEM:
-                Item_Give(play, ITEM_SONG_REQUIEM);
+                item_get_setting(play, ITEM_SONG_REQUIEM);
                 play->nextEntranceIndex = ENTR_DESERT_COLOSSUS_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF0;
+                z_common_data.save.cutsceneIndex = 0xFFF0;
                 play->transitionType = TRANS_TYPE_FADE_WHITE;
                 break;
 
             case CS_DEST_CUTSCENE_MAP_GANONDORF_DEFEATED_CREDITS:
                 play->nextEntranceIndex = ENTR_CUTSCENE_MAP_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF8;
+                z_common_data.save.cutsceneIndex = 0xFFF8;
                 play->transitionType = TRANS_TYPE_FADE_WHITE;
                 break;
 
@@ -781,35 +781,35 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
                 play->linkAgeOnLoad = LINK_AGE_ADULT;
                 play->nextEntranceIndex = ENTR_CHAMBER_OF_THE_SAGES_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF0;
+                z_common_data.save.cutsceneIndex = 0xFFF0;
                 play->transitionType = TRANS_TYPE_FADE_WHITE;
                 break;
 
             case CS_DEST_TEMPLE_OF_TIME_KOKIRI_EMERALD_RESTORED_2:
                 play->nextEntranceIndex = ENTR_TEMPLE_OF_TIME_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF4;
+                z_common_data.save.cutsceneIndex = 0xFFF4;
                 play->transitionType = TRANS_TYPE_FADE_WHITE;
                 break;
 
             case CS_DEST_TEMPLE_OF_TIME_GORON_RUBY_RESTORED_2:
                 play->nextEntranceIndex = ENTR_TEMPLE_OF_TIME_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF5;
+                z_common_data.save.cutsceneIndex = 0xFFF5;
                 play->transitionType = TRANS_TYPE_FADE_WHITE;
                 break;
 
             case CS_DEST_TEMPLE_OF_TIME_ZORAS_SAPPHIRE_RESTORED_2:
                 play->nextEntranceIndex = ENTR_TEMPLE_OF_TIME_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF6;
+                z_common_data.save.cutsceneIndex = 0xFFF6;
                 play->transitionType = TRANS_TYPE_FADE_WHITE;
                 break;
 
             case CS_DEST_CHAMBER_OF_SAGES_FOREST_MEDALLION:
                 play->nextEntranceIndex = ENTR_CHAMBER_OF_THE_SAGES_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.chamberCutsceneNum = CHAMBER_CS_FOREST;
+                z_common_data.chamberCutsceneNum = CHAMBER_CS_FOREST;
                 play->transitionType = TRANS_TYPE_FADE_WHITE;
                 break;
 
@@ -817,22 +817,22 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
                 play->nextEntranceIndex = ENTR_CHAMBER_OF_THE_SAGES_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_WHITE;
-                Item_Give(play, ITEM_MEDALLION_FIRE);
-                gSaveContext.chamberCutsceneNum = CHAMBER_CS_FIRE;
+                item_get_setting(play, ITEM_MEDALLION_FIRE);
+                z_common_data.chamberCutsceneNum = CHAMBER_CS_FIRE;
                 break;
 
             case CS_DEST_CHAMBER_OF_SAGES_WATER_MEDALLION:
                 play->nextEntranceIndex = ENTR_CHAMBER_OF_THE_SAGES_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_WHITE;
-                gSaveContext.chamberCutsceneNum = CHAMBER_CS_WATER;
+                z_common_data.chamberCutsceneNum = CHAMBER_CS_WATER;
                 break;
 
             case CS_DEST_HYRULE_FIELD_FLASHBACK:
                 play->linkAgeOnLoad = LINK_AGE_CHILD;
                 play->nextEntranceIndex = ENTR_HYRULE_FIELD_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF2;
+                z_common_data.save.cutsceneIndex = 0xFFF2;
                 play->transitionType = TRANS_TYPE_INSTANT;
                 break;
 
@@ -845,28 +845,28 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
             case CS_DEST_CUTSCENE_MAP_GANONDORF_FROM_MASTER_SWORD:
                 play->nextEntranceIndex = ENTR_CUTSCENE_MAP_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF3;
+                z_common_data.save.cutsceneIndex = 0xFFF3;
                 play->transitionType = TRANS_TYPE_FADE_WHITE;
                 break;
 
             case CS_DEST_HYRULE_FIELD_INTRO_DREAM:
                 play->nextEntranceIndex = ENTR_HYRULE_FIELD_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF0;
+                z_common_data.save.cutsceneIndex = 0xFFF0;
                 play->transitionType = TRANS_TYPE_FADE_BLACK_FAST;
                 break;
 
             case CS_DEST_CUTSCENE_MAP_SHEIKAH_LEGEND:
                 play->nextEntranceIndex = ENTR_CUTSCENE_MAP_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF4;
+                z_common_data.save.cutsceneIndex = 0xFFF4;
                 play->transitionType = TRANS_TYPE_FADE_BLACK_FAST;
                 break;
 
             case CS_DEST_TEMPLE_OF_TIME_ZELDA_REVEAL:
                 play->nextEntranceIndex = ENTR_TEMPLE_OF_TIME_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF9;
+                z_common_data.save.cutsceneIndex = 0xFFF9;
                 play->transitionType = TRANS_TYPE_FADE_BLACK_FAST;
                 break;
 
@@ -874,7 +874,7 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
                 play->linkAgeOnLoad = LINK_AGE_ADULT;
                 play->nextEntranceIndex = ENTR_TEMPLE_OF_TIME_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFFA;
+                z_common_data.save.cutsceneIndex = 0xFFFA;
                 play->transitionType = TRANS_TYPE_FADE_BLACK_FAST;
                 break;
 
@@ -887,7 +887,7 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
             case CS_DEST_KAKARIKO_VILLAGE_DRAIN_WELL:
                 play->nextEntranceIndex = ENTR_KAKARIKO_VILLAGE_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF2;
+                z_common_data.save.cutsceneIndex = 0xFFF2;
                 play->transitionType = TRANS_TYPE_FADE_BLACK_FAST;
                 break;
 
@@ -913,11 +913,11 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
                 break;
 
             case CS_DEST_KAKARIKO_VILLAGE_NOCTURNE_PART_2:
-                Item_Give(play, ITEM_SONG_NOCTURNE);
+                item_get_setting(play, ITEM_SONG_NOCTURNE);
                 SET_EVENTCHKINF(EVENTCHKINF_54);
                 play->nextEntranceIndex = ENTR_KAKARIKO_VILLAGE_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF1;
+                z_common_data.save.cutsceneIndex = 0xFFF1;
                 play->transitionType = TRANS_TYPE_FADE_BLACK_FAST;
                 break;
 
@@ -925,7 +925,7 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
                 play->nextEntranceIndex = ENTR_DESERT_COLOSSUS_4;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_SANDSTORM_END;
-                gSaveContext.nextTransitionType = TRANS_TYPE_SANDSTORM_END;
+                z_common_data.nextTransitionType = TRANS_TYPE_SANDSTORM_END;
                 break;
 
             case CS_DEST_TEMPLE_OF_TIME_FROM_LIGHT_ARROWS:
@@ -942,14 +942,14 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
 
             case CS_DEST_HYRULE_FIELD_FROM_ZELDAS_COURTYARD:
                 play->nextEntranceIndex = ENTR_HYRULE_FIELD_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF8;
+                z_common_data.save.cutsceneIndex = 0xFFF8;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_CIRCLE(TCA_NORMAL, TCC_WHITE, TCS_SLOW);
                 break;
 
             case CS_DEST_TEMPLE_OF_TIME_SONG_OF_TIME:
                 play->nextEntranceIndex = ENTR_TEMPLE_OF_TIME_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF7;
+                z_common_data.save.cutsceneIndex = 0xFFF7;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_INSTANT;
                 break;
@@ -962,61 +962,61 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
 
             case CS_DEST_GERUDO_VALLEY_CREDITS:
 #if DEBUG_FEATURES
-                gSaveContext.gameMode = GAMEMODE_END_CREDITS;
-                Audio_SetSfxBanksMute(0x6F);
+                z_common_data.gameMode = GAMEMODE_END_CREDITS;
+                Nai_FxSetLockFlag(0x6F);
 #endif
                 play->linkAgeOnLoad = LINK_AGE_CHILD;
                 play->nextEntranceIndex = ENTR_GERUDO_VALLEY_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF2;
+                z_common_data.save.cutsceneIndex = 0xFFF2;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
             case CS_DEST_GERUDO_FORTRESS_CREDITS:
                 play->nextEntranceIndex = ENTR_GERUDOS_FORTRESS_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF1;
+                z_common_data.save.cutsceneIndex = 0xFFF1;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
             case CS_DEST_KAKARIKO_VILLAGE_CREDITS:
                 play->nextEntranceIndex = ENTR_KAKARIKO_VILLAGE_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF4;
+                z_common_data.save.cutsceneIndex = 0xFFF4;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
             case CS_DEST_DEATH_MOUNTAIN_TRAIL_CREDITS_PART_1:
                 play->nextEntranceIndex = ENTR_DEATH_MOUNTAIN_TRAIL_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF3;
+                z_common_data.save.cutsceneIndex = 0xFFF3;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
             case CS_DEST_GORON_CITY_CREDITS:
                 play->nextEntranceIndex = ENTR_GORON_CITY_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF1;
+                z_common_data.save.cutsceneIndex = 0xFFF1;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
             case CS_DEST_LAKE_HYLIA_CREDITS:
                 play->nextEntranceIndex = ENTR_LAKE_HYLIA_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF1;
+                z_common_data.save.cutsceneIndex = 0xFFF1;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
             case CS_DEST_ZORAS_FOUNTAIN_CREDITS:
                 play->nextEntranceIndex = ENTR_ZORAS_FOUNTAIN_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF2;
+                z_common_data.save.cutsceneIndex = 0xFFF2;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
             case CS_DEST_ZORAS_DOMAIN_CREDITS:
                 play->nextEntranceIndex = ENTR_ZORAS_DOMAIN_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF0;
+                z_common_data.save.cutsceneIndex = 0xFFF0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
                 break;
@@ -1024,21 +1024,21 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
             case CS_DEST_KOKIRI_FOREST_CREDITS_PART_1:
                 play->linkAgeOnLoad = LINK_AGE_ADULT;
                 play->nextEntranceIndex = ENTR_KOKIRI_FOREST_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF6;
+                z_common_data.save.cutsceneIndex = 0xFFF6;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
             case CS_DEST_KOKIRI_FOREST_CREDITS_PART_2:
                 play->nextEntranceIndex = ENTR_KOKIRI_FOREST_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF7;
+                z_common_data.save.cutsceneIndex = 0xFFF7;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
             case CS_DEST_HYRULE_FIELD_CREDITS:
                 play->nextEntranceIndex = ENTR_HYRULE_FIELD_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF5;
+                z_common_data.save.cutsceneIndex = 0xFFF5;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
                 break;
@@ -1046,7 +1046,7 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
             case CS_DEST_LON_LON_RANCH_CREDITS_PART_1_ALT:
                 play->linkAgeOnLoad = LINK_AGE_CHILD;
                 play->nextEntranceIndex = ENTR_LON_LON_RANCH_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF2;
+                z_common_data.save.cutsceneIndex = 0xFFF2;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
                 break;
@@ -1066,7 +1066,7 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
             case CS_DEST_CUTSCENE_MAP_DEKU_SPROUT_PART_2:
                 play->nextEntranceIndex = ENTR_CUTSCENE_MAP_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF5;
+                z_common_data.save.cutsceneIndex = 0xFFF5;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
@@ -1079,52 +1079,52 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
             case CS_DEST_DEATH_MOUNTAIN_TRAIL_CREDITS_PART_2:
                 play->nextEntranceIndex = ENTR_DEATH_MOUNTAIN_TRAIL_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF4;
+                z_common_data.save.cutsceneIndex = 0xFFF4;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
-                gSaveContext.nextTransitionType = TRANS_TYPE_FADE_BLACK;
+                z_common_data.nextTransitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
             case CS_DEST_TEMPLE_OF_TIME_CREDITS:
-                gSaveContext.save.info.equips.equipment |= EQUIP_VALUE_TUNIC_KOKIRI << (EQUIP_TYPE_TUNIC * 4);
-                Player_SetEquipmentData(play, player);
-                gSaveContext.save.info.equips.equipment |= EQUIP_VALUE_BOOTS_KOKIRI << (EQUIP_TYPE_BOOTS * 4);
-                Player_SetEquipmentData(play, player);
+                z_common_data.save.info.equips.equipment |= EQUIP_VALUE_TUNIC_KOKIRI << (EQUIP_TYPE_TUNIC * 4);
+                player_ability_set(play, player);
+                z_common_data.save.info.equips.equipment |= EQUIP_VALUE_BOOTS_KOKIRI << (EQUIP_TYPE_BOOTS * 4);
+                player_ability_set(play, player);
                 play->linkAgeOnLoad = LINK_AGE_CHILD;
                 play->nextEntranceIndex = ENTR_TEMPLE_OF_TIME_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF1;
+                z_common_data.save.cutsceneIndex = 0xFFF1;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
             case CS_DEST_ZELDAS_COURTYARD_CREDITS:
                 play->nextEntranceIndex = ENTR_CASTLE_COURTYARD_ZELDA_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF0;
+                z_common_data.save.cutsceneIndex = 0xFFF0;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
-                gSaveContext.nextTransitionType = TRANS_TYPE_FADE_BLACK;
+                z_common_data.nextTransitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
             case CS_DEST_LON_LON_RANCH_CREDITS_PART_1:
                 play->linkAgeOnLoad = LINK_AGE_CHILD;
                 play->nextEntranceIndex = ENTR_LON_LON_RANCH_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF2;
+                z_common_data.save.cutsceneIndex = 0xFFF2;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
             case CS_DEST_LON_LON_RANCH_CREDITS_PART_2:
                 play->nextEntranceIndex = ENTR_LON_LON_RANCH_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF3;
+                z_common_data.save.cutsceneIndex = 0xFFF3;
                 play->transitionType = TRANS_TYPE_FADE_WHITE;
-                gSaveContext.nextTransitionType = TRANS_TYPE_FADE_WHITE;
+                z_common_data.nextTransitionType = TRANS_TYPE_FADE_WHITE;
                 break;
 
             case CS_DEST_LON_LON_RANCH_CREDITS_PART_3:
                 play->linkAgeOnLoad = LINK_AGE_CHILD;
                 play->nextEntranceIndex = ENTR_LON_LON_RANCH_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF4;
+                z_common_data.save.cutsceneIndex = 0xFFF4;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
@@ -1132,7 +1132,7 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
                 play->linkAgeOnLoad = LINK_AGE_ADULT;
                 play->nextEntranceIndex = ENTR_LON_LON_RANCH_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF5;
+                z_common_data.save.cutsceneIndex = 0xFFF5;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
@@ -1140,14 +1140,14 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
                 play->linkAgeOnLoad = LINK_AGE_CHILD;
                 play->nextEntranceIndex = ENTR_LON_LON_RANCH_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF6;
+                z_common_data.save.cutsceneIndex = 0xFFF6;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
             case CS_DEST_LON_LON_RANCH_CREDITS_PART_5:
                 play->nextEntranceIndex = ENTR_LON_LON_RANCH_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF7;
+                z_common_data.save.cutsceneIndex = 0xFFF7;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
@@ -1187,10 +1187,10 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
                     GET_EVENTCHKINF(EVENTCHKINF_4A)) {
                     play->nextEntranceIndex = ENTR_TEMPLE_OF_TIME_0;
                     play->transitionTrigger = TRANS_TRIGGER_START;
-                    gSaveContext.save.cutsceneIndex = 0xFFF3;
+                    z_common_data.save.cutsceneIndex = 0xFFF3;
                     play->transitionType = TRANS_TYPE_FADE_BLACK;
                 } else {
-                    switch (gSaveContext.sceneLayer) {
+                    switch (z_common_data.sceneLayer) {
                         case 8:
                             play->nextEntranceIndex = ENTR_SACRED_FOREST_MEADOW_0;
                             play->transitionTrigger = TRANS_TRIGGER_START;
@@ -1206,7 +1206,7 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
                         case 10:
                             play->nextEntranceIndex = ENTR_LAKE_HYLIA_0;
                             play->transitionTrigger = TRANS_TRIGGER_START;
-                            gSaveContext.save.cutsceneIndex = 0xFFF0;
+                            z_common_data.save.cutsceneIndex = 0xFFF0;
                             play->transitionType = TRANS_TYPE_FADE_WHITE;
                             break;
                     }
@@ -1217,14 +1217,14 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
                 if (CHECK_QUEST_ITEM(QUEST_MEDALLION_SHADOW)) {
                     play->nextEntranceIndex = ENTR_CHAMBER_OF_THE_SAGES_0;
                     play->transitionTrigger = TRANS_TRIGGER_START;
-                    gSaveContext.save.cutsceneIndex = 0xFFF1;
+                    z_common_data.save.cutsceneIndex = 0xFFF1;
                     play->transitionType = TRANS_TYPE_FADE_WHITE_FAST;
                 } else {
                     SET_EVENTCHKINF(EVENTCHKINF_C8);
                     play->nextEntranceIndex = ENTR_DESERT_COLOSSUS_8;
                     play->transitionTrigger = TRANS_TRIGGER_START;
                     play->transitionType = TRANS_TYPE_FADE_WHITE;
-                    gSaveContext.nextTransitionType = TRANS_TYPE_FADE_WHITE;
+                    z_common_data.nextTransitionType = TRANS_TYPE_FADE_WHITE;
                 }
                 break;
 
@@ -1232,13 +1232,13 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
                 if (CHECK_QUEST_ITEM(QUEST_MEDALLION_SPIRIT)) {
                     play->nextEntranceIndex = ENTR_CHAMBER_OF_THE_SAGES_0;
                     play->transitionTrigger = TRANS_TRIGGER_START;
-                    gSaveContext.save.cutsceneIndex = 0xFFF1;
+                    z_common_data.save.cutsceneIndex = 0xFFF1;
                     play->transitionType = TRANS_TYPE_FADE_WHITE_FAST;
                 } else {
                     play->nextEntranceIndex = ENTR_GRAVEYARD_8;
                     play->transitionTrigger = TRANS_TRIGGER_START;
                     play->transitionType = TRANS_TYPE_FADE_WHITE;
-                    gSaveContext.nextTransitionType = TRANS_TYPE_FADE_WHITE;
+                    z_common_data.nextTransitionType = TRANS_TYPE_FADE_WHITE;
                 }
                 break;
 
@@ -1246,22 +1246,22 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
                 play->nextEntranceIndex = ENTR_DEATH_MOUNTAIN_CRATER_5;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_WHITE;
-                gSaveContext.nextTransitionType = TRANS_TYPE_FADE_WHITE;
+                z_common_data.nextTransitionType = TRANS_TYPE_FADE_WHITE;
                 break;
 
             case CS_DEST_SACRED_FOREST_MEADOW_WARP_PAD:
                 play->nextEntranceIndex = ENTR_SACRED_FOREST_MEADOW_3;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
-                gSaveContext.nextTransitionType = TRANS_TYPE_FADE_BLACK;
+                z_common_data.nextTransitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
             case CS_DEST_KOKIRI_FOREST_FROM_CHAMBER_OF_SAGES:
                 play->nextEntranceIndex = ENTR_KOKIRI_FOREST_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF8;
+                z_common_data.save.cutsceneIndex = 0xFFF8;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_WHITE;
-                gSaveContext.nextTransitionType = TRANS_TYPE_FADE_WHITE;
+                z_common_data.nextTransitionType = TRANS_TYPE_FADE_WHITE;
                 break;
 
             case CS_DEST_DESERT_COLOSSUS_FROM_NABOORU_CAPTURE:
@@ -1279,34 +1279,34 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
             case CS_DEST_HYRULE_FIELD_TITLE_SCREEN:
                 play->nextEntranceIndex = ENTR_HYRULE_FIELD_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF3;
+                z_common_data.save.cutsceneIndex = 0xFFF3;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
             case CS_DEST_TITLE_SCREEN_DEMO:
-                switch (sTitleDemoDestination) {
+                switch (E_title_demono) {
                     case TITLE_DEMO_SPIRIT_TEMPLE:
                         play->nextEntranceIndex = ENTR_SPIRIT_TEMPLE_BOSS_0;
                         play->transitionTrigger = TRANS_TRIGGER_START;
-                        gSaveContext.save.cutsceneIndex = 0xFFF2;
+                        z_common_data.save.cutsceneIndex = 0xFFF2;
                         play->transitionType = TRANS_TYPE_FADE_BLACK;
-                        sTitleDemoDestination++;
+                        E_title_demono++;
                         break;
 
                     case TITLE_DEMO_DEATH_MOUNTAIN_CRATER:
                         play->nextEntranceIndex = ENTR_DEATH_MOUNTAIN_CRATER_0;
                         play->transitionTrigger = TRANS_TRIGGER_START;
-                        gSaveContext.save.cutsceneIndex = 0xFFF1;
+                        z_common_data.save.cutsceneIndex = 0xFFF1;
                         play->transitionType = TRANS_TYPE_FADE_BLACK;
-                        sTitleDemoDestination++;
+                        E_title_demono++;
                         break;
 
                     case TITLE_DEMO_GANONDORF_HORSE:
                         play->nextEntranceIndex = ENTR_CUTSCENE_MAP_0;
                         play->transitionTrigger = TRANS_TRIGGER_START;
-                        gSaveContext.save.cutsceneIndex = 0xFFF6;
+                        z_common_data.save.cutsceneIndex = 0xFFF6;
                         play->transitionType = TRANS_TYPE_FADE_BLACK;
-                        sTitleDemoDestination = TITLE_DEMO_SPIRIT_TEMPLE;
+                        E_title_demono = TITLE_DEMO_SPIRIT_TEMPLE;
                         break;
                 }
                 break;
@@ -1314,7 +1314,7 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
             case CS_DEST_GRAVEYARD_SUNS_SONG_PART_2:
                 play->nextEntranceIndex = ENTR_GRAVEYARD_0;
                 play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.save.cutsceneIndex = 0xFFF1;
+                z_common_data.save.cutsceneIndex = 0xFFF1;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
@@ -1361,16 +1361,16 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
                 break;
 
             case CS_DEST_GANONS_CASTLE_DISPEL_BARRIER_CONDITONAL:
-                if (Flags_GetEventChkInf(EVENTCHKINF_BB) && Flags_GetEventChkInf(EVENTCHKINF_BC) &&
-                    Flags_GetEventChkInf(EVENTCHKINF_BD) && Flags_GetEventChkInf(EVENTCHKINF_BE) &&
-                    Flags_GetEventChkInf(EVENTCHKINF_BF) && Flags_GetEventChkInf(EVENTCHKINF_AD)) {
+                if (event_check(EVENTCHKINF_BB) && event_check(EVENTCHKINF_BC) &&
+                    event_check(EVENTCHKINF_BD) && event_check(EVENTCHKINF_BE) &&
+                    event_check(EVENTCHKINF_BF) && event_check(EVENTCHKINF_AD)) {
                     play->csCtx.script = SEGMENTED_TO_VIRTUAL(gTowerBarrierCs);
                     play->csCtx.curFrame = 0;
-                    gSaveContext.cutsceneTrigger = 1;
-                    gSaveContext.save.cutsceneIndex = 0xFFFF;
+                    z_common_data.cutsceneTrigger = 1;
+                    z_common_data.save.cutsceneIndex = 0xFFFF;
                     csCtx->state = CS_STATE_STOP;
                 } else {
-                    gSaveContext.save.cutsceneIndex = 0xFFFF;
+                    z_common_data.save.cutsceneIndex = 0xFFFF;
                     csCtx->state = CS_STATE_STOP;
                 }
                 break;
@@ -1385,7 +1385,7 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
                 play->nextEntranceIndex = ENTR_HYRULE_FIELD_17;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_BLACK;
-                gSaveContext.nextTransitionType = TRANS_TYPE_FADE_BLACK;
+                z_common_data.nextTransitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
             case CS_DEST_FROM_RAURU_FINAL_MESSAGE_CONDITIONAL:
@@ -1399,29 +1399,29 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
                     play->transitionType = TRANS_TYPE_FADE_WHITE;
                 }
 
-                gSaveContext.nextTransitionType = TRANS_TYPE_FADE_WHITE;
+                z_common_data.nextTransitionType = TRANS_TYPE_FADE_WHITE;
                 break;
 
             case CS_DEST_HYRULE_FIELD_CREDITS_SKY:
-                gSaveContext.gameMode = GAMEMODE_END_CREDITS;
-                Audio_SetSfxBanksMute(0x6F);
+                z_common_data.gameMode = GAMEMODE_END_CREDITS;
+                Nai_FxSetLockFlag(0x6F);
                 play->linkAgeOnLoad = LINK_AGE_ADULT;
                 play->nextEntranceIndex = ENTR_HYRULE_FIELD_0;
-                gSaveContext.save.cutsceneIndex = 0xFFF7;
+                z_common_data.save.cutsceneIndex = 0xFFF7;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_WHITE;
                 break;
 
             case CS_DEST_GANON_BATTLE_TOWER_COLLAPSE:
-                gSaveContext.respawn[RESPAWN_MODE_DOWN].entranceIndex = ENTR_GANON_BOSS_0;
-                Play_TriggerVoidOut(play);
-                gSaveContext.respawnFlag = -2;
-                gSaveContext.nextTransitionType = TRANS_TYPE_FADE_BLACK;
+                z_common_data.respawn[RESPAWN_MODE_DOWN].entranceIndex = ENTR_GANON_BOSS_0;
+                Game_play_down_restart(play);
+                z_common_data.respawnFlag = -2;
+                z_common_data.nextTransitionType = TRANS_TYPE_FADE_BLACK;
                 break;
 
             case CS_DEST_ZELDAS_COURTYARD_RECEIVE_LETTER:
-                gSaveContext.save.dayTime = CLOCK_TIME(12, 0);
-                gSaveContext.skyboxTime = CLOCK_TIME(12, 0);
+                z_common_data.save.dayTime = CLOCK_TIME(12, 0);
+                z_common_data.skyboxTime = CLOCK_TIME(12, 0);
                 play->nextEntranceIndex = ENTR_CASTLE_COURTYARD_ZELDA_1;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 play->transitionType = TRANS_TYPE_FADE_WHITE;
@@ -1430,12 +1430,12 @@ void CutsceneCmd_Destination(PlayState* play, CutsceneContext* csCtx, CsCmdDesti
     }
 }
 
-void CutsceneCmd_Transition(PlayState* play, CutsceneContext* csCtx, CsCmdTransition* cmd) {
+void Demo_Fade_Proc(PlayState* play, CutsceneContext* csCtx, CsCmdTransition* cmd) {
     f32 lerp;
 
     if ((csCtx->curFrame >= cmd->startFrame) && (csCtx->curFrame <= cmd->endFrame)) {
         play->envCtx.fillScreen = true;
-        lerp = Environment_LerpWeight(cmd->endFrame, cmd->startFrame, csCtx->curFrame);
+        lerp = get_parcent(cmd->endFrame, cmd->startFrame, csCtx->curFrame);
 
         switch (cmd->type) {
             case CS_TRANS_GRAY_FILL_IN:
@@ -1447,17 +1447,17 @@ void CutsceneCmd_Transition(PlayState* play, CutsceneContext* csCtx, CsCmdTransi
                 if (cmd->type == CS_TRANS_GRAY_FILL_IN) {
                     play->envCtx.screenFillColor[3] = 255.0f * lerp;
 
-                    if ((lerp == 0.0f) && (gSaveContext.save.entranceIndex == ENTR_CHAMBER_OF_THE_SAGES_0)) {
-                        Audio_PlaySfxGeneral(NA_SE_SY_WHITE_OUT_S, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                    if ((lerp == 0.0f) && (z_common_data.save.entranceIndex == ENTR_CHAMBER_OF_THE_SAGES_0)) {
+                        Nai_FxFlagEntry(NA_SE_SY_WHITE_OUT_S, &_dummy_zero_f, 4, &_dummy_one,
+                                             &_dummy_one, &_dummy_zero_s8);
                     } else if ((lerp == 0.0f) &&
-                               ((gSaveContext.save.entranceIndex == ENTR_TEMPLE_OF_TIME_0) ||
-                                (gSaveContext.save.entranceIndex == ENTR_HYRULE_CASTLE_0) ||
-                                (gSaveContext.save.entranceIndex == ENTR_GREAT_FAIRYS_FOUNTAIN_SPELLS_0))) {
-                        Audio_PlaySfxGeneral(NA_SE_EV_WHITE_OUT, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                               ((z_common_data.save.entranceIndex == ENTR_TEMPLE_OF_TIME_0) ||
+                                (z_common_data.save.entranceIndex == ENTR_HYRULE_CASTLE_0) ||
+                                (z_common_data.save.entranceIndex == ENTR_GREAT_FAIRYS_FOUNTAIN_SPELLS_0))) {
+                        Nai_FxFlagEntry(NA_SE_EV_WHITE_OUT, &_dummy_zero_f, 4, &_dummy_one,
+                                             &_dummy_one, &_dummy_zero_s8);
                     } else if ((lerp == 0.0f) && (play->sceneId == SCENE_INSIDE_GANONS_CASTLE)) {
-                        Sfx_PlaySfxCentered2(NA_SE_EV_WHITE_OUT);
+                        Na_StartFixSe_F(NA_SE_EV_WHITE_OUT);
                     }
                 } else {
                     play->envCtx.screenFillColor[3] = (1.0f - lerp) * 255.0f;
@@ -1504,7 +1504,7 @@ void CutsceneCmd_Transition(PlayState* play, CutsceneContext* csCtx, CsCmdTransi
                 break;
 
             case CS_TRANS_TRIGGER_INSTANCE:
-                gSaveContext.cutsceneTransitionControl = 1;
+                z_common_data.cutsceneTransitionControl = 1;
                 break;
 
             case CS_TRANS_BLACK_FILL_OUT:
@@ -1521,7 +1521,7 @@ void CutsceneCmd_Transition(PlayState* play, CutsceneContext* csCtx, CsCmdTransi
                 break;
 
             case CS_TRANS_BLACK_FILL_OUT_TO_HALF:
-                gSaveContext.cutsceneTransitionControl = 255.0f - (155.0f * lerp);
+                z_common_data.cutsceneTransitionControl = 255.0f - (155.0f * lerp);
                 break;
 
             case CS_TRANS_BLACK_FILL_IN_FROM_HALF:
@@ -1534,7 +1534,7 @@ void CutsceneCmd_Transition(PlayState* play, CutsceneContext* csCtx, CsCmdTransi
     }
 }
 
-s32 CutsceneCmd_UpdateCamEyeSpline(PlayState* play, CutsceneContext* csCtx, u8* script, u8 relativeToPlayer) {
+s32 Demo_Camera_proc(PlayState* play, CutsceneContext* csCtx, u8* script, u8 relativeToPlayer) {
     s32 shouldContinue = true;
     CsCmdCam* cmd = (CsCmdCam*)script;
     s32 size;
@@ -1551,12 +1551,12 @@ s32 CutsceneCmd_UpdateCamEyeSpline(PlayState* play, CutsceneContext* csCtx, u8* 
         if (csCtx->camAtReady) {
             csCtx->camEyeSplinePointsAppliedFrame = cmd->startFrame;
 
-            if (gUseCutsceneCam) {
-                Play_RequestCameraSetting(play, csCtx->subCamId, CAM_SET_CS_0);
-                Play_ChangeCameraStatus(play, sReturnToCamId, CAM_STAT_WAIT);
-                Play_ChangeCameraStatus(play, csCtx->subCamId, CAM_STAT_ACTIVE);
-                Camera_ResetAnim(Play_GetCamera(play, csCtx->subCamId));
-                Camera_SetCSParams(Play_GetCamera(play, csCtx->subCamId), csCtx->camAtPoints, csCtx->camEyePoints,
+            if (DEMOCAM_SW) {
+                Gama_play_change_camera_set(play, csCtx->subCamId, CAM_SET_CS_0);
+                Gama_play_set_camera_status(play, active_camera_bak, CAM_STAT_WAIT);
+                Gama_play_set_camera_status(play, csCtx->subCamId, CAM_STAT_ACTIVE);
+                setCameraResetSpline(Gama_play_get_camera(play, csCtx->subCamId));
+                setCameraDemoSplineInfo(Gama_play_get_camera(play, csCtx->subCamId), csCtx->camAtPoints, csCtx->camEyePoints,
                                    GET_PLAYER(play), relativeToPlayer);
             }
         }
@@ -1574,7 +1574,7 @@ s32 CutsceneCmd_UpdateCamEyeSpline(PlayState* play, CutsceneContext* csCtx, u8* 
     return size;
 }
 
-s32 CutsceneCmd_UpdateCamAtSpline(PlayState* play, CutsceneContext* csCtx, u8* script, u8 relativeToPlayer) {
+s32 Demo_Lookcamera_proc(PlayState* play, CutsceneContext* csCtx, u8* script, u8 relativeToPlayer) {
     s32 shouldContinue = true;
     CsCmdCam* cmd = (CsCmdCam*)script;
     s32 size;
@@ -1583,19 +1583,19 @@ s32 CutsceneCmd_UpdateCamAtSpline(PlayState* play, CutsceneContext* csCtx, u8* s
     size = sizeof(CsCmdCam);
 
     if ((csCtx->curFrame > cmd->startFrame) && (csCtx->curFrame < cmd->endFrame) &&
-        ((cmd->startFrame > gCamAtSplinePointsAppliedFrame) || (gCamAtSplinePointsAppliedFrame >= 0xF000))) {
+        ((cmd->startFrame > start_flame_bak2) || (start_flame_bak2 >= 0xF000))) {
         csCtx->camAtReady = true;
         csCtx->camAtPoints = (CutsceneCameraPoint*)script;
 
         if (csCtx->camEyeReady) {
-            gCamAtSplinePointsAppliedFrame = cmd->startFrame;
+            start_flame_bak2 = cmd->startFrame;
 
-            if (gUseCutsceneCam) {
-                Play_RequestCameraSetting(play, csCtx->subCamId, CAM_SET_CS_0);
-                Play_ChangeCameraStatus(play, sReturnToCamId, CAM_STAT_WAIT);
-                Play_ChangeCameraStatus(play, csCtx->subCamId, CAM_STAT_ACTIVE);
-                Camera_ResetAnim(Play_GetCamera(play, csCtx->subCamId));
-                Camera_SetCSParams(Play_GetCamera(play, csCtx->subCamId), csCtx->camAtPoints, csCtx->camEyePoints,
+            if (DEMOCAM_SW) {
+                Gama_play_change_camera_set(play, csCtx->subCamId, CAM_SET_CS_0);
+                Gama_play_set_camera_status(play, active_camera_bak, CAM_STAT_WAIT);
+                Gama_play_set_camera_status(play, csCtx->subCamId, CAM_STAT_ACTIVE);
+                setCameraResetSpline(Gama_play_get_camera(play, csCtx->subCamId));
+                setCameraDemoSplineInfo(Gama_play_get_camera(play, csCtx->subCamId), csCtx->camAtPoints, csCtx->camEyePoints,
                                    GET_PLAYER(play), relativeToPlayer);
             }
         }
@@ -1613,7 +1613,7 @@ s32 CutsceneCmd_UpdateCamAtSpline(PlayState* play, CutsceneContext* csCtx, u8* s
     return size;
 }
 
-s32 CutsceneCmd_SetCamEye(PlayState* play, CutsceneContext* csCtx, u8* script, u8 unused) {
+s32 Demo_Kotei_Camera_proc(PlayState* play, CutsceneContext* csCtx, u8* script, u8 unused) {
     CsCmdCam* cmd = (CsCmdCam*)script;
     s32 size;
     Vec3f at;
@@ -1625,23 +1625,23 @@ s32 CutsceneCmd_SetCamEye(PlayState* play, CutsceneContext* csCtx, u8* script, u
     size = sizeof(CsCmdCam);
 
     if ((csCtx->curFrame > cmd->startFrame) && (csCtx->curFrame < cmd->endFrame) &&
-        ((cmd->startFrame > gCamEyePointAppliedFrame) || (gCamEyePointAppliedFrame >= 0xF000))) {
+        ((cmd->startFrame > start_flame_bak3) || (start_flame_bak3 >= 0xF000))) {
         csCtx->camEyeReady = true;
         csCtx->camEyePoints = (CutsceneCameraPoint*)script;
 
         if (csCtx->camAtReady) {
-            gCamEyePointAppliedFrame = cmd->startFrame;
+            start_flame_bak3 = cmd->startFrame;
 
-            if (gUseCutsceneCam) {
-                subCam = Play_GetCamera(play, csCtx->subCamId);
+            if (DEMOCAM_SW) {
+                subCam = Gama_play_get_camera(play, csCtx->subCamId);
                 subCam->player = NULL;
 
-                Play_ChangeCameraStatus(play, CAM_ID_MAIN, CAM_STAT_WAIT);
-                Play_ChangeCameraStatus(play, csCtx->subCamId, CAM_STAT_ACTIVE);
-                Play_RequestCameraSetting(play, csCtx->subCamId, CAM_SET_FREE0);
+                Gama_play_set_camera_status(play, CAM_ID_MAIN, CAM_STAT_WAIT);
+                Gama_play_set_camera_status(play, csCtx->subCamId, CAM_STAT_ACTIVE);
+                Gama_play_change_camera_set(play, csCtx->subCamId, CAM_SET_FREE0);
 
                 roll = csCtx->camAtPoints->cameraRoll * 1.40625f;
-                Camera_SetViewParam(subCam, CAM_VIEW_ROLL, &roll);
+                lockCamera(subCam, CAM_VIEW_ROLL, &roll);
 
                 at.x = csCtx->camAtPoints->pos.x;
                 at.y = csCtx->camAtPoints->pos.y;
@@ -1651,8 +1651,8 @@ s32 CutsceneCmd_SetCamEye(PlayState* play, CutsceneContext* csCtx, u8* script, u
                 eye.y = csCtx->camEyePoints->pos.y;
                 eye.z = csCtx->camEyePoints->pos.z;
 
-                Play_SetCameraAtEye(play, csCtx->subCamId, &at, &eye);
-                Play_SetCameraFov(play, csCtx->subCamId, csCtx->camEyePoints->viewAngle);
+                Gama_play_camera_setting(play, csCtx->subCamId, &at, &eye);
+                Gama_play_set_camera_fovy(play, csCtx->subCamId, csCtx->camEyePoints->viewAngle);
             }
         }
     }
@@ -1662,7 +1662,7 @@ s32 CutsceneCmd_SetCamEye(PlayState* play, CutsceneContext* csCtx, u8* script, u
     return size;
 }
 
-s32 CutsceneCmd_SetCamAt(PlayState* play, CutsceneContext* csCtx, u8* script, u8 unused) {
+s32 Demo_Kotei_Lookcamera_proc(PlayState* play, CutsceneContext* csCtx, u8* script, u8 unused) {
     CsCmdCam* cmd = (CsCmdCam*)script;
     s32 size;
     Vec3f at;
@@ -1673,20 +1673,20 @@ s32 CutsceneCmd_SetCamAt(PlayState* play, CutsceneContext* csCtx, u8* script, u8
     size = sizeof(CsCmdCam);
 
     if ((csCtx->curFrame > cmd->startFrame) && (csCtx->curFrame < cmd->endFrame) &&
-        ((cmd->startFrame > gCamAtPointAppliedFrame) || (gCamAtPointAppliedFrame >= 0xF000))) {
+        ((cmd->startFrame > start_flame_bak4) || (start_flame_bak4 >= 0xF000))) {
         csCtx->camAtReady = true;
         csCtx->camAtPoints = (CutsceneCameraPoint*)script;
 
         if (csCtx->camEyeReady) {
-            gCamAtPointAppliedFrame = cmd->startFrame;
+            start_flame_bak4 = cmd->startFrame;
 
-            if (gUseCutsceneCam) {
-                subCam = Play_GetCamera(play, csCtx->subCamId);
+            if (DEMOCAM_SW) {
+                subCam = Gama_play_get_camera(play, csCtx->subCamId);
                 subCam->player = NULL;
 
-                Play_ChangeCameraStatus(play, CAM_ID_MAIN, CAM_STAT_WAIT);
-                Play_ChangeCameraStatus(play, csCtx->subCamId, CAM_STAT_ACTIVE);
-                Play_RequestCameraSetting(play, csCtx->subCamId, CAM_SET_FREE0);
+                Gama_play_set_camera_status(play, CAM_ID_MAIN, CAM_STAT_WAIT);
+                Gama_play_set_camera_status(play, csCtx->subCamId, CAM_STAT_ACTIVE);
+                Gama_play_change_camera_set(play, csCtx->subCamId, CAM_SET_FREE0);
 
                 at.x = csCtx->camAtPoints->pos.x;
                 at.y = csCtx->camAtPoints->pos.y;
@@ -1696,8 +1696,8 @@ s32 CutsceneCmd_SetCamAt(PlayState* play, CutsceneContext* csCtx, u8* script, u8
                 eye.y = csCtx->camEyePoints->pos.y;
                 eye.z = csCtx->camEyePoints->pos.z;
 
-                Play_SetCameraAtEye(play, csCtx->subCamId, &at, &eye);
-                Play_SetCameraFov(play, csCtx->subCamId, csCtx->camEyePoints->viewAngle);
+                Gama_play_camera_setting(play, csCtx->subCamId, &at, &eye);
+                Gama_play_set_camera_fovy(play, csCtx->subCamId, csCtx->camEyePoints->viewAngle);
             }
         }
     }
@@ -1707,7 +1707,7 @@ s32 CutsceneCmd_SetCamAt(PlayState* play, CutsceneContext* csCtx, u8* script, u8
     return size;
 }
 
-void CutsceneCmd_Text(PlayState* play, CutsceneContext* csCtx, CsCmdText* cmd) {
+void Demo_message_proc(PlayState* play, CutsceneContext* csCtx, CsCmdText* cmd) {
     u8 dialogState;
 #if PLATFORM_N64
     s32 pad;
@@ -1716,44 +1716,44 @@ void CutsceneCmd_Text(PlayState* play, CutsceneContext* csCtx, CsCmdText* cmd) {
 
     if ((csCtx->curFrame > cmd->startFrame) && (csCtx->curFrame <= cmd->endFrame)) {
         if (cmd->type != CS_TEXT_OCARINA_ACTION) {
-            if (sCurTextId != cmd->textId) {
-                sCurTextId = cmd->textId;
+            if (MESSAGE_BAK != cmd->textId) {
+                MESSAGE_BAK = cmd->textId;
 
                 if ((cmd->type == CS_TEXT_GORON_RUBY) && CHECK_QUEST_ITEM(QUEST_ZORA_SAPPHIRE)) {
-                    Message_StartTextbox(play, cmd->altTextId1, NULL);
+                    message_set(play, cmd->altTextId1, NULL);
                 } else if ((cmd->type == CS_TEXT_ZORA_SAPPHIRE) && CHECK_QUEST_ITEM(QUEST_GORON_RUBY)) {
-                    Message_StartTextbox(play, cmd->altTextId1, NULL);
+                    message_set(play, cmd->altTextId1, NULL);
                 } else {
-                    Message_StartTextbox(play, cmd->textId, NULL);
+                    message_set(play, cmd->textId, NULL);
                 }
                 return;
             }
         } else {
-            if (sCurOcarinaAction != cmd->textId) {
-                sCurOcarinaAction = cmd->textId;
-                Message_StartOcarina(play, cmd->textId);
+            if (OKAMESSAGE_BAK != cmd->textId) {
+                OKAMESSAGE_BAK = cmd->textId;
+                ocarina_set(play, cmd->textId);
                 return;
             }
         }
 
         if (csCtx->curFrame >= cmd->endFrame) {
             endFrame = csCtx->curFrame;
-            dialogState = Message_GetState(&play->msgCtx);
+            dialogState = message_check(&play->msgCtx);
 
             if ((dialogState != TEXT_STATE_CLOSING) && (dialogState != TEXT_STATE_NONE) &&
                 (dialogState != TEXT_STATE_SONG_DEMO_DONE) && (dialogState != TEXT_STATE_8)) {
                 csCtx->curFrame--;
 
-                if ((dialogState == TEXT_STATE_CHOICE) && Message_ShouldAdvance(play)) {
+                if ((dialogState == TEXT_STATE_CHOICE) && pad_on_check(play)) {
                     if (play->msgCtx.choiceIndex == 0) {
                         if (cmd->altTextId1 != CS_TEXT_ID_NONE) {
-                            Message_ContinueTextbox(play, cmd->altTextId1);
+                            message_set2(play, cmd->altTextId1);
                         } else {
                             csCtx->curFrame++;
                         }
                     } else {
                         if (cmd->altTextId2 != CS_TEXT_ID_NONE) {
-                            Message_ContinueTextbox(play, cmd->altTextId2);
+                            message_set2(play, cmd->altTextId2);
                         } else {
                             csCtx->curFrame++;
                         }
@@ -1762,29 +1762,29 @@ void CutsceneCmd_Text(PlayState* play, CutsceneContext* csCtx, CsCmdText* cmd) {
 
                 if (dialogState == TEXT_STATE_9) {
                     if (cmd->altTextId1 != CS_TEXT_ID_NONE) {
-                        Message_ContinueTextbox(play, cmd->altTextId1);
+                        message_set2(play, cmd->altTextId1);
                     } else {
                         csCtx->curFrame++;
                     }
                 }
 
                 if (dialogState == TEXT_STATE_EVENT) {
-                    if (Message_ShouldAdvance(play)) {
-                        Message_StartOcarina(play, cmd->textId);
+                    if (pad_on_check(play)) {
+                        ocarina_set(play, cmd->textId);
                     }
                 }
             }
 
             if (csCtx->curFrame == endFrame) {
-                Interface_ChangeHudVisibilityMode(HUD_VISIBILITY_NOTHING);
-                sCurTextId = 0;
-                sCurOcarinaAction = 0;
+                alpha_change(HUD_VISIBILITY_NOTHING);
+                MESSAGE_BAK = 0;
+                OKAMESSAGE_BAK = 0;
             }
         }
     }
 }
 
-void Cutscene_ProcessScript(PlayState* play, CutsceneContext* csCtx, u8* script) {
+void Demo_data_read(PlayState* play, CutsceneContext* csCtx, u8* script) {
     s16 i;
     s32 totalEntries;
     s32 cmdType;
@@ -1793,10 +1793,10 @@ void Cutscene_ProcessScript(PlayState* play, CutsceneContext* csCtx, u8* script)
     s32 csFrameCount;
     s16 j;
 
-    MemCpy(&totalEntries, script, sizeof(totalEntries));
+    Memcpy(&totalEntries, script, sizeof(totalEntries));
     script += sizeof(totalEntries);
 
-    MemCpy(&csFrameCount, script, sizeof(csFrameCount));
+    Memcpy(&csFrameCount, script, sizeof(csFrameCount));
     script += sizeof(csFrameCount);
 
     if ((csCtx->curFrame > csFrameCount) && (csCtx->state != CS_STATE_RUN_UNSTOPPABLE)) {
@@ -1812,7 +1812,7 @@ void Cutscene_ProcessScript(PlayState* play, CutsceneContext* csCtx, u8* script)
 #endif
 
     for (i = 0; i < totalEntries; i++) {
-        MemCpy(&cmdType, script, sizeof(cmdType));
+        Memcpy(&cmdType, script, sizeof(cmdType));
         script += sizeof(cmdType);
 
         if (cmdType == CS_CMD_END_OF_SCRIPT) {
@@ -1821,77 +1821,77 @@ void Cutscene_ProcessScript(PlayState* play, CutsceneContext* csCtx, u8* script)
 
         switch (cmdType) {
             case CS_CMD_MISC:
-                MemCpy(&cmdEntries, script, sizeof(cmdEntries));
+                Memcpy(&cmdEntries, script, sizeof(cmdEntries));
                 script += sizeof(cmdEntries);
 
                 for (j = 0; j < cmdEntries; j++) {
-                    CutsceneCmd_Misc(play, csCtx, (void*)script);
+                    Demo_kankyo_proc(play, csCtx, (void*)script);
                     script += sizeof(CsCmdMisc);
                 }
                 break;
 
             case CS_CMD_LIGHT_SETTING:
-                MemCpy(&cmdEntries, script, sizeof(cmdEntries));
+                Memcpy(&cmdEntries, script, sizeof(cmdEntries));
                 script += sizeof(cmdEntries);
 
                 for (j = 0; j < cmdEntries; j++) {
-                    CutsceneCmd_SetLightSetting(play, csCtx, (void*)script);
+                    Demo_kcolor_proc(play, csCtx, (void*)script);
                     script += sizeof(CsCmdLightSetting);
                 }
                 break;
 
             case CS_CMD_START_SEQ:
-                MemCpy(&cmdEntries, script, sizeof(cmdEntries));
+                Memcpy(&cmdEntries, script, sizeof(cmdEntries));
                 script += sizeof(cmdEntries);
 
                 for (j = 0; j < cmdEntries; j++) {
-                    CutsceneCmd_StartSequence(play, csCtx, (void*)script);
+                    Demo_bgm_proc(play, csCtx, (void*)script);
                     script += sizeof(CsCmdStartSeq);
                 }
                 break;
 
             case CS_CMD_STOP_SEQ:
-                MemCpy(&cmdEntries, script, sizeof(cmdEntries));
+                Memcpy(&cmdEntries, script, sizeof(cmdEntries));
                 script += sizeof(cmdEntries);
 
                 for (j = 0; j < cmdEntries; j++) {
-                    CutsceneCmd_StopSequence(play, csCtx, (void*)script);
+                    Demo_bgmstop_proc(play, csCtx, (void*)script);
                     script += sizeof(CsCmdStopSeq);
                 }
                 break;
 
             case CS_CMD_FADE_OUT_SEQ:
-                MemCpy(&cmdEntries, script, sizeof(cmdEntries));
+                Memcpy(&cmdEntries, script, sizeof(cmdEntries));
                 script += sizeof(cmdEntries);
 
                 for (j = 0; j < cmdEntries; j++) {
-                    CutsceneCmd_FadeOutSequence(play, csCtx, (void*)script);
+                    Demo_bgm_fade_proc(play, csCtx, (void*)script);
                     script += sizeof(CsCmdFadeOutSeq);
                 }
                 break;
 
             case CS_CMD_RUMBLE_CONTROLLER:
-                MemCpy(&cmdEntries, script, sizeof(cmdEntries));
+                Memcpy(&cmdEntries, script, sizeof(cmdEntries));
                 script += sizeof(cmdEntries);
 
                 for (j = 0; j < cmdEntries; j++) {
-                    CutsceneCmd_RumbleController(play, csCtx, (void*)script);
+                    Demo_vib_proc(play, csCtx, (void*)script);
                     script += sizeof(CsCmdRumble);
                 }
                 break;
 
             case CS_CMD_TIME:
-                MemCpy(&cmdEntries, script, sizeof(cmdEntries));
+                Memcpy(&cmdEntries, script, sizeof(cmdEntries));
                 script += sizeof(cmdEntries);
 
                 for (j = 0; j < cmdEntries; j++) {
-                    CutsceneCmd_SetTime(play, csCtx, (void*)script);
+                    Demo_timeset_proc(play, csCtx, (void*)script);
                     script += sizeof(CsCmdTime);
                 }
                 break;
 
             case CS_CMD_PLAYER_CUE:
-                MemCpy(&cmdEntries, script, sizeof(cmdEntries));
+                Memcpy(&cmdEntries, script, sizeof(cmdEntries));
                 script += sizeof(cmdEntries);
 
                 for (j = 0; j < cmdEntries; j++) {
@@ -1924,7 +1924,7 @@ void Cutscene_ProcessScript(PlayState* play, CutsceneContext* csCtx, u8* script)
             case CS_CMD_ACTOR_CUE_0_15:
             case CS_CMD_ACTOR_CUE_0_16:
             case CS_CMD_ACTOR_CUE_0_17:
-                MemCpy(&cmdEntries, script, sizeof(cmdEntries));
+                Memcpy(&cmdEntries, script, sizeof(cmdEntries));
                 script += sizeof(cmdEntries);
 
                 for (j = 0; j < cmdEntries; j++) {
@@ -1957,7 +1957,7 @@ void Cutscene_ProcessScript(PlayState* play, CutsceneContext* csCtx, u8* script)
             case CS_CMD_ACTOR_CUE_1_15:
             case CS_CMD_ACTOR_CUE_1_16:
             case CS_CMD_ACTOR_CUE_1_17:
-                MemCpy(&cmdEntries, script, sizeof(cmdEntries));
+                Memcpy(&cmdEntries, script, sizeof(cmdEntries));
                 script += sizeof(cmdEntries);
 
                 for (j = 0; j < cmdEntries; j++) {
@@ -1986,7 +1986,7 @@ void Cutscene_ProcessScript(PlayState* play, CutsceneContext* csCtx, u8* script)
             case CS_CMD_ACTOR_CUE_2_11:
             case CS_CMD_ACTOR_CUE_2_12:
             case CS_CMD_ACTOR_CUE_2_13:
-                MemCpy(&cmdEntries, script, sizeof(cmdEntries));
+                Memcpy(&cmdEntries, script, sizeof(cmdEntries));
                 script += sizeof(cmdEntries);
 
                 for (j = 0; j < cmdEntries; j++) {
@@ -2014,7 +2014,7 @@ void Cutscene_ProcessScript(PlayState* play, CutsceneContext* csCtx, u8* script)
             case CS_CMD_ACTOR_CUE_3_10:
             case CS_CMD_ACTOR_CUE_3_11:
             case CS_CMD_ACTOR_CUE_3_12:
-                MemCpy(&cmdEntries, script, sizeof(cmdEntries));
+                Memcpy(&cmdEntries, script, sizeof(cmdEntries));
                 script += sizeof(cmdEntries);
 
                 for (j = 0; j < cmdEntries; j++) {
@@ -2038,7 +2038,7 @@ void Cutscene_ProcessScript(PlayState* play, CutsceneContext* csCtx, u8* script)
             case CS_CMD_ACTOR_CUE_4_6:
             case CS_CMD_ACTOR_CUE_4_7:
             case CS_CMD_ACTOR_CUE_4_8:
-                MemCpy(&cmdEntries, script, sizeof(cmdEntries));
+                Memcpy(&cmdEntries, script, sizeof(cmdEntries));
                 script += sizeof(cmdEntries);
 
                 for (j = 0; j < cmdEntries; j++) {
@@ -2060,7 +2060,7 @@ void Cutscene_ProcessScript(PlayState* play, CutsceneContext* csCtx, u8* script)
             case CS_CMD_ACTOR_CUE_5_4:
             case CS_CMD_ACTOR_CUE_5_5:
             case CS_CMD_ACTOR_CUE_5_6:
-                MemCpy(&cmdEntries, script, sizeof(cmdEntries));
+                Memcpy(&cmdEntries, script, sizeof(cmdEntries));
                 script += sizeof(cmdEntries);
 
                 for (j = 0; j < cmdEntries; j++) {
@@ -2083,7 +2083,7 @@ void Cutscene_ProcessScript(PlayState* play, CutsceneContext* csCtx, u8* script)
             case CS_CMD_ACTOR_CUE_6_5:
             case CS_CMD_ACTOR_CUE_6_6:
             case CS_CMD_ACTOR_CUE_6_7:
-                MemCpy(&cmdEntries, script, sizeof(cmdEntries));
+                Memcpy(&cmdEntries, script, sizeof(cmdEntries));
                 script += sizeof(cmdEntries);
 
                 for (j = 0; j < cmdEntries; j++) {
@@ -2105,7 +2105,7 @@ void Cutscene_ProcessScript(PlayState* play, CutsceneContext* csCtx, u8* script)
             case CS_CMD_ACTOR_CUE_7_4:
             case CS_CMD_ACTOR_CUE_7_5:
             case CS_CMD_ACTOR_CUE_7_6:
-                MemCpy(&cmdEntries, script, sizeof(cmdEntries));
+                Memcpy(&cmdEntries, script, sizeof(cmdEntries));
                 script += sizeof(cmdEntries);
 
                 for (j = 0; j < cmdEntries; j++) {
@@ -2121,7 +2121,7 @@ void Cutscene_ProcessScript(PlayState* play, CutsceneContext* csCtx, u8* script)
                 break;
 
             case CS_CMD_ACTOR_CUE_8_0:
-                MemCpy(&cmdEntries, script, sizeof(cmdEntries));
+                Memcpy(&cmdEntries, script, sizeof(cmdEntries));
                 script += sizeof(cmdEntries);
 
                 for (j = 0; j < cmdEntries; j++) {
@@ -2137,7 +2137,7 @@ void Cutscene_ProcessScript(PlayState* play, CutsceneContext* csCtx, u8* script)
                 break;
 
             case CS_CMD_ACTOR_CUE_9_0:
-                MemCpy(&cmdEntries, script, sizeof(cmdEntries));
+                Memcpy(&cmdEntries, script, sizeof(cmdEntries));
                 script += sizeof(cmdEntries);
 
                 for (j = 0; j < cmdEntries; j++) {
@@ -2153,44 +2153,44 @@ void Cutscene_ProcessScript(PlayState* play, CutsceneContext* csCtx, u8* script)
                 break;
 
             case CS_CMD_CAM_EYE_SPLINE:
-                script += CutsceneCmd_UpdateCamEyeSpline(play, csCtx, (void*)script, false);
+                script += Demo_Camera_proc(play, csCtx, (void*)script, false);
                 break;
 
             case CS_CMD_CAM_EYE_SPLINE_REL_TO_PLAYER:
-                script += CutsceneCmd_UpdateCamEyeSpline(play, csCtx, (void*)script, true);
+                script += Demo_Camera_proc(play, csCtx, (void*)script, true);
                 break;
 
             case CS_CMD_CAM_AT_SPLINE:
-                script += CutsceneCmd_UpdateCamAtSpline(play, csCtx, (void*)script, false);
+                script += Demo_Lookcamera_proc(play, csCtx, (void*)script, false);
                 break;
 
             case CS_CMD_CAM_AT_SPLINE_REL_TO_PLAYER:
-                script += CutsceneCmd_UpdateCamAtSpline(play, csCtx, (void*)script, true);
+                script += Demo_Lookcamera_proc(play, csCtx, (void*)script, true);
                 break;
 
             case CS_CMD_CAM_EYE:
-                script += CutsceneCmd_SetCamEye(play, csCtx, (void*)script, 0);
+                script += Demo_Kotei_Camera_proc(play, csCtx, (void*)script, 0);
                 break;
 
             case CS_CMD_CAM_AT:
-                script += CutsceneCmd_SetCamAt(play, csCtx, (void*)script, 0);
+                script += Demo_Kotei_Lookcamera_proc(play, csCtx, (void*)script, 0);
                 break;
 
             case CS_CMD_DESTINATION:
                 script += sizeof(cmdEntries);
-                CutsceneCmd_Destination(play, csCtx, (void*)script);
+                Demo_Scene_Change(play, csCtx, (void*)script);
                 script += sizeof(CsCmdDestination);
                 break;
 
             case CS_CMD_TEXT:
-                MemCpy(&cmdEntries, script, sizeof(cmdEntries));
+                Memcpy(&cmdEntries, script, sizeof(cmdEntries));
                 script += sizeof(cmdEntries);
 
                 for (j = 0; j < cmdEntries; j++) {
                     cmd = script;
 
                     if (((CsCmdText*)cmd)->textId != CS_TEXT_ID_NONE) {
-                        CutsceneCmd_Text(play, csCtx, (void*)script);
+                        Demo_message_proc(play, csCtx, (void*)script);
                     }
 
                     script += sizeof(CsCmdText);
@@ -2199,12 +2199,12 @@ void Cutscene_ProcessScript(PlayState* play, CutsceneContext* csCtx, u8* script)
 
             case CS_CMD_TRANSITION:
                 script += sizeof(cmdEntries);
-                CutsceneCmd_Transition(play, csCtx, (void*)script);
+                Demo_Fade_Proc(play, csCtx, (void*)script);
                 script += sizeof(CsCmdTransition);
                 break;
 
             default:
-                MemCpy(&cmdEntries, script, 4);
+                Memcpy(&cmdEntries, script, 4);
                 script += sizeof(cmdEntries);
 
                 for (j = 0; j < cmdEntries; j++) {
@@ -2215,8 +2215,8 @@ void Cutscene_ProcessScript(PlayState* play, CutsceneContext* csCtx, u8* script)
     }
 }
 
-void CutsceneHandler_RunScript(PlayState* play, CutsceneContext* csCtx) {
-    if (gSaveContext.save.cutsceneIndex >= 0xFFF0) {
+void Demo_play_demo_proc(PlayState* play, CutsceneContext* csCtx) {
+    if (z_common_data.save.cutsceneIndex >= 0xFFF0) {
 #if DEBUG_FEATURES
         if (BREG(0) != 0) {
             Gfx* displayList;
@@ -2225,11 +2225,11 @@ void CutsceneHandler_RunScript(PlayState* play, CutsceneContext* csCtx) {
             OPEN_DISPS(play->state.gfxCtx, "../z_demo.c", 4101);
 
             prevDisplayList = POLY_OPA_DISP;
-            displayList = Gfx_Open(POLY_OPA_DISP);
+            displayList = gfxopen(POLY_OPA_DISP);
             gSPDisplayList(OVERLAY_DISP++, displayList);
             Cutscene_DrawDebugInfo(play, &displayList, csCtx);
             gSPEndDisplayList(displayList++);
-            Gfx_Close(prevDisplayList, displayList);
+            gfxclose(prevDisplayList, displayList);
             POLY_OPA_DISP = displayList;
 
             CLOSE_DISPS(play->state.gfxCtx, "../z_demo.c", 4108);
@@ -2240,27 +2240,27 @@ void CutsceneHandler_RunScript(PlayState* play, CutsceneContext* csCtx) {
 
 #if DEBUG_FEATURES
         if (R_USE_DEBUG_CUTSCENE) {
-            Cutscene_ProcessScript(play, csCtx, gDebugCutsceneScript);
+            Demo_data_read(play, csCtx, gDebugCutsceneScript);
         } else {
-            Cutscene_ProcessScript(play, csCtx, play->csCtx.script);
+            Demo_data_read(play, csCtx, play->csCtx.script);
         }
 #else
-        Cutscene_ProcessScript(play, csCtx, play->csCtx.script);
+        Demo_data_read(play, csCtx, play->csCtx.script);
 #endif
     }
 }
 
-void CutsceneHandler_StopManual(PlayState* play, CutsceneContext* csCtx) {
-    if (Cutscene_StepTimer(play, csCtx, 0.0f)) {
-        Audio_SetCutsceneFlag(0);
+void Demo_play_end_proc(PlayState* play, CutsceneContext* csCtx) {
+    if (counter_set(play, csCtx, 0.0f)) {
+        Na_SetMessageStatusFlag(0);
         csCtx->state = CS_STATE_IDLE;
     }
 }
 
-void CutsceneHandler_StopScript(PlayState* play, CutsceneContext* csCtx) {
+void Tool_Demo_play_end_proc(PlayState* play, CutsceneContext* csCtx) {
     s16 i;
 
-    if (Cutscene_StepTimer(play, csCtx, 0.0f)) {
+    if (counter_set(play, csCtx, 0.0f)) {
         csCtx->playerCue = NULL;
 
         for (i = 0; i < ARRAY_COUNT(csCtx->actorCues); i++) {
@@ -2269,40 +2269,40 @@ void CutsceneHandler_StopScript(PlayState* play, CutsceneContext* csCtx) {
 
         PRINTF(T("\n\n\n\n\nやっぱりここかいな", "\n\n\n\n\nThis is it after all"));
 
-        gSaveContext.save.cutsceneIndex = 0;
-        gSaveContext.gameMode = GAMEMODE_NORMAL;
+        z_common_data.save.cutsceneIndex = 0;
+        z_common_data.gameMode = GAMEMODE_NORMAL;
 
-        if (gUseCutsceneCam) {
-            switch (gSaveContext.save.entranceIndex) {
+        if (DEMOCAM_SW) {
+            switch (z_common_data.save.entranceIndex) {
                 case ENTR_HYRULE_FIELD_11:
                 case ENTR_HYRULE_FIELD_12:
                 case ENTR_HYRULE_FIELD_13:
                 case ENTR_HYRULE_FIELD_15:
-                    Play_CopyCamera(play, sReturnToCamId, csCtx->subCamId);
+                    Gama_play_copy_camera_position(play, active_camera_bak, csCtx->subCamId);
             }
 
-            Play_ChangeCameraStatus(play, sReturnToCamId, CAM_STAT_ACTIVE);
-            Play_ClearCamera(play, csCtx->subCamId);
-            Camera_SetFinishedFlag(play->cameraPtrs[sReturnToCamId]);
+            Gama_play_set_camera_status(play, active_camera_bak, CAM_STAT_ACTIVE);
+            Gama_play_clear_camera(play, csCtx->subCamId);
+            restartCameraStoped(play->cameraPtrs[active_camera_bak]);
         }
 
-        Audio_SetCutsceneFlag(0);
+        Na_SetMessageStatusFlag(0);
         csCtx->state = CS_STATE_IDLE;
     }
 }
 
-void Cutscene_SetupScripted(PlayState* play, CutsceneContext* csCtx) {
+void Demo_play_select_trig(PlayState* play, CutsceneContext* csCtx) {
     u8 i;
 
-    if ((gSaveContext.cutsceneTrigger != 0) && (csCtx->state == CS_STATE_IDLE) && !Player_InCsMode(play)) {
-        gSaveContext.save.cutsceneIndex = 0xFFFD;
+    if ((z_common_data.cutsceneTrigger != 0) && (csCtx->state == CS_STATE_IDLE) && !player_demo_check(play)) {
+        z_common_data.save.cutsceneIndex = 0xFFFD;
     }
 
-    if ((gSaveContext.save.cutsceneIndex >= 0xFFF0) && (csCtx->state == CS_STATE_IDLE)) {
-        CutsceneFlags_Unset(play, 0);
+    if ((z_common_data.save.cutsceneIndex >= 0xFFF0) && (csCtx->state == CS_STATE_IDLE)) {
+        eventbit_reset(play, 0);
 
-        sCurTextId = 0;
-        sCurOcarinaAction = 0;
+        MESSAGE_BAK = 0;
+        OKAMESSAGE_BAK = 0;
         csCtx->unk_12 = 0;
         csCtx->playerCue = NULL;
 
@@ -2313,122 +2313,122 @@ void Cutscene_SetupScripted(PlayState* play, CutsceneContext* csCtx) {
         csCtx->state++; // CS_STATE_START
 
         if (csCtx->state == CS_STATE_START) {
-            Audio_SetCutsceneFlag(1);
+            Na_SetMessageStatusFlag(1);
 
             csCtx->curFrame = 0xFFFF;
 
             csCtx->camEyeSplinePointsAppliedFrame = CS_CAM_DATA_NOT_APPLIED;
-            gCamAtSplinePointsAppliedFrame = CS_CAM_DATA_NOT_APPLIED;
-            gCamEyePointAppliedFrame = CS_CAM_DATA_NOT_APPLIED;
-            gCamAtPointAppliedFrame = CS_CAM_DATA_NOT_APPLIED;
+            start_flame_bak2 = CS_CAM_DATA_NOT_APPLIED;
+            start_flame_bak3 = CS_CAM_DATA_NOT_APPLIED;
+            start_flame_bak4 = CS_CAM_DATA_NOT_APPLIED;
 
             csCtx->camAtReady = false;
             csCtx->camEyeReady = false;
 
-            sReturnToCamId = play->activeCamId;
+            active_camera_bak = play->activeCamId;
 
-            if (gUseCutsceneCam) {
-                csCtx->subCamId = Play_CreateSubCamera(play);
+            if (DEMOCAM_SW) {
+                csCtx->subCamId = Gama_play_make_camera(play);
             }
 
-            if (gSaveContext.cutsceneTrigger == 0) {
-                Interface_ChangeHudVisibilityMode(HUD_VISIBILITY_NOTHING);
-                Letterbox_SetSizeTarget(32);
-                Letterbox_SetSize(32);
+            if (z_common_data.cutsceneTrigger == 0) {
+                alpha_change(HUD_VISIBILITY_NOTHING);
+                shrink_window_setval(32);
+                shrink_window_setnowval(32);
                 csCtx->state++; // CS_STATE_RUN
             }
 
-            CutsceneHandler_RunScript(play, csCtx);
+            Demo_play_demo_proc(play, csCtx);
         }
 
-        gSaveContext.cutsceneTrigger = 0;
+        z_common_data.cutsceneTrigger = 0;
     }
 }
 
-u16 D_8015FCCC;
-char D_8015FCD0[20]; // unreferenced
-u8 D_8015FCE4;       // only written to, never read
+u16 E_demosetflg;
+char E_demokanri[20]; // unreferenced
+u8 E_demo_no;       // only written to, never read
 
-void func_80069048(PlayState* play) {
+void ToolDemoStartKansi_init(PlayState* play) {
     s16 i;
 
-    D_8015FCCC = 0;
+    E_demosetflg = 0;
     for (i = 0; i < 20; i++) {
         ; // Empty Loop
     }
-    D_8015FCE4 = 0;
+    E_demo_no = 0;
 }
 
-void func_8006907C(PlayState* play) {
-    if (D_8015FCCC != 0) {
-        D_8015FCCC = 0;
+void ToolDemoStartKansi(PlayState* play) {
+    if (E_demosetflg != 0) {
+        E_demosetflg = 0;
     }
 }
 
-void Cutscene_HandleEntranceTriggers(PlayState* play) {
+void SpotShowKansi(PlayState* play) {
     EntranceCutscene* entranceCutscene;
     u8 requiredAge;
     s16 i;
 
-    for (i = 0; i < ARRAY_COUNT(sEntranceCutsceneTable); i++) {
-        entranceCutscene = &sEntranceCutsceneTable[i];
+    for (i = 0; i < ARRAY_COUNT(SSKTbl); i++) {
+        entranceCutscene = &SSKTbl[i];
         requiredAge = entranceCutscene->ageRestriction;
 
         if (requiredAge == 2) {
-            requiredAge = gSaveContext.save.linkAge;
+            requiredAge = z_common_data.save.linkAge;
         }
 
-        if ((gSaveContext.save.entranceIndex == entranceCutscene->entrance) &&
-            (!Flags_GetEventChkInf(entranceCutscene->flag) || (entranceCutscene->flag == EVENTCHKINF_EPONA_OBTAINED)) &&
-            (gSaveContext.save.cutsceneIndex < 0xFFF0) && ((u8)gSaveContext.save.linkAge == requiredAge) &&
-            (gSaveContext.respawnFlag <= 0)) {
-            Flags_SetEventChkInf(entranceCutscene->flag);
-            Cutscene_SetScript(play, entranceCutscene->script);
-            gSaveContext.cutsceneTrigger = 2;
-            gSaveContext.showTitleCard = false;
+        if ((z_common_data.save.entranceIndex == entranceCutscene->entrance) &&
+            (!event_check(entranceCutscene->flag) || (entranceCutscene->flag == EVENTCHKINF_EPONA_OBTAINED)) &&
+            (z_common_data.save.cutsceneIndex < 0xFFF0) && ((u8)z_common_data.save.linkAge == requiredAge) &&
+            (z_common_data.respawnFlag <= 0)) {
+            event_set(entranceCutscene->flag);
+            set_showdata(play, entranceCutscene->script);
+            z_common_data.cutsceneTrigger = 2;
+            z_common_data.showTitleCard = false;
             break;
         }
     }
 }
 
-void Cutscene_HandleConditionalTriggers(PlayState* play) {
-    PRINTF("\ngame_info.mode=[%d] restart_flag", ((void)0, gSaveContext.respawnFlag));
+void DemoStartKansi(PlayState* play) {
+    PRINTF("\ngame_info.mode=[%d] restart_flag", ((void)0, z_common_data.respawnFlag));
 
-    if ((gSaveContext.gameMode == GAMEMODE_NORMAL) && (gSaveContext.respawnFlag <= 0) &&
-        (gSaveContext.save.cutsceneIndex < 0xFFF0)) {
-        if ((gSaveContext.save.entranceIndex == ENTR_DESERT_COLOSSUS_1) && !Flags_GetEventChkInf(EVENTCHKINF_AC)) {
-            Flags_SetEventChkInf(EVENTCHKINF_AC);
-            gSaveContext.save.entranceIndex = ENTR_DESERT_COLOSSUS_0;
-            gSaveContext.save.cutsceneIndex = 0xFFF0;
-        } else if ((gSaveContext.save.entranceIndex == ENTR_KAKARIKO_VILLAGE_0) && LINK_IS_ADULT &&
+    if ((z_common_data.gameMode == GAMEMODE_NORMAL) && (z_common_data.respawnFlag <= 0) &&
+        (z_common_data.save.cutsceneIndex < 0xFFF0)) {
+        if ((z_common_data.save.entranceIndex == ENTR_DESERT_COLOSSUS_1) && !event_check(EVENTCHKINF_AC)) {
+            event_set(EVENTCHKINF_AC);
+            z_common_data.save.entranceIndex = ENTR_DESERT_COLOSSUS_0;
+            z_common_data.save.cutsceneIndex = 0xFFF0;
+        } else if ((z_common_data.save.entranceIndex == ENTR_KAKARIKO_VILLAGE_0) && LINK_IS_ADULT &&
                    GET_EVENTCHKINF(EVENTCHKINF_48) && GET_EVENTCHKINF(EVENTCHKINF_49) &&
-                   GET_EVENTCHKINF(EVENTCHKINF_4A) && !Flags_GetEventChkInf(EVENTCHKINF_AA)) {
-            Flags_SetEventChkInf(EVENTCHKINF_AA);
-            gSaveContext.save.cutsceneIndex = 0xFFF0;
-        } else if ((gSaveContext.save.entranceIndex == ENTR_LOST_WOODS_9) && !Flags_GetEventChkInf(EVENTCHKINF_C1)) {
-            Flags_SetEventChkInf(EVENTCHKINF_C1);
-            Item_Give(play, ITEM_OCARINA_FAIRY);
-            gSaveContext.save.entranceIndex = ENTR_LOST_WOODS_0;
-            gSaveContext.save.cutsceneIndex = 0xFFF0;
+                   GET_EVENTCHKINF(EVENTCHKINF_4A) && !event_check(EVENTCHKINF_AA)) {
+            event_set(EVENTCHKINF_AA);
+            z_common_data.save.cutsceneIndex = 0xFFF0;
+        } else if ((z_common_data.save.entranceIndex == ENTR_LOST_WOODS_9) && !event_check(EVENTCHKINF_C1)) {
+            event_set(EVENTCHKINF_C1);
+            item_get_setting(play, ITEM_OCARINA_FAIRY);
+            z_common_data.save.entranceIndex = ENTR_LOST_WOODS_0;
+            z_common_data.save.cutsceneIndex = 0xFFF0;
         } else if (CHECK_QUEST_ITEM(QUEST_MEDALLION_SPIRIT) && CHECK_QUEST_ITEM(QUEST_MEDALLION_SHADOW) &&
-                   LINK_IS_ADULT && !Flags_GetEventChkInf(EVENTCHKINF_C4) &&
-                   (gEntranceTable[((void)0, gSaveContext.save.entranceIndex)].sceneId == SCENE_TEMPLE_OF_TIME)) {
-            Flags_SetEventChkInf(EVENTCHKINF_C4);
-            gSaveContext.save.entranceIndex = ENTR_TEMPLE_OF_TIME_0;
-            gSaveContext.save.cutsceneIndex = 0xFFF8;
-        } else if (!Flags_GetEventChkInf(EVENTCHKINF_C7) &&
-                   (gEntranceTable[((void)0, gSaveContext.save.entranceIndex)].sceneId == SCENE_GANON_BOSS)) {
-            Flags_SetEventChkInf(EVENTCHKINF_C7);
-            gSaveContext.save.entranceIndex = ENTR_GANON_BOSS_0;
-            gSaveContext.save.cutsceneIndex = 0xFFF0;
+                   LINK_IS_ADULT && !event_check(EVENTCHKINF_C4) &&
+                   (scene_status_data[((void)0, z_common_data.save.entranceIndex)].sceneId == SCENE_TEMPLE_OF_TIME)) {
+            event_set(EVENTCHKINF_C4);
+            z_common_data.save.entranceIndex = ENTR_TEMPLE_OF_TIME_0;
+            z_common_data.save.cutsceneIndex = 0xFFF8;
+        } else if (!event_check(EVENTCHKINF_C7) &&
+                   (scene_status_data[((void)0, z_common_data.save.entranceIndex)].sceneId == SCENE_GANON_BOSS)) {
+            event_set(EVENTCHKINF_C7);
+            z_common_data.save.entranceIndex = ENTR_GANON_BOSS_0;
+            z_common_data.save.cutsceneIndex = 0xFFF0;
         }
     }
 }
 
-void Cutscene_SetScript(PlayState* play, void* script) {
+void set_showdata(PlayState* play, void* script) {
 #if PLATFORM_N64
     if ((B_80121220 != NULL) && (B_80121220->unk_78 != NULL)) {
-        if (B_80121220->unk_78(play, script, sCutscenesUnknownList)) {
+        if (B_80121220->unk_78(play, script, romdatatbl)) {
             return;
         }
     }

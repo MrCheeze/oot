@@ -13,46 +13,46 @@
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_UPDATE_CULLING_DISABLED)
 
-void DemoIm_Init(Actor* thisx, PlayState* play);
-void DemoIm_Destroy(Actor* thisx, PlayState* play);
-void DemoIm_Update(Actor* thisx, PlayState* play);
-void DemoIm_Draw(Actor* thisx, PlayState* play);
-void func_809856F8(DemoIm* this, PlayState* play);
-void func_80985718(DemoIm* this, PlayState* play);
-void func_80985738(DemoIm* this, PlayState* play);
-void func_80985770(DemoIm* this, PlayState* play);
-void func_809857B0(DemoIm* this, PlayState* play);
-void func_809857F0(DemoIm* this, PlayState* play);
-void func_80985830(DemoIm* this, PlayState* play);
-void func_80985C10(DemoIm* this, PlayState* play);
-void func_80985C40(DemoIm* this, PlayState* play);
-void func_80985C94(DemoIm* this, PlayState* play);
-void DemoIm_DrawTranslucent(DemoIm* this, PlayState* play);
-void func_809863BC(DemoIm* this, PlayState* play);
-void func_809863DC(DemoIm* this, PlayState* play);
-void func_80986430(DemoIm* this, PlayState* play);
-void func_80986494(DemoIm* this, PlayState* play);
-void func_809864D4(DemoIm* this, PlayState* play);
-void func_809868E8(DemoIm* this, PlayState* play);
-void func_80986908(DemoIm* this, PlayState* play);
-void func_80986948(DemoIm* this, PlayState* play);
-void func_80986D40(DemoIm* this, PlayState* play);
-void func_80986DC8(DemoIm* this, PlayState* play);
-void func_80986E20(DemoIm* this, PlayState* play);
-void func_80986E40(DemoIm* this, PlayState* play);
-void func_80986EAC(DemoIm* this, PlayState* play);
-void func_80986F08(DemoIm* this, PlayState* play);
-void func_80986F28(DemoIm* this, PlayState* play);
-void func_80986F88(DemoIm* this, PlayState* play);
-void func_80986FA8(DemoIm* this, PlayState* play);
-void func_80987288(DemoIm* this, PlayState* play);
-void func_809872A8(DemoIm* this, PlayState* play);
-void func_809872F0(DemoIm* this, PlayState* play);
-void func_80987330(DemoIm* this, PlayState* play);
-void DemoIm_DrawNothing(DemoIm* this, PlayState* play);
-void DemoIm_DrawSolid(DemoIm* this, PlayState* play);
+void Demo_Im_Actor_ct(Actor* thisx, PlayState* play);
+void Demo_Im_Actor_dt(Actor* thisx, PlayState* play);
+void Demo_Im_Actor_main(Actor* thisx, PlayState* play);
+void Demo_Im_Actor_draw(Actor* thisx, PlayState* play);
+void Demo_Im_Actor_main_wait(DemoIm* this, PlayState* play);
+void Demo_Im_Actor_main_hide(DemoIm* this, PlayState* play);
+void Demo_Im_Actor_main_up(DemoIm* this, PlayState* play);
+void Demo_Im_Actor_main_greet(DemoIm* this, PlayState* play);
+void Demo_Im_Actor_main_handup(DemoIm* this, PlayState* play);
+void Demo_Im_Actor_main_cheer(DemoIm* this, PlayState* play);
+void Demo_Im_Actor_main_stop(DemoIm* this, PlayState* play);
+void Demo_Im_Seal_Actor_main_hide(DemoIm* this, PlayState* play);
+void Demo_Im_Seal_Actor_main_fade(DemoIm* this, PlayState* play);
+void Demo_Im_Seal_Actor_main_pray(DemoIm* this, PlayState* play);
+void Demo_Im_Actor_draw_alpha(DemoIm* this, PlayState* play);
+void Demo_Im_Ocarina_main_wait(DemoIm* this, PlayState* play);
+void Demo_Im_Ocarina_main_greet(DemoIm* this, PlayState* play);
+void Demo_Im_Ocarina_main_play(DemoIm* this, PlayState* play);
+void Demo_Im_Ocarina_main_stop(DemoIm* this, PlayState* play);
+void Demo_Im_Ocarina_main_put(DemoIm* this, PlayState* play);
+void Demo_Im_Spot00_main_wait(DemoIm* this, PlayState* play);
+void Demo_Im_Spot00_main_greet(DemoIm* this, PlayState* play);
+void Demo_Im_Spot00_main_away(DemoIm* this, PlayState* play);
+void Demo_Im_Watch_main_wait(DemoIm* this, PlayState* play);
+void Demo_Im_Watch_main_stand(DemoIm* this, PlayState* play);
+void Demo_Im_Watch_main_wait_warp(DemoIm* this, PlayState* play);
+void Demo_Im_Watch_main_stand_warp(DemoIm* this, PlayState* play);
+void Demo_Im_Watch_main_branch_warp(DemoIm* this, PlayState* play);
+void Demo_Im_Watch_main_wait_ocarina(DemoIm* this, PlayState* play);
+void Demo_Im_Watch_main_stand_ocarina(DemoIm* this, PlayState* play);
+void Demo_Im_Watch_main_wait_spot00(DemoIm* this, PlayState* play);
+void Demo_Im_Watch_main_stand_spot00(DemoIm* this, PlayState* play);
+void Demo_Im_inEnding_main_wait(DemoIm* this, PlayState* play);
+void Demo_Im_inEnding_main_alpha(DemoIm* this, PlayState* play);
+void Demo_Im_inEnding_main_stand(DemoIm* this, PlayState* play);
+void Demo_Im_inEnding_main_lookup(DemoIm* this, PlayState* play);
+void Demo_Im_Actor_draw_none(DemoIm* this, PlayState* play);
+void Demo_Im_Actor_draw_normal(DemoIm* this, PlayState* play);
 
-static void* sEyeTextures[] = {
+static void* demo_im_eye[] = {
     gImpaEyeOpenTex,
     gImpaEyeHalfTex,
     gImpaEyeClosedTex,
@@ -62,7 +62,7 @@ static void* sEyeTextures[] = {
 static u32 D_8098783C = 0;
 #endif
 
-static ColliderCylinderInitType1 sCylinderInit = {
+static ColliderCylinderInitType1 Demo_Im_OcInfoData_forStand = {
     {
         COL_MATERIAL_HIT0,
         AT_NONE,
@@ -76,41 +76,13 @@ static ColliderCylinderInitType1 sCylinderInit = {
 
 #include "Demodt_Kenjyanoma.inc.c"
 
-static DemoImActionFunc sActionFuncs[] = {
-    func_809856F8, func_80985718, func_80985738, func_80985770, func_809857B0, func_809857F0, func_80985830,
-    func_80985C10, func_80985C40, func_80985C94, func_809863BC, func_809863DC, func_80986430, func_80986494,
-    func_809864D4, func_809868E8, func_80986908, func_80986948, func_80986D40, func_80986DC8, func_80986E20,
-    func_80986E40, func_80986EAC, func_80986F08, func_80986F28, func_80986F88, func_80986FA8, func_80987288,
-    func_809872A8, func_809872F0, func_80987330,
-};
-
-static Vec3f D_809887D8 = { 0.0f, 10.0f, 0.0f };
-
-static DemoImDrawFunc sDrawFuncs[] = {
-    DemoIm_DrawNothing,
-    DemoIm_DrawSolid,
-    DemoIm_DrawTranslucent,
-};
-
-ActorProfile Demo_Im_Profile = {
-    /**/ ACTOR_DEMO_IM,
-    /**/ ACTORCAT_NPC,
-    /**/ FLAGS,
-    /**/ OBJECT_IM,
-    /**/ sizeof(DemoIm),
-    /**/ DemoIm_Init,
-    /**/ DemoIm_Destroy,
-    /**/ DemoIm_Update,
-    /**/ DemoIm_Draw,
-};
-
-void func_80984BE0(DemoIm* this) {
+void Demo_Im_set_eye_pattern(DemoIm* this) {
     s32 pad[3];
     s16* blinkTimer = &this->blinkTimer;
     s16* eyeIndex = &this->eyeIndex;
 
     if (DECR(*blinkTimer) == 0) {
-        *blinkTimer = Rand_S16Offset(60, 60);
+        *blinkTimer = get_random_timer(60, 60);
     }
 
     *eyeIndex = *blinkTimer;
@@ -147,39 +119,39 @@ void func_80984C8C(DemoIm* this, PlayState* play) {
 }
 #endif
 
-void DemoIm_InitCollider(Actor* thisx, PlayState* play) {
+void Demo_Im_ct_forCorect(Actor* thisx, PlayState* play) {
     DemoIm* this = (DemoIm*)thisx;
 
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinderType1(play, &this->collider, &this->actor, &sCylinderInit);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set3(play, &this->collider, &this->actor, &Demo_Im_OcInfoData_forStand);
 }
 
-void DemoIm_DestroyCollider(Actor* thisx, PlayState* play) {
+void Demo_Im_dt_forCorect(Actor* thisx, PlayState* play) {
     DemoIm* this = (DemoIm*)thisx;
 
-    Collider_DestroyCylinder(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider);
 }
 
-void DemoIm_UpdateCollider(DemoIm* this, PlayState* play) {
+void Demo_Im_Excute_Corect_forStand(DemoIm* this, PlayState* play) {
     s32 pad[5];
 
-    Collider_UpdateCylinder(&this->actor, &this->collider);
-    CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
+    CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
 }
 
-void func_80984DB8(DemoIm* this) {
+void Demo_Im_Calc_turn_front(DemoIm* this) {
     s32 pad[2];
     Vec3s* headRot = &this->interactInfo.headRot;
     Vec3s* torsoRot = &this->interactInfo.torsoRot;
 
-    Math_SmoothStepToS(&headRot->x, 0, 20, 6200, 100);
-    Math_SmoothStepToS(&headRot->y, 0, 20, 6200, 100);
+    add_calc_short_angle2(&headRot->x, 0, 20, 6200, 100);
+    add_calc_short_angle2(&headRot->y, 0, 20, 6200, 100);
 
-    Math_SmoothStepToS(&torsoRot->x, 0, 20, 6200, 100);
-    Math_SmoothStepToS(&torsoRot->y, 0, 20, 6200, 100);
+    add_calc_short_angle2(&torsoRot->x, 0, 20, 6200, 100);
+    add_calc_short_angle2(&torsoRot->y, 0, 20, 6200, 100);
 }
 
-void func_80984E58(DemoIm* this, PlayState* play) {
+void Demo_Im_Calc_turn_link(DemoIm* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     s16 yawDiff;
     s16 trackingMode;
@@ -189,35 +161,35 @@ void func_80984E58(DemoIm* this, PlayState* play) {
 
     yawDiff = this->actor.yawTowardsPlayer - this->actor.shape.rot.y;
     trackingMode = (ABS(yawDiff) < 0x18E3) ? NPC_TRACKING_HEAD_AND_TORSO : NPC_TRACKING_NONE;
-    Npc_TrackPoint(&this->actor, &this->interactInfo, kREG(17) + 0xC, trackingMode);
+    eye_moveM(&this->actor, &this->interactInfo, kREG(17) + 0xC, trackingMode);
 }
 
-void func_80984F10(DemoIm* this, PlayState* play) {
+void Demo_Im_Calc_turn_link2(DemoIm* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     this->interactInfo.trackPos = player->actor.world.pos;
     this->interactInfo.yOffset = kREG(16) + 12.0f;
 
-    Npc_TrackPoint(&this->actor, &this->interactInfo, kREG(17) + 0xC, NPC_TRACKING_HEAD_AND_TORSO);
+    eye_moveM(&this->actor, &this->interactInfo, kREG(17) + 0xC, NPC_TRACKING_HEAD_AND_TORSO);
 }
 
-void func_80984F94(DemoIm* this, PlayState* play) {
+void Demo_Im_Calc_turn_link3(DemoIm* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     this->interactInfo.trackPos = player->actor.world.pos;
     this->interactInfo.yOffset = kREG(16) + 4.0f;
-    Npc_TrackPoint(&this->actor, &this->interactInfo, kREG(17) + 0xC, NPC_TRACKING_FULL_BODY);
+    eye_moveM(&this->actor, &this->interactInfo, kREG(17) + 0xC, NPC_TRACKING_FULL_BODY);
 }
 
-void DemoIm_UpdateBgCheckInfo(DemoIm* this, PlayState* play) {
-    Actor_UpdateBgCheckInfo(play, &this->actor, 75.0f, 30.0f, 30.0f, UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
+void Demo_Im_BGcheck(DemoIm* this, PlayState* play) {
+    Actor_BGcheck2(play, &this->actor, 75.0f, 30.0f, 30.0f, UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
 }
 
-s32 DemoIm_UpdateSkelAnime(DemoIm* this) {
-    return SkelAnime_Update(&this->skelAnime);
+s32 Demo_Im_Animation_Base(DemoIm* this) {
+    return Skeleton_Info2_anime_play(&this->skelAnime);
 }
 
-s32 DemoIm_IsCutsceneIdle(PlayState* play) {
+s32 Demo_Im_Check_EndDemoMode(PlayState* play) {
     if (play->csCtx.state == CS_STATE_IDLE) {
         return true;
     } else {
@@ -225,19 +197,19 @@ s32 DemoIm_IsCutsceneIdle(PlayState* play) {
     }
 }
 
-CsCmdActorCue* DemoIm_GetCue(PlayState* play, s32 cueChannel) {
+CsCmdActorCue* Demo_Im_Get_npcdemopnt(PlayState* play, s32 cueChannel) {
     s32 pad[2];
     CsCmdActorCue* cue = NULL;
 
-    if (!DemoIm_IsCutsceneIdle(play)) {
+    if (!Demo_Im_Check_EndDemoMode(play)) {
         cue = play->csCtx.actorCues[cueChannel];
     }
 
     return cue;
 }
 
-s32 func_809850E8(DemoIm* this, PlayState* play, u16 action, s32 cueChannel) {
-    CsCmdActorCue* cue = DemoIm_GetCue(play, cueChannel);
+s32 Demo_Im_Check_npcdemopnt(DemoIm* this, PlayState* play, u16 action, s32 cueChannel) {
+    CsCmdActorCue* cue = Demo_Im_Get_npcdemopnt(play, cueChannel);
 
     if (cue != NULL) {
         if (cue->id == action) {
@@ -247,8 +219,8 @@ s32 func_809850E8(DemoIm* this, PlayState* play, u16 action, s32 cueChannel) {
     return false;
 }
 
-s32 func_80985134(DemoIm* this, PlayState* play, u16 cueId, s32 cueChannel) {
-    CsCmdActorCue* cue = DemoIm_GetCue(play, cueChannel);
+s32 Demo_Im_Check2_npcdemopnt(DemoIm* this, PlayState* play, u16 cueId, s32 cueChannel) {
+    CsCmdActorCue* cue = Demo_Im_Get_npcdemopnt(play, cueChannel);
 
     if (cue != NULL) {
         if (cue->id != cueId) {
@@ -258,8 +230,8 @@ s32 func_80985134(DemoIm* this, PlayState* play, u16 cueId, s32 cueChannel) {
     return false;
 }
 
-void func_80985180(DemoIm* this, PlayState* play, s32 cueChannel) {
-    CsCmdActorCue* cue = DemoIm_GetCue(play, cueChannel);
+void Demo_Im_Set_DemoStartPosAngle(DemoIm* this, PlayState* play, s32 cueChannel) {
+    CsCmdActorCue* cue = Demo_Im_Get_npcdemopnt(play, cueChannel);
 
     if (cue != NULL) {
         this->actor.world.pos.x = cue->startPos.x;
@@ -269,8 +241,8 @@ void func_80985180(DemoIm* this, PlayState* play, s32 cueChannel) {
     }
 }
 
-void func_80985200(DemoIm* this, PlayState* play, s32 cueChannel) {
-    CsCmdActorCue* cue = DemoIm_GetCue(play, cueChannel);
+void Demo_Im_Set_StartPos_npcdemopnt(DemoIm* this, PlayState* play, s32 cueChannel) {
+    CsCmdActorCue* cue = Demo_Im_Get_npcdemopnt(play, cueChannel);
 
     if (cue != NULL) {
         this->actor.world.pos.x = cue->startPos.x;
@@ -280,8 +252,8 @@ void func_80985200(DemoIm* this, PlayState* play, s32 cueChannel) {
     }
 }
 
-void DemoIm_ChangeAnim(DemoIm* this, AnimationHeader* animHeaderSeg, u8 animMode, f32 morphFrames, s32 playBackwards) {
-    f32 frameCount = Animation_GetLastFrame(animHeaderSeg);
+void Demo_Im_Change_Anime(DemoIm* this, AnimationHeader* animHeaderSeg, u8 animMode, f32 morphFrames, s32 playBackwards) {
+    f32 frameCount = Si2_anime_end_frame(animHeaderSeg);
     f32 playbackSpeed;
     f32 startFrame;
     f32 endFrame;
@@ -296,7 +268,7 @@ void DemoIm_ChangeAnim(DemoIm* this, AnimationHeader* animHeaderSeg, u8 animMode
         playbackSpeed = -1.0f;
     }
 
-    Animation_Change(&this->skelAnime, animHeaderSeg, playbackSpeed, startFrame, endFrame, animMode, morphFrames);
+    Skeleton_Info2_init(&this->skelAnime, animHeaderSeg, playbackSpeed, startFrame, endFrame, animMode, morphFrames);
 }
 
 #include "z_demo_im_inKenjyanoma.inc.c"
@@ -311,50 +283,58 @@ void DemoIm_ChangeAnim(DemoIm* this, AnimationHeader* animHeaderSeg, u8 animMode
 
 #include "z_demo_im_inEnding.inc.c"
 
-void DemoIm_Update(Actor* thisx, PlayState* play) {
+void Demo_Im_Actor_main(Actor* thisx, PlayState* play) {
+    static DemoImActionFunc proc[] = {
+        Demo_Im_Actor_main_wait, Demo_Im_Actor_main_hide, Demo_Im_Actor_main_up, Demo_Im_Actor_main_greet, Demo_Im_Actor_main_handup, Demo_Im_Actor_main_cheer, Demo_Im_Actor_main_stop,
+        Demo_Im_Seal_Actor_main_hide, Demo_Im_Seal_Actor_main_fade, Demo_Im_Seal_Actor_main_pray, Demo_Im_Ocarina_main_wait, Demo_Im_Ocarina_main_greet, Demo_Im_Ocarina_main_play, Demo_Im_Ocarina_main_stop,
+        Demo_Im_Ocarina_main_put, Demo_Im_Spot00_main_wait, Demo_Im_Spot00_main_greet, Demo_Im_Spot00_main_away, Demo_Im_Watch_main_wait, Demo_Im_Watch_main_stand, Demo_Im_Watch_main_wait_warp,
+        Demo_Im_Watch_main_stand_warp, Demo_Im_Watch_main_branch_warp, Demo_Im_Watch_main_wait_ocarina, Demo_Im_Watch_main_stand_ocarina, Demo_Im_Watch_main_wait_spot00, Demo_Im_Watch_main_stand_spot00, Demo_Im_inEnding_main_wait,
+        Demo_Im_inEnding_main_alpha, Demo_Im_inEnding_main_stand, Demo_Im_inEnding_main_lookup,
+    };
+
     DemoIm* this = (DemoIm*)thisx;
 
-    if ((this->action < 0) || (this->action >= 31) || (sActionFuncs[this->action] == NULL)) {
+    if ((this->action < 0) || (this->action >= 31) || (proc[this->action] == NULL)) {
         PRINTF(VT_FGCOL(RED) "メインモードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
         return;
     }
-    sActionFuncs[this->action](this, play);
+    proc[this->action](this, play);
 }
 
-void DemoIm_Init(Actor* thisx, PlayState* play) {
+void Demo_Im_Actor_ct(Actor* thisx, PlayState* play) {
     DemoIm* this = (DemoIm*)thisx;
 
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 30.0f);
-    DemoIm_InitCollider(thisx, play);
-    SkelAnime_InitFlex(play, &this->skelAnime, &gImpaSkel, NULL, this->jointTable, this->morphTable, 17);
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 30.0f);
+    Demo_Im_ct_forCorect(thisx, play);
+    Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &gImpaSkel, NULL, this->jointTable, this->morphTable, 17);
     thisx->flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
 
     switch (this->actor.params) {
         case 2:
-            func_80985860(this, play);
+            Demo_Im_KenjyanomaDemo02_Init(this, play);
             break;
         case 3:
-            func_80985E60(this, play);
+            Demo_Im_Ocarina_Init(this, play);
             break;
         case 4:
-            func_8098652C(this, play);
+            Demo_Im_Spot00_Init(this, play);
             break;
         case 5:
-            func_809869B0(this, play);
+            Demo_Im_Watch_Init(this, play);
             break;
         case 6:
-            func_80987018(this, play);
+            Demo_Im_Ending_Init(this, play);
             break;
         default:
-            func_80985310(this, play);
+            Demo_Im_Kenjyanoma_Init(this, play);
     }
 }
 
-void DemoIm_Destroy(Actor* thisx, PlayState* play) {
-    DemoIm_DestroyCollider(thisx, play);
+void Demo_Im_Actor_dt(Actor* thisx, PlayState* play) {
+    Demo_Im_dt_forCorect(thisx, play);
 }
 
-s32 DemoIm_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+s32 Demo_Im_before_draw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     DemoIm* this = (DemoIm*)thisx;
     s32* unk_2D0 = &this->unk_2D0;
 
@@ -381,14 +361,16 @@ s32 DemoIm_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* 
     return false;
 }
 
-void DemoIm_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
+void Demo_Im_after_draw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
+    static Vec3f D_809887D8 = { 0.0f, 10.0f, 0.0f };
+
     DemoIm* this = (DemoIm*)thisx;
 
     if (limbIndex == IMPA_LIMB_HEAD) {
         Vec3f sp28 = D_809887D8;
         Vec3f dest;
 
-        Matrix_MultVec3f(&sp28, &dest);
+        Matrix_Position(&sp28, &dest);
         this->actor.focus.pos.x = dest.x;
         this->actor.focus.pos.y = dest.y;
         this->actor.focus.pos.z = dest.z;
@@ -398,36 +380,54 @@ void DemoIm_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot
     }
 }
 
-void DemoIm_DrawNothing(DemoIm* this, PlayState* play) {
+void Demo_Im_Actor_draw_none(DemoIm* this, PlayState* play) {
 }
 
-void DemoIm_DrawSolid(DemoIm* this, PlayState* play) {
+void Demo_Im_Actor_draw_normal(DemoIm* this, PlayState* play) {
     s32 pad[2];
     s16 eyeIndex = this->eyeIndex;
-    void* eyeTexture = sEyeTextures[eyeIndex];
+    void* eyeTexture = demo_im_eye[eyeIndex];
     SkelAnime* skelAnime = &this->skelAnime;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_demo_im.c", 904);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
 
     gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(eyeTexture));
     gSPSegment(POLY_OPA_DISP++, 0x09, SEGMENTED_TO_VIRTUAL(eyeTexture));
     gDPSetEnvColor(POLY_OPA_DISP++, 0, 0, 0, 255);
-    gSPSegment(POLY_OPA_DISP++, 0x0C, &D_80116280[2]);
+    gSPSegment(POLY_OPA_DISP++, 0x0C, &Actor_change_render_mode[2]);
 
-    SkelAnime_DrawFlexOpa(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount,
-                          DemoIm_OverrideLimbDraw, DemoIm_PostLimbDraw, this);
+    Si2_draw_SV(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount,
+                          Demo_Im_before_draw, Demo_Im_after_draw, this);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_demo_im.c", 925);
 }
 
-void DemoIm_Draw(Actor* thisx, PlayState* play) {
+void Demo_Im_Actor_draw(Actor* thisx, PlayState* play) {
+    static DemoImDrawFunc proc[] = {
+        Demo_Im_Actor_draw_none,
+        Demo_Im_Actor_draw_normal,
+        Demo_Im_Actor_draw_alpha,
+    };
+
     DemoIm* this = (DemoIm*)thisx;
 
-    if ((this->drawConfig < 0) || (this->drawConfig >= 3) || (sDrawFuncs[this->drawConfig] == NULL)) {
+    if ((this->drawConfig < 0) || (this->drawConfig >= 3) || (proc[this->drawConfig] == NULL)) {
         PRINTF(VT_FGCOL(RED) "描画モードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
         return;
     }
-    sDrawFuncs[this->drawConfig](this, play);
+    proc[this->drawConfig](this, play);
 }
+
+ActorProfile Demo_Im_Profile = {
+    /**/ ACTOR_DEMO_IM,
+    /**/ ACTORCAT_NPC,
+    /**/ FLAGS,
+    /**/ OBJECT_IM,
+    /**/ sizeof(DemoIm),
+    /**/ Demo_Im_Actor_ct,
+    /**/ Demo_Im_Actor_dt,
+    /**/ Demo_Im_Actor_main,
+    /**/ Demo_Im_Actor_draw,
+};

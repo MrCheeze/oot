@@ -19,7 +19,7 @@ void LogUtils_CheckValidPointer(const char* exp, void* ptr, const char* file, in
 void LogUtils_LogThreadId(const char* name, int line);
 #endif
 
-void LogUtils_HungupThread(const char* name, int line);
-void LogUtils_ResetHungup(void);
+void _dbg_hungup(const char* name, int line);
+void Reset(void);
 
 #endif

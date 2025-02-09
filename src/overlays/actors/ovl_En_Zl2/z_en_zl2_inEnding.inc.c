@@ -1,10 +1,10 @@
-void func_80B5135C(EnZl2* this, PlayState* play) {
-    func_80B4FD00(this, &gZelda2Anime1Anim_00A15C, 0, 0.0f, 0);
+void En_Zl2_Actor_inEnding_Init(EnZl2* this, PlayState* play) {
+    En_Zl2_Change_Anime(this, &gZelda2Anime1Anim_00A15C, 0, 0.0f, 0);
     this->action = 25;
     this->unk_254 = 1;
 }
 
-void func_80B513A8(EnZl2* this, PlayState* play) {
+void Birth_Effect_Light_In_En_Zl2_inEnding(EnZl2* this, PlayState* play) {
     Player* player;
     f32 posX;
     f32 posY;
@@ -15,149 +15,149 @@ void func_80B513A8(EnZl2* this, PlayState* play) {
         posX = player->actor.world.pos.x;
         posY = player->actor.world.pos.y;
         posZ = player->actor.world.pos.z;
-        Actor_Spawn(&play->actorCtx, play, ACTOR_DOOR_WARP1, posX, posY, posZ, 0, 0, 0, WARP_UNK_7);
+        Actor_info_make_actor(&play->actorCtx, play, ACTOR_DOOR_WARP1, posX, posY, posZ, 0, 0, 0, WARP_UNK_7);
         this->unk_250 = 1;
     }
 }
 
-void func_80B51418(EnZl2* this, PlayState* play) {
-    EnZl2_UpdateEyes(this);
+void En_Zl2_inEnding_SetFace_Stand(EnZl2* this, PlayState* play) {
+    En_Zl2_set_eye_pattern(this);
     if (play->csCtx.curFrame < 431) {
-        EnZl2_setMouthIndex(this, 1);
+        En_Zl2_set_mouth_pattern(this, 1);
     } else {
-        EnZl2_setMouthIndex(this, 0);
+        En_Zl2_set_mouth_pattern(this, 0);
     }
 }
 
-void func_80B5146C(EnZl2* this, PlayState* play) {
-    func_80B4EA40(this);
-    EnZl2_setMouthIndex(this, 0);
+void En_Zl2_inEnding_SetFace_Hesitate(EnZl2* this, PlayState* play) {
+    En_Zl2_set_NormalToClose_eye_pattern(this);
+    En_Zl2_set_mouth_pattern(this, 0);
 }
 
-void func_80B5149C(EnZl2* this, PlayState* play) {
+void En_Zl2_inEnding_SetFace_Pile(EnZl2* this, PlayState* play) {
     if (play->csCtx.curFrame < 988) {
-        EnZl2_setEyesIndex(this, 7);
-        EnZl2_setEyeIndex2(this, 8);
+        En_Zl2_setNum_eye_pattern(this, 7);
+        En_Zl2_setNum_eye_pattern2(this, 8);
     } else {
-        EnZl2_UpdateEyes(this);
+        En_Zl2_set_eye_pattern(this);
     }
-    EnZl2_setMouthIndex(this, 0);
+    En_Zl2_set_mouth_pattern(this, 0);
 }
 
-void func_80B514F8(EnZl2* this, PlayState* play) {
-    EnZl2_UpdateEyes(this);
+void En_Zl2_inEnding_SetFace_Chest(EnZl2* this, PlayState* play) {
+    En_Zl2_set_eye_pattern(this);
     if (play->csCtx.curFrame < 1190) {
-        EnZl2_setMouthIndex(this, 1);
+        En_Zl2_set_mouth_pattern(this, 1);
     } else {
-        EnZl2_setMouthIndex(this, 0);
+        En_Zl2_set_mouth_pattern(this, 0);
     }
 }
 
-void func_80B5154C(EnZl2* this, PlayState* play) {
+void En_Zl2_inEnding_SetFace_Play(EnZl2* this, PlayState* play) {
     CutsceneContext* csCtx;
 
     if (this->skelAnime.mode != 0) {
-        EnZl2_UpdateEyes(this);
+        En_Zl2_set_eye_pattern(this);
     } else {
         csCtx = &play->csCtx;
         if (csCtx->curFrame < 1520) {
-            func_80B4EBB8(this);
+            En_Zl2_set_NormalToClose2_eye_pattern(this);
         } else if (csCtx->curFrame == 1520) {
             this->unk_27C = 0.0f;
         } else {
-            func_80B4EC48(this);
+            En_Zl2_set_Close2ToNormal_eye_pattern(this);
         }
     }
 }
 
-void func_80B515C4(EnZl2* this) {
+void En_Zl2_inEnding_setup_Wait(EnZl2* this) {
     this->action = 25;
     this->drawConfig = 0;
     this->actor.shape.shadowAlpha = 0;
 }
 
-void func_80B515D8(EnZl2* this, PlayState* play) {
-    func_80B4FD00(this, &gZelda2Anime1Anim_00A15C, 0, -8.0f, 0);
-    func_80B4EDB8(this, play, 0);
+void En_Zl2_inEnding_setup_Stand(EnZl2* this, PlayState* play) {
+    En_Zl2_Change_Anime(this, &gZelda2Anime1Anim_00A15C, 0, -8.0f, 0);
+    En_Zl2_Set_DemoStartPosAngle(this, play, 0);
     this->action = 26;
     this->drawConfig = 1;
     this->actor.shape.shadowAlpha = 0xFF;
     this->unk_27C = 0.0f;
 }
 
-void func_80B51644(EnZl2* this, s32 arg1) {
+void En_Zl2_inEnding_ChengAnime_Require(EnZl2* this, s32 arg1) {
     if (arg1 != 0) {
-        func_80B4FD00(this, &gZelda2Anime1Anim_0087B8, 0, -8.0f, 0);
+        En_Zl2_Change_Anime(this, &gZelda2Anime1Anim_0087B8, 0, -8.0f, 0);
     }
 }
 
-void func_80B51678(EnZl2* this) {
-    func_80B4FD00(this, &gZelda2Anime1Anim_007D0C, 2, -8.0f, 0);
+void En_Zl2_inEnding_setup_Require(EnZl2* this) {
+    En_Zl2_Change_Anime(this, &gZelda2Anime1Anim_007D0C, 2, -8.0f, 0);
     this->action = 27;
     this->drawConfig = 1;
     this->actor.shape.shadowAlpha = 0xFF;
     this->unk_27C = 0.0f;
 }
 
-void func_80B516D0(EnZl2* this, s32 arg1) {
+void En_Zl2_inEnding_ChengAnime_Pile(EnZl2* this, s32 arg1) {
     if (arg1 != 0) {
-        func_80B4FD00(this, &gZelda2Anime1Anim_009AD4, 0, -8.0f, 0);
+        En_Zl2_Change_Anime(this, &gZelda2Anime1Anim_009AD4, 0, -8.0f, 0);
     }
 }
 
-void func_80B51704(EnZl2* this) {
-    func_80B4FD00(this, &gZelda2Anime1Anim_0090D8, 2, -8.0f, 0);
+void En_Zl2_inEnding_setup_Pile(EnZl2* this) {
+    En_Zl2_Change_Anime(this, &gZelda2Anime1Anim_0090D8, 2, -8.0f, 0);
     this->action = 28;
     this->drawConfig = 1;
     this->actor.shape.shadowAlpha = 0xFF;
     this->unk_27C = 0.0f;
 }
 
-void func_80B5175C(EnZl2* this, s32 arg1) {
+void En_Zl2_inEnding_ChengAnime_Chest(EnZl2* this, s32 arg1) {
     if (arg1 != 0) {
-        func_80B4FD00(this, &gZelda2Anime1Anim_006778, 0, -8.0f, 0);
+        En_Zl2_Change_Anime(this, &gZelda2Anime1Anim_006778, 0, -8.0f, 0);
     }
 }
 
-void func_80B51790(EnZl2* this) {
-    func_80B4FD00(this, &gZelda2Anime1Anim_005F40, 2, -8.0f, 0);
+void En_Zl2_inEnding_setup_Chest(EnZl2* this) {
+    En_Zl2_Change_Anime(this, &gZelda2Anime1Anim_005F40, 2, -8.0f, 0);
     this->action = 29;
     this->drawConfig = 1;
     this->actor.shape.shadowAlpha = 0xFF;
 }
 
-void func_80B517E0(EnZl2* this, s32 arg1) {
+void En_Zl2_inEnding_ChengAnime_Hesitate(EnZl2* this, s32 arg1) {
     if (arg1 != 0) {
-        func_80B4FD00(this, &gZelda2Anime1Anim_002750, 0, -8.0f, 0);
+        En_Zl2_Change_Anime(this, &gZelda2Anime1Anim_002750, 0, -8.0f, 0);
         this->action = 31;
     }
 }
 
-void func_80B51824(EnZl2* this) {
-    func_80B4FD00(this, &gZelda2Anime1Anim_0022D0, 2, -8.0f, 0);
+void En_Zl2_inEnding_setup_Hesitate(EnZl2* this) {
+    En_Zl2_Change_Anime(this, &gZelda2Anime1Anim_0022D0, 2, -8.0f, 0);
     this->action = 30;
     this->drawConfig = 1;
     this->actor.shape.shadowAlpha = 0xFF;
     this->unk_27C = 0.0f;
 }
 
-void func_80B5187C(EnZl2* this, s32 arg1) {
+void En_Zl2_inEnding_ChengAnime_Play(EnZl2* this, s32 arg1) {
     if (arg1 != 0) {
-        func_80B4FD00(this, &gZelda2Anime1Anim_00A79C, 0, -8.0f, 0);
+        En_Zl2_Change_Anime(this, &gZelda2Anime1Anim_00A79C, 0, -8.0f, 0);
         this->unk_27C = 0.0f;
     }
 }
 
-void func_80B518C0(EnZl2* this) {
-    func_80B4FD00(this, SEGMENTED_TO_VIRTUAL(&gZelda2Anime1Anim_004900), 2, -8.0f, 0);
+void En_Zl2_inEnding_setup_Play(EnZl2* this) {
+    En_Zl2_Change_Anime(this, SEGMENTED_TO_VIRTUAL(&gZelda2Anime1Anim_004900), 2, -8.0f, 0);
     this->action = 32;
     this->drawConfig = 1;
     this->actor.shape.shadowAlpha = 0xFF;
     this->unk_27C = 0.0f;
 }
 
-void func_80B51948(EnZl2* this, PlayState* play) {
-    CsCmdActorCue* cue = EnZl2_GetCue(play, 0);
+void En_Zl2_inEnding_Check_DemoMode(EnZl2* this, PlayState* play) {
+    CsCmdActorCue* cue = En_Zl2_Get_npcdemopnt(play, 0);
     s32 nextCueId;
     s32 currentCueId;
 
@@ -168,28 +168,28 @@ void func_80B51948(EnZl2* this, PlayState* play) {
         if (nextCueId != currentCueId) {
             switch (nextCueId) {
                 case 1:
-                    func_80B515C4(this);
+                    En_Zl2_inEnding_setup_Wait(this);
                     break;
                 case 2:
-                    func_80B515D8(this, play);
+                    En_Zl2_inEnding_setup_Stand(this, play);
                     break;
                 case 16:
-                    func_80B51678(this);
+                    En_Zl2_inEnding_setup_Require(this);
                     break;
                 case 17:
-                    func_80B51704(this);
+                    En_Zl2_inEnding_setup_Pile(this);
                     break;
                 case 18:
-                    func_80B51790(this);
+                    En_Zl2_inEnding_setup_Chest(this);
                     break;
                 case 4:
-                    func_80B51824(this);
+                    En_Zl2_inEnding_setup_Hesitate(this);
                     break;
                 case 20:
-                    func_80B518C0(this);
+                    En_Zl2_inEnding_setup_Play(this);
                     break;
                 case 21:
-                    func_80B513A8(this, play);
+                    Birth_Effect_Light_In_En_Zl2_inEnding(this, play);
                     break;
                 default:
                     PRINTF("En_Zl2_inEnding_Check_DemoMode:そんな動作は無い!!!!!!!!\n");
@@ -199,61 +199,61 @@ void func_80B51948(EnZl2* this, PlayState* play) {
     }
 }
 
-void func_80B51A5C(EnZl2* this, PlayState* play) {
-    func_80B4FCCC(this, play);
-    func_80B51948(this, play);
+void En_Zl2_inEnding_main_wait(EnZl2* this, PlayState* play) {
+    En_Zl2_Change_Bank(this, play);
+    En_Zl2_inEnding_Check_DemoMode(this, play);
 }
 
-void func_80B51A8C(EnZl2* this, PlayState* play) {
-    func_80B4FCCC(this, play);
-    func_80B4ED2C(this, play);
-    func_80B51418(this, play);
-    EnZl2_UpdateSkelAnime(this);
-    func_80B51948(this, play);
+void En_Zl2_inEnding_main_stand(EnZl2* this, PlayState* play) {
+    En_Zl2_Change_Bank(this, play);
+    En_Zl2_BGcheck(this, play);
+    En_Zl2_inEnding_SetFace_Stand(this, play);
+    En_Zl2_Animation_Base(this);
+    En_Zl2_inEnding_Check_DemoMode(this, play);
 }
 
-void func_80B51AE4(EnZl2* this, PlayState* play) {
-    func_80B4FCCC(this, play);
-    func_80B4ED2C(this, play);
-    EnZl2_UpdateEyes(this);
-    func_80B51644(this, EnZl2_UpdateSkelAnime(this));
-    func_80B51948(this, play);
+void En_Zl2_inEnding_main_require(EnZl2* this, PlayState* play) {
+    En_Zl2_Change_Bank(this, play);
+    En_Zl2_BGcheck(this, play);
+    En_Zl2_set_eye_pattern(this);
+    En_Zl2_inEnding_ChengAnime_Require(this, En_Zl2_Animation_Base(this));
+    En_Zl2_inEnding_Check_DemoMode(this, play);
 }
 
-void func_80B51B44(EnZl2* this, PlayState* play) {
-    func_80B4FCCC(this, play);
-    func_80B4ED2C(this, play);
-    func_80B5149C(this, play);
-    func_80B516D0(this, EnZl2_UpdateSkelAnime(this));
-    func_80B51948(this, play);
+void En_Zl2_inEnding_main_pile(EnZl2* this, PlayState* play) {
+    En_Zl2_Change_Bank(this, play);
+    En_Zl2_BGcheck(this, play);
+    En_Zl2_inEnding_SetFace_Pile(this, play);
+    En_Zl2_inEnding_ChengAnime_Pile(this, En_Zl2_Animation_Base(this));
+    En_Zl2_inEnding_Check_DemoMode(this, play);
 }
 
-void func_80B51BA8(EnZl2* this, PlayState* play) {
-    func_80B4FCCC(this, play);
-    func_80B4ED2C(this, play);
-    func_80B514F8(this, play);
-    func_80B5175C(this, EnZl2_UpdateSkelAnime(this));
-    func_80B51948(this, play);
+void En_Zl2_inEnding_main_chest(EnZl2* this, PlayState* play) {
+    En_Zl2_Change_Bank(this, play);
+    En_Zl2_BGcheck(this, play);
+    En_Zl2_inEnding_SetFace_Chest(this, play);
+    En_Zl2_inEnding_ChengAnime_Chest(this, En_Zl2_Animation_Base(this));
+    En_Zl2_inEnding_Check_DemoMode(this, play);
 }
 
-void func_80B51C0C(EnZl2* this, PlayState* play) {
-    func_80B4FCCC(this, play);
-    func_80B4ED2C(this, play);
-    func_80B5146C(this, play);
-    func_80B517E0(this, EnZl2_UpdateSkelAnime(this));
+void En_Zl2_inEnding_main_hesitate(EnZl2* this, PlayState* play) {
+    En_Zl2_Change_Bank(this, play);
+    En_Zl2_BGcheck(this, play);
+    En_Zl2_inEnding_SetFace_Hesitate(this, play);
+    En_Zl2_inEnding_ChengAnime_Hesitate(this, En_Zl2_Animation_Base(this));
 }
 
-void func_80B51C64(EnZl2* this, PlayState* play) {
-    func_80B4FCCC(this, play);
-    func_80B4ED2C(this, play);
-    EnZl2_UpdateSkelAnime(this);
-    func_80B51948(this, play);
+void En_Zl2_inEnding_main_downforward(EnZl2* this, PlayState* play) {
+    En_Zl2_Change_Bank(this, play);
+    En_Zl2_BGcheck(this, play);
+    En_Zl2_Animation_Base(this);
+    En_Zl2_inEnding_Check_DemoMode(this, play);
 }
 
-void func_80B51CA8(EnZl2* this, PlayState* play) {
-    func_80B4FCCC(this, play);
-    func_80B4ED2C(this, play);
-    func_80B5154C(this, play);
-    func_80B5187C(this, EnZl2_UpdateSkelAnime(this));
-    func_80B51948(this, play);
+void En_Zl2_inEnding_main_play(EnZl2* this, PlayState* play) {
+    En_Zl2_Change_Bank(this, play);
+    En_Zl2_BGcheck(this, play);
+    En_Zl2_inEnding_SetFace_Play(this, play);
+    En_Zl2_inEnding_ChengAnime_Play(this, En_Zl2_Animation_Base(this));
+    En_Zl2_inEnding_Check_DemoMode(this, play);
 }

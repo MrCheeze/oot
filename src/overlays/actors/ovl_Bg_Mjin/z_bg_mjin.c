@@ -16,13 +16,13 @@
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void BgMjin_Init(Actor* thisx, PlayState* play);
-void BgMjin_Destroy(Actor* thisx, PlayState* play);
-void BgMjin_Update(Actor* thisx, PlayState* play);
-void BgMjin_Draw(Actor* thisx, PlayState* play);
+void Bg_Mjin_actor_ct(Actor* thisx, PlayState* play);
+void Bg_Mjin_actor_dt(Actor* thisx, PlayState* play);
+void Bg_Mjin_actor_move(Actor* thisx, PlayState* play);
+void Bg_Mjin_actor_draw(Actor* thisx, PlayState* play);
 
-void func_808A0850(BgMjin* this, PlayState* play);
-void BgMjin_DoNothing(BgMjin* this, PlayState* play);
+static void move_dma_wait(BgMjin* this, PlayState* play);
+static void move_wait(BgMjin* this, PlayState* play);
 
 ActorProfile Bg_Mjin_Profile = {
     /**/ ACTOR_BG_MJIN,
@@ -30,86 +30,86 @@ ActorProfile Bg_Mjin_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(BgMjin),
-    /**/ BgMjin_Init,
-    /**/ BgMjin_Destroy,
-    /**/ BgMjin_Update,
+    /**/ Bg_Mjin_actor_ct,
+    /**/ Bg_Mjin_actor_dt,
+    /**/ Bg_Mjin_actor_move,
     /**/ NULL,
 };
 
 extern UNK_TYPE D_06000000;
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F_DIV1000(scale, 1000, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDistance, 4000, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeScale, 400, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDownward, 400, ICHAIN_STOP),
 };
 
-static s16 sObjectIds[] = { OBJECT_MJIN_FLASH, OBJECT_MJIN_DARK, OBJECT_MJIN_FLAME,
+static s16 mjin_texture_bank[] = { OBJECT_MJIN_FLASH, OBJECT_MJIN_DARK, OBJECT_MJIN_FLAME,
                             OBJECT_MJIN_ICE,   OBJECT_MJIN_SOUL, OBJECT_MJIN_WIND };
 
-void BgMjin_SetupAction(BgMjin* this, BgMjinActionFunc actionFunc) {
+void Bg_Mjin_actor_set_process(BgMjin* this, BgMjinActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
 
-void BgMjin_Init(Actor* thisx, PlayState* play) {
+void Bg_Mjin_actor_ct(Actor* thisx, PlayState* play) {
     BgMjin* this = (BgMjin*)thisx;
     s8 objectSlot;
 
-    Actor_ProcessInitChain(thisx, sInitChain);
-    objectSlot = Object_GetSlot(&play->objectCtx, (thisx->params != 0 ? OBJECT_MJIN : OBJECT_MJIN_OKA));
+    ValueSet_process(thisx, value_init);
+    objectSlot = Object_Exchange_bank_check(&play->objectCtx, (thisx->params != 0 ? OBJECT_MJIN : OBJECT_MJIN_OKA));
     this->requiredObjectSlot = objectSlot;
     if (objectSlot < 0) {
-        Actor_Kill(thisx);
+        Actor_delete(thisx);
     } else {
-        BgMjin_SetupAction(this, func_808A0850);
+        Bg_Mjin_actor_set_process(this, move_dma_wait);
     }
 }
 
-void BgMjin_Destroy(Actor* thisx, PlayState* play) {
+void Bg_Mjin_actor_dt(Actor* thisx, PlayState* play) {
     BgMjin* this = (BgMjin*)thisx;
 
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
 }
 
-void func_808A0850(BgMjin* this, PlayState* play) {
+static void move_dma_wait(BgMjin* this, PlayState* play) {
     CollisionHeader* colHeader;
     CollisionHeader* collision;
 
-    if (Object_IsLoaded(&play->objectCtx, this->requiredObjectSlot)) {
+    if (Object_Exchange_bank_dma_check(&play->objectCtx, this->requiredObjectSlot)) {
         colHeader = NULL;
         this->dyna.actor.flags &= ~ACTOR_FLAG_UPDATE_CULLING_DISABLED;
         this->dyna.actor.objectSlot = this->requiredObjectSlot;
-        Actor_SetObjectDependency(play, &this->dyna.actor);
-        DynaPolyActor_Init(&this->dyna, 0);
+        Actor_set_segment(play, &this->dyna.actor);
+        MoveBG_ct(&this->dyna, 0);
         collision = this->dyna.actor.params != 0 ? &gWarpPadCol : &gOcarinaWarpPadCol;
-        CollisionHeader_GetVirtual(collision, &colHeader);
-        this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
-        BgMjin_SetupAction(this, BgMjin_DoNothing);
-        this->dyna.actor.draw = BgMjin_Draw;
+        DynaPolyUty_bgdi_SG2KSG(collision, &colHeader);
+        this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
+        Bg_Mjin_actor_set_process(this, move_wait);
+        this->dyna.actor.draw = Bg_Mjin_actor_draw;
     }
 }
 
-void BgMjin_DoNothing(BgMjin* this, PlayState* play) {
+static void move_wait(BgMjin* this, PlayState* play) {
 }
 
-void BgMjin_Update(Actor* thisx, PlayState* play) {
+void Bg_Mjin_actor_move(Actor* thisx, PlayState* play) {
     BgMjin* this = (BgMjin*)thisx;
 
     this->actionFunc(this, play);
 }
 
-void BgMjin_Draw(Actor* thisx, PlayState* play) {
+void Bg_Mjin_actor_draw(Actor* thisx, PlayState* play) {
     BgMjin* this = (BgMjin*)thisx;
     Gfx* dlist;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_bg_mjin.c", 250);
 
     if (thisx->params != 0) {
-        s32 objectSlot = Object_GetSlot(&play->objectCtx, sObjectIds[thisx->params - 1]);
+        s32 objectSlot = Object_Exchange_bank_check(&play->objectCtx, mjin_texture_bank[thisx->params - 1]);
 
         if (objectSlot >= 0) {
-            gSegments[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[objectSlot].segment);
+            SegmentBaseAddress[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[objectSlot].segment);
         }
 
         gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(&D_06000000));
@@ -118,7 +118,7 @@ void BgMjin_Draw(Actor* thisx, PlayState* play) {
         dlist = gOcarinaWarpPadDL;
     }
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_bg_mjin.c", 285);
     gSPDisplayList(POLY_OPA_DISP++, dlist);
 

@@ -5,7 +5,7 @@ typedef struct RestrictionFlags {
     /* 0x03 */ u8 flags3;
 } RestrictionFlags; // size = 0x4
 
-static RestrictionFlags sRestrictionFlags[] = {
+static RestrictionFlags button_data[] = {
     { SCENE_HYRULE_FIELD, 0x00, 0x00, 0x10 },
     { SCENE_KAKARIKO_VILLAGE, 0x00, 0x00, 0x10 },
     { SCENE_GRAVEYARD, 0x00, 0x00, 0x10 },

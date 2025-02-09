@@ -1,12 +1,12 @@
-void DemoDu_InitCs_Credits(DemoDu* this, PlayState* play) {
-    SkelAnime_InitFlex(play, &this->skelAnime, &gDaruniaSkel, &gDaruniaCreditsIdleAnim, NULL, NULL, 0);
+void Demo_Du_Ending_Init(DemoDu* this, PlayState* play) {
+    Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &gDaruniaSkel, &gDaruniaCreditsIdleAnim, NULL, NULL, 0);
     this->updateIndex = CS_CREDITS_SUBSCENE(0);
     this->drawIndex = 0;
     this->actor.shape.shadowAlpha = 0;
-    DemoDu_SetMouthTexIndex(this, 3);
+    Demo_Du_set_mouth_Num(this, 3);
 }
 
-void DemoDu_CsCredits_UpdateShadowAlpha(DemoDu* this) {
+void Demo_Du_inEnding_Set_Alpha(DemoDu* this) {
     s32 shadowAlpha = 255;
     f32 temp_f0;
     f32* unk_1A4;
@@ -25,38 +25,38 @@ void DemoDu_CsCredits_UpdateShadowAlpha(DemoDu* this) {
     }
 }
 
-void DemoDu_CsCredits_AdvanceTo01(DemoDu* this, PlayState* play) {
-    DemoDu_SetStartPosRotFromCue(this, play, 2);
+void Demo_Du_inEnding_setup_Appear(DemoDu* this, PlayState* play) {
+    Demo_Du_Set_StartPos_npcdemopnt(this, play, 2);
     this->updateIndex = CS_CREDITS_SUBSCENE(1);
     this->drawIndex = 2;
 }
 
-void DemoDu_CsCredits_AdvanceTo02(DemoDu* this) {
+void Demo_Du_inEnding_check_AppearToStand(DemoDu* this) {
     if (this->unk_1A4 >= kREG(17) + 10.0f) {
         this->updateIndex = CS_CREDITS_SUBSCENE(2);
         this->drawIndex = 1;
     }
 }
 
-void DemoDu_CsCredits_AdvanceTo03(DemoDu* this) {
-    func_80969DDC(this, &gDaruniaLookingUpToSariaAnim, ANIMMODE_ONCE, -8.0f, 0);
+void Demo_Du_inEnding_setup_Lookup(DemoDu* this) {
+    Demo_Du_Change_Anime(this, &gDaruniaLookingUpToSariaAnim, ANIMMODE_ONCE, -8.0f, 0);
     this->updateIndex = CS_CREDITS_SUBSCENE(3);
 }
 
-void DemoDu_CsCredits_AdvanceTo04(DemoDu* this) {
-    func_80969DDC(this, &gDaruniaCreditsHitBreastAnim, ANIMMODE_ONCE, 0.0f, 0);
+void Demo_Du_inEnding_setup_Lookdown(DemoDu* this) {
+    Demo_Du_Change_Anime(this, &gDaruniaCreditsHitBreastAnim, ANIMMODE_ONCE, 0.0f, 0);
     this->updateIndex = CS_CREDITS_SUBSCENE(4);
 }
 
-void DemoDu_CsCredits_BackTo02(DemoDu* this, s32 animFinished) {
+void Demo_Du_inEnding_Check_LookdownTostand(DemoDu* this, s32 animFinished) {
     if (animFinished) {
-        func_80969DDC(this, &gDaruniaCreditsIdleAnim, ANIMMODE_LOOP, 0.0f, 0);
+        Demo_Du_Change_Anime(this, &gDaruniaCreditsIdleAnim, ANIMMODE_LOOP, 0.0f, 0);
         this->updateIndex = CS_CREDITS_SUBSCENE(2);
     }
 }
 
-void DemoDu_CsCredits_HandleCues(DemoDu* this, PlayState* play) {
-    CsCmdActorCue* cue = DemoDu_GetCue(play, 2);
+void Demo_Du_inEnding_Check_DemoMode(DemoDu* this, PlayState* play) {
+    CsCmdActorCue* cue = Demo_Du_Get_npcdemopnt(play, 2);
 
     if (cue != NULL) {
         s32 nextCueId = cue->id;
@@ -65,13 +65,13 @@ void DemoDu_CsCredits_HandleCues(DemoDu* this, PlayState* play) {
         if (nextCueId != currentCueId) {
             switch (nextCueId) {
                 case 9:
-                    DemoDu_CsCredits_AdvanceTo01(this, play);
+                    Demo_Du_inEnding_setup_Appear(this, play);
                     break;
                 case 10:
-                    DemoDu_CsCredits_AdvanceTo03(this);
+                    Demo_Du_inEnding_setup_Lookup(this);
                     break;
                 case 11:
-                    DemoDu_CsCredits_AdvanceTo04(this);
+                    Demo_Du_inEnding_setup_Lookdown(this);
                     break;
                 default:
                     // "Demo_Du_inEnding_Check_DemoMode:There is no such operation!!!!!!!!"
@@ -83,37 +83,37 @@ void DemoDu_CsCredits_HandleCues(DemoDu* this, PlayState* play) {
     }
 }
 
-void DemoDu_UpdateCs_CR_00(DemoDu* this, PlayState* play) {
-    DemoDu_CsCredits_HandleCues(this, play);
+void Demo_Du_inEnding_main_wait(DemoDu* this, PlayState* play) {
+    Demo_Du_inEnding_Check_DemoMode(this, play);
 }
 
-void DemoDu_UpdateCs_CR_01(DemoDu* this, PlayState* play) {
-    DemoDu_UpdateBgCheckInfo(this, play);
-    DemoDu_UpdateSkelAnime(this);
-    DemoDu_UpdateEyes(this);
-    DemoDu_CsCredits_UpdateShadowAlpha(this);
-    DemoDu_CsCredits_AdvanceTo02(this);
+void Demo_Du_inEnding_main_alpha(DemoDu* this, PlayState* play) {
+    Demo_Du_BGcheck(this, play);
+    Demo_Du_Animation_Base(this);
+    Demo_Du_set_eye_pattern(this);
+    Demo_Du_inEnding_Set_Alpha(this);
+    Demo_Du_inEnding_check_AppearToStand(this);
 }
 
-void DemoDu_UpdateCs_CR_02(DemoDu* this, PlayState* play) {
-    DemoDu_UpdateBgCheckInfo(this, play);
-    DemoDu_UpdateSkelAnime(this);
-    DemoDu_UpdateEyes(this);
-    DemoDu_CsCredits_HandleCues(this, play);
+void Demo_Du_inEnding_main_stand(DemoDu* this, PlayState* play) {
+    Demo_Du_BGcheck(this, play);
+    Demo_Du_Animation_Base(this);
+    Demo_Du_set_eye_pattern(this);
+    Demo_Du_inEnding_Check_DemoMode(this, play);
 }
 
-void DemoDu_UpdateCs_CR_03(DemoDu* this, PlayState* play) {
-    DemoDu_UpdateBgCheckInfo(this, play);
-    DemoDu_UpdateSkelAnime(this);
-    DemoDu_UpdateEyes(this);
-    DemoDu_CsCredits_HandleCues(this, play);
+void Demo_Du_inEnding_main_lookup(DemoDu* this, PlayState* play) {
+    Demo_Du_BGcheck(this, play);
+    Demo_Du_Animation_Base(this);
+    Demo_Du_set_eye_pattern(this);
+    Demo_Du_inEnding_Check_DemoMode(this, play);
 }
 
-void DemoDu_UpdateCs_CR_04(DemoDu* this, PlayState* play) {
+void Demo_Du_inEnding_main_lookdown(DemoDu* this, PlayState* play) {
     s32 animFinished;
 
-    DemoDu_UpdateBgCheckInfo(this, play);
-    animFinished = DemoDu_UpdateSkelAnime(this);
-    DemoDu_UpdateEyes(this);
-    DemoDu_CsCredits_BackTo02(this, animFinished);
+    Demo_Du_BGcheck(this, play);
+    animFinished = Demo_Du_Animation_Base(this);
+    Demo_Du_set_eye_pattern(this);
+    Demo_Du_inEnding_Check_LookdownTostand(this, animFinished);
 }

@@ -7,7 +7,7 @@
 #include "versions.h"
 
 
-#define GET_NEWF(sramCtx, slotNum, index) (sramCtx->readBuff[gSramSlotOffsets[slotNum] + offsetof(SaveContext, save.info.playerData.newf[index])])
+#define GET_NEWF(sramCtx, slotNum, index) (sramCtx->readBuff[sram_save_address[slotNum] + offsetof(SaveContext, save.info.playerData.newf[index])])
 
 #define SLOT_OCCUPIED(sramCtx, slotNum) \
     ((GET_NEWF(sramCtx, slotNum, 0) == 'Z') || \
@@ -182,50 +182,50 @@ typedef enum KeyboardButton {
     /* 99 */ FS_KBD_BTN_NONE = 99
 } KeyboardButton;
 
-void FileSelect_SetupCopySource(GameState* thisx);
-void FileSelect_SelectCopySource(GameState* thisx);
-void FileSelect_SetupCopyDest1(GameState* thisx);
-void FileSelect_SetupCopyDest2(GameState* thisx);
-void FileSelect_SelectCopyDest(GameState* thisx);
-void FileSelect_ExitToCopySource1(GameState* thisx);
-void FileSelect_ExitToCopySource2(GameState* thisx);
-void FileSelect_SetupCopyConfirm1(GameState* thisx);
-void FileSelect_SetupCopyConfirm2(GameState* thisx);
-void FileSelect_CopyConfirm(GameState* thisx);
-void FileSelect_ReturnToCopyDest(GameState* thisx);
-void FileSelect_CopyAnim1(GameState* thisx);
-void FileSelect_CopyAnim2(GameState* thisx);
-void FileSelect_CopyAnim3(GameState* thisx);
-void FileSelect_CopyAnim4(GameState* thisx);
-void FileSelect_CopyAnim5(GameState* thisx);
+void menu_copy_init(GameState* thisx);
+void menu_copy_which(GameState* thisx);
+void menu_copy_move1(GameState* thisx);
+void menu_copy_fdin1(GameState* thisx);
+void menu_copy_where(GameState* thisx);
+void menu_copy_fdout1(GameState* thisx);
+void menu_copy_cancel1(GameState* thisx);
+void menu_copy_move2(GameState* thisx);
+void menu_copy_fdin2(GameState* thisx);
+void menu_copy_ok(GameState* thisx);
+void menu_copy_fdout2(GameState* thisx);
+void menu_copy_move3(GameState* thisx);
+void menu_copy_fdin3(GameState* thisx);
+void menu_copy_end(GameState* thisx);
+void menu_copy_end1(GameState* thisx);
+void menu_copy_end2(GameState* thisx);
 
-void FileSelect_ExitCopyToMain(GameState* thisx);
-void FileSelect_SetupEraseSelect(GameState* thisx);
-void FileSelect_EraseSelect(GameState* thisx);
-void FileSelect_SetupEraseConfirm1(GameState* thisx);
-void FileSelect_SetupEraseConfirm2(GameState* thisx);
-void FileSelect_EraseConfirm(GameState* thisx);
-void FileSelect_ExitToEraseSelect1(GameState* thisx);
-void FileSelect_ExitToEraseSelect2(GameState* thisx);
-void FileSelect_EraseAnim1(GameState* thisx);
-void FileSelect_EraseAnim2(GameState* thisx);
-void FileSelect_EraseAnim3(GameState* thisx);
-void FileSelect_ExitEraseToMain(GameState* thisx);
+void menu_copy_return(GameState* thisx);
+void menu_delt_init(GameState* thisx);
+void menu_delt_where(GameState* thisx);
+void menu_delt_move(GameState* thisx);
+void menu_delt_fdin(GameState* thisx);
+void menu_delt_ok(GameState* thisx);
+void menu_delt_fdout(GameState* thisx);
+void menu_delt_cancel(GameState* thisx);
+void menu_delt_end(GameState* thisx);
+void menu_delt_end1(GameState* thisx);
+void menu_delt_end2(GameState* thisx);
+void menu_delt_return(GameState* thisx);
 
-void FileSelect_UpdateKeyboardCursor(GameState* thisx);
-void FileSelect_StartNameEntry(GameState* thisx);
-void FileSelect_UpdateOptionsMenu(GameState* thisx);
-void FileSelect_StartOptions(GameState* thisx);
+void menu_nameset_play(GameState* thisx);
+void menu_nameset_fdin(GameState* thisx);
+void menu_option_play(GameState* thisx);
+void menu_option_fdin(GameState* thisx);
 
-void FileSelect_InitModeDraw(GameState* thisx);
-void FileSelect_ConfigModeDraw(GameState* thisx);
-void FileSelect_SelectModeDraw(GameState* thisx);
+void file_choose_title_draw(GameState* thisx);
+void file_choose_menu_draw(GameState* thisx);
+void file_choose_decision_draw(GameState* thisx);
 
-void FileSelect_PulsateCursor(GameState* thisx);
-void FileSelect_DrawOptions(GameState* thisx);
+void cursor_color_change(GameState* thisx);
+void menu_option_display(GameState* thisx);
 
-void FileSelect_DrawNameEntry(GameState* thisx);
-void FileSelect_DrawCharacter(GraphicsContext* gfxCtx, void* texture, s16 vtx);
+void menu_nameset_display(GameState* thisx);
+void file_choose_moji_set(GraphicsContext* gfxCtx, void* texture, s16 vtx);
 
 #if OOT_VERSION == PAL_1_1
 extern s16 D_808124C0[];

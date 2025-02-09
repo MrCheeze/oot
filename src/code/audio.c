@@ -1,13 +1,13 @@
 #include "global.h"
 
-u8 sSfxBankIds[] = {
+u8 handle[] = {
     BANK_PLAYER, BANK_ITEM, BANK_ENV, BANK_ENEMY, BANK_SYSTEM, BANK_OCARINA, BANK_VOICE,
 };
 
-void AudioMgr_StopAllSfx(void) {
+void audio_StopAllSoundEffect(void) {
     u8* bankIdPtr;
 
-    for (bankIdPtr = &sSfxBankIds[0]; bankIdPtr < (sSfxBankIds + ARRAY_COUNT(sSfxBankIds)); bankIdPtr++) {
-        Audio_StopSfxByBank(*bankIdPtr);
+    for (bankIdPtr = &handle[0]; bankIdPtr < (handle + ARRAY_COUNT(handle)); bankIdPtr++) {
+        Nai_StopAllHandleFx(*bankIdPtr);
     }
 }

@@ -3,10 +3,10 @@
 
 #include "ultra64.h"
 
-extern s32 gScreenWidth;
-extern s32 gScreenHeight;
-extern u32 gSystemHeapSize;
+extern s32 ScreenWidth;
+extern s32 ScreenHeight;
+extern u32 SystemHeapSize;
 
-void Main(void* arg);
+void mainproc(void* arg);
 
 #endif

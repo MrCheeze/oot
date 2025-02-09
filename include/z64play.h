@@ -118,44 +118,44 @@ typedef struct PlayState {
 #define GET_ACTIVE_CAM(play) ((play)->cameraPtrs[(play)->activeCamId])
 #define GET_PLAYER(play) ((Player*)(play)->actorCtx.actorLists[ACTORCAT_PLAYER].head)
 
-void Play_SetViewpoint(PlayState* this, s16 viewpoint);
-s32 Play_CheckViewpoint(PlayState* this, s16 viewpoint);
-void Play_SetShopBrowsingViewpoint(PlayState* this);
-Gfx* Play_SetFog(PlayState* this, Gfx* gfx);
-void Play_Destroy(GameState* thisx);
-void Play_Init(GameState* thisx);
-void Play_Main(GameState* thisx);
-int Play_InCsMode(PlayState* this);
-f32 func_800BFCB8(PlayState* this, MtxF* mf, Vec3f* pos);
-void* Play_LoadFile(PlayState* this, RomFile* file);
-void Play_GetScreenPos(PlayState* this, Vec3f* src, Vec3f* dest);
-s16 Play_CreateSubCamera(PlayState* this);
-s32 Play_GetActiveCamId(PlayState* this);
-s16 Play_ChangeCameraStatus(PlayState* this, s16 camId, s16 status);
-void Play_ClearCamera(PlayState* this, s16 camId);
-void Play_ClearAllSubCameras(PlayState* this);
-Camera* Play_GetCamera(PlayState* this, s16 camId);
-s32 Play_SetCameraAtEye(PlayState* this, s16 camId, Vec3f* at, Vec3f* eye);
-s32 Play_SetCameraAtEyeUp(PlayState* this, s16 camId, Vec3f* at, Vec3f* eye, Vec3f* up);
-s32 Play_SetCameraFov(PlayState* this, s16 camId, f32 fov);
-s32 Play_SetCameraRoll(PlayState* this, s16 camId, s16 roll);
-void Play_CopyCamera(PlayState* this, s16 destCamId, s16 srcCamId);
-s32 Play_InitCameraDataUsingPlayer(PlayState* this, s16 camId, struct Player* player, s16 setting);
-s32 Play_RequestCameraSetting(PlayState* this, s16 camId, s16 setting);
-void Play_ReturnToMainCam(PlayState* this, s16 camId, s16 duration);
-void Play_SaveSceneFlags(PlayState* this);
-void Play_SetupRespawnPoint(PlayState* this, s32 respawnMode, s32 playerParams);
-void Play_TriggerVoidOut(PlayState* this);
-void Play_TriggerRespawn(PlayState* this);
-int Play_CamIsNotFixed(PlayState* this);
+void Game_play_pr_vr_switch_pr_set(PlayState* this, s16 viewpoint);
+s32 Game_play_pr_vr_switch_pr_check(PlayState* this, s16 viewpoint);
+void Game_play_shop_pr_vr_switch_set(PlayState* this);
+Gfx* game_play_set_fog(PlayState* this, Gfx* gfx);
+void play_cleanup(GameState* thisx);
+void play_init(GameState* thisx);
+void play_main(GameState* thisx);
+int Game_play_demo_mode_check(PlayState* this);
+f32 Game_play_ground_matrix(PlayState* this, MtxF* mf, Vec3f* pos);
+void* ROM_read(PlayState* this, RomFile* file);
+void Gama_play_Projection_Trans(PlayState* this, Vec3f* src, Vec3f* dest);
+s16 Gama_play_make_camera(PlayState* this);
+s32 Gama_play_active_camera(PlayState* this);
+s16 Gama_play_set_camera_status(PlayState* this, s16 camId, s16 status);
+void Gama_play_clear_camera(PlayState* this, s16 camId);
+void Gama_play_clear_camera_all(PlayState* this);
+Camera* Gama_play_get_camera(PlayState* this, s16 camId);
+s32 Gama_play_camera_setting(PlayState* this, s16 camId, Vec3f* at, Vec3f* eye);
+s32 Gama_play_camera_lookat(PlayState* this, s16 camId, Vec3f* at, Vec3f* eye, Vec3f* up);
+s32 Gama_play_set_camera_fovy(PlayState* this, s16 camId, f32 fov);
+s32 Gama_play_set_camera_sz(PlayState* this, s16 camId, s16 roll);
+void Gama_play_copy_camera_position(PlayState* this, s16 destCamId, s16 srcCamId);
+s32 Gama_play_set_camera_owner(PlayState* this, s16 camId, struct Player* player, s16 setting);
+s32 Gama_play_change_camera_set(PlayState* this, s16 camId, s16 setting);
+void Gama_play_shift2main_camera(PlayState* this, s16 camId, s16 duration);
+void Game_play_room_inf_set(PlayState* this);
+void Game_play_restart_set(PlayState* this, s32 respawnMode, s32 playerParams);
+void Game_play_down_restart(PlayState* this);
+void Game_play_down_restart_top(PlayState* this);
+int Game_play_change_camera_check(PlayState* this);
 
 #if DEBUG_FEATURES
 extern void* gDebugCutsceneScript;
 #endif
 
-extern TransitionTile gTransitionTile;
-extern s32 gTransitionTileState;
-extern struct VisMono gPlayVisMono;
-extern union Color_RGBA8_u32 gVisMonoColor;
+extern TransitionTile fbdemo;
+extern s32 fbdemo_mode;
+extern struct VisMono z_play_vismono;
+extern union Color_RGBA8_u32 z_play_vismono_color;
 
 #endif

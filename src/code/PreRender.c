@@ -8,7 +8,7 @@
 #include "global.h"
 #include "alloca.h"
 
-void PreRender_SetValuesSave(PreRender* this, u32 width, u32 height, void* fbuf, void* zbuf, void* cvg) {
+void PreRender_setup_savebuf(PreRender* this, u32 width, u32 height, void* fbuf, void* zbuf, void* cvg) {
     this->widthSave = width;
     this->heightSave = height;
     this->fbufSave = fbuf;
@@ -20,12 +20,12 @@ void PreRender_SetValuesSave(PreRender* this, u32 width, u32 height, void* fbuf,
     this->lrySave = height - 1;
 }
 
-void PreRender_Init(PreRender* this) {
+void PreRender_init(PreRender* this) {
     bzero(this, sizeof(PreRender));
-    ListAlloc_Init(&this->alloc);
+    listalloc_init(&this->alloc);
 }
 
-void PreRender_SetValues(PreRender* this, u32 width, u32 height, void* fbuf, void* zbuf) {
+void PreRender_setup_renderbuf(PreRender* this, u32 width, u32 height, void* fbuf, void* zbuf) {
     this->width = width;
     this->height = height;
     this->fbuf = fbuf;
@@ -36,8 +36,8 @@ void PreRender_SetValues(PreRender* this, u32 width, u32 height, void* fbuf, voi
     this->lry = height - 1;
 }
 
-void PreRender_Destroy(PreRender* this) {
-    ListAlloc_FreeAll(&this->alloc);
+void PreRender_cleanup(PreRender* this) {
+    listalloc_cleanup(&this->alloc);
 }
 
 /**
@@ -47,7 +47,7 @@ void PreRender_Destroy(PreRender* this) {
  * @param img       Image to copy from
  * @param imgDst    Buffer to copy to
  */
-void PreRender_CopyImage(PreRender* this, Gfx** gfxP, void* img, void* imgDst) {
+void PreRender_TransBuffer(PreRender* this, Gfx** gfxP, void* img, void* imgDst) {
     Gfx* gfx;
     s32 rowsRemaining;
     s32 curRow;
@@ -110,7 +110,7 @@ void PreRender_CopyImage(PreRender* this, Gfx** gfxP, void* img, void* imgDst) {
  * Copies part of `this->fbufSave` in the region (this->ulx, this->uly), (this->lrx, this->lry) to the same location in
  * `this->fbuf`.
  */
-void PreRender_CopyImageRegionImpl(PreRender* this, Gfx** gfxP) {
+void PreRender_TransBufferX(PreRender* this, Gfx** gfxP) {
     Gfx* gfx;
     s32 rowsRemaining;
     s32 curRow;
@@ -177,7 +177,7 @@ void PreRender_CopyImageRegionImpl(PreRender* this, Gfx** gfxP) {
  * Copies `buf` to `bufSave`, discarding the alpha channel and modulating the RGB channel by
  * the color ('r', 'g', 'b', 'a')
  */
-void func_800C170C(PreRender* this, Gfx** gfxP, void* buf, void* bufSave, u32 r, u32 g, u32 b, u32 a) {
+void PreRender_TransBuffer1_env(PreRender* this, Gfx** gfxP, void* buf, void* bufSave, u32 r, u32 g, u32 b, u32 a) {
     Gfx* gfx;
     s32 rowsRemaining;
     s32 curRow;
@@ -246,8 +246,8 @@ void func_800C170C(PreRender* this, Gfx** gfxP, void* buf, void* bufSave, u32 r,
 /**
  * Copies `fbuf` to `fbufSave`, discarding the alpha channel and leaving the rgb channel unchanged
  */
-void func_800C1AE8(PreRender* this, Gfx** gfxP, void* fbuf, void* fbufSave) {
-    func_800C170C(this, gfxP, fbuf, fbufSave, 255, 255, 255, 255);
+void PreRender_TransBuffer1(PreRender* this, Gfx** gfxP, void* fbuf, void* fbufSave) {
+    PreRender_TransBuffer1_env(this, gfxP, fbuf, fbufSave, 255, 255, 255, 255);
 }
 
 /**
@@ -258,7 +258,7 @@ void func_800C1AE8(PreRender* this, Gfx** gfxP, void* fbuf, void* fbufSave) {
  * @param img       Image to read coverage from
  * @param cvgDst    Buffer to store coverage into
  */
-void PreRender_CoverageRgba16ToI8(PreRender* this, Gfx** gfxP, void* img, void* cvgDst) {
+void PreRender_TransBuffer2(PreRender* this, Gfx** gfxP, void* img, void* cvgDst) {
     Gfx* gfx;
     s32 rowsRemaining;
     s32 curRow;
@@ -342,24 +342,24 @@ void PreRender_CoverageRgba16ToI8(PreRender* this, Gfx** gfxP, void* img, void* 
 /**
  * Saves zbuf to zbufSave
  */
-void PreRender_SaveZBuffer(PreRender* this, Gfx** gfxP) {
+void PreRender_saveZBuffer(PreRender* this, Gfx** gfxP) {
     LOG_UTILS_CHECK_NULL_POINTER("this->zbuf_save", this->zbufSave, "../PreRender.c", 481);
     LOG_UTILS_CHECK_NULL_POINTER("this->zbuf", this->zbuf, "../PreRender.c", 482);
 
     if ((this->zbufSave != NULL) && (this->zbuf != NULL)) {
-        PreRender_CopyImage(this, gfxP, this->zbuf, this->zbufSave);
+        PreRender_TransBuffer(this, gfxP, this->zbuf, this->zbufSave);
     }
 }
 
 /**
  * Saves fbuf to fbufSave
  */
-void PreRender_SaveFramebuffer(PreRender* this, Gfx** gfxP) {
+void PreRender_saveFrameBuffer(PreRender* this, Gfx** gfxP) {
     LOG_UTILS_CHECK_NULL_POINTER("this->fbuf_save", this->fbufSave, "../PreRender.c", 495);
     LOG_UTILS_CHECK_NULL_POINTER("this->fbuf", this->fbuf, "../PreRender.c", 496);
 
     if ((this->fbufSave != NULL) && (this->fbuf != NULL)) {
-        func_800C1AE8(this, gfxP, this->fbuf, this->fbufSave);
+        PreRender_TransBuffer1(this, gfxP, this->fbuf, this->fbufSave);
     }
 }
 
@@ -367,7 +367,7 @@ void PreRender_SaveFramebuffer(PreRender* this, Gfx** gfxP) {
  * Fetches the coverage of the current framebuffer into an image of the same format as the current color image, storing
  * it over the framebuffer in memory.
  */
-void PreRender_FetchFbufCoverage(PreRender* this, Gfx** gfxP) {
+void PreRender_viscvg(PreRender* this, Gfx** gfxP) {
     Gfx* gfx = *gfxP;
 
     gDPPipeSync(gfx++);
@@ -409,26 +409,26 @@ void PreRender_FetchFbufCoverage(PreRender* this, Gfx** gfxP) {
  * Draws the coverage of the current framebuffer `this->fbuf` to an I8 image at `this->cvgSave`. Overwrites
  * `this->fbuf` in the process.
  */
-void PreRender_DrawCoverage(PreRender* this, Gfx** gfxP) {
-    PreRender_FetchFbufCoverage(this, gfxP);
+void PreRender_saveCVG(PreRender* this, Gfx** gfxP) {
+    PreRender_viscvg(this, gfxP);
     LOG_UTILS_CHECK_NULL_POINTER("this->cvg_save", this->cvgSave, "../PreRender.c", 532);
     if (this->cvgSave != NULL) {
-        PreRender_CoverageRgba16ToI8(this, gfxP, this->fbuf, this->cvgSave);
+        PreRender_TransBuffer2(this, gfxP, this->fbuf, this->cvgSave);
     }
 }
 
 /**
  * Restores zbufSave to zbuf
  */
-void PreRender_RestoreZBuffer(PreRender* this, Gfx** gfxP) {
-    PreRender_CopyImage(this, gfxP, this->zbufSave, this->zbuf);
+void PreRender_loadZBuffer(PreRender* this, Gfx** gfxP) {
+    PreRender_TransBuffer(this, gfxP, this->zbufSave, this->zbuf);
 }
 
 /**
  * Draws a full-screen image to the current framebuffer, that sources the rgb channel from `this->fbufSave` and
  * the alpha channel from `this->cvgSave` modulated by environment color.
  */
-void func_800C213C(PreRender* this, Gfx** gfxP) {
+void PreRender_loadFrameBuffer(PreRender* this, Gfx** gfxP) {
     Gfx* gfx;
     s32 rowsRemaining;
     s32 curRow;
@@ -504,16 +504,16 @@ void func_800C213C(PreRender* this, Gfx** gfxP) {
 /**
  * Copies fbufSave to fbuf
  */
-void PreRender_RestoreFramebuffer(PreRender* this, Gfx** gfxP) {
-    PreRender_CopyImage(this, gfxP, this->fbufSave, this->fbuf);
+void PreRender_loadFrameBufferCopy(PreRender* this, Gfx** gfxP) {
+    PreRender_TransBuffer(this, gfxP, this->fbufSave, this->fbuf);
 }
 
 /**
  * Copies part of `this->fbufSave` in the region (this->ulx, this->uly), (this->lrx, this->lry) to the same location in
  * `this->fbuf`.
  */
-void PreRender_CopyImageRegion(PreRender* this, Gfx** gfxP) {
-    PreRender_CopyImageRegionImpl(this, gfxP);
+void PreRender_loadFrameBufferCopyX(PreRender* this, Gfx** gfxP) {
+    PreRender_TransBufferX(this, gfxP);
 }
 
 /**
@@ -551,7 +551,7 @@ void PreRender_CopyImageRegion(PreRender* this, Gfx** gfxP) {
  * @param x     Center pixel x
  * @param y     Center pixel y
  */
-void PreRender_AntiAliasFilter(PreRender* this, s32 x, s32 y) {
+void ASAlgorithm(PreRender* this, s32 x, s32 y) {
     s32 i;
     s32 j;
     s32 buffCvg[5 * 3];
@@ -713,7 +713,7 @@ void PreRender_AntiAliasFilter(PreRender* this, s32 x, s32 y) {
  *
  * @param this  PreRender instance
  */
-void PreRender_DivotFilter(PreRender* this) {
+void DivotFilter(PreRender* this) {
     s32 x;
     s32 y;
     s32 cvg;
@@ -800,7 +800,7 @@ void PreRender_DivotFilter(PreRender* this) {
  * Applies the Video Interface anti-aliasing filter and (optionally) the divot filter to `this->fbufSave` using
  * `this->cvgSave`
  */
-void PreRender_ApplyFilters(PreRender* this) {
+void PreRender_ConvertFrameBuffer2(PreRender* this) {
     s32 x;
     s32 y;
 
@@ -814,14 +814,14 @@ void PreRender_ApplyFilters(PreRender* this) {
                 cvg++;
                 if (cvg != 8) {
                     // If this pixel has only partial coverage, perform the Video Filter interpolation on it
-                    PreRender_AntiAliasFilter(this, x, y);
+                    ASAlgorithm(this, x, y);
                 }
             }
         }
 
         if (PRERENDER_DIVOT_CONTROL != 0) {
             // Apply divot filter
-            PreRender_DivotFilter(this);
+            DivotFilter(this);
         }
     }
 }

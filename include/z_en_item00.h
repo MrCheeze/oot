@@ -52,8 +52,8 @@ typedef struct EnItem00 {
     /* 0x160 */ ColliderCylinder collider;
 } EnItem00; // size = 0x1AC
 
-EnItem00* Item_DropCollectible(struct PlayState* play, Vec3f* spawnPos, s16 params);
-EnItem00* Item_DropCollectible2(struct PlayState* play, Vec3f* spawnPos, s16 params);
-void Item_DropCollectibleRandom(struct PlayState* play, Actor* fromActor, Vec3f* spawnPos, s16 params);
+EnItem00* Item_set0(struct PlayState* play, Vec3f* spawnPos, s16 params);
+EnItem00* Item_set1(struct PlayState* play, Vec3f* spawnPos, s16 params);
+void Item_Set_Std(struct PlayState* play, Actor* fromActor, Vec3f* spawnPos, s16 params);
 
 #endif

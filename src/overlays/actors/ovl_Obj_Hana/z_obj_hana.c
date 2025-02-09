@@ -9,10 +9,10 @@
 
 #define FLAGS 0
 
-void ObjHana_Init(Actor* thisx, PlayState* play);
-void ObjHana_Destroy(Actor* thisx, PlayState* play);
-void ObjHana_Update(Actor* thisx, PlayState* play);
-void ObjHana_Draw(Actor* thisx, PlayState* play);
+void Obj_Hana_actor_ct(Actor* thisx, PlayState* play);
+void Obj_Hana_actor_dt(Actor* thisx, PlayState* play);
+void Obj_Hana_actor_move(Actor* thisx, PlayState* play);
+void Obj_Hana_actor_draw(Actor* thisx, PlayState* play);
 
 ActorProfile Obj_Hana_Profile = {
     /**/ ACTOR_OBJ_HANA,
@@ -20,13 +20,13 @@ ActorProfile Obj_Hana_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_FIELD_KEEP,
     /**/ sizeof(ObjHana),
-    /**/ ObjHana_Init,
-    /**/ ObjHana_Destroy,
-    /**/ ObjHana_Update,
-    /**/ ObjHana_Draw,
+    /**/ Obj_Hana_actor_ct,
+    /**/ Obj_Hana_actor_dt,
+    /**/ Obj_Hana_actor_move,
+    /**/ Obj_Hana_actor_draw,
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit ClPipeDt_hana = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -46,7 +46,7 @@ static ColliderCylinderInit sCylinderInit = {
     { 8, 10, 0, { 0, 0, 0 } },
 };
 
-static CollisionCheckInfoInit sColChkInfoInit = { 0, 12, 60, MASS_IMMOVABLE };
+static CollisionCheckInfoInit StatusDt_hana = { 0, 12, 60, MASS_IMMOVABLE };
 
 typedef struct HanaParams {
     /* 0x00 */ Gfx* dList;
@@ -56,57 +56,57 @@ typedef struct HanaParams {
     /* 0x0E */ s16 height;
 } HanaParams; // size = 0x10
 
-static HanaParams sHanaParams[] = {
+static HanaParams OH_Data[] = {
     { gHanaDL, 0.01f, 0.0f, -1, 0 },
     { gFieldKakeraDL, 0.1f, 58.0f, 10, 18 },
     { gFieldBushDL, 0.4f, 0.0f, 12, 44 },
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F_DIV1000(scale, 10, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDistance, 900, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeScale, 60, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDownward, 800, ICHAIN_STOP),
 };
 
-void ObjHana_Init(Actor* thisx, PlayState* play) {
+void Obj_Hana_actor_ct(Actor* thisx, PlayState* play) {
     ObjHana* this = (ObjHana*)thisx;
     s16 type = PARAMS_GET_U(this->actor.params, 0, 2);
-    HanaParams* params = &sHanaParams[type];
+    HanaParams* params = &OH_Data[type];
 
-    Actor_ProcessInitChain(&this->actor, sInitChain);
-    Actor_SetScale(&this->actor, params->scale);
+    ValueSet_process(&this->actor, value_init);
+    Actor_set_scale(&this->actor, params->scale);
     this->actor.shape.yOffset = params->yOffset;
     if (params->radius >= 0) {
-        Collider_InitCylinder(play, &this->collider);
-        Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
-        Collider_UpdateCylinder(&this->actor, &this->collider);
+        ClObjPipe_ct(play, &this->collider);
+        ClObjPipe_set5(play, &this->collider, &this->actor, &ClPipeDt_hana);
+        CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
         this->collider.dim.radius = params->radius;
         this->collider.dim.height = params->height;
-        CollisionCheck_SetInfo(&this->actor.colChkInfo, NULL, &sColChkInfoInit);
+        CollisionCheck_Status_set2(&this->actor.colChkInfo, NULL, &StatusDt_hana);
     }
 
     if (type == 2 && GET_EVENTCHKINF(EVENTCHKINF_40)) {
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     }
 }
 
-void ObjHana_Destroy(Actor* thisx, PlayState* play) {
+void Obj_Hana_actor_dt(Actor* thisx, PlayState* play) {
     ObjHana* this = (ObjHana*)thisx;
 
-    if (sHanaParams[PARAMS_GET_U(this->actor.params, 0, 2)].radius >= 0) {
-        Collider_DestroyCylinder(play, &this->collider);
+    if (OH_Data[PARAMS_GET_U(this->actor.params, 0, 2)].radius >= 0) {
+        ClObjPipe_dt(play, &this->collider);
     }
 }
 
-void ObjHana_Update(Actor* thisx, PlayState* play) {
+void Obj_Hana_actor_move(Actor* thisx, PlayState* play) {
     ObjHana* this = (ObjHana*)thisx;
 
-    if (sHanaParams[PARAMS_GET_U(this->actor.params, 0, 2)].radius >= 0 && this->actor.xzDistToPlayer < 400.0f) {
-        CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
+    if (OH_Data[PARAMS_GET_U(this->actor.params, 0, 2)].radius >= 0 && this->actor.xzDistToPlayer < 400.0f) {
+        CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
     }
 }
 
-void ObjHana_Draw(Actor* thisx, PlayState* play) {
-    Gfx_DrawDListOpa(play, sHanaParams[PARAMS_GET_U(thisx->params, 0, 2)].dList);
+void Obj_Hana_actor_draw(Actor* thisx, PlayState* play) {
+    Cheap_gfx_display(play, OH_Data[PARAMS_GET_U(thisx->params, 0, 2)].dList);
 }

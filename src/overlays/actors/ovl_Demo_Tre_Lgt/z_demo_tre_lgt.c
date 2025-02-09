@@ -4,15 +4,15 @@
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void DemoTreLgt_Init(Actor* thisx, PlayState* play);
-void DemoTreLgt_Destroy(Actor* thisx, PlayState* play);
-void DemoTreLgt_Update(Actor* thisx, PlayState* play);
-void DemoTreLgt_Draw(Actor* thisx, PlayState* play);
+void Demo_Tre_Lgt_Actor_ct(Actor* thisx, PlayState* play);
+void Demo_Tre_Lgt_Actor_dt(Actor* thisx, PlayState* play);
+void Demo_Tre_Lgt_Actor_move(Actor* thisx, PlayState* play);
+void Demo_Tre_Lgt_Actor_display(Actor* thisx, PlayState* play);
 
-void func_80993848(DemoTreLgt* this, PlayState* play);
-void func_80993754(DemoTreLgt* this);
-void func_8099375C(DemoTreLgt* this, PlayState* play);
-void func_809937B4(DemoTreLgt* this, PlayState* play, f32 currentFrame);
+void Demo_Tre_Lgt_anim(DemoTreLgt* this, PlayState* play);
+void Demo_Tre_Lgt_wait_init(DemoTreLgt* this);
+void Demo_Tre_Lgt_wait(DemoTreLgt* this, PlayState* play);
+void Demo_Tre_Lgt_anim_init(DemoTreLgt* this, PlayState* play, f32 currentFrame);
 
 typedef struct DemoTreLgtInfo {
     /* 0x00 */ f32 startFrame;
@@ -21,7 +21,7 @@ typedef struct DemoTreLgtInfo {
     /* 0x0C */ f32 unk_0C;
 } DemoTreLgtInfo; // size = 0x10
 
-static DemoTreLgtInfo sDemoTreLgtInfo[] = {
+static DemoTreLgtInfo TreLgtInfo[] = {
     { 1.0f, 136.0f, 190.0f, 40.0f },
     { 1.0f, 136.0f, 220.0f, 50.0f },
 };
@@ -32,23 +32,23 @@ ActorProfile Demo_Tre_Lgt_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_BOX,
     /**/ sizeof(DemoTreLgt),
-    /**/ DemoTreLgt_Init,
-    /**/ DemoTreLgt_Destroy,
-    /**/ DemoTreLgt_Update,
-    /**/ DemoTreLgt_Draw,
+    /**/ Demo_Tre_Lgt_Actor_ct,
+    /**/ Demo_Tre_Lgt_Actor_dt,
+    /**/ Demo_Tre_Lgt_Actor_move,
+    /**/ Demo_Tre_Lgt_Actor_display,
 };
 
-static CurveAnimationHeader* sAnimations[] = { &gTreasureChestCurveAnim_4B60, &gTreasureChestCurveAnim_4F70 };
+static CurveAnimationHeader* anim_tbl[] = { &gTreasureChestCurveAnim_4B60, &gTreasureChestCurveAnim_4F70 };
 
-static DemoTreLgtActionFunc sActionFuncs[] = {
-    func_8099375C,
-    func_80993848,
+static DemoTreLgtActionFunc mode_func[] = {
+    Demo_Tre_Lgt_wait,
+    Demo_Tre_Lgt_anim,
 };
 
-void DemoTreLgt_Init(Actor* thisx, PlayState* play) {
+void Demo_Tre_Lgt_Actor_ct(Actor* thisx, PlayState* play) {
     DemoTreLgt* this = (DemoTreLgt*)thisx;
 
-    if (!SkelCurve_Init(play, &this->skelCurve, &gTreasureChestCurveSkel, sAnimations[0])) {
+    if (!FcSkeletonInfo_ct(play, &this->skelCurve, &gTreasureChestCurveSkel, anim_tbl[0])) {
         // "Demo_Tre_Lgt_Actor_ct (); Construct failed"
         PRINTF("Demo_Tre_Lgt_Actor_ct();コンストラクト失敗\n");
     }
@@ -58,88 +58,88 @@ void DemoTreLgt_Init(Actor* thisx, PlayState* play) {
     this->unk_170 = 255;
     this->unk_174 = 255;
     this->status = 0;
-    func_80993754(this);
+    Demo_Tre_Lgt_wait_init(this);
 }
 
-void DemoTreLgt_Destroy(Actor* thisx, PlayState* play) {
+void Demo_Tre_Lgt_Actor_dt(Actor* thisx, PlayState* play) {
     DemoTreLgt* this = (DemoTreLgt*)thisx;
 
-    SkelCurve_Destroy(play, &this->skelCurve);
+    FcSkeletonInfo_dt(play, &this->skelCurve);
 }
 
-void func_80993754(DemoTreLgt* this) {
+void Demo_Tre_Lgt_wait_init(DemoTreLgt* this) {
     this->action = DEMO_TRE_LGT_ACTION_WAIT;
 }
 
-void func_8099375C(DemoTreLgt* this, PlayState* play) {
+void Demo_Tre_Lgt_wait(DemoTreLgt* this, PlayState* play) {
     EnBox* treasureChest = (EnBox*)this->actor.parent;
 
-    if ((treasureChest != NULL) && Animation_OnFrame(&treasureChest->skelanime, 10.0f)) {
-        func_809937B4(this, play, treasureChest->skelanime.curFrame);
+    if ((treasureChest != NULL) && Skeleton_Info_frame_check(&treasureChest->skelanime, 10.0f)) {
+        Demo_Tre_Lgt_anim_init(this, play, treasureChest->skelanime.curFrame);
     }
 }
 
-void func_809937B4(DemoTreLgt* this, PlayState* play, f32 currentFrame) {
+void Demo_Tre_Lgt_anim_init(DemoTreLgt* this, PlayState* play, f32 currentFrame) {
     SkelCurve* skelCurve = &this->skelCurve;
     s32 pad[2];
 
     this->action = DEMO_TRE_LGT_ACTION_ANIMATE;
 
-    SkelCurve_SetAnim(skelCurve, sAnimations[gSaveContext.save.linkAge], 1.0f,
-                      sDemoTreLgtInfo[gSaveContext.save.linkAge].endFrame +
-                          sDemoTreLgtInfo[gSaveContext.save.linkAge].unk_08,
+    FcSkeletonInfo_init(skelCurve, anim_tbl[z_common_data.save.linkAge], 1.0f,
+                      TreLgtInfo[z_common_data.save.linkAge].endFrame +
+                          TreLgtInfo[z_common_data.save.linkAge].unk_08,
                       currentFrame, 1.0f);
-    SkelCurve_Update(play, skelCurve);
+    FcSkeletonInfo_play(play, skelCurve);
 }
 
-void func_80993848(DemoTreLgt* this, PlayState* play) {
+void Demo_Tre_Lgt_anim(DemoTreLgt* this, PlayState* play) {
     f32 currentFrame = this->skelCurve.curFrame;
 
-    if (currentFrame < sDemoTreLgtInfo[((void)0, gSaveContext.save.linkAge)].endFrame) {
+    if (currentFrame < TreLgtInfo[((void)0, z_common_data.save.linkAge)].endFrame) {
         this->unk_170 = 255;
     } else {
-        if (currentFrame <= (sDemoTreLgtInfo[((void)0, gSaveContext.save.linkAge)].endFrame +
-                             sDemoTreLgtInfo[((void)0, gSaveContext.save.linkAge)].unk_08)) {
-            this->unk_170 = ((((sDemoTreLgtInfo[((void)0, gSaveContext.save.linkAge)].endFrame - currentFrame) /
-                               sDemoTreLgtInfo[((void)0, gSaveContext.save.linkAge)].unk_08) *
+        if (currentFrame <= (TreLgtInfo[((void)0, z_common_data.save.linkAge)].endFrame +
+                             TreLgtInfo[((void)0, z_common_data.save.linkAge)].unk_08)) {
+            this->unk_170 = ((((TreLgtInfo[((void)0, z_common_data.save.linkAge)].endFrame - currentFrame) /
+                               TreLgtInfo[((void)0, z_common_data.save.linkAge)].unk_08) *
                               255.0f) +
                              255.0f);
         } else {
             this->unk_170 = 0;
         }
     }
-    if (currentFrame < sDemoTreLgtInfo[((void)0, gSaveContext.save.linkAge)].unk_0C) {
+    if (currentFrame < TreLgtInfo[((void)0, z_common_data.save.linkAge)].unk_0C) {
         this->unk_174 = 255;
-    } else if (currentFrame < (sDemoTreLgtInfo[((void)0, gSaveContext.save.linkAge)].unk_0C + 10.0f)) {
+    } else if (currentFrame < (TreLgtInfo[((void)0, z_common_data.save.linkAge)].unk_0C + 10.0f)) {
         this->unk_174 =
-            ((((sDemoTreLgtInfo[((void)0, gSaveContext.save.linkAge)].unk_0C - currentFrame) / 10.0f) * 255.0f) +
+            ((((TreLgtInfo[((void)0, z_common_data.save.linkAge)].unk_0C - currentFrame) / 10.0f) * 255.0f) +
              255.0f);
     } else {
         this->unk_174 = 0;
     }
     if ((currentFrame > 30.0f) && !(this->status & 1)) {
         this->status |= 1;
-        Audio_PlaySfxGeneral(NA_SE_EV_TRE_BOX_FLASH, &this->actor.projectedPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        Nai_FxFlagEntry(NA_SE_EV_TRE_BOX_FLASH, &this->actor.projectedPos, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
     }
-    if (SkelCurve_Update(play, &this->skelCurve)) {
-        Actor_Kill(&this->actor);
+    if (FcSkeletonInfo_play(play, &this->skelCurve)) {
+        Actor_delete(&this->actor);
     }
 }
 
-void DemoTreLgt_Update(Actor* thisx, PlayState* play) {
+void Demo_Tre_Lgt_Actor_move(Actor* thisx, PlayState* play) {
     DemoTreLgt* this = (DemoTreLgt*)thisx;
 
-    sActionFuncs[this->action](this, play);
+    mode_func[this->action](this, play);
 }
 
-s32 DemoTreLgt_OverrideLimbDraw(PlayState* play, SkelCurve* skelCurve, s32 limbIndex, void* thisx) {
+s32 Demo_Tre_Lgt_Actor_disp_proc(PlayState* play, SkelCurve* skelCurve, s32 limbIndex, void* thisx) {
     s32 pad;
     DemoTreLgt* this = (DemoTreLgt*)thisx;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_demo_tre_lgt.c", 423);
     gSPSegment(POLY_XLU_DISP++, 0x08,
-               Gfx_TwoTexScroll(play->state.gfxCtx, G_TX_RENDERTILE, (play->state.frames * 2) % 256, 0, 64, 32, 1,
+               two_tex_scroll(play->state.gfxCtx, G_TX_RENDERTILE, (play->state.frames * 2) % 256, 0, 64, 32, 1,
                                 (play->state.frames * -2) % 256, 0, 64, 32));
 
     if (limbIndex == 1) {
@@ -161,7 +161,7 @@ s32 DemoTreLgt_OverrideLimbDraw(PlayState* play, SkelCurve* skelCurve, s32 limbI
 #endif
 }
 
-void DemoTreLgt_Draw(Actor* thisx, PlayState* play) {
+void Demo_Tre_Lgt_Actor_display(Actor* thisx, PlayState* play) {
     GraphicsContext* gfxCtx = play->state.gfxCtx;
     DemoTreLgt* this = (DemoTreLgt*)thisx;
 
@@ -171,9 +171,9 @@ void DemoTreLgt_Draw(Actor* thisx, PlayState* play) {
         return;
     }
 
-    Gfx_SetupDL_25Xlu(gfxCtx);
+    _texture_z_light_fog_prim_xlu(gfxCtx);
     gDPSetEnvColor(POLY_XLU_DISP++, 200, 255, 0, 0);
-    SkelCurve_Draw(&this->actor, play, &this->skelCurve, DemoTreLgt_OverrideLimbDraw, NULL, 1, &this->actor);
+    FcSkeletonInfo_draw(&this->actor, play, &this->skelCurve, Demo_Tre_Lgt_Actor_disp_proc, NULL, 1, &this->actor);
 
     CLOSE_DISPS(gfxCtx, "../z_demo_tre_lgt.c", 476);
 }

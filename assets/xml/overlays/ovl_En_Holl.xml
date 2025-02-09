@@ -1,8 +1,8 @@
 <Root>
     <File Name="ovl_En_Holl" OutName="z_en_holl">
-        <Array Name="sPlaneVtx" Count="4" Offset="0x0">
+        <Array Name="mask_v" Count="4" Offset="0x0">
             <Vtx/>
         </Array>
-        <DList Name="sPlaneDL" Offset="0x40"/>
+        <DList Name="mask_model" Offset="0x40"/>
     </File>
 </Root>

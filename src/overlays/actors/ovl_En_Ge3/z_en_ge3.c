@@ -10,14 +10,14 @@
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY | ACTOR_FLAG_UPDATE_CULLING_DISABLED)
 
-void EnGe3_Init(Actor* thisx, PlayState* play2);
-void EnGe3_Destroy(Actor* thisx, PlayState* play);
-void EnGe3_Update(Actor* thisx, PlayState* play);
-void EnGe3_Draw(Actor* thisx, PlayState* play2);
+void En_Ge3_Actor_ct(Actor* thisx, PlayState* play2);
+void En_Ge3_Actor_dt(Actor* thisx, PlayState* play);
+void En_Ge3_Actor_move_Talk(Actor* thisx, PlayState* play);
+void En_Ge3_Actor_draw(Actor* thisx, PlayState* play2);
 
-void EnGe3_WaitLookAtPlayer(EnGe3* this, PlayState* play);
-void EnGe3_ForceTalk(EnGe3* this, PlayState* play);
-void EnGe3_UpdateWhenNotTalking(Actor* thisx, PlayState* play);
+static void move_frend(EnGe3* this, PlayState* play);
+static void move_give(EnGe3* this, PlayState* play);
+void En_Ge3_Actor_move_Frend(Actor* thisx, PlayState* play);
 
 ActorProfile En_Ge3_Profile = {
     /**/ ACTOR_EN_GE3,
@@ -25,13 +25,13 @@ ActorProfile En_Ge3_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GELDB,
     /**/ sizeof(EnGe3),
-    /**/ EnGe3_Init,
-    /**/ EnGe3_Destroy,
-    /**/ EnGe3_Update,
-    /**/ EnGe3_Draw,
+    /**/ En_Ge3_Actor_ct,
+    /**/ En_Ge3_Actor_dt,
+    /**/ En_Ge3_Actor_move_Talk,
+    /**/ En_Ge3_Actor_draw,
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit EnGe3OcInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -51,144 +51,144 @@ static ColliderCylinderInit sCylinderInit = {
     { 20, 50, 0, { 0, 0, 0 } },
 };
 
-static EnGe3ActionFunc sActionFuncs[] = { EnGe3_WaitLookAtPlayer };
-static AnimationHeader* sAnimations[] = { &gGerudoRedStandAnim }; // Idle with right hand on hip and left over mouth
-static u8 sAnimationModes[] = { ANIMMODE_LOOP };
+static EnGe3ActionFunc prc_tbl[] = { move_frend };
+static AnimationHeader* soft_anime_tbl[] = { &gGerudoRedStandAnim }; // Idle with right hand on hip and left over mouth
+static u8 anime_frame_index[] = { ANIMMODE_LOOP };
 
-void EnGe3_ChangeAction(EnGe3* this, s32 i) {
-    this->actionFunc = sActionFuncs[i];
+void En_Ge3_actor_set_process(EnGe3* this, s32 i) {
+    this->actionFunc = prc_tbl[i];
 
-    Animation_Change(&this->skelAnime, sAnimations[i], 1.0f, 0.0f, (f32)Animation_GetLastFrame(sAnimations[i]),
-                     sAnimationModes[i], -8.0f);
+    Skeleton_Info2_init(&this->skelAnime, soft_anime_tbl[i], 1.0f, 0.0f, (f32)Si2_anime_end_frame(soft_anime_tbl[i]),
+                     anime_frame_index[i], -8.0f);
 
     this->unk_30C &= ~2;
 }
 
-void EnGe3_Init(Actor* thisx, PlayState* play2) {
+void En_Ge3_Actor_ct(Actor* thisx, PlayState* play2) {
     EnGe3* this = (EnGe3*)thisx;
     PlayState* play = play2;
 
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 36.0f);
-    SkelAnime_InitFlex(play, &this->skelAnime, &gGerudoRedSkel, NULL, this->jointTable, this->morphTable,
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 36.0f);
+    Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &gGerudoRedSkel, NULL, this->jointTable, this->morphTable,
                        GELDB_LIMB_MAX);
-    Animation_PlayLoop(&this->skelAnime, &gGerudoRedStandAnim);
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
+    Skeleton_Info2_init_standard_repeat(&this->skelAnime, &gGerudoRedStandAnim);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set5(play, &this->collider, &this->actor, &EnGe3OcInfoData);
     this->actor.colChkInfo.mass = MASS_IMMOVABLE;
-    Actor_SetScale(&this->actor, 0.01f);
+    Actor_set_scale(&this->actor, 0.01f);
     this->actor.world.rot.z = 0;
     this->actor.shape.rot.z = 0;
-    EnGe3_ChangeAction(this, 0);
-    this->actionFunc = EnGe3_ForceTalk;
+    En_Ge3_actor_set_process(this, 0);
+    this->actionFunc = move_give;
     this->unk_30C = 0;
     this->actor.attentionRangeType = ATTENTION_RANGE_6;
     this->actor.minVelocityY = -4.0f;
     this->actor.gravity = -1.0f;
 }
 
-void EnGe3_Destroy(Actor* thisx, PlayState* play) {
+void En_Ge3_Actor_dt(Actor* thisx, PlayState* play) {
     EnGe3* this = (EnGe3*)thisx;
 
-    Collider_DestroyCylinder(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider);
 }
 
-void EnGe3_TurnToFacePlayer(EnGe3* this, PlayState* play) {
+void ge3_search_furimuki(EnGe3* this, PlayState* play) {
     s32 pad;
     s16 angleDiff = this->actor.yawTowardsPlayer - this->actor.shape.rot.y;
 
     if (ABS(angleDiff) <= 0x4000) {
-        Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 6, 4000, 100);
+        add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 6, 4000, 100);
         this->actor.world.rot.y = this->actor.shape.rot.y;
-        Actor_TrackPlayer(play, &this->actor, &this->headRot, &this->unk_306, this->actor.focus.pos);
+        eye_move2(play, &this->actor, &this->headRot, &this->unk_306, this->actor.focus.pos);
     } else {
         if (angleDiff < 0) {
-            Math_SmoothStepToS(&this->headRot.y, -0x2000, 6, 6200, 0x100);
+            add_calc_short_angle2(&this->headRot.y, -0x2000, 6, 6200, 0x100);
         } else {
-            Math_SmoothStepToS(&this->headRot.y, 0x2000, 6, 6200, 0x100);
+            add_calc_short_angle2(&this->headRot.y, 0x2000, 6, 6200, 0x100);
         }
 
-        Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 12, 1000, 100);
+        add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 12, 1000, 100);
         this->actor.world.rot.y = this->actor.shape.rot.y;
     }
 }
 
-void EnGe3_LookAtPlayer(EnGe3* this, PlayState* play) {
+void ge3_search_normal(EnGe3* this, PlayState* play) {
     if ((ABS((s16)(this->actor.yawTowardsPlayer - this->actor.shape.rot.y)) <= 0x2300) &&
         (this->actor.xzDistToPlayer < 100.0f)) {
-        Actor_TrackPlayer(play, &this->actor, &this->headRot, &this->unk_306, this->actor.focus.pos);
+        eye_move2(play, &this->actor, &this->headRot, &this->unk_306, this->actor.focus.pos);
     } else {
-        Math_SmoothStepToS(&this->headRot.x, 0, 6, 6200, 100);
-        Math_SmoothStepToS(&this->headRot.y, 0, 6, 6200, 100);
-        Math_SmoothStepToS(&this->unk_306.x, 0, 6, 6200, 100);
-        Math_SmoothStepToS(&this->unk_306.y, 0, 6, 6200, 100);
+        add_calc_short_angle2(&this->headRot.x, 0, 6, 6200, 100);
+        add_calc_short_angle2(&this->headRot.y, 0, 6, 6200, 100);
+        add_calc_short_angle2(&this->unk_306.x, 0, 6, 6200, 100);
+        add_calc_short_angle2(&this->unk_306.y, 0, 6, 6200, 100);
     }
 }
 
-void EnGe3_Wait(EnGe3* this, PlayState* play) {
-    if (Actor_TextboxIsClosing(&this->actor, play)) {
-        this->actionFunc = EnGe3_WaitLookAtPlayer;
-        this->actor.update = EnGe3_UpdateWhenNotTalking;
+static void talk_frend(EnGe3* this, PlayState* play) {
+    if (Actor_talk_end_check(&this->actor, play)) {
+        this->actionFunc = move_frend;
+        this->actor.update = En_Ge3_Actor_move_Frend;
         this->actor.flags &= ~ACTOR_FLAG_TALK_OFFER_AUTO_ACCEPTED;
     }
-    EnGe3_TurnToFacePlayer(this, play);
+    ge3_search_furimuki(this, play);
 }
 
-void EnGe3_WaitLookAtPlayer(EnGe3* this, PlayState* play) {
-    EnGe3_LookAtPlayer(this, play);
+static void move_frend(EnGe3* this, PlayState* play) {
+    ge3_search_normal(this, play);
 }
 
-void EnGe3_WaitTillCardGiven(EnGe3* this, PlayState* play) {
-    if (Actor_HasParent(&this->actor, play)) {
+static void move_give3(EnGe3* this, PlayState* play) {
+    if (Actor_carry_check(&this->actor, play)) {
         this->actor.parent = NULL;
-        this->actionFunc = EnGe3_Wait;
+        this->actionFunc = talk_frend;
     } else {
-        Actor_OfferGetItem(&this->actor, play, GI_GERUDOS_CARD, 10000.0f, 50.0f);
+        Actor_carry_request_set2(&this->actor, play, GI_GERUDOS_CARD, 10000.0f, 50.0f);
     }
 }
 
-void EnGe3_GiveCard(EnGe3* this, PlayState* play) {
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_EVENT) && Message_ShouldAdvance(play)) {
-        Message_CloseTextbox(play);
+static void move_give2(EnGe3* this, PlayState* play) {
+    if ((message_check(&play->msgCtx) == TEXT_STATE_EVENT) && pad_on_check(play)) {
+        message_close(play);
         this->actor.flags &= ~ACTOR_FLAG_TALK_OFFER_AUTO_ACCEPTED;
-        this->actionFunc = EnGe3_WaitTillCardGiven;
-        Actor_OfferGetItem(&this->actor, play, GI_GERUDOS_CARD, 10000.0f, 50.0f);
+        this->actionFunc = move_give3;
+        Actor_carry_request_set2(&this->actor, play, GI_GERUDOS_CARD, 10000.0f, 50.0f);
     }
 }
 
-void EnGe3_ForceTalk(EnGe3* this, PlayState* play) {
-    if (Actor_TalkOfferAccepted(&this->actor, play)) {
-        this->actionFunc = EnGe3_GiveCard;
+static void move_give(EnGe3* this, PlayState* play) {
+    if (Actor_talk_check(&this->actor, play)) {
+        this->actionFunc = move_give2;
     } else {
         if (!(this->unk_30C & 4)) {
-            Player_SetCsActionWithHaltedActors(play, &this->actor, PLAYER_CSACTION_7);
+            player_demo_mode_set(play, &this->actor, PLAYER_CSACTION_7);
             this->unk_30C |= 4;
         }
         this->actor.textId = 0x6004;
         this->actor.flags |= ACTOR_FLAG_TALK_OFFER_AUTO_ACCEPTED;
-        Actor_OfferTalkExchange(&this->actor, play, 300.0f, 300.0f, EXCH_ITEM_NONE);
+        Actor_talk_request_get_item_set(&this->actor, play, 300.0f, 300.0f, EXCH_ITEM_NONE);
     }
-    EnGe3_LookAtPlayer(this, play);
+    ge3_search_normal(this, play);
 }
 
-void EnGe3_UpdateCollision(EnGe3* this, PlayState* play) {
+static void before_process(EnGe3* this, PlayState* play) {
     s32 pad;
     s32 pad2;
 
-    Collider_UpdateCylinder(&this->actor, &this->collider);
-    CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
-    Actor_UpdateBgCheckInfo(play, &this->actor, 40.0f, 25.0f, 40.0f, UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
+    CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
+    Actor_BGcheck2(play, &this->actor, 40.0f, 25.0f, 40.0f, UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
 
-    if (!(this->unk_30C & 2) && SkelAnime_Update(&this->skelAnime)) {
+    if (!(this->unk_30C & 2) && Skeleton_Info2_anime_play(&this->skelAnime)) {
         this->unk_30C |= 2;
     }
 }
 
-void EnGe3_MoveAndBlink(EnGe3* this, PlayState* play) {
+static void after_process(EnGe3* this, PlayState* play) {
 
-    Actor_MoveXZGravity(&this->actor);
+    Actor_position_moveF(&this->actor);
 
     if (DECR(this->blinkTimer) == 0) {
-        this->blinkTimer = Rand_S16Offset(60, 60);
+        this->blinkTimer = get_random_timer(60, 60);
     }
 
     this->eyeIndex = this->blinkTimer;
@@ -198,34 +198,34 @@ void EnGe3_MoveAndBlink(EnGe3* this, PlayState* play) {
     }
 }
 
-void EnGe3_UpdateWhenNotTalking(Actor* thisx, PlayState* play) {
+void En_Ge3_Actor_move_Frend(Actor* thisx, PlayState* play) {
     EnGe3* this = (EnGe3*)thisx;
 
-    EnGe3_UpdateCollision(this, play);
+    before_process(this, play);
     this->actionFunc(this, play);
 
-    if (Actor_TalkOfferAccepted(&this->actor, play)) {
-        this->actionFunc = EnGe3_Wait;
-        this->actor.update = EnGe3_Update;
+    if (Actor_talk_check(&this->actor, play)) {
+        this->actionFunc = talk_frend;
+        this->actor.update = En_Ge3_Actor_move_Talk;
     } else {
         this->actor.textId = 0x6005;
         if (this->actor.xzDistToPlayer < 100.0f) {
-            Actor_OfferTalk(&this->actor, play, 100.0f);
+            Actor_talk_request2(&this->actor, play, 100.0f);
         }
     }
 
-    EnGe3_MoveAndBlink(this, play);
+    after_process(this, play);
 }
 
-void EnGe3_Update(Actor* thisx, PlayState* play) {
+void En_Ge3_Actor_move_Talk(Actor* thisx, PlayState* play) {
     EnGe3* this = (EnGe3*)thisx;
 
-    EnGe3_UpdateCollision(this, play);
+    before_process(this, play);
     this->actionFunc(this, play);
-    EnGe3_MoveAndBlink(this, play);
+    after_process(this, play);
 }
 
-s32 EnGe3_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+static s32 before_display(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     EnGe3* this = (EnGe3*)thisx;
 
     switch (limbIndex) {
@@ -269,17 +269,17 @@ s32 EnGe3_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* p
     return false;
 }
 
-void EnGe3_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
+static void after_display(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
     EnGe3* this = (EnGe3*)thisx;
     Vec3f D_80A351C8 = { 600.0f, 700.0f, 0.0f };
 
     if (limbIndex == GELDB_LIMB_HEAD) {
-        Matrix_MultVec3f(&D_80A351C8, &this->actor.focus.pos);
+        Matrix_Position(&D_80A351C8, &this->actor.focus.pos);
     }
 }
 
-void EnGe3_Draw(Actor* thisx, PlayState* play2) {
-    static void* eyeTextures[] = {
+void En_Ge3_Actor_draw(Actor* thisx, PlayState* play2) {
+    static void* eye_txt[] = {
         gGerudoRedEyeOpenTex,
         gGerudoRedEyeHalfTex,
         gGerudoRedEyeShutTex,
@@ -289,11 +289,11 @@ void EnGe3_Draw(Actor* thisx, PlayState* play2) {
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_ge3.c", 614);
 
-    Gfx_SetupDL_37Opa(play->state.gfxCtx);
-    gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(eyeTextures[this->eyeIndex]));
-    func_8002EBCC(&this->actor, play, 0);
-    SkelAnime_DrawFlexOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
-                          EnGe3_OverrideLimbDraw, EnGe3_PostLimbDraw, this);
+    _polygon_z_light_fog_prim(play->state.gfxCtx);
+    gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(eye_txt[this->eyeIndex]));
+    Actor_HiliteReflect_set_init(&this->actor, play, 0);
+    Si2_draw_SV(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
+                          before_display, after_display, this);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_ge3.c", 631);
 }

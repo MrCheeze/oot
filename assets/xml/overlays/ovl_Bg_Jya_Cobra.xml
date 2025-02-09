@@ -1,10 +1,10 @@
 <Root>
     <File Name="ovl_Bg_Jya_Cobra" OutName="z_bg_jya_cobra">
-        <Array Name="sShadowVtx" Count="4" Offset="0x0">
+        <Array Name="shadow_cobra_v" Count="4" Offset="0x0">
             <Vtx/>
         </Array>
 
-        <DList Name="sShadowDL" Offset="0x40"/>
+        <DList Name="cobra_shadow_model" Offset="0x40"/>
 
     </File>
 </Root>

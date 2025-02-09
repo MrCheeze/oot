@@ -1,10 +1,10 @@
 #include "z_demo_du.h"
 #include "z64cutscene_commands.h"
 
-static s32 sUnused = 0;
+static s32 Dummy_In_Kenjyanoma = 0;
 
 // clang-format off
-static CutsceneData gFireMedallionCs[] = {
+static CutsceneData Demo_Du_Data1_In_Demodt_Kenjyanoma[] = {
     CS_HEADER(31, 3000),
     CS_UNK_DATA_LIST(0x00000020, 1),
         CS_UNK_DATA(0x00010000, 0x0BB80000, 0x00000000, 0x00000000, 0xFFFFFFFC, 0x00000002, 0x00000000, 0xFFFFFFFC, 0x00000002, 0x00000000, 0x00000000, 0x00000000),

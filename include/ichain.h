@@ -57,6 +57,6 @@ typedef enum InitChainType {
 #define ICHAIN_CONTINUE 1
 #define ICHAIN_STOP     0
 
-void Actor_ProcessInitChain(struct Actor* actor, InitChainEntry* ichain);
+void ValueSet_process(struct Actor* actor, InitChainEntry* ichain);
 
 #endif

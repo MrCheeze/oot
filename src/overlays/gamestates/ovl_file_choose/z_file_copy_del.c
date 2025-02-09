@@ -4,21 +4,21 @@
 // compiler errors (see docs/compilers.md)
 
 // when choosing a file to copy or erase, the 6 main menu buttons are placed at these offsets
-static s16 sChooseFileYOffsets[] = { -48, -48, -48, -24, -24, 0 };
+static s16 move_ypd[] = { -48, -48, -48, -24, -24, 0 };
 
-static s16 D_8081248C[3][3] = {
+static s16 move_ypd0[3][3] = {
     { 0, -48, -48 },
     { -64, 16, -48 },
     { -64, -64, 32 },
 };
 
-static s16 sEraseDelayTimer = 15;
+static s16 wait_frame = 15;
 
 /**
  * Move buttons into place for the select source screen and fade in the proper labels.
  * Update function for `CM_SETUP_COPY_SOURCE`
  */
-void FileSelect_SetupCopySource(GameState* thisx) {
+void menu_copy_init(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
     s16 yStep;
     s16 i;
@@ -28,9 +28,9 @@ void FileSelect_SetupCopySource(GameState* thisx) {
 
 #if !PLATFORM_IQUE
     for (i = 0; i < 5; i++) {
-        yStep = (ABS(this->buttonYOffsets[i] - sChooseFileYOffsets[i])) / this->actionTimer;
+        yStep = (ABS(this->buttonYOffsets[i] - move_ypd[i])) / this->actionTimer;
 
-        if (this->buttonYOffsets[i] >= sChooseFileYOffsets[i]) {
+        if (this->buttonYOffsets[i] >= move_ypd[i]) {
             this->buttonYOffsets[i] -= yStep;
         } else {
             this->buttonYOffsets[i] += yStep;
@@ -39,9 +39,9 @@ void FileSelect_SetupCopySource(GameState* thisx) {
 #else
     array = this->buttonYOffsets;
     for (i = 0; i < 5; i++) {
-        yStep = (ABS(array[i] - sChooseFileYOffsets[i])) / this->actionTimer;
+        yStep = (ABS(array[i] - move_ypd[i])) / this->actionTimer;
 
-        if (array[i] >= sChooseFileYOffsets[i]) {
+        if (array[i] >= move_ypd[i]) {
             array[i] -= yStep;
         } else {
             array[i] += yStep;
@@ -77,7 +77,7 @@ void FileSelect_SetupCopySource(GameState* thisx) {
  * Allow the player to select a file to copy or exit back to the main menu.
  * Update function for `CM_SELECT_COPY_SOURCE`
  */
-void FileSelect_SelectCopySource(GameState* thisx) {
+void menu_copy_which(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
     SramContext* sramCtx = &this->sramCtx;
     Input* input = &this->state.input[0];
@@ -89,24 +89,24 @@ void FileSelect_SelectCopySource(GameState* thisx) {
         this->nextTitleLabel = FS_TITLE_SELECT_FILE;
         this->configMode = CM_COPY_RETURN_MAIN;
         this->warningLabel = FS_WARNING_NONE;
-        Audio_PlaySfxGeneral(NA_SE_SY_FSEL_CLOSE, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        Nai_FxFlagEntry(NA_SE_SY_FSEL_CLOSE, &_dummy_zero_f, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
     } else if (CHECK_BTN_ANY(input->press.button, BTN_A | BTN_START)) {
         if (SLOT_OCCUPIED(sramCtx, this->buttonIndex)) {
             this->actionTimer = 8;
             this->selectedFileIndex = this->buttonIndex;
             this->configMode = CM_SETUP_COPY_DEST_1;
             this->nextTitleLabel = FS_TITLE_COPY_TO;
-            Audio_PlaySfxGeneral(NA_SE_SY_FSEL_DECIDE_L, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+            Nai_FxFlagEntry(NA_SE_SY_FSEL_DECIDE_L, &_dummy_zero_f, 4, &_dummy_one,
+                                 &_dummy_one, &_dummy_zero_s8);
         } else {
-            Audio_PlaySfxGeneral(NA_SE_SY_FSEL_ERROR, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+            Nai_FxFlagEntry(NA_SE_SY_FSEL_ERROR, &_dummy_zero_f, 4, &_dummy_one,
+                                 &_dummy_one, &_dummy_zero_s8);
         }
     } else {
         if (ABS(this->stickAdjY) >= 30) {
-            Audio_PlaySfxGeneral(NA_SE_SY_FSEL_CURSOR, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+            Nai_FxFlagEntry(NA_SE_SY_FSEL_CURSOR, &_dummy_zero_f, 4, &_dummy_one,
+                                 &_dummy_one, &_dummy_zero_s8);
 
             if (this->stickAdjY >= 30) {
                 this->buttonIndex--;
@@ -139,7 +139,7 @@ void FileSelect_SelectCopySource(GameState* thisx) {
  * Move the menu buttons into place for the copy destination selection and switch titles.
  * Update function for `CM_SETUP_COPY_DEST_1`
  */
-void FileSelect_SetupCopyDest1(GameState* thisx) {
+void menu_copy_move1(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
     s16 yStep;
     s16 i;
@@ -149,9 +149,9 @@ void FileSelect_SetupCopyDest1(GameState* thisx) {
 
 #if !PLATFORM_IQUE
     for (i = 0; i < 3; i++) {
-        yStep = ABS(this->buttonYOffsets[i] - D_8081248C[this->buttonIndex][i]) / this->actionTimer;
+        yStep = ABS(this->buttonYOffsets[i] - move_ypd0[this->buttonIndex][i]) / this->actionTimer;
 
-        if (this->buttonYOffsets[i] <= D_8081248C[this->buttonIndex][i]) {
+        if (this->buttonYOffsets[i] <= move_ypd0[this->buttonIndex][i]) {
             this->buttonYOffsets[i] += yStep;
         } else {
             this->buttonYOffsets[i] -= yStep;
@@ -160,9 +160,9 @@ void FileSelect_SetupCopyDest1(GameState* thisx) {
 #else
     array = this->buttonYOffsets;
     for (i = 0; i < 3; i++) {
-        yStep = ABS(array[i] - D_8081248C[this->buttonIndex][i]) / this->actionTimer;
+        yStep = ABS(array[i] - move_ypd0[this->buttonIndex][i]) / this->actionTimer;
 
-        if (array[i] <= D_8081248C[this->buttonIndex][i]) {
+        if (array[i] <= move_ypd0[this->buttonIndex][i]) {
             array[i] += yStep;
         } else {
             array[i] -= yStep;
@@ -185,10 +185,10 @@ void FileSelect_SetupCopyDest1(GameState* thisx) {
     this->actionTimer--;
     if (this->actionTimer == 0) {
 #if !PLATFORM_IQUE
-        this->buttonYOffsets[this->buttonIndex] = D_8081248C[this->buttonIndex][this->buttonIndex];
+        this->buttonYOffsets[this->buttonIndex] = move_ypd0[this->buttonIndex][this->buttonIndex];
 #else
         array = this->buttonYOffsets;
-        array[this->buttonIndex] = D_8081248C[this->buttonIndex][this->buttonIndex];
+        array[this->buttonIndex] = move_ypd0[this->buttonIndex][this->buttonIndex];
 #endif
 
         this->titleLabel = this->nextTitleLabel;
@@ -211,7 +211,7 @@ void FileSelect_SetupCopyDest1(GameState* thisx) {
  * Show the file info of the file selected to copy from.
  * Update function for `CM_SETUP_COPY_DEST_2`
  */
-void FileSelect_SetupCopyDest2(GameState* thisx) {
+void menu_copy_fdin1(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
 #if PLATFORM_IQUE
     s16* array;
@@ -250,7 +250,7 @@ void FileSelect_SetupCopyDest2(GameState* thisx) {
  * Allow the player to select a slot to copy to or exit to the copy select screen.
  * Update function for `CM_SELECT_COPY_DEST`
  */
-void FileSelect_SelectCopyDest(GameState* thisx) {
+void menu_copy_where(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
     SramContext* sramCtx = &this->sramCtx;
     Input* input = &this->state.input[0];
@@ -261,25 +261,25 @@ void FileSelect_SelectCopyDest(GameState* thisx) {
         this->nextTitleLabel = FS_TITLE_COPY_FROM;
         this->actionTimer = 8;
         this->configMode = CM_EXIT_TO_COPY_SOURCE_1;
-        Audio_PlaySfxGeneral(NA_SE_SY_FSEL_CLOSE, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        Nai_FxFlagEntry(NA_SE_SY_FSEL_CLOSE, &_dummy_zero_f, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
     } else if (CHECK_BTN_ANY(input->press.button, BTN_A | BTN_START)) {
         if (!SLOT_OCCUPIED(sramCtx, this->buttonIndex)) {
             this->copyDestFileIndex = this->buttonIndex;
             this->nextTitleLabel = FS_TITLE_COPY_CONFIRM;
             this->actionTimer = 8;
             this->configMode = CM_SETUP_COPY_CONFIRM_1;
-            Audio_PlaySfxGeneral(NA_SE_SY_FSEL_DECIDE_L, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+            Nai_FxFlagEntry(NA_SE_SY_FSEL_DECIDE_L, &_dummy_zero_f, 4, &_dummy_one,
+                                 &_dummy_one, &_dummy_zero_s8);
         } else {
-            Audio_PlaySfxGeneral(NA_SE_SY_FSEL_ERROR, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+            Nai_FxFlagEntry(NA_SE_SY_FSEL_ERROR, &_dummy_zero_f, 4, &_dummy_one,
+                                 &_dummy_one, &_dummy_zero_s8);
         }
     } else {
 
         if (ABS(this->stickAdjY) >= 30) {
-            Audio_PlaySfxGeneral(NA_SE_SY_FSEL_CURSOR, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+            Nai_FxFlagEntry(NA_SE_SY_FSEL_CURSOR, &_dummy_zero_f, 4, &_dummy_one,
+                                 &_dummy_one, &_dummy_zero_s8);
 
             if (this->stickAdjY >= 30) {
                 this->buttonIndex--;
@@ -324,7 +324,7 @@ void FileSelect_SelectCopyDest(GameState* thisx) {
  * Fade out file info, bring back the name box, and get ready to return to copy source screen.
  * Update function for `CM_EXIT_TO_COPY_SOURCE_1`
  */
-void FileSelect_ExitToCopySource1(GameState* thisx) {
+void menu_copy_fdout1(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
 #if PLATFORM_IQUE
     s16* array;
@@ -364,7 +364,7 @@ void FileSelect_ExitToCopySource1(GameState* thisx) {
  * Move the buttons back into place and return to copy source select.
  * Update function for `CM_EXIT_TO_COPY_SOURCE_2`
  */
-void FileSelect_ExitToCopySource2(GameState* thisx) {
+void menu_copy_cancel1(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
     SramContext* sramCtx = &this->sramCtx;
     s16 i;
@@ -375,9 +375,9 @@ void FileSelect_ExitToCopySource2(GameState* thisx) {
 
 #if !PLATFORM_IQUE
     for (i = 0; i < 3; i++) {
-        yStep = ABS(this->buttonYOffsets[i] - sChooseFileYOffsets[i]) / this->actionTimer;
+        yStep = ABS(this->buttonYOffsets[i] - move_ypd[i]) / this->actionTimer;
 
-        if (this->buttonYOffsets[i] >= sChooseFileYOffsets[i]) {
+        if (this->buttonYOffsets[i] >= move_ypd[i]) {
             this->buttonYOffsets[i] -= yStep;
         } else {
             this->buttonYOffsets[i] += yStep;
@@ -386,9 +386,9 @@ void FileSelect_ExitToCopySource2(GameState* thisx) {
 #else
     array = this->buttonYOffsets;
     for (i = 0; i < 3; i++) {
-        yStep = ABS(array[i] - sChooseFileYOffsets[i]) / this->actionTimer;
+        yStep = ABS(array[i] - move_ypd[i]) / this->actionTimer;
 
-        if (array[i] >= sChooseFileYOffsets[i]) {
+        if (array[i] >= move_ypd[i]) {
             array[i] -= yStep;
         } else {
             array[i] += yStep;
@@ -428,8 +428,8 @@ void FileSelect_ExitToCopySource2(GameState* thisx) {
  * Rearrange buttons on the screen to prepare for copy confirmation.
  * Update function for `CM_SETUP_COPY_CONFIRM_1`
  */
-void FileSelect_SetupCopyConfirm1(GameState* thisx) {
-    static s16 D_808124A4[] = { -56, -40, -24, 0 };
+void menu_copy_move2(GameState* thisx) {
+    static s16 move_ypd[] = { -56, -40, -24, 0 };
     FileSelectState* this = (FileSelectState*)thisx;
     SramContext* sramCtx = &this->sramCtx;
     s16 i;
@@ -457,11 +457,11 @@ void FileSelect_SetupCopyConfirm1(GameState* thisx) {
                 this->connectorAlpha[i] -= 31;
             }
         } else if (i == this->copyDestFileIndex) {
-            yStep = ABS(this->buttonYOffsets[i] - D_808124A4[i]) / this->actionTimer;
+            yStep = ABS(this->buttonYOffsets[i] - move_ypd[i]) / this->actionTimer;
             this->buttonYOffsets[i] += yStep;
 
-            if (this->buttonYOffsets[i] >= D_808124A4[i]) {
-                this->buttonYOffsets[i] = D_808124A4[i];
+            if (this->buttonYOffsets[i] >= move_ypd[i]) {
+                this->buttonYOffsets[i] = move_ypd[i];
             }
         }
     }
@@ -483,11 +483,11 @@ void FileSelect_SetupCopyConfirm1(GameState* thisx) {
             }
         } else if (i == this->copyDestFileIndex) {
             array = this->buttonYOffsets;
-            yStep = ABS(array[i] - D_808124A4[i]) / this->actionTimer;
+            yStep = ABS(array[i] - move_ypd[i]) / this->actionTimer;
             array[i] += yStep;
 
-            if (array[i] >= D_808124A4[i]) {
-                array[i] = D_808124A4[i];
+            if (array[i] >= move_ypd[i]) {
+                array[i] = move_ypd[i];
             }
         }
     }
@@ -516,7 +516,7 @@ void FileSelect_SetupCopyConfirm1(GameState* thisx) {
  * Fade in the 'Yes' button before allowing the player to decide.
  * Update function for `CM_SETUP_COPY_CONFIRM_2`
  */
-void FileSelect_SetupCopyConfirm2(GameState* thisx) {
+void menu_copy_fdin2(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
 
     this->actionButtonAlpha[FS_BTN_ACTION_YES] += 25;
@@ -533,7 +533,7 @@ void FileSelect_SetupCopyConfirm2(GameState* thisx) {
  * If yes is selected, the actual copy occurs in this function before moving on to the animation.
  * Update function for `CM_COPY_CONFIRM`
  */
-void FileSelect_CopyConfirm(GameState* thisx) {
+void menu_copy_ok(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
     SramContext* sramCtx = &this->sramCtx;
     Input* input = &this->state.input[0];
@@ -544,22 +544,22 @@ void FileSelect_CopyConfirm(GameState* thisx) {
         this->actionTimer = 8;
         this->nextTitleLabel = FS_TITLE_COPY_TO;
         this->configMode = CM_RETURN_TO_COPY_DEST;
-        Audio_PlaySfxGeneral(NA_SE_SY_FSEL_CLOSE, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        Nai_FxFlagEntry(NA_SE_SY_FSEL_CLOSE, &_dummy_zero_f, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
     } else if (CHECK_BTN_ANY(input->press.button, BTN_A | BTN_START)) {
-        dayTime = gSaveContext.save.dayTime;
-        Sram_CopySave(this, sramCtx);
-        gSaveContext.save.dayTime = dayTime;
+        dayTime = z_common_data.save.dayTime;
+        sram_start_copy(this, sramCtx);
+        z_common_data.save.dayTime = dayTime;
         this->fileInfoAlpha[this->copyDestFileIndex] = this->nameAlpha[this->copyDestFileIndex] = 0;
         this->nextTitleLabel = FS_TITLE_COPY_COMPLETE;
         this->actionTimer = 8;
         this->configMode = CM_COPY_ANIM_1;
-        Rumble_Request(300.0f, 180, 20, 100);
-        Audio_PlaySfxGeneral(NA_SE_SY_FSEL_DECIDE_L, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        z_vibctl2_vib_setQ(300.0f, 180, 20, 100);
+        Nai_FxFlagEntry(NA_SE_SY_FSEL_DECIDE_L, &_dummy_zero_f, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
     } else if (ABS(this->stickAdjY) >= 30) {
-        Audio_PlaySfxGeneral(NA_SE_SY_FSEL_CURSOR, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        Nai_FxFlagEntry(NA_SE_SY_FSEL_CURSOR, &_dummy_zero_f, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
         this->buttonIndex ^= 1;
     }
 }
@@ -568,7 +568,7 @@ void FileSelect_CopyConfirm(GameState* thisx) {
  * Move buttons back in place and return to copy destination select.
  * Update function for `CM_RETURN_TO_COPY_DEST`
  */
-void FileSelect_ReturnToCopyDest(GameState* thisx) {
+void menu_copy_fdout2(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
     SramContext* sramCtx = &this->sramCtx;
     s16 i;
@@ -600,9 +600,9 @@ void FileSelect_ReturnToCopyDest(GameState* thisx) {
             }
         }
 
-        yStep = ABS(this->buttonYOffsets[i] - D_8081248C[this->selectedFileIndex][i]) / this->actionTimer;
+        yStep = ABS(this->buttonYOffsets[i] - move_ypd0[this->selectedFileIndex][i]) / this->actionTimer;
 
-        if (this->buttonYOffsets[i] <= D_8081248C[this->selectedFileIndex][i]) {
+        if (this->buttonYOffsets[i] <= move_ypd0[this->selectedFileIndex][i]) {
             this->buttonYOffsets[i] += yStep;
         } else {
             this->buttonYOffsets[i] -= yStep;
@@ -627,9 +627,9 @@ void FileSelect_ReturnToCopyDest(GameState* thisx) {
         }
 
         array = this->buttonYOffsets;
-        yStep = ABS(array[i] - D_8081248C[this->selectedFileIndex][i]) / this->actionTimer;
+        yStep = ABS(array[i] - move_ypd0[this->selectedFileIndex][i]) / this->actionTimer;
 
-        if (array[i] <= D_8081248C[this->selectedFileIndex][i]) {
+        if (array[i] <= move_ypd0[this->selectedFileIndex][i]) {
             array[i] += yStep;
         } else {
             array[i] -= yStep;
@@ -661,7 +661,7 @@ void FileSelect_ReturnToCopyDest(GameState* thisx) {
  * Hide title
  * Update function for `CM_COPY_ANIM_1`
  */
-void FileSelect_CopyAnim1(GameState* thisx) {
+void menu_copy_move3(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
 
     this->titleAlpha[0] -= 31;
@@ -682,7 +682,7 @@ void FileSelect_CopyAnim1(GameState* thisx) {
  * Move a copy of the file window down and fade in the file info.
  * Update function for `CM_COPY_ANIM_2`
  */
-void FileSelect_CopyAnim2(GameState* thisx) {
+void menu_copy_fdin3(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
     s16 yStep;
 #if PLATFORM_IQUE
@@ -743,14 +743,14 @@ void FileSelect_CopyAnim2(GameState* thisx) {
  * the player to press a button before moving on.
  * Update function for `CM_COPY_ANIM_3`
  */
-void FileSelect_CopyAnim3(GameState* thisx) {
+void menu_copy_end(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
     Input* input = &this->state.input[0];
 
     if (this->actionTimer == 75) {
         this->connectorAlpha[this->copyDestFileIndex] = 255;
-        Audio_PlaySfxGeneral(NA_SE_EV_DIAMOND_SWITCH, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        Nai_FxFlagEntry(NA_SE_EV_DIAMOND_SWITCH, &_dummy_zero_f, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
     }
 
     this->actionTimer--;
@@ -760,8 +760,8 @@ void FileSelect_CopyAnim3(GameState* thisx) {
             this->actionTimer = 8;
             this->nextTitleLabel = FS_TITLE_SELECT_FILE;
             this->configMode++;
-            Audio_PlaySfxGeneral(NA_SE_SY_FSEL_DECIDE_L, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+            Nai_FxFlagEntry(NA_SE_SY_FSEL_DECIDE_L, &_dummy_zero_f, 4, &_dummy_one,
+                                 &_dummy_one, &_dummy_zero_s8);
         }
     }
 }
@@ -770,7 +770,7 @@ void FileSelect_CopyAnim3(GameState* thisx) {
  * Fade out the info boxes for both files and bring in their name boxes. Fade out title.
  * Update function for `CM_COPY_ANIM_4`
  */
-void FileSelect_CopyAnim4(GameState* thisx) {
+void menu_copy_end1(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
     s16* array;
 
@@ -812,7 +812,7 @@ void FileSelect_CopyAnim4(GameState* thisx) {
  * Restore all buttons and labels back to their original place and go back to the main menu.
  * Update function for `CM_COPY_ANIM_5`
  */
-void FileSelect_CopyAnim5(GameState* thisx) {
+void menu_copy_end2(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
     SramContext* sramCtx = &this->sramCtx;
     s16 i;
@@ -955,7 +955,7 @@ void FileSelect_CopyAnim5(GameState* thisx) {
  * Exit from the copy source screen to the main menu. Return all buttons and labels to their original place.
  * Update function for `CM_COPY_RETURN_MAIN`
  */
-void FileSelect_ExitCopyToMain(GameState* thisx) {
+void menu_copy_return(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
     s16 i;
     s16 yStep;
@@ -1039,7 +1039,7 @@ void FileSelect_ExitCopyToMain(GameState* thisx) {
  * Move buttons into place for the erase select screen and fade in the proper labels.
  * Update function for `CM_SETUP_ERASE_SELECT`
  */
-void FileSelect_SetupEraseSelect(GameState* thisx) {
+void menu_delt_init(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
     s16 i;
     s16 yStep;
@@ -1049,9 +1049,9 @@ void FileSelect_SetupEraseSelect(GameState* thisx) {
 
 #if !PLATFORM_IQUE
     for (i = 0; i < 5; i++) {
-        yStep = ABS(this->buttonYOffsets[i] - sChooseFileYOffsets[i]) / this->actionTimer;
+        yStep = ABS(this->buttonYOffsets[i] - move_ypd[i]) / this->actionTimer;
 
-        if (this->buttonYOffsets[i] >= sChooseFileYOffsets[i]) {
+        if (this->buttonYOffsets[i] >= move_ypd[i]) {
             this->buttonYOffsets[i] -= yStep;
         } else {
             this->buttonYOffsets[i] += yStep;
@@ -1060,9 +1060,9 @@ void FileSelect_SetupEraseSelect(GameState* thisx) {
 #else
     array = this->buttonYOffsets;
     for (i = 0; i < 5; i++) {
-        yStep = ABS(array[i] - sChooseFileYOffsets[i]) / this->actionTimer;
+        yStep = ABS(array[i] - move_ypd[i]) / this->actionTimer;
 
-        if (array[i] >= sChooseFileYOffsets[i]) {
+        if (array[i] >= move_ypd[i]) {
             array[i] -= yStep;
         } else {
             array[i] += yStep;
@@ -1133,7 +1133,7 @@ void FileSelect_SetupEraseSelect(GameState* thisx) {
  * Allow the player to select a file to erase or exit back to the main menu.
  * Update function for `CM_ERASE_SELECT`
  */
-void FileSelect_EraseSelect(GameState* thisx) {
+void menu_delt_where(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
     SramContext* sramCtx = &this->sramCtx;
     Input* input = &this->state.input[0];
@@ -1145,24 +1145,24 @@ void FileSelect_EraseSelect(GameState* thisx) {
         this->nextTitleLabel = FS_TITLE_SELECT_FILE;
         this->configMode = CM_EXIT_ERASE_TO_MAIN;
         this->warningLabel = FS_WARNING_NONE;
-        Audio_PlaySfxGeneral(NA_SE_SY_FSEL_CLOSE, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        Nai_FxFlagEntry(NA_SE_SY_FSEL_CLOSE, &_dummy_zero_f, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
     } else if (CHECK_BTN_ANY(input->press.button, BTN_A | BTN_START)) {
         if (SLOT_OCCUPIED(sramCtx, this->buttonIndex)) {
             this->actionTimer = 8;
             this->selectedFileIndex = this->buttonIndex;
             this->configMode = CM_SETUP_ERASE_CONFIRM_1;
             this->nextTitleLabel = FS_TITLE_ERASE_CONFIRM;
-            Audio_PlaySfxGeneral(NA_SE_SY_FSEL_DECIDE_L, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+            Nai_FxFlagEntry(NA_SE_SY_FSEL_DECIDE_L, &_dummy_zero_f, 4, &_dummy_one,
+                                 &_dummy_one, &_dummy_zero_s8);
         } else {
-            Audio_PlaySfxGeneral(NA_SE_SY_FSEL_ERROR, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+            Nai_FxFlagEntry(NA_SE_SY_FSEL_ERROR, &_dummy_zero_f, 4, &_dummy_one,
+                                 &_dummy_one, &_dummy_zero_s8);
         }
     } else {
         if (ABS(this->stickAdjY) >= 30) {
-            Audio_PlaySfxGeneral(NA_SE_SY_FSEL_CURSOR, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+            Nai_FxFlagEntry(NA_SE_SY_FSEL_CURSOR, &_dummy_zero_f, 4, &_dummy_one,
+                                 &_dummy_one, &_dummy_zero_s8);
 
             if (this->stickAdjY >= 30) {
                 this->buttonIndex--;
@@ -1195,8 +1195,8 @@ void FileSelect_EraseSelect(GameState* thisx) {
  * ...
  * Update function for `CM_SETUP_ERASE_CONFIRM_1`
  */
-void FileSelect_SetupEraseConfirm1(GameState* thisx) {
-    static s16 D_808124AC[] = { 0, 16, 32 };
+void menu_delt_move(GameState* thisx) {
+    static s16 move_ypd[] = { 0, 16, 32 };
     FileSelectState* this = (FileSelectState*)thisx;
     SramContext* sramCtx = &this->sramCtx;
     s16 i;
@@ -1251,18 +1251,18 @@ void FileSelect_SetupEraseConfirm1(GameState* thisx) {
 #endif
 
 #if !PLATFORM_IQUE
-    yStep = ABS(this->buttonYOffsets[this->buttonIndex] - D_808124AC[this->buttonIndex]) / this->actionTimer;
+    yStep = ABS(this->buttonYOffsets[this->buttonIndex] - move_ypd[this->buttonIndex]) / this->actionTimer;
 
-    if (this->buttonYOffsets[this->buttonIndex] >= D_808124AC[this->buttonIndex]) {
+    if (this->buttonYOffsets[this->buttonIndex] >= move_ypd[this->buttonIndex]) {
         this->buttonYOffsets[this->buttonIndex] -= yStep;
     } else {
         this->buttonYOffsets[this->buttonIndex] += yStep;
     }
 #else
     array = this->buttonYOffsets;
-    yStep = ABS(array[this->buttonIndex] - D_808124AC[this->buttonIndex]) / this->actionTimer;
+    yStep = ABS(array[this->buttonIndex] - move_ypd[this->buttonIndex]) / this->actionTimer;
 
-    if (array[this->buttonIndex] >= D_808124AC[this->buttonIndex]) {
+    if (array[this->buttonIndex] >= move_ypd[this->buttonIndex]) {
         array[this->buttonIndex] -= yStep;
     } else {
         array[this->buttonIndex] += yStep;
@@ -1309,10 +1309,10 @@ void FileSelect_SetupEraseConfirm1(GameState* thisx) {
 #endif
 
 #if !PLATFORM_IQUE
-        this->buttonYOffsets[this->buttonIndex] = D_808124AC[this->buttonIndex];
+        this->buttonYOffsets[this->buttonIndex] = move_ypd[this->buttonIndex];
 #else
         array = this->buttonYOffsets;
-        array[this->buttonIndex] = D_808124AC[this->buttonIndex];
+        array[this->buttonIndex] = move_ypd[this->buttonIndex];
 #endif
 
         this->actionTimer = 8;
@@ -1324,7 +1324,7 @@ void FileSelect_SetupEraseConfirm1(GameState* thisx) {
  * Show the file info of the file selected to erase.
  * Update function for `CM_SETUP_ERASE_CONFIRM_2`
  */
-void FileSelect_SetupEraseConfirm2(GameState* thisx) {
+void menu_delt_fdin(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
 #if PLATFORM_IQUE
     s16* array;
@@ -1372,7 +1372,7 @@ void FileSelect_SetupEraseConfirm2(GameState* thisx) {
  * Allow the player to confirm their choice to erase or return back to erase select.
  * Update function for `CM_ERASE_CONFIRM`
  */
-void FileSelect_EraseConfirm(GameState* thisx) {
+void menu_delt_ok(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
     Input* input = &this->state.input[0];
 
@@ -1382,20 +1382,20 @@ void FileSelect_EraseConfirm(GameState* thisx) {
         this->nextTitleLabel = FS_TITLE_ERASE_FILE;
         this->configMode = CM_EXIT_TO_ERASE_SELECT_1;
         this->actionTimer = 8;
-        Audio_PlaySfxGeneral(NA_SE_SY_FSEL_CLOSE, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        Nai_FxFlagEntry(NA_SE_SY_FSEL_CLOSE, &_dummy_zero_f, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
     } else if (CHECK_BTN_ANY(input->press.button, BTN_A | BTN_START)) {
         this->n64ddFlags[this->selectedFileIndex] = this->connectorAlpha[this->selectedFileIndex] = 0;
-        Audio_PlaySfxGeneral(NA_SE_EV_DIAMOND_SWITCH, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        Nai_FxFlagEntry(NA_SE_EV_DIAMOND_SWITCH, &_dummy_zero_f, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
         this->actionTimer = 8;
         this->configMode = CM_ERASE_ANIM_1;
         this->nextTitleLabel = FS_TITLE_ERASE_COMPLETE;
-        Rumble_Request(200.0f, 255, 20, 150);
-        sEraseDelayTimer = 15;
+        z_vibctl2_vib_setQ(200.0f, 255, 20, 150);
+        wait_frame = 15;
     } else if (ABS(this->stickAdjY) >= 30) {
-        Audio_PlaySfxGeneral(NA_SE_SY_FSEL_CURSOR, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        Nai_FxFlagEntry(NA_SE_SY_FSEL_CURSOR, &_dummy_zero_f, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
         this->buttonIndex ^= 1;
     }
 }
@@ -1404,7 +1404,7 @@ void FileSelect_EraseConfirm(GameState* thisx) {
  * Fade out file info, bring back the name box, and get ready to return to erase select screen.
  * Update function for `CM_EXIT_TO_ERASE_SELECT_1`
  */
-void FileSelect_ExitToEraseSelect1(GameState* thisx) {
+void menu_delt_fdout(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
 #if PLATFORM_IQUE
     s16* array;
@@ -1443,7 +1443,7 @@ void FileSelect_ExitToEraseSelect1(GameState* thisx) {
  * Move the buttons back into place and return to erase select.
  * Update function for `CM_EXIT_TO_ERASE_SELECT_2`
  */
-void FileSelect_ExitToEraseSelect2(GameState* thisx) {
+void menu_delt_cancel(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
     SramContext* sramCtx = &this->sramCtx;
     s16 i;
@@ -1453,18 +1453,18 @@ void FileSelect_ExitToEraseSelect2(GameState* thisx) {
 #endif
 
 #if !PLATFORM_IQUE
-    yStep = ABS(this->buttonYOffsets[this->buttonIndex] - sChooseFileYOffsets[this->buttonIndex]) / this->actionTimer;
+    yStep = ABS(this->buttonYOffsets[this->buttonIndex] - move_ypd[this->buttonIndex]) / this->actionTimer;
 
-    if (this->buttonYOffsets[this->buttonIndex] >= sChooseFileYOffsets[this->buttonIndex]) {
+    if (this->buttonYOffsets[this->buttonIndex] >= move_ypd[this->buttonIndex]) {
         this->buttonYOffsets[this->buttonIndex] -= yStep;
     } else {
         this->buttonYOffsets[this->buttonIndex] += yStep;
     }
 #else
     array = this->buttonYOffsets;
-    yStep = ABS(array[this->buttonIndex] - sChooseFileYOffsets[this->buttonIndex]) / this->actionTimer;
+    yStep = ABS(array[this->buttonIndex] - move_ypd[this->buttonIndex]) / this->actionTimer;
 
-    if (array[this->buttonIndex] >= sChooseFileYOffsets[this->buttonIndex]) {
+    if (array[this->buttonIndex] >= move_ypd[this->buttonIndex]) {
         array[this->buttonIndex] -= yStep;
     } else {
         array[this->buttonIndex] += yStep;
@@ -1515,10 +1515,10 @@ void FileSelect_ExitToEraseSelect2(GameState* thisx) {
 
     if (this->actionTimer == 0) {
 #if !PLATFORM_IQUE
-        this->buttonYOffsets[this->buttonIndex] = sChooseFileYOffsets[this->buttonIndex];
+        this->buttonYOffsets[this->buttonIndex] = move_ypd[this->buttonIndex];
 #else
         array = this->buttonYOffsets;
-        array[this->buttonIndex] = sChooseFileYOffsets[this->buttonIndex];
+        array[this->buttonIndex] = move_ypd[this->buttonIndex];
 #endif
 
         this->actionTimer = 8;
@@ -1543,17 +1543,17 @@ void FileSelect_ExitToEraseSelect2(GameState* thisx) {
  * The actual file deletion occurs in this function
  * Update function for `CM_ERASE_ANIM_1`
  */
-void FileSelect_EraseAnim1(GameState* thisx) {
-    static s16 D_80813800;
+void menu_delt_end(GameState* thisx) {
+    static s16 m;
     FileSelectState* this = (FileSelectState*)thisx;
     SramContext* sramCtx = &this->sramCtx;
 #if PLATFORM_IQUE
     s16* array;
 #endif
 
-    if (sEraseDelayTimer == 0) {
+    if (wait_frame == 0) {
         if (this->actionTimer == 8) {
-            D_80813800 = 1;
+            m = 1;
         }
 
         if (this->actionTimer != 0) {
@@ -1576,17 +1576,17 @@ void FileSelect_EraseAnim1(GameState* thisx) {
         }
 
 #if !PLATFORM_IQUE
-        this->fileNamesY[this->selectedFileIndex] -= D_80813800;
+        this->fileNamesY[this->selectedFileIndex] -= m;
 #else
         array = this->fileNamesY;
-        array[this->selectedFileIndex] -= D_80813800;
+        array[this->selectedFileIndex] -= m;
 #endif
 
-        D_80813800 += 2;
+        m += 2;
         this->actionTimer--;
 
         if (this->actionTimer == 0) {
-            Sram_EraseSave(this, sramCtx);
+            sram_start_clear(this, sramCtx);
             this->titleLabel = this->nextTitleLabel;
 
 #if !PLATFORM_IQUE
@@ -1610,11 +1610,11 @@ void FileSelect_EraseAnim1(GameState* thisx) {
             this->actionTimer = 90;
         }
     } else {
-        sEraseDelayTimer--;
+        wait_frame--;
 
-        if (sEraseDelayTimer == 0) {
-            Audio_PlaySfxGeneral(NA_SE_OC_ABYSS, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        if (wait_frame == 0) {
+            Nai_FxFlagEntry(NA_SE_OC_ABYSS, &_dummy_zero_f, 4, &_dummy_one,
+                                 &_dummy_one, &_dummy_zero_s8);
         }
     }
 }
@@ -1623,7 +1623,7 @@ void FileSelect_EraseAnim1(GameState* thisx) {
  * Wait for a delay timer or for the palyer to press a button before returning to the main menu.
  * Update function for `CM_ERASE_ANIM_2`
  */
-void FileSelect_EraseAnim2(GameState* thisx) {
+void menu_delt_end1(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
     Input* input = &this->state.input[0];
 
@@ -1632,8 +1632,8 @@ void FileSelect_EraseAnim2(GameState* thisx) {
         this->actionTimer = 8;
         this->nextTitleLabel = FS_TITLE_SELECT_FILE;
         this->configMode++;
-        Audio_PlaySfxGeneral(NA_SE_SY_FSEL_CLOSE, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        Nai_FxFlagEntry(NA_SE_SY_FSEL_CLOSE, &_dummy_zero_f, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
     }
 }
 
@@ -1641,7 +1641,7 @@ void FileSelect_EraseAnim2(GameState* thisx) {
  * Exit from the erase animation to the main menu. Return all buttons and labels to their original place.
  * Update function for `CM_ERASE_ANIM_3`
  */
-void FileSelect_EraseAnim3(GameState* thisx) {
+void menu_delt_end2(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
     SramContext* sramCtx = &this->sramCtx;
     s16 i;
@@ -1770,7 +1770,7 @@ void FileSelect_EraseAnim3(GameState* thisx) {
  * Exit from the erase select screen to the main menu. Return all buttons and labels to their original place.
  * Update function for `CM_EXIT_ERASE_TO_MAIN`
  */
-void FileSelect_ExitEraseToMain(GameState* thisx) {
+void menu_delt_return(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
     s16 i;
     s16 yStep;

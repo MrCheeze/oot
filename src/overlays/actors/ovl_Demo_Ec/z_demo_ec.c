@@ -39,10 +39,10 @@
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void DemoEc_Init(Actor* thisx, PlayState* play);
-void DemoEc_Destroy(Actor* thisx, PlayState* play);
-void DemoEc_Update(Actor* thisx, PlayState* play);
-void DemoEc_Draw(Actor* thisx, PlayState* play);
+void Demo_Ec_Actor_ct(Actor* thisx, PlayState* play);
+void Demo_Ec_Actor_dt(Actor* thisx, PlayState* play);
+void Demo_Ec_main(Actor* thisx, PlayState* play);
+void Demo_Ec_draw(Actor* thisx, PlayState* play);
 
 typedef enum DemoEcUpdateMode {
     /* 00 */ EC_UPDATE_COMMON,
@@ -103,7 +103,7 @@ typedef enum DemoEcDrawconfig {
     /* 23 */ EC_DRAW_MALON
 } DemoEcDrawconfig;
 
-static s16 sDrawObjects[] = {
+static s16 Demo_Ec_Shape_Bank[] = {
     /*  0 */ OBJECT_IN,
     /*  1 */ OBJECT_TA,
     /*  2 */ OBJECT_FU,
@@ -141,64 +141,64 @@ static s16 sDrawObjects[] = {
     /* 34 */ OBJECT_MA2,
 };
 
-static s16 sAnimationObjects[] = {
+static s16 Demo_Ec_Anime_Bank[] = {
     OBJECT_EC, OBJECT_EC, OBJECT_EC, OBJECT_EC, OBJECT_EC, OBJECT_EC, OBJECT_EC, OBJECT_EC,  OBJECT_EC,
     OBJECT_EC, OBJECT_EC, OBJECT_EC, OBJECT_EC, OBJECT_EC, OBJECT_EC, OBJECT_EC, OBJECT_EC,  OBJECT_EC,
     OBJECT_EC, OBJECT_EC, OBJECT_EC, OBJECT_EC, OBJECT_EC, OBJECT_EC, OBJECT_EC, OBJECT_EC,  OBJECT_EC,
     OBJECT_EC, OBJECT_EC, OBJECT_EC, OBJECT_EC, OBJECT_EC, OBJECT_EC, OBJECT_GM, OBJECT_MA2,
 };
 
-void DemoEc_Destroy(Actor* thisx, PlayState* play) {
+void Demo_Ec_Actor_dt(Actor* thisx, PlayState* play) {
     DemoEc* this = (DemoEc*)thisx;
 
-    SkelAnime_Free(&this->skelAnime, play);
+    Skeleton_Info_dt(&this->skelAnime, play);
 }
 
-void DemoEc_Init(Actor* thisx, PlayState* play) {
+void Demo_Ec_Actor_ct(Actor* thisx, PlayState* play) {
     DemoEc* this = (DemoEc*)thisx;
 
     if ((this->actor.params < 0) || (this->actor.params > 34)) {
         PRINTF(VT_FGCOL(RED) "Demo_Ec_Actor_ct:arg_dataがおかしい!!!!!!!!!!!!\n" VT_RST);
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     } else {
         this->updateMode = EC_UPDATE_COMMON;
         this->drawConfig = EC_DRAW_COMMON;
     }
 }
 
-s32 DemoEc_UpdateSkelAnime(DemoEc* this) {
-    return SkelAnime_Update(&this->skelAnime);
+s32 Demo_Ec_Animation_Base(DemoEc* this) {
+    return Skeleton_Info2_anime_play(&this->skelAnime);
 }
 
-void DemoEc_UpdateBgFlags(DemoEc* this, PlayState* play) {
-    Actor_UpdateBgCheckInfo(play, &this->actor, 30.0f, 25.0f, 30.0f,
+void Demo_Ec_BGcheck(DemoEc* this, PlayState* play) {
+    Actor_BGcheck2(play, &this->actor, 30.0f, 25.0f, 30.0f,
                             UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_1 | UPDBGCHECKINFO_FLAG_2);
 }
 
-void func_8096D594(DemoEc* this, PlayState* play) {
+void Demo_Ec_Movement_byAnimation_CorrectNone(DemoEc* this, PlayState* play) {
     this->skelAnime.movementFlags |= ANIM_FLAG_UPDATE_XZ | ANIM_FLAG_UPDATE_Y;
-    AnimTaskQueue_AddActorMovement(play, &this->actor, &this->skelAnime, 1.0f);
+    Skeleton_Proc_Anime_Move_init(play, &this->actor, &this->skelAnime, 1.0f);
 }
 
-void func_8096D5D4(DemoEc* this, PlayState* play) {
+void Demo_Ec_Start_Movement_byAnimation(DemoEc* this, PlayState* play) {
     this->skelAnime.baseTransl = this->skelAnime.jointTable[0];
     this->skelAnime.prevTransl = this->skelAnime.jointTable[0];
     this->skelAnime.movementFlags |= ANIM_FLAG_UPDATE_XZ | ANIM_FLAG_UPDATE_Y;
-    AnimTaskQueue_AddActorMovement(play, &this->actor, &this->skelAnime, 1.0f);
+    Skeleton_Proc_Anime_Move_init(play, &this->actor, &this->skelAnime, 1.0f);
 }
 
-void func_8096D64C(DemoEc* this, PlayState* play) {
+void Demo_Ec_Start2_Movement_byAnimation(DemoEc* this, PlayState* play) {
     this->skelAnime.movementFlags |= ANIM_FLAG_UPDATE_XZ | ANIM_FLAG_UPDATE_Y;
-    AnimTaskQueue_AddActorMovement(play, &this->actor, &this->skelAnime, 1.0f);
+    Skeleton_Proc_Anime_Move_init(play, &this->actor, &this->skelAnime, 1.0f);
 }
 
-void DemoEc_UpdateEyes(DemoEc* this) {
+void Demo_Ec_set_eye_pattern(DemoEc* this) {
     s32 pad[3];
     s16* blinkTimer = &this->blinkTimer;
     s16* eyeTexIndex = &this->eyeTexIndex;
 
     if (DECR(*blinkTimer) == 0) {
-        *blinkTimer = Rand_S16Offset(60, 60);
+        *blinkTimer = get_random_timer(60, 60);
     }
 
     *eyeTexIndex = *blinkTimer;
@@ -208,15 +208,15 @@ void DemoEc_UpdateEyes(DemoEc* this) {
     }
 }
 
-void DemoEc_SetEyeTexIndex(DemoEc* this, s16 texIndex) {
+void Demo_Ec_set_eye_Num(DemoEc* this, s16 texIndex) {
     this->eyeTexIndex = texIndex;
 }
 
-void DemoEc_InitSkelAnime(DemoEc* this, PlayState* play, FlexSkeletonHeader* skeletonHeader) {
-    SkelAnime_InitFlex(play, &this->skelAnime, SEGMENTED_TO_VIRTUAL(skeletonHeader), NULL, NULL, NULL, 0);
+void Demo_Ec_Setup_Mdl(DemoEc* this, PlayState* play, FlexSkeletonHeader* skeletonHeader) {
+    Skeleton_Info2_SV_M_ct(play, &this->skelAnime, SEGMENTED_TO_VIRTUAL(skeletonHeader), NULL, NULL, NULL, 0);
 }
 
-void DemoEc_ChangeAnimation(DemoEc* this, AnimationHeader* animation, u8 mode, f32 morphFrames, s32 reverse) {
+void Demo_Ec_Change_Anime(DemoEc* this, AnimationHeader* animation, u8 mode, f32 morphFrames, s32 reverse) {
     f32 frameCount;
     f32 startFrame;
     AnimationHeader* anim;
@@ -224,7 +224,7 @@ void DemoEc_ChangeAnimation(DemoEc* this, AnimationHeader* animation, u8 mode, f
     s16 frameCountS;
 
     anim = SEGMENTED_TO_VIRTUAL(animation);
-    frameCountS = Animation_GetLastFrame(anim);
+    frameCountS = Si2_anime_end_frame(anim);
 
     if (!reverse) {
         startFrame = 0.0f;
@@ -236,10 +236,10 @@ void DemoEc_ChangeAnimation(DemoEc* this, AnimationHeader* animation, u8 mode, f
         playbackSpeed = -1.0f;
     }
 
-    Animation_Change(&this->skelAnime, anim, playbackSpeed, startFrame, frameCount, mode, morphFrames);
+    Skeleton_Info2_init(&this->skelAnime, anim, playbackSpeed, startFrame, frameCount, mode, morphFrames);
 }
 
-Gfx* DemoEc_AllocColorDList(GraphicsContext* gfxCtx, u8* color) {
+Gfx* Demo_Ec_SetDrawColor(GraphicsContext* gfxCtx, u8* color) {
     Gfx* dList;
 
     dList = GRAPH_ALLOC(gfxCtx, sizeof(Gfx) * 2);
@@ -249,7 +249,7 @@ Gfx* DemoEc_AllocColorDList(GraphicsContext* gfxCtx, u8* color) {
     return dList;
 }
 
-void DemoEc_DrawSkeleton(DemoEc* this, PlayState* play, void* eyeTexture, void* arg3, OverrideLimbDraw overrideLimbDraw,
+void Demo_Ec_draw_normal_1(DemoEc* this, PlayState* play, void* eyeTexture, void* arg3, OverrideLimbDraw overrideLimbDraw,
                          PostLimbDraw postLimbDraw) {
     GraphicsContext* gfxCtx = play->state.gfxCtx;
     SkelAnime* skelAnime = &this->skelAnime;
@@ -257,7 +257,7 @@ void DemoEc_DrawSkeleton(DemoEc* this, PlayState* play, void* eyeTexture, void* 
 
     OPEN_DISPS(gfxCtx, "../z_demo_ec.c", 565);
 
-    Gfx_SetupDL_25Opa(gfxCtx);
+    _texture_z_light_fog_prim(gfxCtx);
 
     if (eyeTexture != NULL) {
         gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(eyeTexture));
@@ -269,13 +269,13 @@ void DemoEc_DrawSkeleton(DemoEc* this, PlayState* play, void* eyeTexture, void* 
     }
 
     gDPSetEnvColor(POLY_OPA_DISP++, 0, 0, 0, 255);
-    gSPSegment(POLY_OPA_DISP++, 0x0C, &D_80116280[2]);
-    POLY_OPA_DISP = SkelAnime_DrawFlex(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount,
+    gSPSegment(POLY_OPA_DISP++, 0x0C, &Actor_change_render_mode[2]);
+    POLY_OPA_DISP = Si2_draw2_SV(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount,
                                        overrideLimbDraw, postLimbDraw, &this->actor, POLY_OPA_DISP);
     CLOSE_DISPS(gfxCtx, "../z_demo_ec.c", 595);
 }
 
-void DemoEc_DrawSkeletonCustomColor(DemoEc* this, PlayState* play, Gfx* arg2, Gfx* arg3, u8* color1, u8* color2,
+void Demo_Ec_draw_normal_2(DemoEc* this, PlayState* play, Gfx* arg2, Gfx* arg3, u8* color1, u8* color2,
                                     OverrideLimbDraw overrideLimbDraw, PostLimbDraw postLimbDraw) {
     s32 pad;
     GraphicsContext* gfxCtx = play->state.gfxCtx;
@@ -283,7 +283,7 @@ void DemoEc_DrawSkeletonCustomColor(DemoEc* this, PlayState* play, Gfx* arg2, Gf
 
     OPEN_DISPS(gfxCtx, "../z_demo_ec.c", 609);
 
-    Gfx_SetupDL_25Opa(gfxCtx);
+    _texture_z_light_fog_prim(gfxCtx);
 
     if (arg2 != NULL) {
         gSPSegment(POLY_OPA_DISP++, 0x0A, SEGMENTED_TO_VIRTUAL(arg2));
@@ -294,25 +294,25 @@ void DemoEc_DrawSkeletonCustomColor(DemoEc* this, PlayState* play, Gfx* arg2, Gf
     }
 
     if (color1 != NULL) {
-        //! @bug DemoEc_AllocColorDList is called twice in SEGMENTED_TO_VIRTUAL, allocating two display lists
-        gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(DemoEc_AllocColorDList(gfxCtx, color1)));
+        //! @bug Demo_Ec_SetDrawColor is called twice in SEGMENTED_TO_VIRTUAL, allocating two display lists
+        gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(Demo_Ec_SetDrawColor(gfxCtx, color1)));
     }
 
     if (color2 != NULL) {
-        //! @bug DemoEc_AllocColorDList is called twice in SEGMENTED_TO_VIRTUAL, allocating two display lists
+        //! @bug Demo_Ec_SetDrawColor is called twice in SEGMENTED_TO_VIRTUAL, allocating two display lists
         //! @bug meant to pass color2 instead of color1?
-        gSPSegment(POLY_OPA_DISP++, 0x09, SEGMENTED_TO_VIRTUAL(DemoEc_AllocColorDList(gfxCtx, color1)));
+        gSPSegment(POLY_OPA_DISP++, 0x09, SEGMENTED_TO_VIRTUAL(Demo_Ec_SetDrawColor(gfxCtx, color1)));
     }
 
     gDPSetEnvColor(POLY_OPA_DISP++, 0, 0, 0, 255);
-    gSPSegment(POLY_OPA_DISP++, 0x0C, &D_80116280[2]);
-    POLY_OPA_DISP = SkelAnime_DrawFlex(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount,
+    gSPSegment(POLY_OPA_DISP++, 0x0C, &Actor_change_render_mode[2]);
+    POLY_OPA_DISP = Si2_draw2_SV(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount,
                                        overrideLimbDraw, postLimbDraw, &this->actor, POLY_OPA_DISP);
 
     CLOSE_DISPS(gfxCtx, "../z_demo_ec.c", 646);
 }
 
-void DemoEc_UseDrawObject(DemoEc* this, PlayState* play) {
+void Demo_Ec_Change_ShapeBank(DemoEc* this, PlayState* play) {
     s32 pad[2];
     s32 drawObjectSlot = this->drawObjectSlot;
     GraphicsContext* gfxCtx = play->state.gfxCtx;
@@ -320,19 +320,19 @@ void DemoEc_UseDrawObject(DemoEc* this, PlayState* play) {
     OPEN_DISPS(gfxCtx, "../z_demo_ec.c", 662);
 
     gSPSegment(POLY_OPA_DISP++, 0x06, play->objectCtx.slots[drawObjectSlot].segment);
-    gSegments[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[drawObjectSlot].segment);
+    SegmentBaseAddress[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[drawObjectSlot].segment);
     if (!play) {}
 
     CLOSE_DISPS(gfxCtx, "../z_demo_ec.c", 670);
 }
 
-void DemoEc_UseAnimationObject(DemoEc* this, PlayState* play) {
+void Demo_Ec_Change_AnimeBank(DemoEc* this, PlayState* play) {
     s32 animObjectSlot = this->animObjectSlot;
 
-    gSegments[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[animObjectSlot].segment);
+    SegmentBaseAddress[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[animObjectSlot].segment);
 }
 
-CsCmdActorCue* DemoEc_GetCue(PlayState* play, s32 cueChannel) {
+CsCmdActorCue* Demo_Ec_Get_npcdemopnt(PlayState* play, s32 cueChannel) {
     if (play->csCtx.state != CS_STATE_IDLE) {
         CsCmdActorCue* cue = play->csCtx.actorCues[cueChannel];
 
@@ -342,8 +342,8 @@ CsCmdActorCue* DemoEc_GetCue(PlayState* play, s32 cueChannel) {
     return NULL;
 }
 
-void DemoEc_SetStartPosRotFromCue(DemoEc* this, PlayState* play, s32 cueChannel) {
-    CsCmdActorCue* cue = DemoEc_GetCue(play, cueChannel);
+void Demo_Ec_Set_StartPos_npcdemopnt(DemoEc* this, PlayState* play, s32 cueChannel) {
+    CsCmdActorCue* cue = Demo_Ec_Get_npcdemopnt(play, cueChannel);
 
     if (cue != NULL) {
         this->actor.world.pos.x = cue->startPos.x;
@@ -400,58 +400,58 @@ void DemoEc_SetStartPosRotFromCue(DemoEc* this, PlayState* play, s32 cueChannel)
 
 #include "z_demo_ec_inMa2.inc.c"
 
-static DemoEcInitFunc sInitFuncs[] = {
-    /*  0 */ DemoEc_InitIngo,
-    /*  1 */ DemoEc_InitTalon,
-    /*  2 */ DemoEc_InitWindmillMan,
-    /*  3 */ DemoEc_InitKokiriBoy,
-    /*  4 */ DemoEc_InitKokiriGirl,
-    /*  5 */ DemoEc_InitOldMan,
-    /*  6 */ DemoEc_InitBeardedMan,
-    /*  7 */ DemoEc_InitWoman,
-    /*  8 */ DemoEc_InitOldWoman,
-    /*  9 */ DemoEc_InitBossCarpenter,
-    /* 10 */ DemoEc_InitCarpenter,
-    /* 11 */ DemoEc_InitCarpenter,
-    /* 12 */ DemoEc_InitCarpenter,
-    /* 13 */ DemoEc_InitCarpenter,
-    /* 14 */ DemoEc_InitDancingKokiriBoy,
-    /* 15 */ DemoEc_InitDancingKokiriGirl,
-    /* 16 */ DemoEc_InitGerudo,
-    /* 17 */ DemoEc_InitGerudo,
-    /* 18 */ DemoEc_InitGerudo,
-    /* 19 */ DemoEc_InitDancingZora,
-    /* 20 */ DemoEc_InitKingZora,
-    /* 21 */ DemoEc_InitMido,
-    /* 22 */ DemoEc_InitCucco,
-    /* 23 */ DemoEc_InitCucco,
-    /* 24 */ DemoEc_InitCucco,
-    /* 25 */ DemoEc_InitCuccoLady,
-    /* 26 */ DemoEc_InitPotionShopOwner,
-    /* 27 */ DemoEc_InitMaskShopOwner,
-    /* 28 */ DemoEc_InitFishingOwner,
-    /* 29 */ DemoEc_InitBombchuShopOwner,
-    /* 30 */ DemoEc_InitGorons,
-    /* 31 */ DemoEc_InitGorons,
-    /* 32 */ DemoEc_InitGorons,
-    /* 33 */ DemoEc_InitGorons,
-    /* 34 */ DemoEc_InitMalon,
-};
+void Demo_Ec_main_init(DemoEc* this, PlayState* play) {
+    static DemoEcInitFunc proc[] = {
+        /*  0 */ Demo_Ec_main_init_In,
+        /*  1 */ Demo_Ec_main_init_Ta,
+        /*  2 */ Demo_Ec_main_init_Fu,
+        /*  3 */ Demo_Ec_main_init_Km1,
+        /*  4 */ Demo_Ec_main_init_Kw1,
+        /*  5 */ Demo_Ec_main_init_Bji,
+        /*  6 */ Demo_Ec_main_init_Ahg,
+        /*  7 */ Demo_Ec_main_init_Bob,
+        /*  8 */ Demo_Ec_main_init_Bba,
+        /*  9 */ Demo_Ec_main_init_Dk1,
+        /* 10 */ Demo_Ec_main_init_Dk2,
+        /* 11 */ Demo_Ec_main_init_Dk2,
+        /* 12 */ Demo_Ec_main_init_Dk2,
+        /* 13 */ Demo_Ec_main_init_Dk2,
+        /* 14 */ Demo_Ec_main_init_Km1_dance,
+        /* 15 */ Demo_Ec_main_init_Kw1_dance,
+        /* 16 */ Demo_Ec_main_init_Ge1,
+        /* 17 */ Demo_Ec_main_init_Ge1,
+        /* 18 */ Demo_Ec_main_init_Ge1,
+        /* 19 */ Demo_Ec_main_init_Zo,
+        /* 20 */ Demo_Ec_main_init_Kz,
+        /* 21 */ Demo_Ec_main_init_Md,
+        /* 22 */ Demo_Ec_main_init_Niw,
+        /* 23 */ Demo_Ec_main_init_Niw,
+        /* 24 */ Demo_Ec_main_init_Niw,
+        /* 25 */ Demo_Ec_main_init_Ane,
+        /* 26 */ Demo_Ec_main_init_Ds2,
+        /* 27 */ Demo_Ec_main_init_Os,
+        /* 28 */ Demo_Ec_main_init_Fs,
+        /* 29 */ Demo_Ec_main_init_Rs,
+        /* 30 */ Demo_Ec_main_init_Go,
+        /* 31 */ Demo_Ec_main_init_Go,
+        /* 32 */ Demo_Ec_main_init_Go,
+        /* 33 */ Demo_Ec_main_init_Go,
+        /* 34 */ Demo_Ec_main_init_Ma2,
+    };
 
-void DemoEc_InitNpc(DemoEc* this, PlayState* play) {
     s16 type = this->actor.params;
 
-    if (sInitFuncs[type] == NULL) {
+    if (proc[type] == NULL) {
         // "Demo_Ec_main_init: Initialization process is wrong arg_data"
         PRINTF(VT_FGCOL(RED) " Demo_Ec_main_init:初期化処理がおかしいarg_data = %d!\n" VT_RST, type);
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
         return;
     }
 
-    sInitFuncs[type](this, play);
+    proc[type](this, play);
 }
 
-void DemoEc_InitCommon(DemoEc* this, PlayState* play) {
+void Demo_Ec_main_bank(DemoEc* this, PlayState* play) {
     s32 pad;
     s16 primary;
     s32 type;
@@ -461,105 +461,105 @@ void DemoEc_InitCommon(DemoEc* this, PlayState* play) {
     s32 secondaryObjectSlot;
 
     type = this->actor.params;
-    primary = sDrawObjects[type];
-    sp28 = sAnimationObjects[type];
-    primaryObjectSlot = Object_GetSlot(&play->objectCtx, primary);
-    secondaryObjectSlot = Object_GetSlot(&play->objectCtx, sp28);
+    primary = Demo_Ec_Shape_Bank[type];
+    sp28 = Demo_Ec_Anime_Bank[type];
+    primaryObjectSlot = Object_Exchange_bank_check(&play->objectCtx, primary);
+    secondaryObjectSlot = Object_Exchange_bank_check(&play->objectCtx, sp28);
 
     if ((secondaryObjectSlot < 0) || (primaryObjectSlot < 0)) {
         // "Demo_Ec_main_bank: Bank unreadable arg_data = %d!"
         PRINTF(VT_FGCOL(RED) "Demo_Ec_main_bank:バンクを読めない arg_data = %d!\n" VT_RST, type);
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
         return;
     }
 
-    if (Object_IsLoaded(&play->objectCtx, primaryObjectSlot) &&
-        Object_IsLoaded(&play->objectCtx, secondaryObjectSlot)) {
+    if (Object_Exchange_bank_dma_check(&play->objectCtx, primaryObjectSlot) &&
+        Object_Exchange_bank_dma_check(&play->objectCtx, secondaryObjectSlot)) {
 
         this->drawObjectSlot = primaryObjectSlot;
         this->animObjectSlot = secondaryObjectSlot;
 
-        DemoEc_InitNpc(this, play);
+        Demo_Ec_main_init(this, play);
     }
 }
 
-static DemoEcUpdateFunc sUpdateFuncs[] = {
-    DemoEc_InitCommon,
-    DemoEc_UpdateIngo,
-    DemoEc_UpdateTalon,
-    DemoEc_UpdateWindmillMan,
-    DemoEc_UpdateKokiriBoy,
-    DemoEc_UpdateKokiriGirl,
-    DemoEc_UpdateOldMan,
-    DemoEc_UpdateBeardedMan,
-    DemoEc_UpdateWoman,
-    DemoEc_UpdateOldWoman,
-    DemoEc_UpdateBossCarpenter,
-    DemoEc_UpdateCarpenter,
-    DemoEc_UpdateDancingKokiriBoy,
-    DemoEc_UpdateDancingKokiriGirl,
-    DemoEc_UpdateGerudo,
-    DemoEc_UpdateDancingZora,
-    DemoEc_UpdateKingZora,
-    func_8096F378,
-    func_8096F3D4,
-    DemoEc_UpdateMido,
-    func_8096F640,
-    DemoEc_UpdateCucco,
-    DemoEc_UpdateCuccoLady,
-    DemoEc_UpdatePotionShopOwner,
-    DemoEc_UpdateMaskShopOwner,
-    DemoEc_UpdateFishingOwner,
-    DempEc_UpdateBombchuShopOwner,
-    DemoEc_UpdateGorons,
-    DemoEc_UpdateMalon,
-};
+void Demo_Ec_main(Actor* thisx, PlayState* play) {
+    static DemoEcUpdateFunc proc[] = {
+        Demo_Ec_main_bank,
+        Demo_Ec_main_In_Wait,
+        Demo_Ec_main_Ta_Wait,
+        Demo_Ec_main_Fu_Wait,
+        Demo_Ec_main_Km1_Wait,
+        Demo_Ec_main_Kw1_Wait,
+        Demo_Ec_main_Bji_Wait,
+        Demo_Ec_main_Ahg_Wait,
+        Demo_Ec_main_Bob_Wait,
+        Demo_Ec_main_Bba_Wait,
+        Demo_Ec_main_Dk1_Wait,
+        Demo_Ec_main_Dk2_Wait,
+        Demo_Ec_main_Km1_Dance,
+        Demo_Ec_main_Kw1_Dance,
+        Demo_Ec_main_Ge1_Wait,
+        Demo_Ec_main_Zo_Wait,
+        Demo_Ec_main_Kz_Wait,
+        Demo_Ec_main_Kz_Standup,
+        Demo_Ec_main_Kz_Stand,
+        Demo_Ec_main_Md_Wait,
+        Demo_Ec_main_Md_Stand,
+        Demo_Ec_main_Niw_Wait,
+        Demo_Ec_main_Ane_Wait,
+        Demo_Ec_main_Ds2_Wait,
+        Demo_Ec_main_Os_Wait,
+        Demo_Ec_main_Fs_Wait,
+        Demo_Ec_main_Rs_Wait,
+        Demo_Ec_main_Go_Wait,
+        Demo_Ec_main_Ma2_Wait,
+    };
 
-void DemoEc_Update(Actor* thisx, PlayState* play) {
     DemoEc* this = (DemoEc*)thisx;
     s32 updateMode = this->updateMode;
 
-    if ((updateMode < 0) || (updateMode >= ARRAY_COUNT(sUpdateFuncs)) || sUpdateFuncs[updateMode] == NULL) {
+    if ((updateMode < 0) || (updateMode >= ARRAY_COUNT(proc)) || proc[updateMode] == NULL) {
         // "The main mode is strange !!!!!!!!!!!!!!!!!!!!!!!!!"
         PRINTF(VT_FGCOL(RED) "メインモードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
     } else {
         if (updateMode != EC_UPDATE_COMMON) {
-            DemoEc_UseAnimationObject(this, play);
+            Demo_Ec_Change_AnimeBank(this, play);
         }
-        sUpdateFuncs[updateMode](this, play);
+        proc[updateMode](this, play);
     }
 }
 
-void DemoEc_DrawCommon(DemoEc* this, PlayState* play) {
+void Demo_Ec_draw_none(DemoEc* this, PlayState* play) {
 }
 
-static DemoEcDrawFunc sDrawFuncs[] = {
-    DemoEc_DrawCommon,          DemoEc_DrawIngo,
-    DemoEc_DrawTalon,           DemoEc_DrawWindmillMan,
-    DemoEc_DrawKokiriBoy,       DemoEc_DrawKokiriGirl,
-    DemoEc_DrawOldMan,          DemoEc_DrawBeardedMan,
-    DemoEc_DrawWoman,           DemoEc_DrawOldWoman,
-    DemoEc_DrawBossCarpenter,   DemoEc_DrawCarpenter,
-    DemoEc_DrawGerudo,          DemoEc_DrawDancingZora,
-    DemoEc_DrawKingZora,        DemoEc_DrawMido,
-    DemoEc_DrawCucco,           DemoEc_DrawCuccoLady,
-    DemoEc_DrawPotionShopOwner, DemoEc_DrawMaskShopOwner,
-    DemoEc_DrawFishingOwner,    DemoEc_DrawBombchuShopOwner,
-    DemoEc_DrawGorons,          DemoEc_DrawMalon,
+static DemoEcDrawFunc proc[] = {
+    Demo_Ec_draw_none,          Demo_Ec_draw_normal_In,
+    Demo_Ec_draw_normal_Ta,           Demo_Ec_draw_normal_Fu,
+    Demo_Ec_draw_normal_Km1,       Demo_Ec_draw_normal_Kw1,
+    Demo_Ec_draw_normal_Bji,          Demo_Ec_draw_normal_Ahg,
+    Demo_Ec_draw_normal_Bob,           Demo_Ec_draw_normal_Bba,
+    Demo_Ec_draw_normal_Dk1,   Demo_Ec_draw_normal_Dk2,
+    Demo_Ec_draw_normal_Ge1,          Demo_Ec_draw_normal_Zo,
+    Demo_Ec_draw_normal_Kz,        Demo_Ec_draw_normal_Md,
+    Demo_Ec_draw_normal_Niw,           Demo_Ec_draw_normal_Ane,
+    Demo_Ec_draw_normal_Ds2, Demo_Ec_draw_normal_Os,
+    Demo_Ec_draw_normal_Fs,    Demo_Ec_draw_normal_Rs,
+    Demo_Ec_draw_normal_Go,          Demo_Ec_draw_normal_Ma2,
 };
 
-void DemoEc_Draw(Actor* thisx, PlayState* play) {
+void Demo_Ec_draw(Actor* thisx, PlayState* play) {
     DemoEc* this = (DemoEc*)thisx;
     s32 drawConfig = this->drawConfig;
 
-    if ((drawConfig < 0) || (drawConfig >= ARRAY_COUNT(sDrawFuncs)) || sDrawFuncs[drawConfig] == NULL) {
+    if ((drawConfig < 0) || (drawConfig >= ARRAY_COUNT(proc)) || proc[drawConfig] == NULL) {
         // "The main mode is strange !!!!!!!!!!!!!!!!!!!!!!!!!"
         PRINTF(VT_FGCOL(RED) "描画モードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
     } else {
         if (drawConfig != EC_DRAW_COMMON) {
-            DemoEc_UseDrawObject(this, play);
+            Demo_Ec_Change_ShapeBank(this, play);
         }
-        sDrawFuncs[drawConfig](this, play);
+        proc[drawConfig](this, play);
     }
 }
 
@@ -569,8 +569,8 @@ ActorProfile Demo_Ec_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_EC,
     /**/ sizeof(DemoEc),
-    /**/ DemoEc_Init,
-    /**/ DemoEc_Destroy,
-    /**/ DemoEc_Update,
-    /**/ DemoEc_Draw,
+    /**/ Demo_Ec_Actor_ct,
+    /**/ Demo_Ec_Actor_dt,
+    /**/ Demo_Ec_main,
+    /**/ Demo_Ec_draw,
 };

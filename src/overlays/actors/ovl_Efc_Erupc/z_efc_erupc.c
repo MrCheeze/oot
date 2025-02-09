@@ -3,16 +3,16 @@
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED)
 
-void EfcErupc_Init(Actor* thisx, PlayState* play);
-void EfcErupc_Destroy(Actor* thisx, PlayState* play);
-void EfcErupc_Update(Actor* thisx, PlayState* play);
-void EfcErupc_Draw(Actor* thisx, PlayState* play);
+void Efc_Erupc_Actor_ct(Actor* thisx, PlayState* play);
+void Efc_Erupc_Actor_dt(Actor* thisx, PlayState* play);
+void Efc_Erupc_Actor_move(Actor* thisx, PlayState* play);
+void Efc_Erupc_Actor_draw(Actor* thisx, PlayState* play);
 
-void EfcErupc_UpdateAction(EfcErupc* this, PlayState* play);
-void EfcErupc_DrawEffects(EfcErupcEffect* effect, PlayState* play);
-void EfcErupc_UpdateEffects(EfcErupc* this, PlayState* play);
-void EfcErupc_SpawnEffect(EfcErupcEffect* effect, Vec3f* pos, Vec3f* vel, Vec3f* accel, f32 scaleFactor);
-void EfcErupc_InitEffects(EfcErupcEffect* effect);
+static void move_wait(EfcErupc* this, PlayState* play);
+static void Boss_Eff_disp(EfcErupcEffect* effect, PlayState* play);
+static void Boss_Eff_move(EfcErupc* this, PlayState* play);
+void Effect_hinoko_ct_IN(EfcErupcEffect* effect, Vec3f* pos, Vec3f* vel, Vec3f* accel, f32 scaleFactor);
+void Effect_hinoko_init(EfcErupcEffect* effect);
 
 ActorProfile Efc_Erupc_Profile = {
     /**/ ACTOR_EFC_ERUPC,
@@ -20,31 +20,31 @@ ActorProfile Efc_Erupc_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_EFC_ERUPC,
     /**/ sizeof(EfcErupc),
-    /**/ EfcErupc_Init,
-    /**/ EfcErupc_Destroy,
-    /**/ EfcErupc_Update,
-    /**/ EfcErupc_Draw,
+    /**/ Efc_Erupc_Actor_ct,
+    /**/ Efc_Erupc_Actor_dt,
+    /**/ Efc_Erupc_Actor_move,
+    /**/ Efc_Erupc_Actor_draw,
 };
 
-void EfcErupc_SetupAction(EfcErupc* this, EfcErupcActionFunc actionFunc) {
+void Efc_Erupc_actor_set_process(EfcErupc* this, EfcErupcActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
 
-void EfcErupc_Init(Actor* thisx, PlayState* play) {
+void Efc_Erupc_Actor_ct(Actor* thisx, PlayState* play) {
     EfcErupc* this = (EfcErupc*)thisx;
 
-    EfcErupc_SetupAction(this, EfcErupc_UpdateAction);
-    Actor_SetScale(&this->actor, 1.0f);
-    EfcErupc_InitEffects(this->effects);
+    Efc_Erupc_actor_set_process(this, move_wait);
+    Actor_set_scale(&this->actor, 1.0f);
+    Effect_hinoko_init(this->effects);
     this->unk_14C = this->unk_14E = this->unk_150 = 0;
     this->unk_152 = 5;
     this->unk_154 = -100;
 }
 
-void EfcErupc_Destroy(Actor* thisx, PlayState* play) {
+void Efc_Erupc_Actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void EfcErupc_UpdateAction(EfcErupc* this, PlayState* play) {
+static void move_wait(EfcErupc* this, PlayState* play) {
     Vec3f pos;
     Vec3f vel;
     Vec3f accel;
@@ -54,7 +54,7 @@ void EfcErupc_UpdateAction(EfcErupc* this, PlayState* play) {
         if (play->csCtx.actorCues[1] != NULL) {
             if (play->csCtx.actorCues[1]->id == 2) {
                 if (this->unk_150 == 30) {
-                    Sfx_PlaySfxCentered2(NA_SE_IT_EARTHQUAKE);
+                    Na_StartFixSe_F(NA_SE_IT_EARTHQUAKE);
                 }
                 if (this->unk_150 <= 64) {
                     if (this->unk_154 < 200) {
@@ -78,7 +78,7 @@ void EfcErupc_UpdateAction(EfcErupc* this, PlayState* play) {
             switch (play->csCtx.actorCues[2]->id) {
                 case 2:
                     if (this->unk_14E == 0) {
-                        Audio_PlayCutsceneEffectsSequence(SEQ_CS_EFFECTS_LAVA_ERUPT);
+                        Na_StartDemoSe(SEQ_CS_EFFECTS_LAVA_ERUPT);
                         SET_EVENTCHKINF(EVENTCHKINF_2F);
                     }
                     this->unk_14E++;
@@ -93,45 +93,45 @@ void EfcErupc_UpdateAction(EfcErupc* this, PlayState* play) {
     accel.x = 0.0f;
     pos.y = this->actor.world.pos.y + 300.0f;
     for (i = 0; i < this->unk_152; i++) {
-        pos.x = Rand_CenteredFloat(100.0f) + this->actor.world.pos.x;
-        pos.z = Rand_CenteredFloat(100.0f) + this->actor.world.pos.z;
-        vel.x = Rand_CenteredFloat(100.0f);
-        vel.y = Rand_ZeroFloat(100.0f);
-        vel.z = Rand_CenteredFloat(100.0f);
+        pos.x = rnd_fx(100.0f) + this->actor.world.pos.x;
+        pos.z = rnd_fx(100.0f) + this->actor.world.pos.z;
+        vel.x = rnd_fx(100.0f);
+        vel.y = rnd_f(100.0f);
+        vel.z = rnd_fx(100.0f);
         accel.y = this->unk_154 * 0.1f;
-        EfcErupc_SpawnEffect(this->effects, &pos, &vel, &accel, 80.0f);
+        Effect_hinoko_ct_IN(this->effects, &pos, &vel, &accel, 80.0f);
     }
 }
 
-void EfcErupc_Update(Actor* thisx, PlayState* play) {
+void Efc_Erupc_Actor_move(Actor* thisx, PlayState* play) {
     EfcErupc* this = (EfcErupc*)thisx;
 
     this->actionFunc(this, play);
-    EfcErupc_UpdateEffects(this, play);
+    Boss_Eff_move(this, play);
 }
 
-void EfcErupc_Draw(Actor* thisx, PlayState* play) {
+void Efc_Erupc_Actor_draw(Actor* thisx, PlayState* play) {
     EfcErupc* this = (EfcErupc*)thisx;
     u16 cueId;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_efc_erupc.c", 282);
 
-    Gfx_SetupDL_25Xlu(play->state.gfxCtx);
+    _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
 
     gSPSegment(POLY_XLU_DISP++, 0x08,
-               Gfx_TwoTexScroll(play->state.gfxCtx, G_TX_RENDERTILE, this->unk_14C * 1, this->unk_14E * -4, 32, 64, 1,
+               two_tex_scroll(play->state.gfxCtx, G_TX_RENDERTILE, this->unk_14C * 1, this->unk_14E * -4, 32, 64, 1,
                                 this->unk_14C * 4, this->unk_14E * -20, 64, 64));
 
     gSPSegment(POLY_XLU_DISP++, 0x09,
-               Gfx_TwoTexScroll(play->state.gfxCtx, G_TX_RENDERTILE, 0, this->unk_150 * -4, 16, 128, 1, 0,
+               two_tex_scroll(play->state.gfxCtx, G_TX_RENDERTILE, 0, this->unk_150 * -4, 16, 128, 1, 0,
                                 this->unk_150 * 12, 32, 32));
 
     gSPSegment(POLY_XLU_DISP++, 0x0A,
-               Gfx_TwoTexScroll(play->state.gfxCtx, G_TX_RENDERTILE, 0, this->unk_150 * -4, 16, 128, 1, 0,
+               two_tex_scroll(play->state.gfxCtx, G_TX_RENDERTILE, 0, this->unk_150 * -4, 16, 128, 1, 0,
                                 this->unk_150 * 12, 32, 32));
 
-    Matrix_Push();
-    Matrix_Scale(0.8f, 0.8f, 0.8f, MTXMODE_APPLY);
+    Matrix_push();
+    Matrix_scale(0.8f, 0.8f, 0.8f, MTXMODE_APPLY);
     MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx, "../z_efc_erupc.c", 321);
 
     if (play->csCtx.state != CS_STATE_IDLE) {
@@ -139,8 +139,8 @@ void EfcErupc_Draw(Actor* thisx, PlayState* play) {
             gSPDisplayList(POLY_XLU_DISP++, object_efc_erupc_DL_002570);
         }
     }
-    Matrix_Pop();
-    Matrix_Scale(3.4f, 3.4f, 3.4f, MTXMODE_APPLY);
+    Matrix_pull();
+    Matrix_scale(3.4f, 3.4f, 3.4f, MTXMODE_APPLY);
     MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx, "../z_efc_erupc.c", 333);
     if (play->csCtx.state != CS_STATE_IDLE) {
         CsCmdActorCue* cue = play->csCtx.actorCues[2];
@@ -156,10 +156,10 @@ void EfcErupc_Draw(Actor* thisx, PlayState* play) {
         }
     }
     CLOSE_DISPS(play->state.gfxCtx, "../z_efc_erupc.c", 356);
-    EfcErupc_DrawEffects(this->effects, play);
+    Boss_Eff_disp(this->effects, play);
 }
 
-void EfcErupc_DrawEffects(EfcErupcEffect* effect, PlayState* play) {
+static void Boss_Eff_disp(EfcErupcEffect* effect, PlayState* play) {
     GraphicsContext* gfxCtx = play->state.gfxCtx;
     s16 i;
     s32 pad;
@@ -167,14 +167,14 @@ void EfcErupc_DrawEffects(EfcErupcEffect* effect, PlayState* play) {
     OPEN_DISPS(gfxCtx, "../z_efc_erupc.c", 368);
     for (i = 0; i < EFC_ERUPC_EFFECT_COUNT; i++, effect++) {
         if (effect->isActive) {
-            Gfx_SetupDL_25Xlu(play->state.gfxCtx);
+            _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
             gSPDisplayList(POLY_XLU_DISP++, object_efc_erupc_DL_002760);
             gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, effect->color.r, effect->color.g, effect->color.b, effect->alpha);
             gDPSetEnvColor(POLY_XLU_DISP++, 150, 0, 0, 0);
             gDPPipeSync(POLY_XLU_DISP++);
-            Matrix_Translate(effect->pos.x, effect->pos.y, effect->pos.z, MTXMODE_NEW);
-            Matrix_ReplaceRotation(&play->billboardMtxF);
-            Matrix_Scale(effect->scale, effect->scale, 1.0f, MTXMODE_APPLY);
+            Matrix_translate(effect->pos.x, effect->pos.y, effect->pos.z, MTXMODE_NEW);
+            Matrix_rotate_scale_exchange(&play->billboardMtxF);
+            Matrix_scale(effect->scale, effect->scale, 1.0f, MTXMODE_APPLY);
             MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, gfxCtx, "../z_efc_erupc.c", 393);
             gSPDisplayList(POLY_XLU_DISP++, object_efc_erupc_DL_0027D8);
         }
@@ -182,14 +182,14 @@ void EfcErupc_DrawEffects(EfcErupcEffect* effect, PlayState* play) {
     CLOSE_DISPS(gfxCtx, "../z_efc_erupc.c", 399);
 }
 
-static Color_RGB8 D_8099D770[] = {
+static Color_RGB8 col_d[] = {
     { 255, 128, 0 },
     { 255, 0, 0 },
     { 255, 255, 0 },
     { 255, 0, 0 },
 };
 
-void EfcErupc_UpdateEffects(EfcErupc* this, PlayState* play) {
+static void Boss_Eff_move(EfcErupc* this, PlayState* play) {
     s16 i;
     s16 index;
     Color_RGB8 effectColors[] = {
@@ -224,7 +224,7 @@ void EfcErupc_UpdateEffects(EfcErupc* this, PlayState* play) {
     }
 }
 
-void EfcErupc_SpawnEffect(EfcErupcEffect* effect, Vec3f* pos, Vec3f* vel, Vec3f* accel, f32 scaleFactor) {
+void Effect_hinoko_ct_IN(EfcErupcEffect* effect, Vec3f* pos, Vec3f* vel, Vec3f* accel, f32 scaleFactor) {
     s16 i;
 
     for (i = 0; i < EFC_ERUPC_EFFECT_COUNT; i++, effect++) {
@@ -235,13 +235,13 @@ void EfcErupc_SpawnEffect(EfcErupcEffect* effect, Vec3f* pos, Vec3f* vel, Vec3f*
             effect->accel = *accel;
             effect->scale = scaleFactor / 1000.0f;
             effect->alpha = 255;
-            effect->animTimer = (s16)Rand_ZeroFloat(10.0f);
+            effect->animTimer = (s16)rnd_f(10.0f);
             return;
         }
     }
 }
 
-void EfcErupc_InitEffects(EfcErupcEffect* effect) {
+void Effect_hinoko_init(EfcErupcEffect* effect) {
     s16 i;
 
     for (i = 0; i < EFC_ERUPC_EFFECT_COUNT; i++, effect++) {

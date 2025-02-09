@@ -1,5 +1,5 @@
 #include "versions.h"
 
-const char gBuildCreator[] = BUILD_CREATOR;
-const char gBuildDate[] = BUILD_DATE " " BUILD_TIME;
-const char gBuildMakeOption[] = "";
+const char __Creator__[] = BUILD_CREATOR;
+const char __DateTime__[] = BUILD_DATE " " BUILD_TIME;
+const char __MakeOption__[] = "";

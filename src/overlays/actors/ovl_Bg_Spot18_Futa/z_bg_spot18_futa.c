@@ -9,10 +9,10 @@
 
 #define FLAGS 0
 
-void BgSpot18Futa_Init(Actor* thisx, PlayState* play);
-void BgSpot18Futa_Destroy(Actor* thisx, PlayState* play);
-void BgSpot18Futa_Update(Actor* thisx, PlayState* play);
-void BgSpot18Futa_Draw(Actor* thisx, PlayState* play);
+void Bg_Spot18_Futa_actor_ct(Actor* thisx, PlayState* play);
+void Bg_Spot18_Futa_actor_dt(Actor* thisx, PlayState* play);
+void Bg_Spot18_Futa_actor_move(Actor* thisx, PlayState* play);
+void Bg_Spot18_Futa_actor_draw(Actor* thisx, PlayState* play);
 
 ActorProfile Bg_Spot18_Futa_Profile = {
     /**/ ACTOR_BG_SPOT18_FUTA,
@@ -20,45 +20,45 @@ ActorProfile Bg_Spot18_Futa_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_SPOT18_OBJ,
     /**/ sizeof(BgSpot18Futa),
-    /**/ BgSpot18Futa_Init,
-    /**/ BgSpot18Futa_Destroy,
-    /**/ BgSpot18Futa_Update,
-    /**/ BgSpot18Futa_Draw,
+    /**/ Bg_Spot18_Futa_actor_ct,
+    /**/ Bg_Spot18_Futa_actor_dt,
+    /**/ Bg_Spot18_Futa_actor_move,
+    /**/ Bg_Spot18_Futa_actor_draw,
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDistance, 1000, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeScale, 500, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDownward, 1000, ICHAIN_STOP),
 };
 
-void BgSpot18Futa_Init(Actor* thisx, PlayState* play) {
+void Bg_Spot18_Futa_actor_ct(Actor* thisx, PlayState* play) {
     BgSpot18Futa* this = (BgSpot18Futa*)thisx;
     s32 pad;
     CollisionHeader* colHeader = NULL;
 
-    DynaPolyActor_Init(&this->dyna, 0);
-    CollisionHeader_GetVirtual(&gGoronCityVaseLidCol, &colHeader);
-    this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
-    Actor_ProcessInitChain(&this->dyna.actor, sInitChain);
+    MoveBG_ct(&this->dyna, 0);
+    DynaPolyUty_bgdi_SG2KSG(&gGoronCityVaseLidCol, &colHeader);
+    this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
+    ValueSet_process(&this->dyna.actor, value_init);
 }
 
-void BgSpot18Futa_Destroy(Actor* thisx, PlayState* play) {
+void Bg_Spot18_Futa_actor_dt(Actor* thisx, PlayState* play) {
     BgSpot18Futa* this = (BgSpot18Futa*)thisx;
 
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
 }
 
-void BgSpot18Futa_Update(Actor* thisx, PlayState* play) {
+void Bg_Spot18_Futa_actor_move(Actor* thisx, PlayState* play) {
     BgSpot18Futa* this = (BgSpot18Futa*)thisx;
     s32 iVar1;
 
     if (this->dyna.actor.parent == NULL) {
-        iVar1 = Math_StepToF(&this->dyna.actor.scale.x, 0, 0.005);
+        iVar1 = chase_f(&this->dyna.actor.scale.x, 0, 0.005);
 
         if (iVar1 != 0) {
-            Actor_Kill(&this->dyna.actor);
+            Actor_delete(&this->dyna.actor);
         } else {
             this->dyna.actor.scale.z = this->dyna.actor.scale.x;
             this->dyna.actor.scale.y = this->dyna.actor.scale.x;
@@ -66,6 +66,6 @@ void BgSpot18Futa_Update(Actor* thisx, PlayState* play) {
     }
 }
 
-void BgSpot18Futa_Draw(Actor* thisx, PlayState* play) {
-    Gfx_DrawDListOpa(play, gGoronCityVaseLidDL);
+void Bg_Spot18_Futa_actor_draw(Actor* thisx, PlayState* play) {
+    Cheap_gfx_display(play, gGoronCityVaseLidDL);
 }

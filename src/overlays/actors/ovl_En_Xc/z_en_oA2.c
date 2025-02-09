@@ -19,19 +19,19 @@
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void EnXc_Init(Actor* thisx, PlayState* play);
-void EnXc_Destroy(Actor* thisx, PlayState* play);
-void EnXc_Update(Actor* thisx, PlayState* play);
-void EnXc_Draw(Actor* thisx, PlayState* play);
+void En_Oa2_Actor_ct(Actor* thisx, PlayState* play);
+void En_Oa2_Actor_dt(Actor* thisx, PlayState* play);
+void En_Oa2_Actor_main(Actor* thisx, PlayState* play);
+void En_Oa2_Actor_draw(Actor* thisx, PlayState* play);
 
-void EnXc_DrawNothing(Actor* thisx, PlayState* play);
-void EnXc_DrawDefault(Actor* thisx, PlayState* play);
-void EnXc_DrawPullingOutHarp(Actor* thisx, PlayState* play);
-void EnXc_DrawHarp(Actor* thisx, PlayState* play);
-void EnXc_DrawTriforce(Actor* thisx, PlayState* play);
-void EnXc_DrawSquintingEyes(Actor* thisx, PlayState* play);
+void En_Oa2_Actor_draw_none(Actor* thisx, PlayState* play);
+void En_Oa2_Actor_draw_normal(Actor* thisx, PlayState* play);
+void En_Oa2_Actor_draw_take(Actor* thisx, PlayState* play);
+void En_Oa2_Actor_draw_harp(Actor* thisx, PlayState* play);
+void En_Oa2_Actor_draw_tryforce(Actor* thisx, PlayState* play);
+void En_Oa2_draw_glare(Actor* thisx, PlayState* play);
 
-static ColliderCylinderInitType1 sCylinderInit = {
+static ColliderCylinderInitType1 En_Oa2_OcInfoData_forStand = {
     {
         COL_MATERIAL_HIT0,
         AT_NONE,
@@ -50,77 +50,77 @@ static ColliderCylinderInitType1 sCylinderInit = {
     { 25, 80, 0, { 0, 0, 0 } },
 };
 
-static void* sEyeTextures[] = {
+static void* en_oa2_eye[] = {
     gSheikEyeOpenTex,
     gSheikEyeHalfClosedTex,
     gSheikEyeShutTex,
 };
 
-void EnXc_InitCollider(Actor* thisx, PlayState* play) {
+void En_Oa2_ct_forCorect(Actor* thisx, PlayState* play) {
     EnXc* this = (EnXc*)thisx;
 
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinderType1(play, &this->collider, &this->actor, &sCylinderInit);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set3(play, &this->collider, &this->actor, &En_Oa2_OcInfoData_forStand);
 }
 
-void EnXc_UpdateCollider(Actor* thisx, PlayState* play) {
+void En_Oa2_Excute_Corect(Actor* thisx, PlayState* play) {
     EnXc* this = (EnXc*)thisx;
     Collider* colliderBase = &this->collider.base;
     s32 pad[3];
 
-    Collider_UpdateCylinder(thisx, &this->collider);
-    CollisionCheck_SetOC(play, &play->colChkCtx, colliderBase);
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(thisx, &this->collider);
+    CollisionCheck_setOC(play, &play->colChkCtx, colliderBase);
 }
 
-void EnXc_Destroy(Actor* thisx, PlayState* play) {
+void En_Oa2_Actor_dt(Actor* thisx, PlayState* play) {
     EnXc* this = (EnXc*)thisx;
 
-    Collider_DestroyCylinder(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider);
 }
 
-void EnXc_CalculateHeadTurn(EnXc* this, PlayState* play) {
+void En_Oa2_Calc_turn_link(EnXc* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     this->interactInfo.trackPos = player->actor.world.pos;
     this->interactInfo.yOffset = kREG(16) - 3.0f;
-    Npc_TrackPoint(&this->actor, &this->interactInfo, kREG(17) + 0xC, NPC_TRACKING_HEAD_AND_TORSO);
+    eye_moveM(&this->actor, &this->interactInfo, kREG(17) + 0xC, NPC_TRACKING_HEAD_AND_TORSO);
 }
 
-void EnXc_SetEyePattern(EnXc* this) {
+void En_Oa2_set_eye_pattern(EnXc* this) {
     s32 pad[3];
     s16* blinkTimer = &this->blinkTimer;
     s16* eyePattern = &this->eyeIdx;
 
     if (DECR(*blinkTimer) == 0) {
-        *blinkTimer = Rand_S16Offset(60, 60);
+        *blinkTimer = get_random_timer(60, 60);
     }
 
     *eyePattern = *blinkTimer;
-    if (*eyePattern >= ARRAY_COUNT(sEyeTextures)) {
+    if (*eyePattern >= ARRAY_COUNT(en_oa2_eye)) {
         *eyePattern = 0;
     }
 }
 
-void EnXc_SpawnNut(EnXc* this, PlayState* play) {
+void Birth_Door_Deku_In_En_Oa2(EnXc* this, PlayState* play) {
     s32 pad;
     Vec3f* pos = &this->actor.world.pos;
     s16 angle = this->actor.shape.rot.y;
-    f32 x = (Math_SinS(angle) * 30.0f) + pos->x;
+    f32 x = (sin_s(angle) * 30.0f) + pos->x;
     f32 y = pos->y + 3.0f;
-    f32 z = (Math_CosS(angle) * 30.0f) + pos->z;
+    f32 z = (cos_s(angle) * 30.0f) + pos->z;
 
-    Actor_Spawn(&play->actorCtx, play, ACTOR_EN_ARROW, x, y, z, 0xFA0, this->actor.shape.rot.y, 0, ARROW_CS_NUT);
+    Actor_info_make_actor(&play->actorCtx, play, ACTOR_EN_ARROW, x, y, z, 0xFA0, this->actor.shape.rot.y, 0, ARROW_CS_NUT);
 }
 
-void EnXc_BgCheck(EnXc* this, PlayState* play) {
-    Actor_UpdateBgCheckInfo(play, &this->actor, 75.0f, 30.0f, 30.0f, UPDBGCHECKINFO_FLAG_2);
+void En_Oa2_BGcheck(EnXc* this, PlayState* play) {
+    Actor_BGcheck2(play, &this->actor, 75.0f, 30.0f, 30.0f, UPDBGCHECKINFO_FLAG_2);
 }
 
-s32 EnXc_AnimIsFinished(EnXc* this) {
-    return SkelAnime_Update(&this->skelAnime);
+s32 En_Oa2_Animation_Basic(EnXc* this) {
+    return Skeleton_Info2_anime_play(&this->skelAnime);
 }
 
-CsCmdActorCue* EnXc_GetCue(PlayState* play, s32 cueChannel) {
+CsCmdActorCue* En_Oa2_Get_npcdemopnt(PlayState* play, s32 cueChannel) {
     CsCmdActorCue* cue = NULL;
 
     if (play->csCtx.state != CS_STATE_IDLE) {
@@ -129,8 +129,8 @@ CsCmdActorCue* EnXc_GetCue(PlayState* play, s32 cueChannel) {
     return cue;
 }
 
-s32 EnXc_CheckForCue(EnXc* this, PlayState* play, u16 cueId, s32 cueChannel) {
-    CsCmdActorCue* cue = EnXc_GetCue(play, cueChannel);
+s32 En_Oa2_Check_npcdemopnt(EnXc* this, PlayState* play, u16 cueId, s32 cueChannel) {
+    CsCmdActorCue* cue = En_Oa2_Get_npcdemopnt(play, cueChannel);
 
     if (cue != NULL && cue->id == cueId) {
         return true;
@@ -139,8 +139,8 @@ s32 EnXc_CheckForCue(EnXc* this, PlayState* play, u16 cueId, s32 cueChannel) {
     return false;
 }
 
-s32 EnXc_CheckForNoCue(EnXc* this, PlayState* play, u16 cueId, s32 cueChannel) {
-    CsCmdActorCue* cue = EnXc_GetCue(play, cueChannel);
+s32 En_Oa2_Check2_npcdemopnt(EnXc* this, PlayState* play, u16 cueId, s32 cueChannel) {
+    CsCmdActorCue* cue = En_Oa2_Get_npcdemopnt(play, cueChannel);
 
     if (cue && cue->id != cueId) {
         return true;
@@ -149,8 +149,8 @@ s32 EnXc_CheckForNoCue(EnXc* this, PlayState* play, u16 cueId, s32 cueChannel) {
     return false;
 }
 
-void func_80B3C588(EnXc* this, PlayState* play, u32 cueChannel) {
-    CsCmdActorCue* cue = EnXc_GetCue(play, cueChannel);
+void En_Oa2_Set_DemoStartPosAngle(EnXc* this, PlayState* play, u32 cueChannel) {
+    CsCmdActorCue* cue = En_Oa2_Get_npcdemopnt(play, cueChannel);
     Actor* thisx = &this->actor;
 
     if (cue != NULL) {
@@ -164,8 +164,8 @@ void func_80B3C588(EnXc* this, PlayState* play, u32 cueChannel) {
     }
 }
 
-void func_80B3C620(EnXc* this, PlayState* play, s32 cueChannel) {
-    CsCmdActorCue* cue = EnXc_GetCue(play, cueChannel);
+void En_Oa2_Movement_fromData(EnXc* this, PlayState* play, s32 cueChannel) {
+    CsCmdActorCue* cue = En_Oa2_Get_npcdemopnt(play, cueChannel);
     Vec3f* worldPos = &this->actor.world.pos;
     f32 startX;
     f32 startY;
@@ -176,7 +176,7 @@ void func_80B3C620(EnXc* this, PlayState* play, s32 cueChannel) {
     f32 lerp;
 
     if (cue != NULL) {
-        lerp = Environment_LerpWeightAccelDecel(cue->endFrame, cue->startFrame, play->csCtx.curFrame, 0, 0);
+        lerp = get_parcent_forAccelBrake(cue->endFrame, cue->startFrame, play->csCtx.curFrame, 0, 0);
 
         startX = cue->startPos.x;
         startY = cue->startPos.y;
@@ -192,10 +192,10 @@ void func_80B3C620(EnXc* this, PlayState* play, s32 cueChannel) {
     }
 }
 
-void EnXc_ChangeAnimation(EnXc* this, AnimationHeader* animation, u8 mode, f32 morphFrames, s32 reverseFlag) {
+void En_Oa2_Change_Anime(EnXc* this, AnimationHeader* animation, u8 mode, f32 morphFrames, s32 reverseFlag) {
     s32 pad[2];
     AnimationHeader* animationSeg = SEGMENTED_TO_VIRTUAL(animation);
-    f32 frameCount = Animation_GetLastFrame(&animationSeg->common);
+    f32 frameCount = Si2_anime_end_frame(&animationSeg->common);
     f32 playbackSpeed;
     f32 startFrame;
     f32 endFrame;
@@ -210,16 +210,16 @@ void EnXc_ChangeAnimation(EnXc* this, AnimationHeader* animation, u8 mode, f32 m
         playbackSpeed = -1.0f;
     }
 
-    Animation_Change(&this->skelAnime, animationSeg, playbackSpeed, startFrame, endFrame, mode, morphFrames);
+    Skeleton_Info2_init(&this->skelAnime, animationSeg, playbackSpeed, startFrame, endFrame, mode, morphFrames);
 }
 
-void EnXc_CheckAndSetAction(EnXc* this, s32 check, s32 set) {
+void En_Oa2_CheckAndSet_Mode(EnXc* this, s32 check, s32 set) {
     if (check != this->action) {
         this->action = set;
     }
 }
 
-void func_80B3C7D4(EnXc* this, s32 action1, s32 action2, s32 action3) {
+void En_Oa2_CheckAndSet_Mode_forPlay_stopToPlay(EnXc* this, s32 action1, s32 action2, s32 action3) {
     if (action1 != this->action) {
         if (this->action == SHEIK_ACTION_PUT_HARP_AWAY) {
             this->action = action2;
@@ -238,7 +238,7 @@ s32 EnXc_NoCutscenePlaying(PlayState* play) {
 }
 
 void func_80B3C820(EnXc* this) {
-    Animation_Change(&this->skelAnime, &gSheikIdleAnim, 1.0f, 0.0f, Animation_GetLastFrame(&gSheikIdleAnim),
+    Skeleton_Info2_init(&this->skelAnime, &gSheikIdleAnim, 1.0f, 0.0f, Si2_anime_end_frame(&gSheikIdleAnim),
                      ANIMMODE_LOOP, 0.0f);
     this->action = SHEIK_ACTION_53;
 }
@@ -250,33 +250,33 @@ void func_80B3C888(EnXc* this, PlayState* play) {
 }
 #endif
 
-void func_80B3C8CC(EnXc* this, PlayState* play) {
+void En_Oa2_Movement_byAnimation(EnXc* this, PlayState* play) {
     SkelAnime* skelAnime = &this->skelAnime;
 
     if (skelAnime->jointTable[0].y >= skelAnime->baseTransl.y) {
         skelAnime->movementFlags |= ANIM_FLAG_UPDATE_XZ | ANIM_FLAG_UPDATE_Y;
-        AnimTaskQueue_AddActorMovement(play, &this->actor, skelAnime, 1.0f);
+        Skeleton_Proc_Anime_Move_init(play, &this->actor, skelAnime, 1.0f);
     }
 }
 
-void func_80B3C924(EnXc* this, PlayState* play) {
+void En_Oa2_Movement_byAnimation_CorrectNone(EnXc* this, PlayState* play) {
     this->skelAnime.movementFlags |= ANIM_FLAG_UPDATE_XZ | ANIM_FLAG_UPDATE_Y;
-    AnimTaskQueue_AddActorMovement(play, &this->actor, &this->skelAnime, 1.0f);
+    Skeleton_Proc_Anime_Move_init(play, &this->actor, &this->skelAnime, 1.0f);
 }
 
-void func_80B3C964(EnXc* this, PlayState* play) {
+void En_Oa2_Start_Movement_byAnimation(EnXc* this, PlayState* play) {
     this->skelAnime.baseTransl = this->skelAnime.jointTable[0];
     this->skelAnime.prevTransl = this->skelAnime.jointTable[0];
     this->skelAnime.movementFlags |= ANIM_FLAG_UPDATE_XZ | ANIM_FLAG_UPDATE_Y;
-    AnimTaskQueue_AddActorMovement(play, &this->actor, &this->skelAnime, 1.0f);
+    Skeleton_Proc_Anime_Move_init(play, &this->actor, &this->skelAnime, 1.0f);
 }
 
-void func_80B3C9DC(EnXc* this) {
+void En_Oa2_End_Movement_byAnimation(EnXc* this) {
     this->skelAnime.movementFlags &= ~(ANIM_FLAG_UPDATE_XZ | ANIM_FLAG_UPDATE_Y);
 }
 
-void func_80B3C9EC(EnXc* this) {
-    EnXc_ChangeAnimation(this, &gSheikArmsCrossedIdleAnim, ANIMMODE_LOOP, 0.0f, false);
+void En_Oa2_Setup_TokinomaToWall(EnXc* this) {
+    En_Oa2_Change_Anime(this, &gSheikArmsCrossedIdleAnim, ANIMMODE_LOOP, 0.0f, false);
     this->action = SHEIK_ACTION_BLOCK_PEDESTAL;
     this->drawMode = SHEIK_DRAW_DEFAULT;
     this->unk_30C = 1;
@@ -305,149 +305,149 @@ void func_80B3C9EC(EnXc* this) {
 
 #include "z_en_oA2_inWall.inc.c"
 
-static EnXcActionFunc sActionFuncs[] = {
-    EnXc_ActionFunc0,
-    EnXc_ActionFunc1,
-    EnXc_GracefulFall,
-    EnXc_Accelerate,
-    EnXc_Walk,
-    EnXc_Stopped,
-    EnXc_ActionFunc6,
-    EnXc_ActionFunc7,
-    EnXc_ActionFunc8,
-    EnXc_ActionFunc9,
-    EnXc_ActionFunc10,
-    EnXc_ActionFunc11,
-    EnXc_ActionFunc12,
-    EnXc_ActionFunc13,
-    EnXc_ReverseAccelerate,
-    EnXc_ActionFunc15,
-    EnXc_HaltAndWaitToThrowNut,
-    EnXc_ThrowNut,
-    EnXc_Delete,
-    EnXc_Fade,
-    EnXc_ActionFunc20,
-    EnXc_ActionFunc21,
-    EnXc_ActionFunc22,
-    EnXc_ActionFunc23,
-    EnXc_ActionFunc24,
-    EnXc_ActionFunc25,
-    EnXc_ActionFunc26,
-    EnXc_ActionFunc27,
-    EnXc_ActionFunc28,
-    EnXc_Serenade,
-    EnXc_ActionFunc30,
-    EnXc_ActionFunc31,
-    EnXc_ActionFunc32,
-    EnXc_ActionFunc33,
-    EnXc_ActionFunc34,
-    EnXc_ActionFunc35,
-    EnXc_ActionFunc36,
-    EnXc_ActionFunc37,
-    EnXc_ActionFunc38,
-    EnXc_ActionFunc39,
-    EnXc_ActionFunc40,
-    EnXc_ActionFunc41,
-    EnXc_ActionFunc42,
-    EnXc_ActionFunc43,
-    EnXc_ActionFunc44,
-    EnXc_ActionFunc45,
-    EnXc_ActionFunc46,
-    EnXc_ActionFunc47,
-    EnXc_ActionFunc48,
-    EnXc_ActionFunc49,
-    EnXc_Kneel,
-    EnXc_ActionFunc51,
-    EnXc_ActionFunc52,
-    EnXc_ActionFunc53,
-    EnXc_ActionFunc54,
-    EnXc_ShowTriforce,
-    EnXc_ShowTriforceIdle,
-    EnXc_InitialNocturneAction,
-    EnXc_IdleInNocturne,
-    EnXc_DefenseStance,
-    EnXc_Contort,
-    EnXc_FallInNocturne,
-    EnXc_HitGroundInNocturne,
-    EnXc_ActionFunc63,
-    EnXc_KneelInNocturneCS,
-    EnXc_ActionFunc65,
-    EnXc_ActionFunc66,
-    EnXc_ActionFunc67,
-    EnXc_ActionFunc68,
-    EnXc_ActionFunc69,
-    EnXc_ActionFunc70,
-    EnXc_ActionFunc71,
-    EnXc_ActionFunc72,
-    EnXc_ReverseAccelInNocturneCS,
-    EnXc_ReverseWalkInNocturneCS,
-    EnXc_ReverseHaltInNocturneCS,
-    EnXc_ThrowNutInNocturneCS,
-    EnXc_DeleteInNocturneCS,
-    EnXc_KillInNocturneCS,
-    EnXc_BlockingPedestalAction,
-    EnXc_ActionFunc80,
-};
+void En_Oa2_Actor_main(Actor* thisx, PlayState* play) {
+    static EnXcActionFunc proc[] = {
+        En_Oa2_Actor_main_wait,
+        En_Oa2_Actor_main_hide,
+        En_Oa2_Actor_main_appear,
+        En_Oa2_Actor_main_approach_accel,
+        En_Oa2_Actor_main_approach_move,
+        En_Oa2_Actor_main_approach_brake,
+        En_Oa2_Actor_main_greet,
+        En_Oa2_Actor_main_take,
+        En_Oa2_Actor_main_ready,
+        En_Oa2_Actor_main_play,
+        En_Oa2_Actor_main_play_stop,
+        En_Oa2_Actor_main_play_end,
+        En_Oa2_Actor_main_put,
+        En_Oa2_Actor_main_goodby,
+        En_Oa2_Actor_main_away_accel,
+        En_Oa2_Actor_main_away_move,
+        En_Oa2_Actor_main_away_brake,
+        En_Oa2_Actor_main_throw,
+        En_Oa2_Actor_main_fade,
+        En_Oa2_Actor_main_disappear,
+        En_Oa2_Toki_Actor_main_wait,
+        En_Oa2_Toki_Actor_main_hide,
+        En_Oa2_Toki_Actor_main_greet,
+        En_Oa2_Toki_Actor_main_away_accel,
+        En_Oa2_Toki_Actor_main_away_move,
+        En_Oa2_Toki_Actor_main_away_brake,
+        En_Oa2_Toki_Actor_main_throw,
+        En_Oa2_Toki_Actor_main_fade,
+        En_Oa2_Toki_Actor_main_disappear,
+        En_Oa2_Ice_Actor_main_wait,
+        En_Oa2_Ice_Actor_main_hide,
+        En_Oa2_Ice_Actor_main_greet,
+        En_Oa2_Ice_Actor_main_take,
+        En_Oa2_Ice_Actor_main_ready,
+        En_Oa2_Ice_Actor_main_play,
+        En_Oa2_Ice_Actor_main_play_stop,
+        En_Oa2_Ice_Actor_main_play_end,
+        En_Oa2_Ice_Actor_main_put,
+        En_Oa2_Ice_Actor_main_goodby,
+        En_Oa2_Ice_Actor_main_away_accel,
+        En_Oa2_Ice_Actor_main_away_move,
+        En_Oa2_Ice_Actor_main_away_brake,
+        En_Oa2_Ice_Actor_main_throw,
+        En_Oa2_Ice_Actor_main_fade,
+        En_Oa2_Ice_Actor_main_disappear,
+        En_Oa2_Spot06_Actor_main_wait,
+        En_Oa2_Spot06_Actor_main_hide,
+        En_Oa2_Spot06_Actor_main_greet,
+        En_Oa2_Spot06_Actor_main_away_accel,
+        En_Oa2_Spot06_Actor_main_away_move,
+        En_Oa2_Spot06_Actor_main_sitdown,
+        En_Oa2_Spot06_Actor_main_diving,
+        En_Oa2_Spot06_Actor_main_disappear,
+        En_Oa2_Metamol_main_wait,
+        En_Oa2_Metamol_main_greet,
+        En_Oa2_Metamol_main_chenge,
+        En_Oa2_Metamol_main_posing,
+        En_Oa2_Stalker_main_wait,
+        En_Oa2_Stalker_main_standing,
+        En_Oa2_Stalker_main_square,
+        En_Oa2_Stalker_main_brandish,
+        En_Oa2_Stalker_main_drop,
+        En_Oa2_Stalker_main_observe,
+        En_Oa2_Stalker_main_restrain,
+        En_Oa2_Stalker_main_nurse,
+        En_Oa2_Stalker_main_greet,
+        En_Oa2_Stalker_main_take,
+        En_Oa2_Stalker_main_ready,
+        En_Oa2_Stalker_main_play,
+        En_Oa2_Stalker_main_play_stop,
+        En_Oa2_Stalker_main_play_end,
+        En_Oa2_Stalker_main_put,
+        En_Oa2_Stalker_main_goodby,
+        En_Oa2_Stalker_main_away_accel,
+        En_Oa2_Stalker_main_away_move,
+        En_Oa2_Stalker_main_away_brake,
+        En_Oa2_Stalker_main_throw,
+        En_Oa2_Stalker_main_fade,
+        En_Oa2_Stalker_main_disappear,
+        En_Oa2_Wall_main_blocking,
+        En_Oa2_Wall_main_greeting,
+    };
 
-void EnXc_Update(Actor* thisx, PlayState* play) {
     EnXc* this = (EnXc*)thisx;
     s32 action = this->action;
 
-    if ((action < 0) || (action >= ARRAY_COUNT(sActionFuncs)) || (sActionFuncs[action] == NULL)) {
+    if ((action < 0) || (action >= ARRAY_COUNT(proc)) || (proc[action] == NULL)) {
         PRINTF(VT_FGCOL(RED) "メインモードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
     } else {
-        sActionFuncs[action](this, play);
+        proc[action](this, play);
     }
 }
 
-void EnXc_Init(Actor* thisx, PlayState* play) {
+void En_Oa2_Actor_ct(Actor* thisx, PlayState* play) {
     EnXc* this = (EnXc*)thisx;
 
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 30.0f);
-    SkelAnime_InitFlex(play, &this->skelAnime, &gSheikSkel, &gSheikIdleAnim, this->jointTable, this->morphTable,
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 30.0f);
+    Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &gSheikSkel, &gSheikIdleAnim, this->jointTable, this->morphTable,
                        ARRAY_COUNT(this->jointTable));
-    EnXc_InitCollider(thisx, play);
+    En_Oa2_ct_forCorect(thisx, play);
 
     switch (this->actor.params) {
         case SHEIK_TYPE_1:
-            func_80B3EBF0(this, play);
+            En_Oa2_Actor_Tokinoma_Init(this, play);
             break;
         case SHEIK_TYPE_2: // Beta Serenade Cutscene or Learning Prelude
-            func_80B3EE64(this, play);
+            En_Oa2_Actor_IceShrine_Init(this, play);
             break;
         case SHEIK_TYPE_3:
-            func_80B3F3C8(this, play);
+            En_Oa2_Actor_Spot06_Init(this, play);
             break;
         case SHEIK_TYPE_4:
-            func_80B3FA08(this, play);
+            En_Oa2_Actor_Metamol_Init(this, play);
             break;
         case SHEIK_TYPE_5:
-            func_80B40590(this, play);
+            En_Oa2_Actor_Stalker_Init(this, play);
             break;
         case SHEIK_TYPE_MINUET:
-            func_80B3CA38(this, play);
+            En_Oa2_Actor_Wind_Init(this, play);
             break;
         case SHEIK_TYPE_BOLERO:
-            func_80B3CB58(this, play);
+            En_Oa2_Actor_Fire_Init(this, play);
             break;
         case SHEIK_TYPE_SERENADE:
-            EnXc_SetupSerenadeAction(this, play);
+            En_Oa2_Actor_Water_Init(this, play);
             break;
         case SHEIK_TYPE_9:
-            EnXc_InitTempleOfTime(this, play);
+            En_Oa2_Actor_Wall_Init(this, play);
             break;
 #if DEBUG_FEATURES
         case SHEIK_TYPE_0:
-            EnXc_DoNothing(this, play);
+            En_Oa2_Actor_Spot05_Init(this, play);
             break;
 #endif
         default:
             PRINTF(VT_FGCOL(RED) " En_Oa2 の arg_data がおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
-            EnXc_DoNothing(this, play);
+            En_Oa2_Actor_Spot05_Init(this, play);
     }
 }
 
-s32 EnXc_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+s32 En_Oa2_BeforeDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     EnXc* this = (EnXc*)thisx;
 
     if (this->unk_30C != 0) {
@@ -464,13 +464,13 @@ s32 EnXc_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* po
     return 0;
 }
 
-void EnXc_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
+void En_Zl3_AfterDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
     if (limbIndex == 16) {
         EnXc* this = (EnXc*)thisx;
         Vec3f src = { 0.0f, 10.0f, 0.0f };
         Vec3f dest;
 
-        Matrix_MultVec3f(&src, &dest);
+        Matrix_Position(&src, &dest);
         this->actor.focus.pos.x = dest.x;
         this->actor.focus.pos.y = dest.y;
         this->actor.focus.pos.z = dest.z;
@@ -480,41 +480,41 @@ void EnXc_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, 
     }
 }
 
-void EnXc_DrawNothing(Actor* thisx, PlayState* play) {
+void En_Oa2_Actor_draw_none(Actor* thisx, PlayState* play) {
 }
 
-void EnXc_DrawDefault(Actor* thisx, PlayState* play) {
+void En_Oa2_Actor_draw_normal(Actor* thisx, PlayState* play) {
     s32 pad;
     EnXc* this = (EnXc*)thisx;
     s16 eyeIdx = this->eyeIdx;
-    void* eyeSegment = sEyeTextures[eyeIdx];
+    void* eyeSegment = en_oa2_eye[eyeIdx];
     SkelAnime* skelAnime = &this->skelAnime;
     GraphicsContext* localGfxCtx = play->state.gfxCtx;
     GraphicsContext* gfxCtx = localGfxCtx;
 
     OPEN_DISPS(gfxCtx, "../z_en_oA2.c", 1164);
-    func_8002EBCC(&this->actor, play, 0);
-    Gfx_SetupDL_25Opa(gfxCtx);
+    Actor_HiliteReflect_set_init(&this->actor, play, 0);
+    _texture_z_light_fog_prim(gfxCtx);
     gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(eyeSegment));
     gSPSegment(POLY_OPA_DISP++, 0x09, SEGMENTED_TO_VIRTUAL(eyeSegment));
-    SkelAnime_DrawFlexOpa(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount,
-                          EnXc_OverrideLimbDraw, EnXc_PostLimbDraw, this);
+    Si2_draw_SV(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount,
+                          En_Oa2_BeforeDraw, En_Zl3_AfterDraw, this);
     CLOSE_DISPS(gfxCtx, "../z_en_oA2.c", 1207);
 }
 
-static EnXcDrawFunc sDrawFuncs[] = {
-    EnXc_DrawNothing, EnXc_DrawDefault,  EnXc_DrawPullingOutHarp,
-    EnXc_DrawHarp,    EnXc_DrawTriforce, EnXc_DrawSquintingEyes,
-};
+void En_Oa2_Actor_draw(Actor* thisx, PlayState* play) {
+    static EnXcDrawFunc proc[] = {
+        En_Oa2_Actor_draw_none, En_Oa2_Actor_draw_normal,  En_Oa2_Actor_draw_take,
+        En_Oa2_Actor_draw_harp,    En_Oa2_Actor_draw_tryforce, En_Oa2_draw_glare,
+    };
 
-void EnXc_Draw(Actor* thisx, PlayState* play) {
     EnXc* this = (EnXc*)thisx;
 
-    if (this->drawMode < 0 || this->drawMode > 5 || sDrawFuncs[this->drawMode] == NULL) {
+    if (this->drawMode < 0 || this->drawMode > 5 || proc[this->drawMode] == NULL) {
         // "Draw mode is abnormal!!!!!!!!!!!!!!!!!!!!!!!!!"
         PRINTF(VT_FGCOL(RED) "描画モードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
     } else {
-        sDrawFuncs[this->drawMode](thisx, play);
+        proc[this->drawMode](thisx, play);
     }
 }
 
@@ -524,8 +524,8 @@ ActorProfile En_Xc_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_XC,
     /**/ sizeof(EnXc),
-    /**/ EnXc_Init,
-    /**/ EnXc_Destroy,
-    /**/ EnXc_Update,
-    /**/ EnXc_Draw,
+    /**/ En_Oa2_Actor_ct,
+    /**/ En_Oa2_Actor_dt,
+    /**/ En_Oa2_Actor_main,
+    /**/ En_Oa2_Actor_draw,
 };

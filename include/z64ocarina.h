@@ -177,15 +177,15 @@ typedef struct OcarinaStaff {
     /* 0x2 */ u8 pos;     // "locate"
 } OcarinaStaff; // size = 0x3
 
-void AudioOcarina_Start(u16 ocarinaFlags);
-void AudioOcarina_SetInstrument(u8 ocarinaInstrumentId);
-void AudioOcarina_SetPlaybackSong(s8 songIndexPlusOne, s8 playbackState);
-void AudioOcarina_SetRecordingState(u8 recordingState);
-OcarinaStaff* AudioOcarina_GetRecordingStaff(void);
-OcarinaStaff* AudioOcarina_GetPlayingStaff(void);
-OcarinaStaff* AudioOcarina_GetPlaybackStaff(void);
-void AudioOcarina_MemoryGameInit(u8 minigameRound);
-s32 AudioOcarina_MemoryGameNextNote(void);
-void AudioOcarina_PlayLongScarecrowSong(void);
+void Na_SetOcarinaPlayCheckFlag2(u16 ocarinaFlags);
+void Na_SetOcarinaModeFlag(u8 ocarinaInstrumentId);
+void Na_SetOcarinaSeq(s8 songIndexPlusOne, s8 playbackState);
+void Na_SetOcarinaRecModeFlag(u8 recordingState);
+OcarinaStaff* Na_GetOcarinaRecInfoWork(void);
+OcarinaStaff* Na_GetOcarinaInfoWork(void);
+OcarinaStaff* Na_GetOcarinaSeqInfoWork(void);
+void Na_InitOcarinaGameWork(u8 minigameRound);
+s32 Na_MakeOcarinaGameData(void);
+void Na_AutoPlayUserOcarinaMelody(void);
 
 #endif

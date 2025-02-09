@@ -13,7 +13,7 @@ typedef struct DemoGj {
     /* 0x0164 */ s32 updateMode;
     /* 0x0168 */ s32 drawConfig;
     /* 0x016C */ Vec3s rotationVec;
-    /* 0x0172 */ Vec3s unk_172; // It is assigned only. @see DemoGj_SetupTranslation and @see DemoGj_SetupMovement
+    /* 0x0172 */ Vec3s unk_172; // It is assigned only. @see DemoGj_SetupTranslation and @see Demo_Gj_Setup_Move_common
     /* 0x0178 */ BossGanon2* ganon;
     /* 0x017C */ s32 isTransformedIntoGanon; // flag
     /* 0x0180 */ s32 isRotated; // flag
@@ -30,7 +30,7 @@ typedef struct DemoGj {
  */
 typedef enum DemoGjType {
     /* 04 */ DEMOGJ_TYPE_AROUNDARENA = 4, // This is the indestructible rubble around the arena. This actor keeps alive the whole fight.
-    /* 08 */ DEMOGJ_TYPE_RUBBLE_PILE_1 = 8, // DEMOGJ_TYPE_RUBBLE_PILE_X are the rubbles from where Ganondorf rises. When he transforms into Ganon these are removed from the scene (Actor_Kill).
+    /* 08 */ DEMOGJ_TYPE_RUBBLE_PILE_1 = 8, // DEMOGJ_TYPE_RUBBLE_PILE_X are the rubbles from where Ganondorf rises. When he transforms into Ganon these are removed from the scene (Actor_delete).
     /* 09 */ DEMOGJ_TYPE_RUBBLE_PILE_2,
     /* 10 */ DEMOGJ_TYPE_RUBBLE_PILE_3,
     /* 11 */ DEMOGJ_TYPE_RUBBLE_PILE_4,

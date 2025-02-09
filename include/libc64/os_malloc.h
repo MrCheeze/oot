@@ -49,12 +49,12 @@ typedef struct ArenaNode {
 
 void __osMallocInit(Arena* arena, void* start, s32 size);
 void __osMallocCleanup(Arena* arena);
-s32 __osMallocIsInitialized(Arena* arena);
+s32 __osMallocIsInitalized(Arena* arena);
 void* __osMalloc(Arena* arena, u32 size);
 void* __osMallocR(Arena* arena, u32 size);
 void __osFree(Arena* arena, void* ptr);
 void* __osRealloc(Arena* arena, void* ptr, u32 newSize);
-void ArenaImpl_GetSizes(Arena* arena, u32* outMaxFree, u32* outFree, u32* outAlloc);
+void __osGetFreeArena(Arena* arena, u32* outMaxFree, u32* outFree, u32* outAlloc);
 s32 __osCheckArena(Arena* arena);
 
 #if PLATFORM_N64 || DEBUG_FEATURES
@@ -70,7 +70,7 @@ extern u32 __osMalloc_FreeBlockTest_Enable;
 #endif
 
 #if PLATFORM_N64
-extern u32 gTotalAllocFailures;
+extern u32 __Arena_failcnt;
 #endif
 
 #endif

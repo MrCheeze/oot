@@ -246,8 +246,8 @@ typedef struct PauseMapMarkData {
 
 typedef PauseMapMarkData PauseMapMarksData[3];
 
-void KaleidoSetup_Update(struct PlayState* play);
-void KaleidoSetup_Init(struct PlayState* play);
-void KaleidoSetup_Destroy(struct PlayState* play);
+void kaleido_scope_pause(struct PlayState* play);
+void kaleido_scope_ct(struct PlayState* play);
+void kaleido_scope_dt(struct PlayState* play);
 
 #endif

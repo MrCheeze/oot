@@ -2,7 +2,7 @@
 #include "terminal.h"
 
 // clang-format off
-MtxF sMtxFClear = {
+MtxF mat = {
     1.0f, 0.0f, 0.0f, 0.0f,
     0.0f, 1.0f, 0.0f, 0.0f,
     0.0f, 0.0f, 1.0f, 0.0f,
@@ -19,7 +19,7 @@ MtxF sMtxFClear = {
  *        \begin{bmatrix} \texttt{src} \\ 1 \\ \end{bmatrix}
  * \f]
  */
-void SkinMatrix_Vec3fMtxFMultXYZW(MtxF* mf, Vec3f* src, Vec3f* xyzDest, f32* wDest) {
+void Skin_Matrix_PrjMulVector(MtxF* mf, Vec3f* src, Vec3f* xyzDest, f32* wDest) {
     xyzDest->x = mf->xw + ((src->x * mf->xx) + (src->y * mf->xy) + (src->z * mf->xz));
     xyzDest->y = mf->yw + ((src->x * mf->yx) + (src->y * mf->yy) + (src->z * mf->yz));
     xyzDest->z = mf->zw + ((src->x * mf->zx) + (src->y * mf->zy) + (src->z * mf->zz));
@@ -34,7 +34,7 @@ void SkinMatrix_Vec3fMtxFMultXYZW(MtxF* mf, Vec3f* src, Vec3f* xyzDest, f32* wDe
  *        \begin{bmatrix} \texttt{src} \\ 1 \\ \end{bmatrix}
  * \f]
  */
-void SkinMatrix_Vec3fMtxFMultXYZ(MtxF* mf, Vec3f* src, Vec3f* dest) {
+void Skin_Matrix_MulVector(MtxF* mf, Vec3f* src, Vec3f* dest) {
     f32 mx = mf->xx;
     f32 my = mf->xy;
     f32 mz = mf->xz;
@@ -57,7 +57,7 @@ void SkinMatrix_Vec3fMtxFMultXYZ(MtxF* mf, Vec3f* src, Vec3f* dest) {
  * Matrix multiplication, dest = mfA * mfB.
  * mfB and dest should not be the same matrix.
  */
-void SkinMatrix_MtxFMtxFMult(MtxF* mfA, MtxF* mfB, MtxF* dest) {
+void Skin_Matrix_MulMatrix(MtxF* mfA, MtxF* mfB, MtxF* dest) {
     f32 cx;
     f32 cy;
     f32 cz;
@@ -187,11 +187,11 @@ void SkinMatrix_MtxFMtxFMult(MtxF* mfA, MtxF* mfB, MtxF* dest) {
 /**
  * "Clear" in this file means the identity matrix.
  */
-void SkinMatrix_GetClear(MtxF** mfp) {
-    *mfp = &sMtxFClear;
+void Skin_Matrix_getUnitMatrixPointer(MtxF** mfp) {
+    *mfp = &mat;
 }
 
-void SkinMatrix_Clear(MtxF* mf) {
+void Skin_Matrix_SetUnitMatrix(MtxF* mf) {
     mf->xx = 1.0f;
     mf->yx = 0.0f;
     mf->zx = 0.0f;
@@ -210,7 +210,7 @@ void SkinMatrix_Clear(MtxF* mf) {
     mf->ww = 1.0f;
 }
 
-void SkinMatrix_MtxFCopy(MtxF* src, MtxF* dest) {
+void Skin_Matrix_Copy(MtxF* src, MtxF* dest) {
     dest->xx = src->xx;
     dest->yx = src->yx;
     dest->zx = src->zx;
@@ -234,15 +234,15 @@ void SkinMatrix_MtxFCopy(MtxF* src, MtxF* dest) {
  * returns 0 if successfully inverted
  * returns 2 if matrix non-invertible (0 determinant)
  */
-s32 SkinMatrix_Invert(MtxF* src, MtxF* dest) {
+s32 Skin_Matrix_InverseMatrix(MtxF* src, MtxF* dest) {
     MtxF mfCopy;
     s32 i;
     f32 temp1;
     s32 thisCol;
     s32 thisRow;
 
-    SkinMatrix_MtxFCopy(src, &mfCopy);
-    SkinMatrix_Clear(dest);
+    Skin_Matrix_Copy(src, &mfCopy);
+    Skin_Matrix_SetUnitMatrix(dest);
     for (thisCol = 0; thisCol < 4; thisCol++) {
         thisRow = thisCol;
         while ((thisRow < 4) && (fabsf(mfCopy.mf[thisCol][thisRow]) < 0.0005f)) {
@@ -291,7 +291,7 @@ s32 SkinMatrix_Invert(MtxF* src, MtxF* dest) {
 /**
  * Produces a matrix which scales x,y,z components of vectors or x,y,z rows of matrices (when applied on LHS)
  */
-void SkinMatrix_SetScale(MtxF* mf, f32 x, f32 y, f32 z) {
+void Skin_Matrix_SetScale(MtxF* mf, f32 x, f32 y, f32 z) {
     mf->yx = 0.0f;
     mf->zx = 0.0f;
     mf->wx = 0.0f;
@@ -313,10 +313,10 @@ void SkinMatrix_SetScale(MtxF* mf, f32 x, f32 y, f32 z) {
 /**
  * Produces a rotation matrix using ZYX Tait-Bryan angles.
  */
-void SkinMatrix_SetRotateZYX(MtxF* mf, s16 x, s16 y, s16 z) {
+void Skin_Matrix_SetRotateXyz_s(MtxF* mf, s16 x, s16 y, s16 z) {
     f32 cos;
-    f32 sinZ = Math_SinS(z);
-    f32 cosZ = Math_CosS(z);
+    f32 sinZ = sin_s(z);
+    f32 cosZ = cos_s(z);
     f32 xy;
     f32 sin;
     f32 xz;
@@ -330,8 +330,8 @@ void SkinMatrix_SetRotateZYX(MtxF* mf, s16 x, s16 y, s16 z) {
     mf->ww = 1;
 
     if (y != 0) {
-        sin = Math_SinS(y);
-        cos = Math_CosS(y);
+        sin = sin_s(y);
+        cos = cos_s(y);
 
         mf->xx = cosZ * cos;
         mf->xz = cosZ * sin;
@@ -352,8 +352,8 @@ void SkinMatrix_SetRotateZYX(MtxF* mf, s16 x, s16 y, s16 z) {
     }
 
     if (x != 0) {
-        sin = Math_SinS(x);
-        cos = Math_CosS(x);
+        sin = sin_s(x);
+        cos = cos_s(x);
 
         xy = mf->xy;
         xz = mf->xz;
@@ -377,10 +377,10 @@ void SkinMatrix_SetRotateZYX(MtxF* mf, s16 x, s16 y, s16 z) {
 /**
  * Produces a rotation matrix using YXZ Tait-Bryan angles.
  */
-void SkinMatrix_SetRotateYXZ(MtxF* mf, s16 x, s16 y, s16 z) {
+void Skin_Matrix_SetRotateZxy_s(MtxF* mf, s16 x, s16 y, s16 z) {
     f32 cos;
-    f32 sinY = Math_SinS(y);
-    f32 cosY = Math_CosS(y);
+    f32 sinY = sin_s(y);
+    f32 cosY = cos_s(y);
     f32 zx;
     f32 sin;
     f32 zy;
@@ -398,8 +398,8 @@ void SkinMatrix_SetRotateYXZ(MtxF* mf, s16 x, s16 y, s16 z) {
     mf->ww = 1;
 
     if (x != 0) {
-        sin = Math_SinS(x);
-        cos = Math_CosS(x);
+        sin = sin_s(x);
+        cos = cos_s(x);
 
         mf->zz = cosY * cos;
         mf->zy = cosY * sin;
@@ -420,8 +420,8 @@ void SkinMatrix_SetRotateYXZ(MtxF* mf, s16 x, s16 y, s16 z) {
     }
 
     if (z != 0) {
-        sin = Math_SinS(z);
-        cos = Math_CosS(z);
+        sin = sin_s(z);
+        cos = cos_s(z);
         xx = mf->xx;
         xy = mf->xy;
         mf->xx = (xx * cos) + (xy * sin);
@@ -442,7 +442,7 @@ void SkinMatrix_SetRotateYXZ(MtxF* mf, s16 x, s16 y, s16 z) {
 /**
  * Produces a matrix which translates a vector by amounts in the x, y and z directions
  */
-void SkinMatrix_SetTranslate(MtxF* mf, f32 x, f32 y, f32 z) {
+void Skin_Matrix_SetTranslate(MtxF* mf, f32 x, f32 y, f32 z) {
     mf->yx = 0.0f;
     mf->zx = 0.0f;
     mf->wx = 0.0f;
@@ -464,59 +464,59 @@ void SkinMatrix_SetTranslate(MtxF* mf, f32 x, f32 y, f32 z) {
 /**
  * Produces a matrix which scales, then rotates (using ZYX Tait-Bryan angles), then translates.
  */
-void SkinMatrix_SetTranslateRotateZYXScale(MtxF* dest, f32 scaleX, f32 scaleY, f32 scaleZ, s16 rotX, s16 rotY, s16 rotZ,
+void Skin_Matrix_SetSrtMatrix(MtxF* dest, f32 scaleX, f32 scaleY, f32 scaleZ, s16 rotX, s16 rotY, s16 rotZ,
                                            f32 translateX, f32 translateY, f32 translateZ) {
     MtxF mft1;
     MtxF mft2;
 
-    SkinMatrix_SetTranslate(dest, translateX, translateY, translateZ);
-    SkinMatrix_SetRotateZYX(&mft1, rotX, rotY, rotZ);
-    SkinMatrix_MtxFMtxFMult(dest, &mft1, &mft2);
-    SkinMatrix_SetScale(&mft1, scaleX, scaleY, scaleZ);
-    SkinMatrix_MtxFMtxFMult(&mft2, &mft1, dest);
+    Skin_Matrix_SetTranslate(dest, translateX, translateY, translateZ);
+    Skin_Matrix_SetRotateXyz_s(&mft1, rotX, rotY, rotZ);
+    Skin_Matrix_MulMatrix(dest, &mft1, &mft2);
+    Skin_Matrix_SetScale(&mft1, scaleX, scaleY, scaleZ);
+    Skin_Matrix_MulMatrix(&mft2, &mft1, dest);
 }
 
 /**
  * Produces a matrix which scales, then rotates (using YXZ Tait-Bryan angles), then translates.
  */
-void SkinMatrix_SetTranslateRotateYXZScale(MtxF* dest, f32 scaleX, f32 scaleY, f32 scaleZ, s16 rotX, s16 rotY, s16 rotZ,
+void Skin_Matrix_SetSRzxyTMatrix(MtxF* dest, f32 scaleX, f32 scaleY, f32 scaleZ, s16 rotX, s16 rotY, s16 rotZ,
                                            f32 translateX, f32 translateY, f32 translateZ) {
     MtxF mft1;
     MtxF mft2;
 
-    SkinMatrix_SetTranslate(dest, translateX, translateY, translateZ);
-    SkinMatrix_SetRotateYXZ(&mft1, rotX, rotY, rotZ);
-    SkinMatrix_MtxFMtxFMult(dest, &mft1, &mft2);
-    SkinMatrix_SetScale(&mft1, scaleX, scaleY, scaleZ);
-    SkinMatrix_MtxFMtxFMult(&mft2, &mft1, dest);
+    Skin_Matrix_SetTranslate(dest, translateX, translateY, translateZ);
+    Skin_Matrix_SetRotateZxy_s(&mft1, rotX, rotY, rotZ);
+    Skin_Matrix_MulMatrix(dest, &mft1, &mft2);
+    Skin_Matrix_SetScale(&mft1, scaleX, scaleY, scaleZ);
+    Skin_Matrix_MulMatrix(&mft2, &mft1, dest);
 }
 
 /**
  * Produces a matrix which rotates (using ZYX Tait-Bryan angles), then translates.
  */
-void SkinMatrix_SetTranslateRotateZYX(MtxF* dest, s16 rotX, s16 rotY, s16 rotZ, f32 translateX, f32 translateY,
+void Skin_Matrix_SetRtMatrix(MtxF* dest, s16 rotX, s16 rotY, s16 rotZ, f32 translateX, f32 translateY,
                                       f32 translateZ) {
     MtxF rotation;
     MtxF translation;
 
-    SkinMatrix_SetTranslate(&translation, translateX, translateY, translateZ);
-    SkinMatrix_SetRotateZYX(&rotation, rotX, rotY, rotZ);
-    SkinMatrix_MtxFMtxFMult(&translation, &rotation, dest);
+    Skin_Matrix_SetTranslate(&translation, translateX, translateY, translateZ);
+    Skin_Matrix_SetRotateXyz_s(&rotation, rotX, rotY, rotZ);
+    Skin_Matrix_MulMatrix(&translation, &rotation, dest);
 }
 
-void SkinMatrix_Vec3fToVec3s(Vec3f* src, Vec3s* dest) {
+void Skin_Matrix_vec2svec(Vec3f* src, Vec3s* dest) {
     dest->x = src->x;
     dest->y = src->y;
     dest->z = src->z;
 }
 
-void SkinMatrix_Vec3sToVec3f(Vec3s* src, Vec3f* dest) {
+void Skin_Matrix_svec2vec(Vec3s* src, Vec3f* dest) {
     dest->x = src->x;
     dest->y = src->y;
     dest->z = src->z;
 }
 
-void SkinMatrix_MtxFToMtx(MtxF* src, Mtx* dest) {
+void Skin_Matrix_to_Mtx(MtxF* src, Mtx* dest) {
     s32 temp;
     u16* m1 = (u16*)&dest->m[0][0];
     u16* m2 = (u16*)&dest->m[2][0];
@@ -586,7 +586,7 @@ void SkinMatrix_MtxFToMtx(MtxF* src, Mtx* dest) {
     m2[15] = temp & 0xFFFF;
 }
 
-Mtx* SkinMatrix_MtxFToNewMtx(GraphicsContext* gfxCtx, MtxF* src) {
+Mtx* Skin_Matrix_to_Mtx_new(GraphicsContext* gfxCtx, MtxF* src) {
     Mtx* mtx = GRAPH_ALLOC(gfxCtx, sizeof(Mtx));
 
     if (mtx == NULL) {
@@ -594,7 +594,7 @@ Mtx* SkinMatrix_MtxFToNewMtx(GraphicsContext* gfxCtx, MtxF* src) {
                  "Skin_Matrix_to_Mtx_new() allocation failed: Return NULL and exit\n"));
         return NULL;
     }
-    SkinMatrix_MtxFToMtx(src, mtx);
+    Skin_Matrix_to_Mtx(src, mtx);
     return mtx;
 }
 
@@ -602,7 +602,7 @@ Mtx* SkinMatrix_MtxFToNewMtx(GraphicsContext* gfxCtx, MtxF* src) {
  * Produces a matrix which rotates by binary angle `angle` around a unit vector (`axisX`,`axisY`,`axisZ`).
  * NB: the rotation axis is assumed to be a unit vector.
  */
-void SkinMatrix_SetRotateAxis(MtxF* mf, s16 angle, f32 axisX, f32 axisY, f32 axisZ) {
+void Skin_Matrix_SetFreeVecRotMatrix(MtxF* mf, s16 angle, f32 axisX, f32 axisY, f32 axisZ) {
     f32 sinA;
     f32 cosA;
     f32 xx;
@@ -613,8 +613,8 @@ void SkinMatrix_SetRotateAxis(MtxF* mf, s16 angle, f32 axisX, f32 axisY, f32 axi
     f32 xz;
     f32 pad;
 
-    sinA = Math_SinS(angle);
-    cosA = Math_CosS(angle);
+    sinA = sin_s(angle);
+    cosA = cos_s(angle);
 
     xx = axisX * axisX;
     yy = axisY * axisY;
@@ -642,7 +642,7 @@ void SkinMatrix_SetRotateAxis(MtxF* mf, s16 angle, f32 axisX, f32 axisY, f32 axi
     mf->ww = 1.0f;
 }
 
-void func_800A8030(MtxF* mf, f32* arg1) {
+void Skin_Matrix_SetQuaternion(MtxF* mf, f32* arg1) {
     f32 n;
     f32 xNorm;
     f32 yNorm;

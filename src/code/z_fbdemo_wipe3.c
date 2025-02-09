@@ -7,26 +7,26 @@ typedef enum TransitionCircleDirection {
 
 #include "assets/code/fbdemo_circle/z_fbdemo_wipe3_data.c"
 
-void TransitionCircle_Start(void* thisx) {
+void fbdemo_wipe3_startup(void* thisx) {
     TransitionCircle* this = (TransitionCircle*)thisx;
 
     this->isDone = false;
 
     switch (this->appearanceType) {
         case TCA_WAVE:
-            this->texture = sTransCircleWaveTex;
+            this->texture = g_wipe1_txt;
             break;
 
         case TCA_RIPPLE:
-            this->texture = sTransCircleRippleTex;
+            this->texture = g_wipe2_txt;
             break;
 
         case TCA_STARBURST:
-            this->texture = sTransCircleStarburstTex;
+            this->texture = g_wipe3_txt;
             break;
 
         default:
-            this->texture = sTransCircleNormalTex;
+            this->texture = g_wipe0_txt;
             break;
     }
 
@@ -58,8 +58,8 @@ void TransitionCircle_Start(void* thisx) {
     } else {
         this->texY = (s32)(125.0f * (1 << 2));
         if (this->appearanceType == TCA_RIPPLE) {
-            Audio_PlaySfxGeneral(NA_SE_OC_SECRET_WARP_OUT, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+            Nai_FxFlagEntry(NA_SE_OC_SECRET_WARP_OUT, &_dummy_zero_f, 4, &_dummy_one,
+                                 &_dummy_one, &_dummy_zero_s8);
         }
     }
 
@@ -67,24 +67,24 @@ void TransitionCircle_Start(void* thisx) {
     guLookAt(&this->lookAt, 0.0f, 0.0f, 400.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
 }
 
-void* TransitionCircle_Init(void* thisx) {
+void* fbdemo_wipe3_init(void* thisx) {
     TransitionCircle* this = (TransitionCircle*)thisx;
 
     bzero(this, sizeof(TransitionCircle));
     return this;
 }
 
-void TransitionCircle_Destroy(void* thisx) {
+void fbdemo_wipe3_cleanup(void* thisx) {
 }
 
-void TransitionCircle_Update(void* thisx, s32 updateRate) {
+void fbdemo_wipe3_move(void* thisx, s32 updateRate) {
     TransitionCircle* this = (TransitionCircle*)thisx;
 
     if (this->direction != TRANS_CIRCLE_DIR_IN) {
         if (this->texY == 0) {
             if (this->appearanceType == TCA_RIPPLE) {
-                Audio_PlaySfxGeneral(NA_SE_OC_SECRET_WARP_IN, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                     &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                Nai_FxFlagEntry(NA_SE_OC_SECRET_WARP_IN, &_dummy_zero_f, 4, &_dummy_one,
+                                     &_dummy_one, &_dummy_zero_s8);
             }
         }
         this->texY += this->speed * 3 / updateRate;
@@ -108,7 +108,7 @@ void TransitionCircle_Update(void* thisx, s32 updateRate) {
     }
 }
 
-void TransitionCircle_Draw(void* thisx, Gfx** gfxP) {
+void fbdemo_wipe3_draw(void* thisx, Gfx** gfxP) {
     Gfx* gfx = *gfxP;
     Mtx* modelView;
     TransitionCircle* this = (TransitionCircle*)thisx;
@@ -122,7 +122,7 @@ void TransitionCircle_Draw(void* thisx, Gfx** gfxP) {
 
     this->frame ^= 1;
     gDPPipeSync(gfx++);
-    texScroll = Gfx_BranchTexScroll(&gfx, this->texX, this->texY, 16, 64);
+    texScroll = gfx_tex_scroll2(&gfx, this->texX, this->texY, 16, 64);
     gSPSegment(gfx++, 9, texScroll);
     gSPSegment(gfx++, 8, this->texture);
     gDPSetColor(gfx++, G_SETPRIMCOLOR, this->color.rgba);
@@ -145,18 +145,18 @@ void TransitionCircle_Draw(void* thisx, Gfx** gfxP) {
         guTranslate(&modelView[2], tPos, tPos, 0.0f);
         gSPMatrix(gfx++, &modelView[2], G_MTX_NOPUSH | G_MTX_MUL | G_MTX_MODELVIEW);
     }
-    gSPDisplayList(gfx++, sTransCircleDL);
+    gSPDisplayList(gfx++, wipe_new_modelT);
     gDPPipeSync(gfx++);
     *gfxP = gfx;
 }
 
-s32 TransitionCircle_IsDone(void* thisx) {
+s32 fbdemo_wipe3_is_finish(void* thisx) {
     TransitionCircle* this = (TransitionCircle*)thisx;
 
     return this->isDone;
 }
 
-void TransitionCircle_SetType(void* thisx, s32 type) {
+void fbdemo_wipe3_settype(void* thisx, s32 type) {
     TransitionCircle* this = (TransitionCircle*)thisx;
 
     if (type & TC_SET_PARAMS) {
@@ -174,13 +174,13 @@ void TransitionCircle_SetType(void* thisx, s32 type) {
     }
 }
 
-void TransitionCircle_SetColor(void* thisx, u32 color) {
+void fbdemo_wipe3_setcolor_rgba8888(void* thisx, u32 color) {
     TransitionCircle* this = (TransitionCircle*)thisx;
 
     this->color.rgba = color;
 }
 
-void TransitionCircle_SetUnkColor(void* thisx, u32 color) {
+void fbdemo_wipe3_setaltcolor_rgba8888(void* thisx, u32 color) {
     TransitionCircle* this = (TransitionCircle*)thisx;
 
     this->unkColor.rgba = color;

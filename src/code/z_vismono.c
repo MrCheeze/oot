@@ -15,8 +15,8 @@
 // the half of TMEM dedicated to color-indexed data.
 #define VISMONO_CFBFRAG_HEIGHT ((TMEM_SIZE / 2) / (SCREEN_WIDTH * G_IM_SIZ_16b_BYTES))
 
-// Maximum size of the dlist written by `VisMono_DesaturateDList`.
-// `VisMono_DesaturateDList` consistently uses `VISMONO_DLSIZE - 2` double words, so this can be 2 less.
+// Maximum size of the dlist written by `z_vismono_make_dl`.
+// `z_vismono_make_dl` consistently uses `VISMONO_DLSIZE - 2` double words, so this can be 2 less.
 #define VISMONO_DLSIZE (3 + SCREEN_HEIGHT / VISMONO_CFBFRAG_HEIGHT * (7 + 2 + 2 + 3) + 2 + 2)
 
 // How much each color component contributes to the desaturated result.
@@ -30,7 +30,7 @@
 // color framebuffer
 extern u16 D_0F000000[];
 
-void VisMono_Init(VisMono* this) {
+void z_vismono_init(VisMono* this) {
     bzero(this, sizeof(VisMono));
     this->vis.type = 0;
     this->vis.scissorType = VIS_NO_SETSCISSOR;
@@ -44,11 +44,11 @@ void VisMono_Init(VisMono* this) {
     this->vis.envColor.a = 0;
 }
 
-void VisMono_Destroy(VisMono* this) {
+void z_vismono_cleanup(VisMono* this) {
     SYSTEM_ARENA_FREE(this->dList, "../z_vismono.c", 137);
 }
 
-void VisMono_DesaturateTLUT(VisMono* this, u16* tlut) {
+void z_vismono_make_pal(VisMono* this, u16* tlut) {
     s32 i;
 
     for (i = 0; i < 256; i++) {
@@ -69,7 +69,7 @@ void VisMono_DesaturateTLUT(VisMono* this, u16* tlut) {
     }
 }
 
-Gfx* VisMono_DesaturateDList(VisMono* this, Gfx* gfx) {
+Gfx* z_vismono_make_dl(VisMono* this, Gfx* gfx) {
     s32 y;
     s32 height = VISMONO_CFBFRAG_HEIGHT;
     u16* cfbFrag = D_0F000000;
@@ -117,7 +117,7 @@ Gfx* VisMono_DesaturateDList(VisMono* this, Gfx* gfx) {
         // The 2*n-th byte of texel 0 is the high byte of the n-th RGBA16 color of the color frame buffer.
         // The 2*n+1-th byte of texel 1 is the low byte of the n-th RGBA16 color of the color frame buffer.
 
-        // With the TLUT computed by `VisMono_DesaturateTLUT`:
+        // With the TLUT computed by `z_vismono_make_pal`:
         // The 2*n-th byte of texel 0 maps to a IA16 color where the high byte I (intensity) corresponds to
         // the high byte of the n-th RGBA16 color of the color frame buffer.
         // The 2*n+1-th byte of texel 1 maps to a IA16 color where the low byte A (alpha) corresponds to
@@ -136,7 +136,7 @@ Gfx* VisMono_DesaturateDList(VisMono* this, Gfx* gfx) {
     return gfx;
 }
 
-void VisMono_Draw(VisMono* this, Gfx** gfxP) {
+void z_vismono_draw(VisMono* this, Gfx** gfxP) {
     Gfx* gfx = *gfxP;
     u16* tlut;
     Gfx* dList;
@@ -145,15 +145,15 @@ void VisMono_Draw(VisMono* this, Gfx** gfxP) {
     if (this->tlut) {
         tlut = this->tlut;
     } else {
-        tlut = Gfx_Alloc(&gfx, 256 * G_IM_SIZ_16b_BYTES);
-        VisMono_DesaturateTLUT(this, tlut);
+        tlut = gfxalloc(&gfx, 256 * G_IM_SIZ_16b_BYTES);
+        z_vismono_make_pal(this, tlut);
     }
 
     if (this->dList) {
         dList = this->dList;
     } else {
-        dList = Gfx_Alloc(&gfx, VISMONO_DLSIZE * sizeof(Gfx));
-        dListEnd = VisMono_DesaturateDList(this, dList);
+        dList = gfxalloc(&gfx, VISMONO_DLSIZE * sizeof(Gfx));
+        dListEnd = z_vismono_make_dl(this, dList);
 
         if (!(dListEnd <= dList + VISMONO_DLSIZE)) {
             LOG_ADDRESS("glistp_end", dListEnd, "../z_vismono.c", 257);
@@ -182,17 +182,17 @@ void VisMono_Draw(VisMono* this, Gfx** gfxP) {
     *gfxP = gfx;
 }
 
-void VisMono_DrawOld(VisMono* this) {
+void z_vismono_setup(VisMono* this) {
     UNUSED_NDEBUG Gfx* dListEnd;
 
     if (this->tlut == NULL) {
         this->tlut = SYSTEM_ARENA_MALLOC(256 * G_IM_SIZ_16b_BYTES, "../z_vismono.c", 283);
-        VisMono_DesaturateTLUT(this, this->tlut);
+        z_vismono_make_pal(this, this->tlut);
     }
 
     if (this->dList == NULL) {
         this->dList = SYSTEM_ARENA_MALLOC(VISMONO_DLSIZE * sizeof(Gfx), "../z_vismono.c", 289);
-        dListEnd = VisMono_DesaturateDList(this, this->dList);
+        dListEnd = z_vismono_make_dl(this, this->dList);
         ASSERT(dListEnd <= this->dList + VISMONO_DLSIZE, "glistp_end <= this->mono_dl + DLSIZE", "../z_vismono.c", 292);
     }
 }

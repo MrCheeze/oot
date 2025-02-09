@@ -29,10 +29,10 @@
 #define vClosestDirection genericVar1 // relative to spike trap's facing angle if moving out, absolute if moving in
 #define vMovementMetric genericVar2
 
-void EnTrap_Init(Actor* thisx, PlayState* play);
-void EnTrap_Destroy(Actor* thisx, PlayState* play);
-void EnTrap_Update(Actor* thisx, PlayState* play);
-void EnTrap_Draw(Actor* thisx, PlayState* play);
+void En_trap_Actor_ct(Actor* thisx, PlayState* play);
+void En_trap_Actor_dt(Actor* thisx, PlayState* play);
+void En_trap_move(Actor* thisx, PlayState* play);
+void En_trap_display(Actor* thisx, PlayState* play);
 
 ActorProfile En_Trap_Profile = {
     /**/ ACTOR_EN_TRAP,
@@ -40,13 +40,13 @@ ActorProfile En_Trap_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_TRAP,
     /**/ sizeof(EnTrap),
-    /**/ EnTrap_Init,
-    /**/ EnTrap_Destroy,
-    /**/ EnTrap_Update,
-    /**/ EnTrap_Draw,
+    /**/ En_trap_Actor_ct,
+    /**/ En_trap_Actor_dt,
+    /**/ En_trap_move,
+    /**/ En_trap_display,
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit OcInfoData = {
     {
         COL_MATERIAL_HIT0,
         AT_NONE,
@@ -59,7 +59,7 @@ static ColliderCylinderInit sCylinderInit = {
     { 30, 20, 0, { 0, 0, 0 } },
 };
 
-void EnTrap_Init(Actor* thisx, PlayState* play) {
+void En_trap_Actor_ct(Actor* thisx, PlayState* play) {
     f32 trapDist;
     f32 trapSpeed;
     s16 zSpeed;
@@ -69,16 +69,16 @@ void EnTrap_Init(Actor* thisx, PlayState* play) {
 
     this->upperParams = PARAMS_GET_U(thisx->params, 8, 8);
     thisx->params &= 0xFF;
-    Actor_SetScale(thisx, 0.1f);
+    Actor_set_scale(thisx, 0.1f);
     thisx->gravity = -2.0f;
     if (thisx->params & SPIKETRAP_MODE_LINEAR) {
         thisx->speed = this->moveSpeedForwardBack.z = this->upperParams & 0xF;
-        Actor_PlaySfx(thisx, NA_SE_EV_SPINE_TRAP_MOVE);
+        Actor_SE_set(thisx, NA_SE_EV_SPINE_TRAP_MOVE);
     } else if (thisx->params & SPIKETRAP_MODE_CIRCULAR) {
         this->vRadius = (this->upperParams & 0xF) * 40.0f;
         this->vAngularVel = ((this->upperParams & 0xF0) + 0x10) << 5;
-        thisx->world.pos.x = thisx->home.pos.x + (Math_SinS(0) * this->vRadius);
-        thisx->world.pos.z = thisx->home.pos.z + (Math_CosS(0) * this->vRadius);
+        thisx->world.pos.x = thisx->home.pos.x + (sin_s(0) * this->vRadius);
+        thisx->world.pos.z = thisx->home.pos.z + (cos_s(0) * this->vRadius);
     } else { // Four-way motion
         if (this->upperParams != 0) {
             trapDist = (this->upperParams >> 4) * 40;
@@ -88,40 +88,40 @@ void EnTrap_Init(Actor* thisx, PlayState* play) {
             trapSpeed = 10.0f;
             thisx->params = 0xF;
         }
-        Actor_UpdateBgCheckInfo(play, thisx, 10.0f, 20.0f, 20.0f,
+        Actor_BGcheck2(play, thisx, 10.0f, 20.0f, 20.0f,
                                 UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2 | UPDBGCHECKINFO_FLAG_3 |
                                     UPDBGCHECKINFO_FLAG_4);
         thisx->home.pos = thisx->world.pos;
-        this->targetPosLeft.x = thisx->world.pos.x + (trapDist * Math_CosS(thisx->world.rot.y));
-        this->targetPosLeft.z = thisx->world.pos.z - (trapDist * Math_SinS(thisx->world.rot.y));
-        this->targetPosRight.x = thisx->world.pos.x + (trapDist * Math_CosS(thisx->world.rot.y + 0x8000));
-        this->targetPosRight.z = thisx->world.pos.z - (trapDist * Math_SinS(thisx->world.rot.y + 0x8000));
-        this->targetPosFwd.x = thisx->world.pos.x + (trapDist * Math_SinS(thisx->world.rot.y));
-        this->targetPosFwd.z = thisx->world.pos.z + (trapDist * Math_CosS(thisx->world.rot.y));
-        this->targetPosBack.x = thisx->world.pos.x + (trapDist * Math_SinS(thisx->world.rot.y + 0x8000));
-        this->targetPosBack.z = thisx->world.pos.z + (trapDist * Math_CosS(thisx->world.rot.y + 0x8000));
+        this->targetPosLeft.x = thisx->world.pos.x + (trapDist * cos_s(thisx->world.rot.y));
+        this->targetPosLeft.z = thisx->world.pos.z - (trapDist * sin_s(thisx->world.rot.y));
+        this->targetPosRight.x = thisx->world.pos.x + (trapDist * cos_s(thisx->world.rot.y + 0x8000));
+        this->targetPosRight.z = thisx->world.pos.z - (trapDist * sin_s(thisx->world.rot.y + 0x8000));
+        this->targetPosFwd.x = thisx->world.pos.x + (trapDist * sin_s(thisx->world.rot.y));
+        this->targetPosFwd.z = thisx->world.pos.z + (trapDist * cos_s(thisx->world.rot.y));
+        this->targetPosBack.x = thisx->world.pos.x + (trapDist * sin_s(thisx->world.rot.y + 0x8000));
+        this->targetPosBack.z = thisx->world.pos.z + (trapDist * cos_s(thisx->world.rot.y + 0x8000));
 
-        zSpeed = trapSpeed * Math_CosS(thisx->world.rot.y);
-        xSpeed = trapSpeed * Math_SinS(thisx->world.rot.y);
+        zSpeed = trapSpeed * cos_s(thisx->world.rot.y);
+        xSpeed = trapSpeed * sin_s(thisx->world.rot.y);
         zSpeed = ABS(zSpeed);
         xSpeed = ABS(xSpeed);
         this->moveSpeedLeftRight.x = this->moveSpeedForwardBack.z = zSpeed;
         this->moveSpeedLeftRight.z = this->moveSpeedForwardBack.x = xSpeed;
     }
     thisx->focus.pos = thisx->world.pos;
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinder(play, &this->collider, thisx, &sCylinderInit);
-    ActorShape_Init(&thisx->shape, 0.0f, ActorShadow_DrawCircle, 0.0f);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set5(play, &this->collider, thisx, &OcInfoData);
+    Shape_Info_init(&thisx->shape, 0.0f, Actor_shadow_circle, 0.0f);
     thisx->attentionRangeType = ATTENTION_RANGE_3;
     thisx->colChkInfo.mass = MASS_IMMOVABLE;
 }
 
-void EnTrap_Destroy(Actor* thisx, PlayState* play) {
+void En_trap_Actor_dt(Actor* thisx, PlayState* play) {
     EnTrap* this = (EnTrap*)thisx;
-    Collider_DestroyCylinder(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider);
 }
 
-void EnTrap_Update(Actor* thisx, PlayState* play) {
+void En_trap_move(Actor* thisx, PlayState* play) {
     EnTrap* this = (EnTrap*)thisx;
     Vec3f posTemp;
     s16 angleToKnockPlayer;
@@ -142,22 +142,22 @@ void EnTrap_Update(Actor* thisx, PlayState* play) {
     if (this->collider.base.ocFlags1 & OC1_HIT) {
         this->collider.base.ocFlags1 &= ~OC1_HIT;
         angleToCollidedActor =
-            thisx->world.rot.y + Math_Vec3f_Yaw(&this->collider.base.oc->world.pos, &thisx->world.pos);
+            thisx->world.rot.y + search_position_angleY(&this->collider.base.oc->world.pos, &thisx->world.pos);
         touchingActor = true;
     }
     // Freeze the trap if hit by ice arrows:
     if (this->collider.base.acFlags & AC_HIT) {
         icePos = thisx->world.pos;
         this->collider.base.acFlags &= ~AC_HIT;
-        Actor_SetColorFilter(thisx, COLORFILTER_COLORFLAG_BLUE, 250, COLORFILTER_BUFFLAG_OPA, 250);
+        Set_Fog(thisx, COLORFILTER_COLORFLAG_BLUE, 250, COLORFILTER_BUFFLAG_OPA, 250);
         icePos.y += 10.0f;
         icePos.z += 10.0f;
-        EffectSsEnIce_SpawnFlyingVec3f(play, thisx, &icePos, 150, 150, 150, 250, 235, 245, 255, 1.8f);
+        Effect_En_Ice_ct0(play, thisx, &icePos, 150, 150, 150, 250, 235, 245, 255, 1.8f);
         icePos.x += 10.0f;
         icePos.z -= 20.0f;
-        EffectSsEnIce_SpawnFlyingVec3f(play, thisx, &icePos, 150, 150, 150, 250, 235, 245, 255, 1.8f);
+        Effect_En_Ice_ct0(play, thisx, &icePos, 150, 150, 150, 250, 235, 245, 255, 1.8f);
         icePos.x -= 20.0f;
-        EffectSsEnIce_SpawnFlyingVec3f(play, thisx, &icePos, 150, 150, 150, 250, 235, 245, 255, 1.8f);
+        Effect_En_Ice_ct0(play, thisx, &icePos, 150, 150, 150, 250, 235, 245, 255, 1.8f);
     }
     // If not frozen:
     if (thisx->colorFilterTimer == 0) {
@@ -175,7 +175,7 @@ void EnTrap_Update(Actor* thisx, PlayState* play) {
                 angleToKnockPlayer = thisx->yawTowardsPlayer;
             }
             play->damagePlayer(play, -4);
-            Actor_SetPlayerKnockbackSmallNoDamage(play, thisx, 6.0f, angleToKnockPlayer, 6.0f);
+            Actor_player_power_damage_set2(play, thisx, 6.0f, angleToKnockPlayer, 6.0f);
             this->playerDmgTimer = 15;
         }
         if (thisx->params & SPIKETRAP_MODE_LINEAR) {
@@ -186,10 +186,10 @@ void EnTrap_Update(Actor* thisx, PlayState* play) {
             }
             // If there is a collision poly between current position and a position 30 units ahead of spike trap
             if (this->vContinue != 0.0f) {
-                posAhead.x = (Math_SinS(thisx->world.rot.y) * 30.0f) + thisx->world.pos.x;
-                posAhead.z = (Math_CosS(thisx->world.rot.y) * 30.0f) + thisx->world.pos.z;
+                posAhead.x = (sin_s(thisx->world.rot.y) * 30.0f) + thisx->world.pos.x;
+                posAhead.z = (cos_s(thisx->world.rot.y) * 30.0f) + thisx->world.pos.z;
                 posAhead.y = thisx->world.pos.y;
-                if (BgCheck_EntityLineTest1(&play->colCtx, &thisx->world.pos, &posAhead, &colPoint, &colPoly, true,
+                if (T_BGCheck_ObjLineCheck_poly_chgrp_ai(&play->colCtx, &thisx->world.pos, &posAhead, &colPoint, &colPoly, true,
                                             true, false, true, &bgId) == true) {
                     this->vContinue = 0.0f;
                 }
@@ -197,7 +197,7 @@ void EnTrap_Update(Actor* thisx, PlayState* play) {
             // If spike trap is touching an actor which is in the path of the spike trap
             if (touchingActor && (this->vContinue != 0.0f)) {
                 angleToCollidedActor =
-                    Math_Vec3f_Yaw(&thisx->world.pos, &this->collider.base.oc->world.pos) - thisx->world.rot.y;
+                    search_position_angleY(&thisx->world.pos, &this->collider.base.oc->world.pos) - thisx->world.rot.y;
                 if (ABS(angleToCollidedActor) < 0x1000) {
                     this->vContinue = 0.0f;
                 }
@@ -205,18 +205,18 @@ void EnTrap_Update(Actor* thisx, PlayState* play) {
             // If any of the above three conditions are met, turn around
             if (this->vContinue == 0.0f) {
                 thisx->world.rot.y += 0x8000;
-                Actor_PlaySfx(thisx, NA_SE_EV_SPINE_TRAP_MOVE);
+                Actor_SE_set(thisx, NA_SE_EV_SPINE_TRAP_MOVE);
             }
         } else if (thisx->params & SPIKETRAP_MODE_CIRCULAR) {
-            f32 temp_cond = Math_SinS(this->vAngularPos);
+            f32 temp_cond = sin_s(this->vAngularPos);
 
             this->vAngularPos += this->vAngularVel;
             // Every full circle make a sound:
-            if ((temp_cond < 0.0f) && (Math_SinS(this->vAngularPos) >= 0.0f)) {
-                Actor_PlaySfx(thisx, NA_SE_EV_ROUND_TRAP_MOVE);
+            if ((temp_cond < 0.0f) && (sin_s(this->vAngularPos) >= 0.0f)) {
+                Actor_SE_set(thisx, NA_SE_EV_ROUND_TRAP_MOVE);
             }
-            thisx->world.pos.x = (this->vRadius * Math_SinS(this->vAngularPos)) + thisx->home.pos.x;
-            thisx->world.pos.z = (this->vRadius * Math_CosS(this->vAngularPos)) + thisx->home.pos.z;
+            thisx->world.pos.x = (this->vRadius * sin_s(this->vAngularPos)) + thisx->home.pos.x;
+            thisx->world.pos.z = (this->vRadius * cos_s(this->vAngularPos)) + thisx->home.pos.z;
             thisx->world.pos.y = thisx->floorHeight;
             thisx->prevPos = thisx->world.pos;
         } else { // 4 way movement
@@ -234,11 +234,11 @@ void EnTrap_Update(Actor* thisx, PlayState* play) {
                         }
                         if (this->vMovementMetric != 0.0f) {
                             if (this->vMovementMetric == BEGIN_MOVE_OUT) {
-                                Actor_PlaySfx(thisx, NA_SE_EV_SPINE_TRAP_MOVE);
+                                Actor_SE_set(thisx, NA_SE_EV_SPINE_TRAP_MOVE);
                             }
-                            this->vMovementMetric = Math_SmoothStepToF(&thisx->world.pos.z, this->targetPosFwd.z, 1.0f,
+                            this->vMovementMetric = add_calc(&thisx->world.pos.z, this->targetPosFwd.z, 1.0f,
                                                                        this->moveSpeedForwardBack.z, 0.0f);
-                            this->vMovementMetric += Math_SmoothStepToF(&thisx->world.pos.x, this->targetPosFwd.x, 1.0f,
+                            this->vMovementMetric += add_calc(&thisx->world.pos.x, this->targetPosFwd.x, 1.0f,
                                                                         this->moveSpeedForwardBack.x, 0.0f);
                         }
                         break;
@@ -257,11 +257,11 @@ void EnTrap_Update(Actor* thisx, PlayState* play) {
                         }
                         if (this->vMovementMetric != 0.0f) {
                             if (this->vMovementMetric == BEGIN_MOVE_OUT) {
-                                Actor_PlaySfx(thisx, NA_SE_EV_SPINE_TRAP_MOVE);
+                                Actor_SE_set(thisx, NA_SE_EV_SPINE_TRAP_MOVE);
                             }
-                            this->vMovementMetric = Math_SmoothStepToF(&thisx->world.pos.x, this->targetPosLeft.x, 1.0f,
+                            this->vMovementMetric = add_calc(&thisx->world.pos.x, this->targetPosLeft.x, 1.0f,
                                                                        this->moveSpeedLeftRight.x, 0.0f);
-                            this->vMovementMetric += Math_SmoothStepToF(&thisx->world.pos.z, this->targetPosLeft.z,
+                            this->vMovementMetric += add_calc(&thisx->world.pos.z, this->targetPosLeft.z,
                                                                         1.0f, this->moveSpeedLeftRight.z, 0.0f);
                         }
                         break;
@@ -278,11 +278,11 @@ void EnTrap_Update(Actor* thisx, PlayState* play) {
                         }
                         if (this->vMovementMetric != 0.0f) {
                             if (this->vMovementMetric == BEGIN_MOVE_OUT) {
-                                Actor_PlaySfx(thisx, NA_SE_EV_SPINE_TRAP_MOVE);
+                                Actor_SE_set(thisx, NA_SE_EV_SPINE_TRAP_MOVE);
                             }
-                            this->vMovementMetric = Math_SmoothStepToF(&thisx->world.pos.z, this->targetPosBack.z, 1.0f,
+                            this->vMovementMetric = add_calc(&thisx->world.pos.z, this->targetPosBack.z, 1.0f,
                                                                        this->moveSpeedForwardBack.z, 0.0f);
-                            this->vMovementMetric += Math_SmoothStepToF(&thisx->world.pos.x, this->targetPosBack.x,
+                            this->vMovementMetric += add_calc(&thisx->world.pos.x, this->targetPosBack.x,
                                                                         1.0f, this->moveSpeedForwardBack.x, 0.0f);
                         }
                         break;
@@ -301,16 +301,16 @@ void EnTrap_Update(Actor* thisx, PlayState* play) {
                         }
                         if (this->vMovementMetric != 0.0f) {
                             if (this->vMovementMetric == BEGIN_MOVE_OUT) {
-                                Actor_PlaySfx(thisx, NA_SE_EV_SPINE_TRAP_MOVE);
+                                Actor_SE_set(thisx, NA_SE_EV_SPINE_TRAP_MOVE);
                             }
-                            this->vMovementMetric = Math_SmoothStepToF(&thisx->world.pos.x, this->targetPosRight.x,
+                            this->vMovementMetric = add_calc(&thisx->world.pos.x, this->targetPosRight.x,
                                                                        1.0f, this->moveSpeedLeftRight.x, 0.0f);
-                            this->vMovementMetric += Math_SmoothStepToF(&thisx->world.pos.z, this->targetPosRight.z,
+                            this->vMovementMetric += add_calc(&thisx->world.pos.z, this->targetPosRight.z,
                                                                         1.0f, this->moveSpeedLeftRight.z, 0.0f);
                         }
                         break;
                 }
-                if (!Actor_TestFloorInDirection(thisx, play, 50.0f, this->vClosestDirection)) {
+                if (!BG_point_check(thisx, play, 50.0f, this->vClosestDirection)) {
                     this->vMovementMetric = 0.0f;
                 }
                 // if in initial position:
@@ -325,7 +325,7 @@ void EnTrap_Update(Actor* thisx, PlayState* play) {
             } else {
                 // Of the four real world compass directions, get the one which is closest to the movement direction of
                 // the returning spike. Note that this is different from the previous usages of vClosestDirection
-                this->vClosestDirection = (Math_Vec3f_Yaw(&thisx->world.pos, &thisx->home.pos) + 0x2000) & 0xC000;
+                this->vClosestDirection = (search_position_angleY(&thisx->world.pos, &thisx->home.pos) + 0x2000) & 0xC000;
                 switch (this->vClosestDirection) {
                     case 0: // movement is closest to +z direction
                         if (thisx->bgCheckFlags & BGCHECKFLAG_WALL) {
@@ -367,17 +367,17 @@ void EnTrap_Update(Actor* thisx, PlayState* play) {
                         break;
                 }
                 if (!blockedOnReturn) {
-                    Math_SmoothStepToF(&thisx->world.pos.x, thisx->home.pos.x, 1.0f, 3.0f, 0.0f);
-                    Math_SmoothStepToF(&thisx->world.pos.z, thisx->home.pos.z, 1.0f, 3.0f, 0.0f);
+                    add_calc(&thisx->world.pos.x, thisx->home.pos.x, 1.0f, 3.0f, 0.0f);
+                    add_calc(&thisx->world.pos.z, thisx->home.pos.z, 1.0f, 3.0f, 0.0f);
                 }
             }
         }
-        Actor_MoveXZGravity(thisx); // Only used by straight line logic
+        Actor_position_moveF(thisx); // Only used by straight line logic
         // Adjust position using bgcheck, but do not adjust x, z position if in straight line mode:
         if (thisx->params & SPIKETRAP_MODE_LINEAR) {
             posTemp = thisx->world.pos;
         }
-        Actor_UpdateBgCheckInfo(play, thisx, 25.0f, 20.0f, 20.0f,
+        Actor_BGcheck2(play, thisx, 25.0f, 20.0f, 20.0f,
                                 UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2 | UPDBGCHECKINFO_FLAG_3 |
                                     UPDBGCHECKINFO_FLAG_4);
         if (thisx->params & SPIKETRAP_MODE_LINEAR) {
@@ -385,14 +385,14 @@ void EnTrap_Update(Actor* thisx, PlayState* play) {
             thisx->world.pos.z = posTemp.z;
         }
     }
-    Collider_UpdateCylinder(thisx, &this->collider);
-    CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(thisx, &this->collider);
+    CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
     if (thisx->colorFilterTimer == 0) {
-        CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
+        CollisionCheck_setAC(play, &play->colChkCtx, &this->collider.base);
     }
 }
 
-void EnTrap_Draw(Actor* thisx, PlayState* play) {
-    func_8002EBCC(thisx, play, 1);
-    Gfx_DrawDListOpa(play, gSlidingBladeTrapDL);
+void En_trap_display(Actor* thisx, PlayState* play) {
+    Actor_HiliteReflect_set_init(thisx, play, 1);
+    Cheap_gfx_display(play, gSlidingBladeTrapDL);
 }

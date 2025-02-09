@@ -53,12 +53,12 @@ typedef enum EnNbDrawMode {
     /* 0x04 */ NB_DRAW_LOOK_DIRECTION
 } EnNbDrawMode;
 
-void EnNb_Init(Actor* thisx, PlayState* play);
-void EnNb_Destroy(Actor* thisx, PlayState* play);
-void EnNb_Update(Actor* thisx, PlayState* play);
-void EnNb_Draw(Actor* thisx, PlayState* play);
+void En_Nb_Actor_ct(Actor* thisx, PlayState* play);
+void En_Nb_Actor_dt(Actor* thisx, PlayState* play);
+void En_Nb_Actor_main(Actor* thisx, PlayState* play);
+void En_Nb_Actor_draw(Actor* thisx, PlayState* play);
 
-static ColliderCylinderInitType1 sCylinderInit = {
+static ColliderCylinderInitType1 En_Nb_OcInfoData_forStand = {
     {
         COL_MATERIAL_HIT0,
         AT_NONE,
@@ -77,7 +77,7 @@ static ColliderCylinderInitType1 sCylinderInit = {
     { 25, 80, 0, { 0, 0, 0 } },
 };
 
-static void* sEyeTextures[] = {
+static void* en_nb_eye[] = {
     gNabooruEyeOpenTex,
     gNabooruEyeHalfTex,
     gNabooruEyeClosedTex,
@@ -89,19 +89,19 @@ static s32 D_80AB4318 = 0;
 
 #include "Demodt_Kenjyanoma.inc.c"
 
-s32 EnNb_GetPath(EnNb* this) {
+s32 En_Nb_GetUpper_arg_data(EnNb* this) {
     s32 path = PARAMS_GET_U(this->actor.params, 8, 8);
 
     return path;
 }
 
-s32 EnNb_GetType(EnNb* this) {
+s32 En_Nb_GetLower_arg_data(EnNb* this) {
     s32 type = PARAMS_GET_U(this->actor.params, 0, 8);
 
     return type;
 }
 
-void EnNb_UpdatePath(EnNb* this, PlayState* play) {
+void En_Nb_Init_path_info(EnNb* this, PlayState* play) {
     Vec3s* pointPos;
     Path* pathList;
     s32 pad;
@@ -110,7 +110,7 @@ void EnNb_UpdatePath(EnNb* this, PlayState* play) {
     pathList = play->pathList;
 
     if (pathList != NULL) {
-        path = EnNb_GetPath(this);
+        path = En_Nb_GetUpper_arg_data(this);
         pathList += path;
         pointPos = SEGMENTED_TO_VIRTUAL(pathList->points);
         this->initialPos.x = pointPos[0].x;
@@ -120,7 +120,7 @@ void EnNb_UpdatePath(EnNb* this, PlayState* play) {
         this->finalPos.y = pointPos[1].y;
         this->finalPos.z = pointPos[1].z;
         this->pathYaw =
-            RAD_TO_BINANG(Math_FAtan2F(this->finalPos.x - this->initialPos.x, this->finalPos.z - this->initialPos.z));
+            RAD_TO_BINANG(fatan2(this->finalPos.x - this->initialPos.x, this->finalPos.z - this->initialPos.z));
         // "En_Nb_Get_path_info Rail Data Get! = %d!!!!!!!!!!!!!!"
         PRINTF("En_Nb_Get_path_info レールデータをゲットだぜ = %d!!!!!!!!!!!!!!\n", path);
     } else {
@@ -129,67 +129,67 @@ void EnNb_UpdatePath(EnNb* this, PlayState* play) {
     }
 }
 
-void EnNb_SetupCollider(Actor* thisx, PlayState* play) {
+void En_Nb_ct_forCorect(Actor* thisx, PlayState* play) {
     EnNb* this = (EnNb*)thisx;
 
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinderType1(play, &this->collider, thisx, &sCylinderInit);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set3(play, &this->collider, thisx, &En_Nb_OcInfoData_forStand);
 }
 
-void EnNb_UpdateCollider(EnNb* this, PlayState* play) {
+void En_Nb_Excute_Corect(EnNb* this, PlayState* play) {
     s32 pad[4];
     ColliderCylinder* collider = &this->collider;
 
-    Collider_UpdateCylinder(&this->actor, collider);
-    CollisionCheck_SetOC(play, &play->colChkCtx, &collider->base);
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, collider);
+    CollisionCheck_setOC(play, &play->colChkCtx, &collider->base);
 }
 
-void EnNb_Destroy(Actor* thisx, PlayState* play) {
+void En_Nb_Actor_dt(Actor* thisx, PlayState* play) {
     EnNb* this = (EnNb*)thisx;
 
-    Collider_DestroyCylinder(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider);
 }
 
-void func_80AB0FBC(EnNb* this, PlayState* play) {
+void En_Nb_Calc_turn_link(EnNb* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     this->interactInfo.trackPos = player->actor.world.pos;
     this->interactInfo.yOffset = kREG(16) + 9.0f;
-    Npc_TrackPoint(&this->actor, &this->interactInfo, kREG(17) + 0xC, NPC_TRACKING_HEAD_AND_TORSO);
+    eye_moveM(&this->actor, &this->interactInfo, kREG(17) + 0xC, NPC_TRACKING_HEAD_AND_TORSO);
 }
 
-void func_80AB1040(EnNb* this, PlayState* play) {
+void En_Nb_Calc_turn_link2(EnNb* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     this->interactInfo.trackPos = player->actor.world.pos;
     this->interactInfo.yOffset = kREG(16) + 9.0f;
-    Npc_TrackPoint(&this->actor, &this->interactInfo, kREG(17) + 0xC, NPC_TRACKING_FULL_BODY);
+    eye_moveM(&this->actor, &this->interactInfo, kREG(17) + 0xC, NPC_TRACKING_FULL_BODY);
 }
 
-void func_80AB10C4(EnNb* this) {
+void En_Nb_Calc_turn_front(EnNb* this) {
     s32 pad2[2];
     Vec3s* headRot;
     Vec3s* torsoRot;
 
     headRot = &this->interactInfo.headRot;
-    Math_SmoothStepToS(&headRot->x, 0, 20, 6200, 100);
-    Math_SmoothStepToS(&headRot->y, 0, 20, 6200, 100);
+    add_calc_short_angle2(&headRot->x, 0, 20, 6200, 100);
+    add_calc_short_angle2(&headRot->y, 0, 20, 6200, 100);
     torsoRot = &this->interactInfo.torsoRot;
-    Math_SmoothStepToS(&torsoRot->x, 0, 20, 6200, 100);
-    Math_SmoothStepToS(&torsoRot->y, 0, 20, 6200, 100);
+    add_calc_short_angle2(&torsoRot->x, 0, 20, 6200, 100);
+    add_calc_short_angle2(&torsoRot->y, 0, 20, 6200, 100);
 }
 
-void EnNb_UpdateEyes(EnNb* this) {
+void En_Nb_set_eye_pattern(EnNb* this) {
     s32 pad[3];
     s16* blinkTimer = &this->blinkTimer;
     s16* eyeIdx = &this->eyeIdx;
 
     if (DECR(*blinkTimer) == 0) {
-        *blinkTimer = Rand_S16Offset(60, 60);
+        *blinkTimer = get_random_timer(60, 60);
     }
 
     *eyeIdx = *blinkTimer;
-    if (*eyeIdx >= ARRAY_COUNT(sEyeTextures)) {
+    if (*eyeIdx >= ARRAY_COUNT(en_nb_eye)) {
         *eyeIdx = 0;
     }
 }
@@ -224,15 +224,15 @@ void func_80AB1210(EnNb* this, PlayState* play) {
 }
 #endif
 
-void func_80AB1284(EnNb* this, PlayState* play) {
-    Actor_UpdateBgCheckInfo(play, &this->actor, 75.0f, 30.0f, 30.0f, UPDBGCHECKINFO_FLAG_2);
+void En_Nb_BGcheck(EnNb* this, PlayState* play) {
+    Actor_BGcheck2(play, &this->actor, 75.0f, 30.0f, 30.0f, UPDBGCHECKINFO_FLAG_2);
 }
 
-s32 EnNb_UpdateSkelAnime(EnNb* this) {
-    return SkelAnime_Update(&this->skelAnime);
+s32 En_Nb_Animation_Base(EnNb* this) {
+    return Skeleton_Info2_anime_play(&this->skelAnime);
 }
 
-CsCmdActorCue* EnNb_GetCue(PlayState* play, s32 cueChannel) {
+CsCmdActorCue* En_Nb_Get_npcdemopnt(PlayState* play, s32 cueChannel) {
     if (play->csCtx.state != CS_STATE_IDLE) {
         CsCmdActorCue* cue = play->csCtx.actorCues[cueChannel];
 
@@ -242,8 +242,8 @@ CsCmdActorCue* EnNb_GetCue(PlayState* play, s32 cueChannel) {
     return NULL;
 }
 
-void EnNb_SetStartPosRotFromCue1(EnNb* this, PlayState* play, s32 cueChannel) {
-    CsCmdActorCue* cue = EnNb_GetCue(play, cueChannel);
+void En_Nb_Set_DemoStartPosAngle(EnNb* this, PlayState* play, s32 cueChannel) {
+    CsCmdActorCue* cue = En_Nb_Get_npcdemopnt(play, cueChannel);
     Actor* thisx = &this->actor;
 
     if (cue != NULL) {
@@ -255,7 +255,7 @@ void EnNb_SetStartPosRotFromCue1(EnNb* this, PlayState* play, s32 cueChannel) {
     }
 }
 
-s32 func_80AB1390(EnNb* this, PlayState* play, u16 cueId, s32 cueChannel) {
+s32 En_Nb_Check_npcdemopnt(EnNb* this, PlayState* play, u16 cueId, s32 cueChannel) {
     CsCmdActorCue* cue;
 
     if (play->csCtx.state != CS_STATE_IDLE) {
@@ -269,7 +269,7 @@ s32 func_80AB1390(EnNb* this, PlayState* play, u16 cueId, s32 cueChannel) {
     return false;
 }
 
-s32 func_80AB13D8(EnNb* this, PlayState* play, u16 cueId, s32 cueChannel) {
+s32 En_Nb_Check2_npcdemopnt(EnNb* this, PlayState* play, u16 cueId, s32 cueChannel) {
     CsCmdActorCue* cue;
 
     if (play->csCtx.state != CS_STATE_IDLE) {
@@ -283,8 +283,8 @@ s32 func_80AB13D8(EnNb* this, PlayState* play, u16 cueId, s32 cueChannel) {
     return false;
 }
 
-void EnNb_SetStartPosRotFromCue2(EnNb* this, PlayState* play, s32 cueChannel) {
-    CsCmdActorCue* cue = EnNb_GetCue(play, cueChannel);
+void En_Nb_Set_StartPos_npcdemopnt(EnNb* this, PlayState* play, s32 cueChannel) {
+    CsCmdActorCue* cue = En_Nb_Get_npcdemopnt(play, cueChannel);
     Actor* thisx = &this->actor;
 
     if (cue != NULL) {
@@ -296,8 +296,8 @@ void EnNb_SetStartPosRotFromCue2(EnNb* this, PlayState* play, s32 cueChannel) {
     }
 }
 
-void EnNb_SetCurrentAnim(EnNb* this, AnimationHeader* animation, u8 mode, f32 morphFrames, s32 arg4) {
-    f32 frameCount = Animation_GetLastFrame(animation);
+void En_Nb_Change_Anime(EnNb* this, AnimationHeader* animation, u8 mode, f32 morphFrames, s32 arg4) {
+    f32 frameCount = Si2_anime_end_frame(animation);
     f32 playbackSpeed;
     f32 unk0;
     f32 fc;
@@ -312,7 +312,7 @@ void EnNb_SetCurrentAnim(EnNb* this, AnimationHeader* animation, u8 mode, f32 mo
         playbackSpeed = -1.0f;
     }
 
-    Animation_Change(&this->skelAnime, animation, playbackSpeed, unk0, fc, mode, morphFrames);
+    Skeleton_Info2_init(&this->skelAnime, animation, playbackSpeed, unk0, fc, mode, morphFrames);
 }
 
 #include "z_en_nb_inKenjyanoma.inc.c"
@@ -327,83 +327,83 @@ void EnNb_SetCurrentAnim(EnNb* this, AnimationHeader* animation, u8 mode, f32 mo
 
 #include "z_en_nb_inStand.inc.c"
 
-static EnNbActionFunc sActionFuncs[] = {
-    EnNb_SetupChamberCs,
-    EnNb_SetupChamberWarp,
-    EnNb_ComeUp,
-    func_80AB193C,
-    EnNb_RaiseArm,
-    func_80AB19BC,
-    func_80AB19FC,
-    EnNb_Hide,
-    EnNb_Fade,
-    EnNb_CreateLightOrb,
-    func_80AB23A8,
-    EnNb_MovingInPortal,
-    EnNb_SuckedInByPortal,
-    EnNb_CheckConfrontationCsModeWrapper,
-    func_80AB2C18,
-    EnNb_Kneel,
-    EnNb_LookRight,
-    EnNb_LookLeft,
-    EnNb_Run,
-    EnNb_ConfrontationDestroy,
-    EnNb_CheckCreditsCsMode,
-    EnNb_CreditsFade,
-    func_80AB3428,
-    EnNb_LookUp,
-    EnNb_WaitForNotice,
-    EnNb_StandUpAfterNotice,
-    EnNb_BlockCrawlspace,
-    EnNb_InitCrawlspaceDialogue,
-    EnNb_FollowPath,
-    func_80AB3DB0,
-    func_80AB3E10,
-};
+void En_Nb_Actor_main(Actor* thisx, PlayState* play) {
+    static EnNbActionFunc proc[] = {
+        En_Nb_Actor_main_wait,
+        En_Nb_Actor_main_hide,
+        En_Nb_Actor_main_up,
+        En_Nb_Actor_main_greet,
+        En_Nb_Actor_main_handup,
+        En_Nb_Actor_main_cheer,
+        En_Nb_Actor_main_stop,
+        En_Nb_Seal_Actor_main_hide,
+        En_Nb_Seal_Actor_main_fade,
+        En_Nb_Seal_Actor_main_pray,
+        En_Nb_Kidnap_Actor_main_hide,
+        En_Nb_Kidnap_Actor_main_struggle,
+        En_Nb_Kidnap_Actor_main_Fall,
+        En_Nb_Confrontion_Actor_main_hide,
+        En_Nb_Confrontion_Actor_main_Absence,
+        En_Nb_Confrontion_Actor_main_Kneel,
+        En_Nb_Confrontion_Actor_main_Turn_right,
+        En_Nb_Confrontion_Actor_main_Turn_left,
+        En_Nb_Confrontion_Actor_main_Away,
+        En_Nb_Confrontion_Actor_main_Disappear,
+        En_Nb_inEnding_main_wait,
+        En_Nb_inEnding_main_alpha,
+        En_Nb_inEnding_main_stand,
+        En_Nb_inEnding_main_lookup,
+        En_Nb_inStand_main_wait,
+        En_Nb_inStand_main_up,
+        En_Nb_inStand_main_blocking,
+        En_Nb_inStand_main_blocking_greet,
+        En_Nb_inStand_main_moving,
+        En_Nb_inStand_main_welcome,
+        En_Nb_inStand_main_welcome_greet,
+    };
 
-void EnNb_Update(Actor* thisx, PlayState* play) {
     EnNb* this = (EnNb*)thisx;
 
-    if (this->action < 0 || this->action > 30 || sActionFuncs[this->action] == NULL) {
+    if (this->action < 0 || this->action > 30 || proc[this->action] == NULL) {
         // "Main mode is wrong!!!!!!!!!!!!!!!!!!!!!!!!!"
         PRINTF(VT_FGCOL(RED) "メインモードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
         return;
     }
 
-    sActionFuncs[this->action](this, play);
+    proc[this->action](this, play);
 }
 
-void EnNb_Init(Actor* thisx, PlayState* play) {
+void En_Nb_Actor_ct(Actor* thisx, PlayState* play) {
     s32 pad;
     EnNb* this = (EnNb*)thisx;
 
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 30.0f);
-    EnNb_SetupCollider(thisx, play);
-    SkelAnime_InitFlex(play, &this->skelAnime, &gNabooruSkel, NULL, this->jointTable, this->morphTable, NB_LIMB_MAX);
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 30.0f);
+    En_Nb_ct_forCorect(thisx, play);
+    Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &gNabooruSkel, NULL, this->jointTable, this->morphTable, NB_LIMB_MAX);
 
-    switch (EnNb_GetType(this)) {
+    switch (En_Nb_GetLower_arg_data(this)) {
         case NB_TYPE_DEMO02:
-            EnNb_SetupLightArrowOrSealingCs(this, play);
+            En_Nb_KenjyanomaDemo02_Init(this, play);
             break;
         case NB_TYPE_KIDNAPPED:
-            EnNb_InitKidnap(this, play);
+            En_Nb_Kidnap_Init(this, play);
             break;
         case NB_TYPE_KNUCKLE:
-            EnNb_SetupConfrontation(this, play);
+            En_Nb_Confrontion_Init(this, play);
             break;
         case NB_TYPE_CREDITS:
-            EnNb_SetupCreditsSpawn(this, play);
+            En_Nb_Ending_Init(this, play);
             break;
         case NB_TYPE_CRAWLSPACE:
-            EnNb_CrawlspaceSpawnCheck(this, play);
+            En_Nb_Stand_Init(this, play);
             break;
         default: // giving medallion
-            EnNb_SetChamberAnim(this, play);
+            En_Nb_Kenjyanoma_Init(this, play);
             break;
     }
 }
 
-s32 EnNb_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+s32 En_Nb_BeforeDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     EnNb* this = (EnNb*)thisx;
     NpcInteractInfo* interactInfo = &this->interactInfo;
     s32 ret = false;
@@ -425,14 +425,14 @@ s32 EnNb_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* po
     return ret;
 }
 
-void EnNb_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
+void En_Nb_AfterDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
     EnNb* this = (EnNb*)thisx;
 
     if (limbIndex == NB_LIMB_HEAD) {
         Vec3f vec1 = { 0.0f, 10.0f, 0.0f };
         Vec3f vec2;
 
-        Matrix_MultVec3f(&vec1, &vec2);
+        Matrix_Position(&vec1, &vec2);
         this->actor.focus.pos.x = vec2.x;
         this->actor.focus.pos.y = vec2.y;
         this->actor.focus.pos.z = vec2.z;
@@ -442,43 +442,43 @@ void EnNb_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, 
     }
 }
 
-void EnNb_DrawNothing(EnNb* this, PlayState* play) {
+void En_Nb_Actor_draw_none(EnNb* this, PlayState* play) {
 }
 
-void EnNb_DrawDefault(EnNb* this, PlayState* play) {
+void En_Nb_Actor_draw_normal(EnNb* this, PlayState* play) {
     s32 pad;
     s16 eyeIdx = this->eyeIdx;
     SkelAnime* skelAnime = &this->skelAnime;
-    void* eyeTexture = sEyeTextures[eyeIdx];
+    void* eyeTexture = en_nb_eye[eyeIdx];
     s32 pad1;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_nb.c", 992);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
     gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(eyeTexture));
     gSPSegment(POLY_OPA_DISP++, 0x09, SEGMENTED_TO_VIRTUAL(eyeTexture));
     gDPSetEnvColor(POLY_OPA_DISP++, 0, 0, 0, 255);
-    gSPSegment(POLY_OPA_DISP++, 0x0C, &D_80116280[2]);
-    SkelAnime_DrawFlexOpa(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount,
-                          EnNb_OverrideLimbDraw, EnNb_PostLimbDraw, &this->actor);
+    gSPSegment(POLY_OPA_DISP++, 0x0C, &Actor_change_render_mode[2]);
+    Si2_draw_SV(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount,
+                          En_Nb_BeforeDraw, En_Nb_AfterDraw, &this->actor);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_nb.c", 1013);
 }
 
-static EnNbDrawFunc sDrawFuncs[] = {
-    EnNb_DrawNothing, EnNb_DrawDefault, EnNb_DrawTransparency, func_80AB2E70, func_80AB2FE4,
-};
+void En_Nb_Actor_draw(Actor* thisx, PlayState* play) {
+    static EnNbDrawFunc proc[] = {
+        En_Nb_Actor_draw_none, En_Nb_Actor_draw_normal, En_Nb_Actor_draw_alpha, En_Nb_draw_surprise_eye, En_Nb_draw_surprise_head,
+    };
 
-void EnNb_Draw(Actor* thisx, PlayState* play) {
     EnNb* this = (EnNb*)thisx;
 
-    if (this->drawMode < 0 || this->drawMode >= 5 || sDrawFuncs[this->drawMode] == NULL) {
+    if (this->drawMode < 0 || this->drawMode >= 5 || proc[this->drawMode] == NULL) {
         // "Draw mode is wrong!!!!!!!!!!!!!!!!!!!!!!!!!"
         PRINTF(VT_FGCOL(RED) "描画モードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
         return;
     }
 
-    sDrawFuncs[this->drawMode](this, play);
+    proc[this->drawMode](this, play);
 }
 
 ActorProfile En_Nb_Profile = {
@@ -487,8 +487,8 @@ ActorProfile En_Nb_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_NB,
     /**/ sizeof(EnNb),
-    /**/ EnNb_Init,
-    /**/ EnNb_Destroy,
-    /**/ EnNb_Update,
-    /**/ EnNb_Draw,
+    /**/ En_Nb_Actor_ct,
+    /**/ En_Nb_Actor_dt,
+    /**/ En_Nb_Actor_main,
+    /**/ En_Nb_Actor_draw,
 };

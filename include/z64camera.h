@@ -97,18 +97,18 @@ struct View;
 
 // Camera stateFlags. Variety of generic flags
 #define CAM_STATE_CHECK_BG_ALT (1 << 0) // Must be set for the camera to change settings based on the bg surface
-#define CAM_STATE_CHECK_WATER (1 << 1) // Must be set for Camera_UpdateWater to run
+#define CAM_STATE_CHECK_WATER (1 << 1) // Must be set for water_check to run
 #define CAM_STATE_CHECK_BG (1 << 2) //  Must be set for the camera to change settings based on the bg surface
 #define CAM_STATE_EXTERNAL_FINISHED (1 << 3) // Signal from the external systems to camera that the current cam-update function is no longer needed
 #define CAM_STATE_CAM_FUNC_FINISH (1 << 4) // Signal from camera to player that the cam-update function is finished its primary purpose
-#define CAM_STATE_LOCK_MODE (1 << 5) // Prevents camera from changing mode, unless overridden by `forceModeChange` passed to `Camera_RequestModeImpl`
+#define CAM_STATE_LOCK_MODE (1 << 5) // Prevents camera from changing mode, unless overridden by `forceModeChange` passed to `change_camera_mode`
 #define CAM_STATE_DISTORTION (1 << 6) // Set when camera distortion is on
-#define CAM_STATE_PLAY_INIT (1 << 7) // Set in Play_Init, never used or changed
+#define CAM_STATE_PLAY_INIT (1 << 7) // Set in play_init, never used or changed
 #define CAM_STATE_CAMERA_IN_WATER (1 << 8) // Camera (eye) is underwater
 #define CAM_STATE_PLAYER_IN_WATER (1 << 9) // Player is swimming in water
 #define CAM_STATE_BLOCK_BG (1 << 10) // Prevents the camera from changing settings based on the bg surface for 1 frame
-#define CAM_STATE_DEMO7 (1 << 12) // Set in Camera_Demo7, but this function is never called
-#define CAM_STATE_CAM_INIT (1 << 14) // Set in Camera_Init, never used or changed
+#define CAM_STATE_DEMO7 (1 << 12) // Set in demo_camerawork_07, but this function is never called
+#define CAM_STATE_CAM_INIT (1 << 14) // Set in initCamera, never used or changed
 #define CAM_STATE_PLAYER_DIVING ((s16)(1 << 15)) // Diving from the surface of the water down
 
 // Camera viewFlags. Set params related to view
@@ -1699,34 +1699,34 @@ typedef enum DebugCamTextColor {
     /* 7 */ DEBUG_CAM_TEXT_GREEN
 } DebugCamTextColor;
 
-void Camera_Init(Camera* camera, struct View* view, struct CollisionContext* colCtx, struct PlayState* play);
-void Camera_InitDataUsingPlayer(Camera* camera, struct Player* player);
-s16 Camera_ChangeStatus(Camera* camera, s16 status);
-Vec3s Camera_Update(Camera* camera);
-void Camera_Finish(Camera* camera);
-s32 Camera_RequestMode(Camera* camera, s16 mode);
-s32 Camera_CheckValidMode(Camera* camera, s16 mode);
-s32 Camera_RequestSetting(Camera* camera, s16 setting);
-s32 Camera_RequestBgCam(Camera* camera, s32 requestedBgCamIndex);
-s16 Camera_GetInputDirYaw(Camera* camera);
-Vec3s Camera_GetCamDir(Camera* camera);
-s16 Camera_GetCamDirPitch(Camera* camera);
-s16 Camera_GetCamDirYaw(Camera* camera);
-s32 Camera_RequestQuake(Camera* camera, s32 unused, s16 y, s32 duration);
-s32 Camera_SetViewParam(Camera* camera, s32 viewFlag, void* param);
-s32 Camera_OverwriteStateFlags(Camera* camera, s16 stateFlags);
-s16 Camera_SetStateFlag(Camera* camera, s16 stateFlag);
-s16 Camera_UnsetStateFlag(Camera* camera, s16 stateFlag);
-s32 Camera_ResetAnim(Camera* camera);
-s32 Camera_SetCSParams(Camera* camera, CutsceneCameraPoint* atPoints, CutsceneCameraPoint* eyePoints,
+void initCamera(Camera* camera, struct View* view, struct CollisionContext* colCtx, struct PlayState* play);
+void leaveCamera(Camera* camera, struct Player* player);
+s16 changeCameraStatus(Camera* camera, s16 status);
+Vec3s actionCameraWork(Camera* camera);
+void batontouchCamera(Camera* camera);
+s32 changeCameraMode(Camera* camera, s16 mode);
+s32 useCameraModeOK(Camera* camera, s16 mode);
+s32 changeCameraSet(Camera* camera, s16 setting);
+s32 changeCameraID(Camera* camera, s32 requestedBgCamIndex);
+s16 getCameraAngleY(Camera* camera);
+Vec3s getRealCameraAngle(Camera* camera);
+s16 getRealCameraAngleX(Camera* camera);
+s16 getRealCameraAngleY(Camera* camera);
+s32 setDamageCamera(Camera* camera, s32 unused, s16 y, s32 duration);
+s32 lockCamera(Camera* camera, s32 viewFlag, void* param);
+s32 changeCameraByPolygon(Camera* camera, s16 stateFlags);
+s16 setCameraFlag(Camera* camera, s16 stateFlag);
+s16 clearCameraFlag(Camera* camera, s16 stateFlag);
+s32 setCameraResetSpline(Camera* camera);
+s32 setCameraDemoSplineInfo(Camera* camera, CutsceneCameraPoint* atPoints, CutsceneCameraPoint* eyePoints,
                        struct Player* player, s16 relativeToPlayer);
-s32 Camera_ChangeDoorCam(Camera* camera, struct Actor* doorActor, s16 bgCamIndex, f32 arg3, s16 timer1, s16 timer2,
+s32 setDoorCameraInfo(Camera* camera, struct Actor* doorActor, s16 bgCamIndex, f32 arg3, s16 timer1, s16 timer2,
                          s16 timer3);
-s32 Camera_Copy(Camera* dstCamera, Camera* srcCamera);
-Vec3f Camera_GetQuakeOffset(Camera* camera);
-void Camera_SetCameraData(Camera* camera, s16 setDataFlags, void* data0, void* data1, s16 data2, s16 data3,
+s32 copyCameraPos(Camera* dstCamera, Camera* srcCamera);
+Vec3f getCameraGap(Camera* camera);
+void setCameraData(Camera* camera, s16 setDataFlags, void* data0, void* data1, s16 data2, s16 data3,
                           UNK_TYPE arg6);
-s32 func_8005B198(void);
-s16 Camera_SetFinishedFlag(Camera* camera);
+s32 getAttentionDemoPart(void);
+s16 restartCameraStoped(Camera* camera);
 
 #endif

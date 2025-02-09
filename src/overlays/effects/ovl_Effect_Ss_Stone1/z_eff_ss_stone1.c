@@ -9,13 +9,13 @@
 
 #define rReg0 regs[0]
 
-u32 EffectSsStone1_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
-void EffectSsStone1_Draw(PlayState* play, u32 index, EffectSs* this);
-void EffectSsStone1_Update(PlayState* play, u32 index, EffectSs* this);
+u32 Effect_SS2_Stone1_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
+void Effect_SS_Stone1_disp_mode(PlayState* play, u32 index, EffectSs* this);
+void Effect_SS_Stone1_func_proc(PlayState* play, u32 index, EffectSs* this);
 
 EffectSsProfile Effect_Ss_Stone1_Profile = {
     EFFECT_SS_STONE1,
-    EffectSsStone1_Init,
+    Effect_SS2_Stone1_ct,
 };
 
 typedef struct EffStoneDrawInfo {
@@ -24,7 +24,7 @@ typedef struct EffStoneDrawInfo {
     /* 0x08 */ Color_RGBA8 envColor;
 } EffStoneDrawInfo;
 
-static EffStoneDrawInfo sDrawInfo[] = {
+static EffStoneDrawInfo stone1_anime_data[] = {
     { gUnknownEffStone8Tex, { 200, 0, 0, 255 }, { 0, 0, 0, 255 } },
     { gUnknownEffStone7Tex, { 255, 100, 0, 255 }, { 100, 0, 0, 255 } },
     { gUnknownEffStone6Tex, { 255, 200, 0, 255 }, { 200, 0, 0, 255 } },
@@ -35,7 +35,7 @@ static EffStoneDrawInfo sDrawInfo[] = {
     { gUnknownEffStone1Tex, { 255, 255, 255, 255 }, { 0, 255, 255, 255 } },
 };
 
-u32 EffectSsStone1_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
+u32 Effect_SS2_Stone1_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
     EffectSsStone1InitParams* initParams = (EffectSsStone1InitParams*)initParamsx;
     Vec3f pos = initParams->pos;
 
@@ -43,27 +43,27 @@ u32 EffectSsStone1_Init(PlayState* play, u32 index, EffectSs* this, void* initPa
     this->vec = pos;
     this->life = 8;
     this->rReg0 = initParams->unk_C;
-    this->draw = EffectSsStone1_Draw;
-    this->update = EffectSsStone1_Update;
+    this->draw = Effect_SS_Stone1_disp_mode;
+    this->update = Effect_SS_Stone1_func_proc;
 
     return 1;
 }
 
-void EffectSsStone1_Draw(PlayState* play, u32 index, EffectSs* this) {
+void Effect_SS_Stone1_disp_mode(PlayState* play, u32 index, EffectSs* this) {
     GraphicsContext* gfxCtx = play->state.gfxCtx;
-    EffStoneDrawInfo* drawParams = &sDrawInfo[this->life];
+    EffStoneDrawInfo* drawParams = &stone1_anime_data[this->life];
     Vec3f mfVec;
     f32 mfW;
     f32 scale;
 
     OPEN_DISPS(gfxCtx, "../z_eff_ss_stone1.c", 154);
 
-    SkinMatrix_Vec3fMtxFMultXYZW(&play->viewProjectionMtxF, &this->pos, &mfVec, &mfW);
+    Skin_Matrix_PrjMulVector(&play->viewProjectionMtxF, &this->pos, &mfVec, &mfW);
     scale = (mfW < 1500.0f) ? 3.0f : (mfW / 1500.0f) * 3.0f;
-    Matrix_Translate(this->pos.x, this->pos.y, this->pos.z, MTXMODE_NEW);
-    Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
+    Matrix_translate(this->pos.x, this->pos.y, this->pos.z, MTXMODE_NEW);
+    Matrix_scale(scale, scale, scale, MTXMODE_APPLY);
     MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, gfxCtx, "../z_eff_ss_stone1.c", 168);
-    Gfx_SetupDL_61Xlu(gfxCtx);
+    texture_z_cld_poly_xlu_nd(gfxCtx);
     gSPSegment(POLY_XLU_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(drawParams->texture));
     gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, drawParams->primColor.r, drawParams->primColor.g, drawParams->primColor.b,
                     255);
@@ -73,7 +73,7 @@ void EffectSsStone1_Draw(PlayState* play, u32 index, EffectSs* this) {
     CLOSE_DISPS(gfxCtx, "../z_eff_ss_stone1.c", 183);
 }
 
-void EffectSsStone1_Update(PlayState* play, u32 index, EffectSs* this) {
+void Effect_SS_Stone1_func_proc(PlayState* play, u32 index, EffectSs* this) {
     if ((this->life == 6) && (this->rReg0 != 0)) {
         R_TRANS_FADE_FLASH_ALPHA_STEP = 0;
     }

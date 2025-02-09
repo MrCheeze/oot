@@ -18,16 +18,16 @@
 #define rFlags regs[8]
 #define rScroll regs[9]
 
-u32 EffectSsEnFire_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
-void EffectSsEnFire_Draw(PlayState* play, u32 index, EffectSs* this);
-void EffectSsEnFire_Update(PlayState* play, u32 index, EffectSs* this);
+u32 Effect_Ss_En_Fire_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
+void Effect_SS_En_Fire_disp_mode(PlayState* play, u32 index, EffectSs* this);
+void Effect_SS_En_Fire_func_proc(PlayState* play, u32 index, EffectSs* this);
 
 EffectSsProfile Effect_Ss_En_Fire_Profile = {
     EFFECT_SS_EN_FIRE,
-    EffectSsEnFire_Init,
+    Effect_Ss_En_Fire_ct,
 };
 
-u32 EffectSsEnFire_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
+u32 Effect_Ss_En_Fire_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
     EffectSsEnFireInitParams* initParams = (EffectSsEnFireInitParams*)initParamsx;
     Vec3f zeroVec = { 0.0f, 0.0f, 0.0f };
 
@@ -36,16 +36,16 @@ u32 EffectSsEnFire_Init(PlayState* play, u32 index, EffectSs* this, void* initPa
     this->life = 20;
     this->rLifespan = this->life;
     this->actor = initParams->actor;
-    this->rScroll = Rand_ZeroOne() * 20.0f;
-    this->draw = EffectSsEnFire_Draw;
-    this->update = EffectSsEnFire_Update;
+    this->rScroll = fqrand() * 20.0f;
+    this->draw = Effect_SS_En_Fire_disp_mode;
+    this->update = Effect_SS_En_Fire_func_proc;
     this->rUnused = -15;
 
     if (initParams->bodyPart < 0) {
-        this->rYaw = Math_Vec3f_Yaw(&initParams->actor->world.pos, &initParams->pos) - initParams->actor->shape.rot.y;
+        this->rYaw = search_position_angleY(&initParams->actor->world.pos, &initParams->pos) - initParams->actor->shape.rot.y;
         this->rPitch =
-            Math_Vec3f_Pitch(&initParams->actor->world.pos, &initParams->pos) - initParams->actor->shape.rot.x;
-        this->vec.z = Math_Vec3f_DistXYZ(&initParams->pos, &initParams->actor->world.pos);
+            search_position_angleX(&initParams->actor->world.pos, &initParams->pos) - initParams->actor->shape.rot.x;
+        this->vec.z = search_position_distance(&initParams->pos, &initParams->actor->world.pos);
     }
 
     this->rScaleMax = initParams->scale;
@@ -63,7 +63,7 @@ u32 EffectSsEnFire_Init(PlayState* play, u32 index, EffectSs* this, void* initPa
     return 1;
 }
 
-void EffectSsEnFire_Draw(PlayState* play, u32 index, EffectSs* this) {
+void Effect_SS_En_Fire_disp_mode(PlayState* play, u32 index, EffectSs* this) {
     GraphicsContext* gfxCtx = play->state.gfxCtx;
     f32 scale;
     s16 camYaw;
@@ -73,12 +73,12 @@ void EffectSsEnFire_Draw(PlayState* play, u32 index, EffectSs* this) {
 
     OPEN_DISPS(gfxCtx, "../z_eff_en_fire.c", 169);
 
-    Matrix_Translate(this->pos.x, this->pos.y, this->pos.z, MTXMODE_NEW);
-    camYaw = (Camera_GetCamDirYaw(GET_ACTIVE_CAM(play)) + 0x8000);
-    Matrix_RotateY(BINANG_TO_RAD(camYaw), MTXMODE_APPLY);
+    Matrix_translate(this->pos.x, this->pos.y, this->pos.z, MTXMODE_NEW);
+    camYaw = (getRealCameraAngleY(GET_ACTIVE_CAM(play)) + 0x8000);
+    Matrix_rotateY(BINANG_TO_RAD(camYaw), MTXMODE_APPLY);
 
-    scale = Math_SinS(this->life * 0x333) * (this->rScale * 0.00005f);
-    Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
+    scale = sin_s(this->life * 0x333) * (this->rScale * 0.00005f);
+    Matrix_scale(scale, scale, scale, MTXMODE_APPLY);
     MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx, "../z_eff_en_fire.c", 180);
 
     intensity = this->life - 5;
@@ -88,11 +88,11 @@ void EffectSsEnFire_Draw(PlayState* play, u32 index, EffectSs* this) {
     }
 
     redGreen = intensity;
-    Gfx_SetupDL_25Xlu(play->state.gfxCtx);
+    _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
     gDPSetEnvColor(POLY_XLU_DISP++, redGreen * 12.7f, 0, 0, 0);
     gDPSetPrimColor(POLY_XLU_DISP++, 0x0, 0x80, redGreen * 12.7f, redGreen * 12.7f, 0, 255);
     gSPSegment(POLY_XLU_DISP++, 0x08,
-               Gfx_TwoTexScroll(play->state.gfxCtx, G_TX_RENDERTILE, 0, 0, 0x20, 0x40, 1, 0,
+               two_tex_scroll(play->state.gfxCtx, G_TX_RENDERTILE, 0, 0, 0x20, 0x40, 1, 0,
                                 (this->rScroll * -0x14) & 0x1FF, 0x20, 0x80));
 
     if (((this->rFlags & 0x7FFF) != 0) || (this->life < 18)) {
@@ -114,7 +114,7 @@ typedef struct FireActorS {
     /* 0x14C */ Vec3s firePos[10];
 } FireActorS;
 
-void EffectSsEnFire_Update(PlayState* play, u32 index, EffectSs* this) {
+void Effect_SS_En_Fire_func_proc(PlayState* play, u32 index, EffectSs* this) {
 
     this->rScroll++;
 
@@ -123,14 +123,14 @@ void EffectSsEnFire_Update(PlayState* play, u32 index, EffectSs* this) {
             this->life++;
         }
         if (this->actor->update != NULL) {
-            Math_SmoothStepToS(&this->rScale, this->rScaleMax, 1, this->rScaleMax >> 3, 0);
+            add_calc_short_angle2(&this->rScale, this->rScaleMax, 1, this->rScaleMax >> 3, 0);
 
             if (this->rBodyPart < 0) {
-                Matrix_Translate(this->actor->world.pos.x, this->actor->world.pos.y, this->actor->world.pos.z,
+                Matrix_translate(this->actor->world.pos.x, this->actor->world.pos.y, this->actor->world.pos.z,
                                  MTXMODE_NEW);
-                Matrix_RotateY(BINANG_TO_RAD(this->rYaw + this->actor->shape.rot.y), MTXMODE_APPLY);
-                Matrix_RotateX(BINANG_TO_RAD(this->rPitch + this->actor->shape.rot.x), MTXMODE_APPLY);
-                Matrix_MultVec3f(&this->vec, &this->pos);
+                Matrix_rotateY(BINANG_TO_RAD(this->rYaw + this->actor->shape.rot.y), MTXMODE_APPLY);
+                Matrix_rotateX(BINANG_TO_RAD(this->rPitch + this->actor->shape.rot.x), MTXMODE_APPLY);
+                Matrix_Position(&this->vec, &this->pos);
             } else {
                 if (this->rFlags & 0x8000) {
                     this->pos.x = ((FireActorS*)this->actor)->firePos[this->rBodyPart].x;

@@ -225,16 +225,16 @@ typedef enum NatureAmimalId {
 
 // functions in sequence.c
 
-void Audio_StartSequence(u8 seqPlayerIndex, u8 seqId, u8 seqArgs, u16 fadeInDuration);
-void Audio_StopSequence(u8 seqPlayerIndex, u16 fadeOutDuration);
-void Audio_QueueSeqCmd(u32 cmd);
-void Audio_ProcessSeqCmds(void);
-u16 Audio_GetActiveSeqId(u8 seqPlayerIndex);
-s32 Audio_IsSeqCmdNotQueued(u32 cmdVal, u32 cmdMask);
-void Audio_SetVolumeScale(u8 seqPlayerIndex, u8 scaleIndex, u8 targetVol, u8 volFadeTimer);
-void Audio_UpdateActiveSequences(void);
-u8 func_800FAD34(void);
-void Audio_ResetActiveSequences(void);
-void Audio_ResetActiveSequencesAndVolume(void);
+void Nai_StartSeqSet(u8 seqPlayerIndex, u8 seqId, u8 seqArgs, u16 fadeInDuration);
+void Nai_StopSeqSet(u8 seqPlayerIndex, u16 fadeOutDuration);
+void Nai_SeqFlagEntry(u32 cmd);
+void Nai_SeqBufFlagCheck(void);
+u16 Nai_GetPlayingSeqFlag(u8 seqPlayerIndex);
+s32 Nai_CheckSeqFlagBuffer2(u32 cmdVal, u32 cmdMask);
+void Nai_SetSeqLineVolMove(u8 seqPlayerIndex, u8 scaleIndex, u8 targetVol, u8 volFadeTimer);
+void Nai_SeqGameFrameWork(void);
+u8 Nai_SpecBusyCheck(void);
+void Nai_seq_inter_init_spec(void);
+void Nai_seq_inter_init(void);
 
 #endif

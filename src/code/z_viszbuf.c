@@ -44,7 +44,7 @@ extern u16 D_0E000000[];
 /**
  * Initialise to IA type with white and black as default colors.
  */
-void VisZBuf_Init(VisZBuf* this) {
+void z_viszbuf_init(VisZBuf* this) {
     this->vis.type = VIS_ZBUF_TYPE_IA;
     this->vis.scissorType = VIS_NO_SETSCISSOR;
 
@@ -61,10 +61,10 @@ void VisZBuf_Init(VisZBuf* this) {
     // clang-format on
 }
 
-void VisZBuf_Destroy(VisZBuf* this) {
+void z_viszbuf_cleanup(VisZBuf* this) {
 }
 
-void VisZBuf_Draw(VisZBuf* this, Gfx** gfxP) {
+void z_viszbuf_draw(VisZBuf* this, Gfx** gfxP) {
     Gfx* gfx = *gfxP;
     s32 pad;
     u16* zbufFrag = D_0E000000;

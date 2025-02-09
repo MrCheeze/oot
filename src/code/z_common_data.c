@@ -5,39 +5,39 @@
 #pragma increment_block_number "gc-eu:128 gc-eu-mq:128 gc-jp:128 gc-jp-ce:128 gc-jp-mq:128 gc-us:128 gc-us-mq:128" \
                                "ntsc-1.0:176 ntsc-1.1:176 ntsc-1.2:176 pal-1.0:160 pal-1.1:160 hiratsu3:128"
 
-ALIGNED(16) SaveContext gSaveContext;
+ALIGNED(16) SaveContext z_common_data;
 #if PLATFORM_IQUE
 // Unknown bss padding, placed here for matching
 char sUnknownBssPadding[0x20];
 #endif
-u32 D_8015FA88;
-u32 D_8015FA8C;
+u32 z_common_data__newer_member;
+u32 z_common_data__hayakawa_mode;
 
-void SaveContext_Init(void) {
-    bzero(&gSaveContext, sizeof(gSaveContext));
-    D_8015FA88 = 0;
-    D_8015FA8C = 0;
-    gSaveContext.seqId = (u8)NA_BGM_DISABLED;
-    gSaveContext.natureAmbienceId = NATURE_ID_DISABLED;
-    gSaveContext.forcedSeqId = NA_BGM_GENERAL_SFX;
-    gSaveContext.nextCutsceneIndex = 0xFFEF;
-    gSaveContext.cutsceneTrigger = 0;
-    gSaveContext.chamberCutsceneNum = CHAMBER_CS_FOREST;
-    gSaveContext.nextDayTime = NEXT_TIME_NONE;
-    gSaveContext.skyboxTime = 0;
-    gSaveContext.dogIsLost = true;
-    gSaveContext.nextTransitionType = TRANS_NEXT_TYPE_DEFAULT;
-    gSaveContext.prevHudVisibilityMode = HUD_VISIBILITY_ALL;
+void z_common_data_init(void) {
+    bzero(&z_common_data, sizeof(z_common_data));
+    z_common_data__newer_member = 0;
+    z_common_data__hayakawa_mode = 0;
+    z_common_data.seqId = (u8)NA_BGM_DISABLED;
+    z_common_data.natureAmbienceId = NATURE_ID_DISABLED;
+    z_common_data.forcedSeqId = NA_BGM_GENERAL_SFX;
+    z_common_data.nextCutsceneIndex = 0xFFEF;
+    z_common_data.cutsceneTrigger = 0;
+    z_common_data.chamberCutsceneNum = CHAMBER_CS_FOREST;
+    z_common_data.nextDayTime = NEXT_TIME_NONE;
+    z_common_data.skyboxTime = 0;
+    z_common_data.dogIsLost = true;
+    z_common_data.nextTransitionType = TRANS_NEXT_TYPE_DEFAULT;
+    z_common_data.prevHudVisibilityMode = HUD_VISIBILITY_ALL;
 #if OOT_NTSC && OOT_VERSION < GC_US || PLATFORM_IQUE || OOT_VERSION == HIRATSU3
-    if (gCurrentRegion == REGION_JP) {
-        gSaveContext.language = LANGUAGE_JPN;
+    if (z_locale_mode == REGION_JP) {
+        z_common_data.language = LANGUAGE_JPN;
     }
-    if (gCurrentRegion == REGION_US) {
-        gSaveContext.language = LANGUAGE_ENG;
+    if (z_locale_mode == REGION_US) {
+        z_common_data.language = LANGUAGE_ENG;
     }
 #elif OOT_VERSION == GC_US || OOT_VERSION == GC_US_MQ
-    gSaveContext.language = LANGUAGE_ENG;
+    z_common_data.language = LANGUAGE_ENG;
 #elif OOT_VERSION == GC_JP_CE
-    gSaveContext.language = LANGUAGE_JPN;
+    z_common_data.language = LANGUAGE_JPN;
 #endif
 }

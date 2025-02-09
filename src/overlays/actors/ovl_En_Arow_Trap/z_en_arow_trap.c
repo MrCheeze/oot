@@ -8,9 +8,9 @@
 #include "overlays/actors/ovl_En_Arrow/z_en_arrow.h"
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void EnArowTrap_Init(Actor* thisx, PlayState* play);
-void EnArowTrap_Destroy(Actor* thisx, PlayState* play);
-void EnArowTrap_Update(Actor* thisx, PlayState* play);
+void En_atp_Actor_ct(Actor* thisx, PlayState* play);
+void En_atp_Actor_dt(Actor* thisx, PlayState* play);
+void En_atp_move(Actor* thisx, PlayState* play);
 
 ActorProfile En_Arow_Trap_Profile = {
     /**/ ACTOR_EN_AROW_TRAP,
@@ -18,32 +18,32 @@ ActorProfile En_Arow_Trap_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(EnArowTrap),
-    /**/ EnArowTrap_Init,
-    /**/ EnArowTrap_Destroy,
-    /**/ EnArowTrap_Update,
+    /**/ En_atp_Actor_ct,
+    /**/ En_atp_Actor_dt,
+    /**/ En_atp_move,
     /**/ NULL,
 };
 
-void EnArowTrap_Init(Actor* thisx, PlayState* play) {
+void En_atp_Actor_ct(Actor* thisx, PlayState* play) {
     EnArowTrap* this = (EnArowTrap*)thisx;
 
-    Actor_SetScale(&this->actor, 0.01);
+    Actor_set_scale(&this->actor, 0.01);
     this->unk_14C = 0;
     this->attackTimer = 80;
     this->actor.focus.pos = this->actor.world.pos;
 }
 
-void EnArowTrap_Destroy(Actor* thisx, PlayState* play) {
+void En_atp_Actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void EnArowTrap_Update(Actor* thisx, PlayState* play) {
+void En_atp_move(Actor* thisx, PlayState* play) {
     EnArowTrap* this = (EnArowTrap*)thisx;
 
     if (this->actor.xzDistToPlayer <= 400) {
         this->attackTimer--;
 
         if (this->attackTimer == 0) {
-            Actor_Spawn(&play->actorCtx, play, ACTOR_EN_ARROW, this->actor.world.pos.x, this->actor.world.pos.y,
+            Actor_info_make_actor(&play->actorCtx, play, ACTOR_EN_ARROW, this->actor.world.pos.x, this->actor.world.pos.y,
                         this->actor.world.pos.z, this->actor.shape.rot.x, this->actor.shape.rot.y,
                         this->actor.shape.rot.z, ARROW_NORMAL_SILENT);
             this->attackTimer = 80;

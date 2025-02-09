@@ -110,18 +110,18 @@ void LogUtils_LogThreadId(const char* name, int line) {
 }
 #endif
 
-void LogUtils_HungupThread(const char* name, int line) {
+void _dbg_hungup(const char* name, int line) {
     OSId threadId = osGetThreadId(NULL);
 
 #if PLATFORM_N64 || DEBUG_FEATURES
     osSyncPrintf("*** HungUp in thread %d, [%s:%d] ***\n", threadId, name, line);
 #endif
-    Fault_AddHungupAndCrash(name, line);
+    fault_HungUp(name, line);
 }
 
-void LogUtils_ResetHungup(void) {
+void Reset(void) {
 #if PLATFORM_N64 || DEBUG_FEATURES
     osSyncPrintf("*** Reset ***\n");
 #endif
-    Fault_AddHungupAndCrash("Reset", 0);
+    fault_HungUp("Reset", 0);
 }

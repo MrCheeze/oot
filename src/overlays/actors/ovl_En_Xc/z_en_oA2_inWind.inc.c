@@ -1,15 +1,15 @@
-void func_80B3CA38(EnXc* this, PlayState* play) {
+void En_Oa2_Actor_Wind_Init(EnXc* this, PlayState* play) {
     // If Player is adult but hasn't learned Minuet of Forest
     if (!GET_EVENTCHKINF(EVENTCHKINF_50) && LINK_IS_ADULT) {
         s32 pad;
 
         this->action = SHEIK_ACTION_INIT;
     } else {
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     }
 }
 
-s32 EnXc_MinuetCS(EnXc* this, PlayState* play) {
+s32 En_Oa2_Set_DemoWind(EnXc* this, PlayState* play) {
     Player* player;
     f32 playerPosZ;
 
@@ -18,13 +18,13 @@ s32 EnXc_MinuetCS(EnXc* this, PlayState* play) {
         playerPosZ = player->actor.world.pos.z;
 
         if (playerPosZ < -2225.0f) {
-            if (!Play_InCsMode(play)) {
+            if (!Game_play_demo_mode_check(play)) {
                 s32 pad;
 
                 play->csCtx.script = SEGMENTED_TO_VIRTUAL(gMeadowMinuetCs);
-                gSaveContext.cutsceneTrigger = 1;
+                z_common_data.cutsceneTrigger = 1;
                 SET_EVENTCHKINF(EVENTCHKINF_50);
-                Item_Give(play, ITEM_SONG_MINUET);
+                item_get_setting(play, ITEM_SONG_MINUET);
                 return true;
             }
         }

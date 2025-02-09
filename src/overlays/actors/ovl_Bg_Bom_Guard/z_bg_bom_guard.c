@@ -15,11 +15,11 @@
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void BgBomGuard_Init(Actor* thisx, PlayState* play);
-void BgBomGuard_Destroy(Actor* thisx, PlayState* play);
-void BgBomGuard_Update(Actor* thisx, PlayState* play);
+void Bg_Bom_Guard_actor_ct(Actor* thisx, PlayState* play);
+void Bg_Bom_Guard_actor_dt(Actor* thisx, PlayState* play);
+void Bg_Bom_Guard_actor_move(Actor* thisx, PlayState* play);
 
-void func_8086E638(BgBomGuard* this, PlayState* play);
+static void mode_wait(BgBomGuard* this, PlayState* play);
 
 ActorProfile Bg_Bom_Guard_Profile = {
     /**/ ACTOR_BG_BOM_GUARD,
@@ -27,24 +27,24 @@ ActorProfile Bg_Bom_Guard_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_BOWL,
     /**/ sizeof(BgBomGuard),
-    /**/ BgBomGuard_Init,
-    /**/ BgBomGuard_Destroy,
-    /**/ BgBomGuard_Update,
+    /**/ Bg_Bom_Guard_actor_ct,
+    /**/ Bg_Bom_Guard_actor_dt,
+    /**/ Bg_Bom_Guard_actor_move,
     /**/ NULL,
 };
 
-void BgBomGuard_SetupAction(BgBomGuard* this, BgBomGuardActionFunc actionFunc) {
+void Bg_Bom_Guard_actor_set_process(BgBomGuard* this, BgBomGuardActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
 
-void BgBomGuard_Init(Actor* thisx, PlayState* play) {
+void Bg_Bom_Guard_actor_ct(Actor* thisx, PlayState* play) {
     BgBomGuard* this = (BgBomGuard*)thisx;
     s32 pad[2];
     CollisionHeader* colHeader = NULL;
 
-    DynaPolyActor_Init(&this->dyna, 0);
-    CollisionHeader_GetVirtual(&gBowlingDefaultCol, &colHeader);
-    this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, thisx, colHeader);
+    MoveBG_ct(&this->dyna, 0);
+    DynaPolyUty_bgdi_SG2KSG(&gBowlingDefaultCol, &colHeader);
+    this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, thisx, colHeader);
 
     PRINTF("\n\n");
     PRINTF(VT_FGCOL(GREEN) " ☆☆☆☆☆ 透明ガード出現 ☆☆☆☆☆ \n" VT_RST);
@@ -53,16 +53,16 @@ void BgBomGuard_Init(Actor* thisx, PlayState* play) {
     thisx->scale.y = 1.0f;
     thisx->scale.z = 1.0f;
     this->unk_16C = thisx->world.pos;
-    BgBomGuard_SetupAction(this, func_8086E638);
+    Bg_Bom_Guard_actor_set_process(this, mode_wait);
 }
 
-void BgBomGuard_Destroy(Actor* thisx, PlayState* play) {
+void Bg_Bom_Guard_actor_dt(Actor* thisx, PlayState* play) {
     BgBomGuard* this = (BgBomGuard*)thisx;
 
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
 }
 
-void func_8086E638(BgBomGuard* this, PlayState* play) {
+static void mode_wait(BgBomGuard* this, PlayState* play) {
     Actor* it = play->actorCtx.actorLists[ACTORCAT_NPC].head;
     Actor* thisx = &this->dyna.actor;
 
@@ -86,7 +86,7 @@ void func_8086E638(BgBomGuard* this, PlayState* play) {
     }
 }
 
-void BgBomGuard_Update(Actor* thisx, PlayState* play) {
+void Bg_Bom_Guard_actor_move(Actor* thisx, PlayState* play) {
     BgBomGuard* this = (BgBomGuard*)thisx;
 
     this->actionFunc(this, play);

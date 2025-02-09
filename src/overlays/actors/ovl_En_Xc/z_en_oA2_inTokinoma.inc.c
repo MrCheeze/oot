@@ -1,12 +1,12 @@
-void func_80B3EBF0(EnXc* this, PlayState* play) {
+void En_Oa2_Actor_Tokinoma_Init(EnXc* this, PlayState* play) {
     this->action = SHEIK_ACTION_20;
 }
 
-void func_80B3EC00(EnXc* this) {
+void En_Oa2_Toki_check_WaitToHide(EnXc* this) {
     this->action = SHEIK_ACTION_21;
 }
 
-void func_80B3EC0C(EnXc* this, PlayState* play) {
+void En_Oa2_Toki_check_HideToGreet(EnXc* this, PlayState* play) {
     CutsceneContext* csCtx = &play->csCtx;
 
     if (csCtx->state != 0) {
@@ -29,19 +29,19 @@ void func_80B3EC0C(EnXc* this, PlayState* play) {
     }
 }
 
-void func_80B3EC90(EnXc* this, PlayState* play) {
+void En_Oa2_Toki_check_GreetToBloking(EnXc* this, PlayState* play) {
     CutsceneContext* csCtx = &play->csCtx;
 
     if (csCtx->state != 0) {
         CsCmdActorCue* cue = csCtx->actorCues[4];
 
         if (cue != NULL && cue->id != 6) {
-            func_80B3C9EC(this);
+            En_Oa2_Setup_TokinomaToWall(this);
         }
     }
 }
 
-void func_80B3ECD8(EnXc* this) {
+void En_Oa2_Toki_check_Away_accelToAway_move(EnXc* this) {
     this->timer++;
     if (this->timer >= 12.0f) {
         this->actor.speed = kREG(2) * 0.01f + 1.2f;
@@ -49,41 +49,41 @@ void func_80B3ECD8(EnXc* this) {
     }
 }
 
-void EnXc_ActionFunc20(EnXc* this, PlayState* play) {
-    func_80B3EC00(this);
+void En_Oa2_Toki_Actor_main_wait(EnXc* this, PlayState* play) {
+    En_Oa2_Toki_check_WaitToHide(this);
 }
 
-void EnXc_ActionFunc21(EnXc* this, PlayState* play) {
-    func_80B3EC0C(this, play);
+void En_Oa2_Toki_Actor_main_hide(EnXc* this, PlayState* play) {
+    En_Oa2_Toki_check_HideToGreet(this, play);
 }
 
-void EnXc_ActionFunc22(EnXc* this, PlayState* play) {
-    EnXc_AnimIsFinished(this);
-    EnXc_BgCheck(this, play);
-    EnXc_SetEyePattern(this);
-    func_80B3EC90(this, play);
+void En_Oa2_Toki_Actor_main_greet(EnXc* this, PlayState* play) {
+    En_Oa2_Animation_Basic(this);
+    En_Oa2_BGcheck(this, play);
+    En_Oa2_set_eye_pattern(this);
+    En_Oa2_Toki_check_GreetToBloking(this, play);
 }
 
-void EnXc_ActionFunc23(EnXc* this, PlayState* play) {
-    func_80B3D6F0(this);
-    EnXc_AnimIsFinished(this);
-    EnXc_BgCheck(this, play);
-    EnXc_SetEyePattern(this);
-    EnXc_SetWalkingSFX(this, play);
-    func_80B3ECD8(this);
+void En_Oa2_Toki_Actor_main_away_accel(EnXc* this, PlayState* play) {
+    En_Oa2_Movement_Away_accel(this);
+    En_Oa2_Animation_Basic(this);
+    En_Oa2_BGcheck(this, play);
+    En_Oa2_set_eye_pattern(this);
+    En_Oa2_Set_WalkSound(this, play);
+    En_Oa2_Toki_check_Away_accelToAway_move(this);
 }
 
-void EnXc_ActionFunc24(EnXc* this, PlayState* play) {
+void En_Oa2_Toki_Actor_main_away_move(EnXc* this, PlayState* play) {
 }
 
-void EnXc_ActionFunc25(EnXc* this, PlayState* play) {
+void En_Oa2_Toki_Actor_main_away_brake(EnXc* this, PlayState* play) {
 }
 
-void EnXc_ActionFunc26(EnXc* this, PlayState* play) {
+void En_Oa2_Toki_Actor_main_throw(EnXc* this, PlayState* play) {
 }
 
-void EnXc_ActionFunc27(EnXc* this, PlayState* play) {
+void En_Oa2_Toki_Actor_main_fade(EnXc* this, PlayState* play) {
 }
 
-void EnXc_ActionFunc28(EnXc* this, PlayState* play) {
+void En_Oa2_Toki_Actor_main_disappear(EnXc* this, PlayState* play) {
 }

@@ -13,36 +13,36 @@
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void DemoSa_Init(Actor* thisx, PlayState* play);
-void DemoSa_Destroy(Actor* thisx, PlayState* play);
-void DemoSa_Update(Actor* thisx, PlayState* play);
-void DemoSa_Draw(Actor* thisx, PlayState* play);
+void Demo_Sa_Actor_ct(Actor* thisx, PlayState* play);
+void Demo_Sa_Actor_dt(Actor* thisx, PlayState* play);
+void Demo_Sa_Actor_main(Actor* thisx, PlayState* play);
+void Demo_Sa_Actor_draw(Actor* thisx, PlayState* play);
 
-void func_8098EBB8(DemoSa* this, PlayState* play);
-void func_8098EBD8(DemoSa* this, PlayState* play);
-void func_8098EBF8(DemoSa* this, PlayState* play);
-void func_8098EC28(DemoSa* this, PlayState* play);
-void func_8098EC60(DemoSa* this, PlayState* play);
-void func_8098EC94(DemoSa* this, PlayState* play);
-void func_8098ECCC(DemoSa* this, PlayState* play);
-void func_8098F0E8(DemoSa* this, PlayState* play);
-void func_8098F118(DemoSa* this, PlayState* play);
-void func_8098F16C(DemoSa* this, PlayState* play);
-void func_8098F3F0(DemoSa* this, PlayState* play);
-void func_8098F714(DemoSa* this, PlayState* play);
-void func_8098F734(DemoSa* this, PlayState* play);
-void func_8098F77C(DemoSa* this, PlayState* play);
-void func_8098F7BC(DemoSa* this, PlayState* play);
-void func_8098F7FC(DemoSa* this, PlayState* play);
-void func_8098FC44(DemoSa* this, PlayState* play);
-void func_8098FC64(DemoSa* this, PlayState* play);
-void func_8098FC9C(DemoSa* this, PlayState* play);
-void func_8098FCD4(DemoSa* this, PlayState* play);
-void func_8098FD0C(DemoSa* this, PlayState* play);
+void Demo_Sa_Actor_main_wait(DemoSa* this, PlayState* play);
+void Demo_Sa_Actor_main_hide(DemoSa* this, PlayState* play);
+void Demo_Sa_Actor_main_up(DemoSa* this, PlayState* play);
+void Demo_Sa_Actor_main_greet(DemoSa* this, PlayState* play);
+void Demo_Sa_Actor_main_handup(DemoSa* this, PlayState* play);
+void Demo_Sa_Actor_main_cheer(DemoSa* this, PlayState* play);
+void Demo_Sa_Actor_main_stop(DemoSa* this, PlayState* play);
+void Demo_Sa_Seal_Actor_main_hide(DemoSa* this, PlayState* play);
+void Demo_Sa_Seal_Actor_main_fade(DemoSa* this, PlayState* play);
+void Demo_Sa_Seal_Actor_main_pray(DemoSa* this, PlayState* play);
+void Demo_Sa_Stand_Actor_main_gaze(DemoSa* this, PlayState* play);
+void Demo_Sa_inEnding_main_wait(DemoSa* this, PlayState* play);
+void Demo_Sa_inEnding_main_alpha(DemoSa* this, PlayState* play);
+void Demo_Sa_inEnding_main_stand(DemoSa* this, PlayState* play);
+void Demo_Sa_inEnding_main_lookup(DemoSa* this, PlayState* play);
+void Demo_Sa_inEnding_main_lookdown(DemoSa* this, PlayState* play);
+void Demo_Sa_inPresent_main_wait(DemoSa* this, PlayState* play);
+void Demo_Sa_inPresent_main_alpha(DemoSa* this, PlayState* play);
+void Demo_Sa_inPresent_main_stand(DemoSa* this, PlayState* play);
+void Demo_Sa_inPresent_main_hold(DemoSa* this, PlayState* play);
+void Demo_Sa_inPresent_main_send(DemoSa* this, PlayState* play);
 
-void DemoSa_DrawNothing(DemoSa* this, PlayState* play);
-void DemoSa_DrawOpa(DemoSa* this, PlayState* play);
-void DemoSa_DrawXlu(DemoSa* this, PlayState* play);
+void Demo_Sa_Actor_draw_none(DemoSa* this, PlayState* play);
+void Demo_Sa_Actor_draw_normal(DemoSa* this, PlayState* play);
+void Demo_Sa_Actor_draw_alpha(DemoSa* this, PlayState* play);
 
 typedef enum SariaEyeState {
     /* 0 */ SARIA_EYE_OPEN,
@@ -60,11 +60,11 @@ typedef enum SariaMouthState {
     /* 4 */ SARIA_MOUTH_FROWNING
 } SariaMouthState;
 
-static void* sEyeTextures[] = {
+static void* demo_sa_eye[] = {
     gSariaEyeOpenTex, gSariaEyeHalfTex, gSariaEyeClosedTex, gSariaEyeSuprisedTex, gSariaEyeSadTex,
 };
 
-static void* sMouthTextures[] = {
+static void* demo_sa_mouth[] = {
     gSariaMouthClosed2Tex,     gSariaMouthSuprisedTex, gSariaMouthClosedTex,
     gSariaMouthSmilingOpenTex, gSariaMouthFrowningTex,
 };
@@ -75,43 +75,19 @@ static u32 D_80990108 = 0;
 
 #include "Demodt_Kenjyanoma.inc.c"
 
-static DemoSaActionFunc sActionFuncs[] = {
-    func_8098EBB8, func_8098EBD8, func_8098EBF8, func_8098EC28, func_8098EC60, func_8098EC94, func_8098ECCC,
-    func_8098F0E8, func_8098F118, func_8098F16C, func_8098F3F0, func_8098F714, func_8098F734, func_8098F77C,
-    func_8098F7BC, func_8098F7FC, func_8098FC44, func_8098FC64, func_8098FC9C, func_8098FCD4, func_8098FD0C,
-};
-
-static DemoSaDrawFunc sDrawFuncs[] = {
-    DemoSa_DrawNothing,
-    DemoSa_DrawOpa,
-    DemoSa_DrawXlu,
-};
-
-ActorProfile Demo_Sa_Profile = {
-    /**/ ACTOR_DEMO_SA,
-    /**/ ACTORCAT_NPC,
-    /**/ FLAGS,
-    /**/ OBJECT_SA,
-    /**/ sizeof(DemoSa),
-    /**/ DemoSa_Init,
-    /**/ DemoSa_Destroy,
-    /**/ DemoSa_Update,
-    /**/ DemoSa_Draw,
-};
-
-void DemoSa_Destroy(Actor* thisx, PlayState* play) {
+void Demo_Sa_Actor_dt(Actor* thisx, PlayState* play) {
     DemoSa* this = (DemoSa*)thisx;
 
-    SkelAnime_Free(&this->skelAnime, play);
+    Skeleton_Info_dt(&this->skelAnime, play);
 }
 
-void func_8098E480(DemoSa* this) {
+void Demo_Sa_set_eye_pattern(DemoSa* this) {
     s32 pad[2];
     s16* eyeIndex = &this->eyeIndex;
     s16* blinkTimer = &this->blinkTimer;
 
     if (DECR(*blinkTimer) == 0) {
-        *blinkTimer = Rand_S16Offset(0x3C, 0x3C);
+        *blinkTimer = get_random_timer(0x3C, 0x3C);
     }
 
     *eyeIndex = *blinkTimer;
@@ -120,11 +96,11 @@ void func_8098E480(DemoSa* this) {
     }
 }
 
-void DemoSa_SetEyeIndex(DemoSa* this, s16 eyeIndex) {
+void Demo_Sa_set_eye_Num(DemoSa* this, s16 eyeIndex) {
     this->eyeIndex = eyeIndex;
 }
 
-void DemoSa_SetMouthIndex(DemoSa* this, s16 mouthIndex) {
+void Demo_Sa_set_mouth_Num(DemoSa* this, s16 mouthIndex) {
     this->mouthIndex = mouthIndex;
 }
 
@@ -154,15 +130,15 @@ void func_8098E554(DemoSa* this, PlayState* play) {
 }
 #endif
 
-void func_8098E5C8(DemoSa* this, PlayState* play) {
-    Actor_UpdateBgCheckInfo(play, &this->actor, 75.0f, 30.0f, 30.0f, UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
+void Demo_Sa_BGcheck(DemoSa* this, PlayState* play) {
+    Actor_BGcheck2(play, &this->actor, 75.0f, 30.0f, 30.0f, UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
 }
 
-s32 DemoSa_UpdateSkelAnime(DemoSa* this) {
-    return SkelAnime_Update(&this->skelAnime);
+s32 Demo_Sa_Animation_Base(DemoSa* this) {
+    return Skeleton_Info2_anime_play(&this->skelAnime);
 }
 
-CsCmdActorCue* DemoSa_GetCue(PlayState* play, s32 cueChannel) {
+CsCmdActorCue* Demo_Sa_Get_npcdemopnt(PlayState* play, s32 cueChannel) {
     if (play->csCtx.state != CS_STATE_IDLE) {
         CsCmdActorCue* cue = play->csCtx.actorCues[cueChannel];
 
@@ -172,8 +148,8 @@ CsCmdActorCue* DemoSa_GetCue(PlayState* play, s32 cueChannel) {
     return NULL;
 }
 
-s32 func_8098E654(DemoSa* this, PlayState* play, u16 cueId, s32 cueChannel) {
-    CsCmdActorCue* cue = DemoSa_GetCue(play, cueChannel);
+s32 Demo_Sa_Check_npcdemopnt(DemoSa* this, PlayState* play, u16 cueId, s32 cueChannel) {
+    CsCmdActorCue* cue = Demo_Sa_Get_npcdemopnt(play, cueChannel);
 
     if ((cue != NULL) && (cue->id == cueId)) {
         return true;
@@ -182,8 +158,8 @@ s32 func_8098E654(DemoSa* this, PlayState* play, u16 cueId, s32 cueChannel) {
     return false;
 }
 
-s32 func_8098E6A0(DemoSa* this, PlayState* play, u16 cueId, s32 cueChannel) {
-    CsCmdActorCue* cue = DemoSa_GetCue(play, cueChannel);
+s32 Demo_Sa_Check2_npcdemopnt(DemoSa* this, PlayState* play, u16 cueId, s32 cueChannel) {
+    CsCmdActorCue* cue = Demo_Sa_Get_npcdemopnt(play, cueChannel);
 
     if ((cue != NULL) && (cue->id != cueId)) {
         return true;
@@ -192,8 +168,8 @@ s32 func_8098E6A0(DemoSa* this, PlayState* play, u16 cueId, s32 cueChannel) {
     return false;
 }
 
-void func_8098E6EC(DemoSa* this, PlayState* play, s32 cueChannel) {
-    CsCmdActorCue* cue = DemoSa_GetCue(play, cueChannel);
+void Demo_Sa_Set_StartPos_npcdemopnt(DemoSa* this, PlayState* play, s32 cueChannel) {
+    CsCmdActorCue* cue = Demo_Sa_Get_npcdemopnt(play, cueChannel);
 
     if (cue != NULL) {
         this->actor.world.pos.x = cue->startPos.x;
@@ -204,9 +180,9 @@ void func_8098E6EC(DemoSa* this, PlayState* play, s32 cueChannel) {
     }
 }
 
-void func_8098E76C(DemoSa* this, AnimationHeader* animHeaderSeg, u8 arg2, f32 morphFrames, s32 arg4) {
+void Demo_Sa_Change_Anime(DemoSa* this, AnimationHeader* animHeaderSeg, u8 arg2, f32 morphFrames, s32 arg4) {
     s32 pad[2];
-    f32 frameCount = Animation_GetLastFrame(animHeaderSeg);
+    f32 frameCount = Si2_anime_end_frame(animHeaderSeg);
     f32 playbackSpeed;
     f32 unk0;
     f32 fc;
@@ -221,7 +197,7 @@ void func_8098E76C(DemoSa* this, AnimationHeader* animHeaderSeg, u8 arg2, f32 mo
         playbackSpeed = -1.0f;
     }
 
-    Animation_Change(&this->skelAnime, animHeaderSeg, playbackSpeed, unk0, fc, arg2, morphFrames);
+    Skeleton_Info2_init(&this->skelAnime, animHeaderSeg, playbackSpeed, unk0, fc, arg2, morphFrames);
 }
 
 #include "z_demo_sa_inKenjyanoma.inc.c"
@@ -234,40 +210,46 @@ void func_8098E76C(DemoSa* this, AnimationHeader* animHeaderSeg, u8 arg2, f32 mo
 
 #include "z_demo_sa_inPresent.inc.c"
 
-void DemoSa_Update(Actor* thisx, PlayState* play) {
+void Demo_Sa_Actor_main(Actor* thisx, PlayState* play) {
+    static DemoSaActionFunc proc[] = {
+        Demo_Sa_Actor_main_wait, Demo_Sa_Actor_main_hide, Demo_Sa_Actor_main_up, Demo_Sa_Actor_main_greet, Demo_Sa_Actor_main_handup, Demo_Sa_Actor_main_cheer, Demo_Sa_Actor_main_stop,
+        Demo_Sa_Seal_Actor_main_hide, Demo_Sa_Seal_Actor_main_fade, Demo_Sa_Seal_Actor_main_pray, Demo_Sa_Stand_Actor_main_gaze, Demo_Sa_inEnding_main_wait, Demo_Sa_inEnding_main_alpha, Demo_Sa_inEnding_main_stand,
+        Demo_Sa_inEnding_main_lookup, Demo_Sa_inEnding_main_lookdown, Demo_Sa_inPresent_main_wait, Demo_Sa_inPresent_main_alpha, Demo_Sa_inPresent_main_stand, Demo_Sa_inPresent_main_hold, Demo_Sa_inPresent_main_send,
+    };
+
     DemoSa* this = (DemoSa*)thisx;
 
-    if (this->action < 0 || this->action >= 21 || sActionFuncs[this->action] == NULL) {
+    if (this->action < 0 || this->action >= 21 || proc[this->action] == NULL) {
         PRINTF(VT_FGCOL(RED) "メインモードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
         return;
     }
-    sActionFuncs[this->action](this, play);
+    proc[this->action](this, play);
 }
 
-void DemoSa_Init(Actor* thisx, PlayState* play) {
+void Demo_Sa_Actor_ct(Actor* thisx, PlayState* play) {
     DemoSa* this = (DemoSa*)thisx;
 
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 30.0f);
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 30.0f);
 
     switch (this->actor.params) {
         case 2:
-            func_8098ECF4(this, play);
+            Demo_Sa_KenjyanomaDemo02_Init(this, play);
             break;
         case 3:
-            func_8098F390(this, play);
+            Demo_Sa_Stand_Init(this, play);
             break;
         case 4:
-            func_8098F420(this, play);
+            Demo_Sa_Ending_Init(this, play);
             break;
         case 5:
-            func_8098F83C(this, play);
+            Demo_Sa_Present_Init(this, play);
             break;
         default:
-            func_8098E7FC(this, play);
+            Demo_Sa_Kenjyanoma_Init(this, play);
     }
 }
 
-s32 DemoSa_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+s32 Demo_Sa_beforedraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     DemoSa* this = (DemoSa*)thisx;
 
     if ((limbIndex == 15) && (this->unk_1B0 != 0)) {
@@ -276,40 +258,58 @@ s32 DemoSa_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* 
     return false;
 }
 
-void DemoSa_DrawNothing(DemoSa* this, PlayState* play) {
+void Demo_Sa_Actor_draw_none(DemoSa* this, PlayState* play) {
 }
 
-void DemoSa_DrawOpa(DemoSa* this, PlayState* play) {
+void Demo_Sa_Actor_draw_normal(DemoSa* this, PlayState* play) {
     s32 pad[2];
     s16 eyeIndex = this->eyeIndex;
-    void* eyeTex = sEyeTextures[eyeIndex];
+    void* eyeTex = demo_sa_eye[eyeIndex];
     s32 pad2;
     s16 mouthIndex = this->mouthIndex;
-    void* mouthTex = sMouthTextures[mouthIndex];
+    void* mouthTex = demo_sa_mouth[mouthIndex];
     SkelAnime* skelAnime = &this->skelAnime;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_demo_sa.c", 602);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
 
     gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(eyeTex));
     gSPSegment(POLY_OPA_DISP++, 0x09, SEGMENTED_TO_VIRTUAL(eyeTex));
     gSPSegment(POLY_OPA_DISP++, 0x0A, SEGMENTED_TO_VIRTUAL(mouthTex));
     gDPSetEnvColor(POLY_OPA_DISP++, 0, 0, 0, 255);
-    gSPSegment(POLY_OPA_DISP++, 0x0C, &D_80116280[2]);
+    gSPSegment(POLY_OPA_DISP++, 0x0C, &Actor_change_render_mode[2]);
 
-    SkelAnime_DrawFlexOpa(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount,
-                          DemoSa_OverrideLimbDraw, NULL, &this->actor);
+    Si2_draw_SV(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount,
+                          Demo_Sa_beforedraw, NULL, &this->actor);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_demo_sa.c", 626);
 }
 
-void DemoSa_Draw(Actor* thisx, PlayState* play) {
+void Demo_Sa_Actor_draw(Actor* thisx, PlayState* play) {
+    static DemoSaDrawFunc proc[] = {
+        Demo_Sa_Actor_draw_none,
+        Demo_Sa_Actor_draw_normal,
+        Demo_Sa_Actor_draw_alpha,
+    };
+
     DemoSa* this = (DemoSa*)thisx;
 
-    if (this->drawConfig < 0 || this->drawConfig >= 3 || sDrawFuncs[this->drawConfig] == NULL) {
+    if (this->drawConfig < 0 || this->drawConfig >= 3 || proc[this->drawConfig] == NULL) {
         PRINTF(VT_FGCOL(RED) "描画モードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
         return;
     }
-    sDrawFuncs[this->drawConfig](this, play);
+    proc[this->drawConfig](this, play);
 }
+
+ActorProfile Demo_Sa_Profile = {
+    /**/ ACTOR_DEMO_SA,
+    /**/ ACTORCAT_NPC,
+    /**/ FLAGS,
+    /**/ OBJECT_SA,
+    /**/ sizeof(DemoSa),
+    /**/ Demo_Sa_Actor_ct,
+    /**/ Demo_Sa_Actor_dt,
+    /**/ Demo_Sa_Actor_main,
+    /**/ Demo_Sa_Actor_draw,
+};

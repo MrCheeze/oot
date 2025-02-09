@@ -208,7 +208,7 @@ void UCodeDisas_Init(UCodeDisas* this) {
 
     bzero(this, sizeof(UCodeDisas));
     for (i = 0; i < NUM_SEGMENTS; i++) {
-        this->segments[i] = gSegments[i];
+        this->segments[i] = SegmentBaseAddress[i];
     }
 }
 

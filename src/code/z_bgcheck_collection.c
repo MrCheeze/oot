@@ -4,25 +4,25 @@
 /**
  * Update the `carriedActor`'s position based on the dynapoly actor identified by `bgId`.
  */
-void DynaPolyActor_UpdateCarriedActorPos(CollisionContext* colCtx, s32 bgId, Actor* carriedActor) {
+void BGCheckCollection_typicalActorPos(CollisionContext* colCtx, s32 bgId, Actor* carriedActor) {
     MtxF prevTransform;
     MtxF prevTransformInv;
     MtxF curTransform;
     Vec3f pos;
     Vec3f tempPos;
 
-    if (DynaPoly_IsBgIdBgActor(bgId)) {
+    if (DynaPolyInfo_checkMoveBG(bgId)) {
 
-        SkinMatrix_SetTranslateRotateYXZScale(
+        Skin_Matrix_SetSRzxyTMatrix(
             &prevTransform, colCtx->dyna.bgActors[bgId].prevTransform.scale.x,
             colCtx->dyna.bgActors[bgId].prevTransform.scale.y, colCtx->dyna.bgActors[bgId].prevTransform.scale.z,
             colCtx->dyna.bgActors[bgId].prevTransform.rot.x, colCtx->dyna.bgActors[bgId].prevTransform.rot.y,
             colCtx->dyna.bgActors[bgId].prevTransform.rot.z, colCtx->dyna.bgActors[bgId].prevTransform.pos.x,
             colCtx->dyna.bgActors[bgId].prevTransform.pos.y, colCtx->dyna.bgActors[bgId].prevTransform.pos.z);
 
-        if (SkinMatrix_Invert(&prevTransform, &prevTransformInv) != 2) {
+        if (Skin_Matrix_InverseMatrix(&prevTransform, &prevTransformInv) != 2) {
 
-            SkinMatrix_SetTranslateRotateYXZScale(
+            Skin_Matrix_SetSRzxyTMatrix(
                 &curTransform, colCtx->dyna.bgActors[bgId].curTransform.scale.x,
                 colCtx->dyna.bgActors[bgId].curTransform.scale.y, colCtx->dyna.bgActors[bgId].curTransform.scale.z,
                 colCtx->dyna.bgActors[bgId].curTransform.rot.x, colCtx->dyna.bgActors[bgId].curTransform.rot.y,
@@ -32,8 +32,8 @@ void DynaPolyActor_UpdateCarriedActorPos(CollisionContext* colCtx, s32 bgId, Act
             // Apply the movement of the dynapoly actor `bgId` over the last frame to the `carriedActor` position
             // pos = curTransform * prevTransformInv * pos
             // Note (curTransform * prevTransformInv) represents the transform relative to the previous frame
-            SkinMatrix_Vec3fMtxFMultXYZ(&prevTransformInv, &carriedActor->world.pos, &tempPos);
-            SkinMatrix_Vec3fMtxFMultXYZ(&curTransform, &tempPos, &pos);
+            Skin_Matrix_MulVector(&prevTransformInv, &carriedActor->world.pos, &tempPos);
+            Skin_Matrix_MulVector(&curTransform, &tempPos, &pos);
             carriedActor->world.pos = pos;
 
 #if DEBUG_FEATURES
@@ -57,8 +57,8 @@ void DynaPolyActor_UpdateCarriedActorPos(CollisionContext* colCtx, s32 bgId, Act
 /**
  * Update the `carriedActor`'s Y rotation based on the dynapoly actor identified by `bgId`.
  */
-void DynaPolyActor_UpdateCarriedActorRotY(CollisionContext* colCtx, s32 bgId, Actor* carriedActor) {
-    if (DynaPoly_IsBgIdBgActor(bgId)) {
+void BGCheckCollection_typicalActorRotY(CollisionContext* colCtx, s32 bgId, Actor* carriedActor) {
+    if (DynaPolyInfo_checkMoveBG(bgId)) {
         s16 rotY = colCtx->dyna.bgActors[bgId].curTransform.rot.y - colCtx->dyna.bgActors[bgId].prevTransform.rot.y;
 
         if (carriedActor->id == ACTOR_PLAYER) {
@@ -70,14 +70,14 @@ void DynaPolyActor_UpdateCarriedActorRotY(CollisionContext* colCtx, s32 bgId, Ac
     }
 }
 
-void func_80043334(CollisionContext* colCtx, Actor* actor, s32 bgId) {
-    if (DynaPoly_IsBgIdBgActor(bgId)) {
-        DynaPolyActor* dynaActor = DynaPoly_GetActor(colCtx, bgId);
+void BGCheckCollection_setRideStatus(CollisionContext* colCtx, Actor* actor, s32 bgId) {
+    if (DynaPolyInfo_checkMoveBG(bgId)) {
+        DynaPolyActor* dynaActor = DynaPolyInfo_actor_index2pointer(colCtx, bgId);
         if (dynaActor != NULL) {
-            DynaPolyActor_SetActorOnTop(dynaActor);
+            MoveBG_setRideStatus(dynaActor);
 
             if (CHECK_FLAG_ALL(actor->flags, ACTOR_FLAG_CAN_PRESS_SWITCHES)) {
-                DynaPolyActor_SetSwitchPressed(dynaActor);
+                MoveBG_setSwOnStatus(dynaActor);
             }
         }
     }
@@ -87,11 +87,11 @@ void func_80043334(CollisionContext* colCtx, Actor* actor, s32 bgId) {
  * Update the `carriedActor`'s position and Y rotation based on the dynapoly actor identified by `bgId`, according to
  * the dynapoly actor's move flags (see `DYNA_TRANSFORM_POS` and `DYNA_TRANSFORM_ROT_Y`).
  */
-s32 DynaPolyActor_TransformCarriedActor(CollisionContext* colCtx, s32 bgId, Actor* carriedActor) {
+s32 BGCheckCollection_proc(CollisionContext* colCtx, s32 bgId, Actor* carriedActor) {
     s32 result = false;
     DynaPolyActor* dynaActor;
 
-    if (!DynaPoly_IsBgIdBgActor(bgId)) {
+    if (!DynaPolyInfo_checkMoveBG(bgId)) {
         return false;
     }
 
@@ -99,19 +99,19 @@ s32 DynaPolyActor_TransformCarriedActor(CollisionContext* colCtx, s32 bgId, Acto
         return false;
     }
 
-    dynaActor = DynaPoly_GetActor(colCtx, bgId);
+    dynaActor = DynaPolyInfo_actor_index2pointer(colCtx, bgId);
 
     if (dynaActor == NULL) {
         return false;
     }
 
     if (dynaActor->transformFlags & DYNA_TRANSFORM_POS) {
-        DynaPolyActor_UpdateCarriedActorPos(colCtx, bgId, carriedActor);
+        BGCheckCollection_typicalActorPos(colCtx, bgId, carriedActor);
         result = true;
     }
 
     if (dynaActor->transformFlags & DYNA_TRANSFORM_ROT_Y) {
-        DynaPolyActor_UpdateCarriedActorRotY(colCtx, bgId, carriedActor);
+        BGCheckCollection_typicalActorRotY(colCtx, bgId, carriedActor);
         result = true;
     }
 

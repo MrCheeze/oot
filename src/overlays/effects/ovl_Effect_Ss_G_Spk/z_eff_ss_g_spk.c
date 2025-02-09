@@ -19,22 +19,22 @@
 #define rScale regs[9]
 #define rScaleStep regs[10]
 
-u32 EffectSsGSpk_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
-void EffectSsGSpk_Update(PlayState* play, u32 index, EffectSs* this);
-void EffectSsGSpk_UpdateNoAccel(PlayState* play, u32 index, EffectSs* this);
-void EffectSsGSpk_Draw(PlayState* play, u32 index, EffectSs* this);
+u32 Effect_SS_Spk_ct_ovl(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
+void Effect_SS_Spk_func_proc(PlayState* play, u32 index, EffectSs* this);
+void Effect_SS_Spk_func_proc2(PlayState* play, u32 index, EffectSs* this);
+void Effect_SS_Spk_disp_mode(PlayState* play, u32 index, EffectSs* this);
 
 EffectSsProfile Effect_Ss_G_Spk_Profile = {
     EFFECT_SS_G_SPK,
-    EffectSsGSpk_Init,
+    Effect_SS_Spk_ct_ovl,
 };
 
-u32 EffectSsGSpk_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
+u32 Effect_SS_Spk_ct_ovl(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
     EffectSsGSpkInitParams* initParams = (EffectSsGSpkInitParams*)initParamsx;
 
-    Math_Vec3f_Copy(&this->pos, &initParams->pos);
-    Math_Vec3f_Copy(&this->velocity, &initParams->velocity);
-    Math_Vec3f_Copy(&this->accel, &initParams->accel);
+    xyz_t_move(&this->pos, &initParams->pos);
+    xyz_t_move(&this->velocity, &initParams->velocity);
+    xyz_t_move(&this->accel, &initParams->accel);
     this->gfx = SEGMENTED_TO_VIRTUAL(gEffSparkDL);
 
     if (initParams->updateMode == 0) {
@@ -42,13 +42,13 @@ u32 EffectSsGSpk_Init(PlayState* play, u32 index, EffectSs* this, void* initPara
         this->vec.x = initParams->pos.x - initParams->actor->world.pos.x;
         this->vec.y = initParams->pos.y - initParams->actor->world.pos.y;
         this->vec.z = initParams->pos.z - initParams->actor->world.pos.z;
-        this->update = EffectSsGSpk_Update;
+        this->update = Effect_SS_Spk_func_proc;
     } else {
         this->life = 5;
-        this->update = EffectSsGSpk_UpdateNoAccel;
+        this->update = Effect_SS_Spk_func_proc2;
     }
 
-    this->draw = EffectSsGSpk_Draw;
+    this->draw = Effect_SS_Spk_disp_mode;
     this->rPrimColorR = initParams->primColor.r;
     this->rPrimColorG = initParams->primColor.g;
     this->rPrimColorB = initParams->primColor.b;
@@ -65,8 +65,8 @@ u32 EffectSsGSpk_Init(PlayState* play, u32 index, EffectSs* this, void* initPara
     return 1;
 }
 
-void EffectSsGSpk_Draw(PlayState* play, u32 index, EffectSs* this) {
-    static void* sparkTextures[] = {
+void Effect_SS_Spk_disp_mode(PlayState* play, u32 index, EffectSs* this) {
+    static void* spark1_txt[] = {
         gEffSpark1Tex,
         gEffSpark2Tex,
         gEffSpark3Tex,
@@ -84,17 +84,17 @@ void EffectSsGSpk_Draw(PlayState* play, u32 index, EffectSs* this) {
     OPEN_DISPS(gfxCtx, "../z_eff_ss_g_spk.c", 208);
 
     scale = this->rScale * 0.0025f;
-    SkinMatrix_SetTranslate(&mfTrans, this->pos.x, this->pos.y, this->pos.z);
-    SkinMatrix_SetScale(&mfScale, scale, scale, 1.0f);
-    SkinMatrix_MtxFMtxFMult(&mfTrans, &play->billboardMtxF, &mfTransBillboard);
-    SkinMatrix_MtxFMtxFMult(&mfTransBillboard, &mfScale, &mfResult);
+    Skin_Matrix_SetTranslate(&mfTrans, this->pos.x, this->pos.y, this->pos.z);
+    Skin_Matrix_SetScale(&mfScale, scale, scale, 1.0f);
+    Skin_Matrix_MulMatrix(&mfTrans, &play->billboardMtxF, &mfTransBillboard);
+    Skin_Matrix_MulMatrix(&mfTransBillboard, &mfScale, &mfResult);
 
-    mtx = SkinMatrix_MtxFToNewMtx(gfxCtx, &mfResult);
+    mtx = Skin_Matrix_to_Mtx_new(gfxCtx, &mfResult);
 
     if (mtx != NULL) {
         gSPMatrix(POLY_XLU_DISP++, mtx, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-        gSPSegment(POLY_XLU_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(sparkTextures[this->rTexIndex]));
-        Gfx_SetupDL_60NoCDXlu(gfxCtx);
+        gSPSegment(POLY_XLU_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(spark1_txt[this->rTexIndex]));
+        texture_z_cld_poly_xlu(gfxCtx);
         gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, this->rPrimColorR, this->rPrimColorG, this->rPrimColorB, 255);
         gDPSetEnvColor(POLY_XLU_DISP++, this->rEnvColorR, this->rEnvColorG, this->rEnvColorB, this->rEnvColorA);
         gSPDisplayList(POLY_XLU_DISP++, this->gfx);
@@ -104,10 +104,10 @@ void EffectSsGSpk_Draw(PlayState* play, u32 index, EffectSs* this) {
     CLOSE_DISPS(gfxCtx, "../z_eff_ss_g_spk.c", 255);
 }
 
-void EffectSsGSpk_Update(PlayState* play, u32 index, EffectSs* this) {
+void Effect_SS_Spk_func_proc(PlayState* play, u32 index, EffectSs* this) {
 
-    this->accel.x = (Rand_ZeroOne() - 0.5f) * 3.0f;
-    this->accel.z = (Rand_ZeroOne() - 0.5f) * 3.0f;
+    this->accel.x = (fqrand() - 0.5f) * 3.0f;
+    this->accel.z = (fqrand() - 0.5f) * 3.0f;
 
     if (this->actor != NULL) {
         if ((this->actor->category == ACTORCAT_EXPLOSIVE) && (this->actor->update != NULL)) {
@@ -127,11 +127,11 @@ void EffectSsGSpk_Update(PlayState* play, u32 index, EffectSs* this) {
 
 // this update mode is unused in the original game
 // with this update mode, the sparks don't move randomly in the xz plane, appearing to be on top of each other
-void EffectSsGSpk_UpdateNoAccel(PlayState* play, u32 index, EffectSs* this) {
+void Effect_SS_Spk_func_proc2(PlayState* play, u32 index, EffectSs* this) {
     if (this->actor != NULL) {
         if ((this->actor->category == ACTORCAT_EXPLOSIVE) && (this->actor->update != NULL)) {
-            this->pos.x += (Math_SinS(this->actor->world.rot.y) * this->actor->speed);
-            this->pos.z += (Math_CosS(this->actor->world.rot.y) * this->actor->speed);
+            this->pos.x += (sin_s(this->actor->world.rot.y) * this->actor->speed);
+            this->pos.z += (cos_s(this->actor->world.rot.y) * this->actor->speed);
         }
     }
 

@@ -12,15 +12,15 @@
 #define rSfxId regs[10]
 #define rRepeatMode regs[11] // sound is replayed every update. unused in the original game
 
-u32 EffectSsDeadSound_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
-void EffectSsDeadSound_Update(PlayState* play, u32 index, EffectSs* this);
+u32 Effect_Ss_Dead_Sound_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
+void Effect_sound_func_proc(PlayState* play, u32 index, EffectSs* this);
 
 EffectSsProfile Effect_Ss_Dead_Sound_Profile = {
     EFFECT_SS_DEAD_SOUND,
-    EffectSsDeadSound_Init,
+    Effect_Ss_Dead_Sound_ct,
 };
 
-u32 EffectSsDeadSound_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
+u32 Effect_Ss_Dead_Sound_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
     EffectSsDeadSoundInitParams* initParams = (EffectSsDeadSoundInitParams*)initParamsx;
 
     this->pos = initParams->pos;
@@ -29,7 +29,7 @@ u32 EffectSsDeadSound_Init(PlayState* play, u32 index, EffectSs* this, void* ini
     this->flags = 2;
     this->life = initParams->life;
     this->draw = NULL;
-    this->update = EffectSsDeadSound_Update;
+    this->update = Effect_sound_func_proc;
     this->rRepeatMode = initParams->repeatMode;
     this->rSfxId = initParams->sfxId;
     PRINTF("コンストラクター3\n"); // "constructor 3"
@@ -37,7 +37,7 @@ u32 EffectSsDeadSound_Init(PlayState* play, u32 index, EffectSs* this, void* ini
     return 1;
 }
 
-void EffectSsDeadSound_Update(PlayState* play, u32 index, EffectSs* this) {
+void Effect_sound_func_proc(PlayState* play, u32 index, EffectSs* this) {
     switch (this->rRepeatMode) {
         case DEADSOUND_REPEAT_MODE_OFF:
             this->rRepeatMode--; // decrement to 0 so sound only plays once
@@ -48,6 +48,6 @@ void EffectSsDeadSound_Update(PlayState* play, u32 index, EffectSs* this) {
             return;
     }
 
-    Audio_PlaySfxGeneral(this->rSfxId, &this->pos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
-                         &gSfxDefaultReverb);
+    Nai_FxFlagEntry(this->rSfxId, &this->pos, 4, &_dummy_one, &_dummy_one,
+                         &_dummy_zero_s8);
 }

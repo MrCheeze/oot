@@ -935,7 +935,7 @@ size_t gzip_read(GzipFileDescriptor* romInput, void* dst, size_t blockSize) {
 
     alignedSize = ALIGN8(blockSize);
     if (alignedSize > 0) {
-        DmaMgr_DmaRomToRam(romInput->addr, dst, alignedSize);
+        percial_DMA(romInput->addr, dst, alignedSize);
     }
 
     romInput->size -= alignedSize;

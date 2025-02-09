@@ -540,14 +540,14 @@ tablegen_sequences(const char *seq_font_tbl_out, const char *seq_order_path, con
                                             "\n"
            ".section .rodata"               "\n"
                                             "\n"
-           ".global gSequenceFontTable"     "\n"
-           "gSequenceFontTable:"            "\n"
+           ".global AudiomapHeaderStart"     "\n"
+           "AudiomapHeaderStart:"            "\n"
             // clang-format on
     );
 
     // Write the 16-bit offsets for each sequence
     for (size_t i = 0; i < order.num_sequences; i++) {
-        fprintf(out, "    .half Fonts_%lu - gSequenceFontTable\n", i);
+        fprintf(out, "    .half Fonts_%lu - AudiomapHeaderStart\n", i);
     }
     fprintf(out, "\n");
 

@@ -16,14 +16,14 @@
 
 #define FLAGS 0
 
-void BgHidanHrock_Init(Actor* thisx, PlayState* play);
-void BgHidanHrock_Destroy(Actor* thisx, PlayState* play);
-void BgHidanHrock_Update(Actor* thisx, PlayState* play);
-void BgHidanHrock_Draw(Actor* thisx, PlayState* play);
+void Bg_Hidan_Hrock_actor_ct(Actor* thisx, PlayState* play);
+void Bg_Hidan_Hrock_actor_dt(Actor* thisx, PlayState* play);
+void Bg_Hidan_Hrock_actor_move(Actor* thisx, PlayState* play);
+void Bg_Hidan_Hrock_actor_draw(Actor* thisx, PlayState* play);
 
-void func_8088960C(BgHidanHrock* this, PlayState* play);
-void func_808896B8(BgHidanHrock* this, PlayState* play);
-void func_808894A4(BgHidanHrock* this, PlayState* play);
+static void mode_drop(BgHidanHrock* this, PlayState* play);
+void mode_damage_wait(BgHidanHrock* this, PlayState* play);
+static void mode_wait(BgHidanHrock* this, PlayState* play);
 
 ActorProfile Bg_Hidan_Hrock_Profile = {
     /**/ ACTOR_BG_HIDAN_HROCK,
@@ -31,13 +31,13 @@ ActorProfile Bg_Hidan_Hrock_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_HIDAN_OBJECTS,
     /**/ sizeof(BgHidanHrock),
-    /**/ BgHidanHrock_Init,
-    /**/ BgHidanHrock_Destroy,
-    /**/ BgHidanHrock_Update,
-    /**/ BgHidanHrock_Draw,
+    /**/ Bg_Hidan_Hrock_actor_ct,
+    /**/ Bg_Hidan_Hrock_actor_dt,
+    /**/ Bg_Hidan_Hrock_actor_move,
+    /**/ Bg_Hidan_Hrock_actor_draw,
 };
 
-static ColliderTrisElementInit sTrisElementsInit[2] = {
+static ColliderTrisElementInit HidanHrockAcTrisElemData[2] = {
     {
         {
             ELEM_MATERIAL_UNK0,
@@ -62,7 +62,7 @@ static ColliderTrisElementInit sTrisElementsInit[2] = {
     },
 };
 
-static ColliderTrisInit sTrisInit = {
+static ColliderTrisInit HidanHrockAcTrisData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -72,15 +72,15 @@ static ColliderTrisInit sTrisInit = {
         COLSHAPE_TRIS,
     },
     2,
-    sTrisElementsInit,
+    HidanHrockAcTrisElemData,
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_CONTINUE),
     ICHAIN_F32(gravity, -1, ICHAIN_STOP),
 };
 
-void BgHidanHrock_Init(Actor* thisx, PlayState* play) {
+void Bg_Hidan_Hrock_actor_ct(Actor* thisx, PlayState* play) {
     BgHidanHrock* this = (BgHidanHrock*)thisx;
     ColliderTrisElementInit* colliderElementInit;
     Vec3f vertices[3];
@@ -91,15 +91,15 @@ void BgHidanHrock_Init(Actor* thisx, PlayState* play) {
     CollisionHeader* collisionHeader = NULL;
     Vec3f* vtx;
 
-    Actor_ProcessInitChain(thisx, sInitChain);
+    ValueSet_process(thisx, value_init);
     this->unk_16A = PARAMS_GET_U(thisx->params, 0, 6);
     thisx->params = PARAMS_GET_U(thisx->params, 8, 8);
-    Collider_InitTris(play, &this->collider);
-    Collider_SetTris(play, &this->collider, thisx, &sTrisInit, this->colliderItems);
-    DynaPolyActor_Init(&this->dyna, 0);
+    ClObjTris_ct(play, &this->collider);
+    ClObjTris_set5_nzm(play, &this->collider, thisx, &HidanHrockAcTrisData, this->colliderItems);
+    MoveBG_ct(&this->dyna, 0);
 
-    sinRotY = Math_SinS(thisx->shape.rot.y);
-    cosRotY = Math_CosS(thisx->shape.rot.y);
+    sinRotY = sin_s(thisx->shape.rot.y);
+    cosRotY = cos_s(thisx->shape.rot.y);
 
     if (thisx->params == 0) {
         sinRotY *= 1.5f;
@@ -107,7 +107,7 @@ void BgHidanHrock_Init(Actor* thisx, PlayState* play) {
     }
 
     for (i = 0; i < 2; i++) {
-        colliderElementInit = &sTrisInit.elements[i];
+        colliderElementInit = &HidanHrockAcTrisData.elements[i];
 
         if (1) {
             for (j = 0; j < 3; j++) {
@@ -118,11 +118,11 @@ void BgHidanHrock_Init(Actor* thisx, PlayState* play) {
                 vertices[j].z = vtx->z * cosRotY + (thisx->home.pos.z - vtx->x * sinRotY);
             }
         }
-        Collider_SetTrisVertices(&this->collider, i, &vertices[0], &vertices[1], &vertices[2]);
+        CollisionCheck_Uty_setTrisPos(&this->collider, i, &vertices[0], &vertices[1], &vertices[2]);
     }
 
-    if (Flags_GetSwitch(play, this->unk_16A)) {
-        this->actionFunc = func_808894A4;
+    if (Actor_Environment_sw_Check(play, this->unk_16A)) {
+        this->actionFunc = mode_wait;
         if (thisx->params == 0) {
             thisx->world.pos.y -= 2800.0f;
             thisx->cullingVolumeDistance = 3000.0f;
@@ -136,41 +136,41 @@ void BgHidanHrock_Init(Actor* thisx, PlayState* play) {
             thisx->flags |= ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED;
             thisx->cullingVolumeDistance = 3000.0f;
         }
-        this->actionFunc = func_808896B8;
+        this->actionFunc = mode_damage_wait;
     }
 
     if (thisx->params == 0) {
-        CollisionHeader_GetVirtual(&gFireTempleTallestPillarAboveRoomBeforeBossCol, &collisionHeader);
+        DynaPolyUty_bgdi_SG2KSG(&gFireTempleTallestPillarAboveRoomBeforeBossCol, &collisionHeader);
     } else {
-        CollisionHeader_GetVirtual(&gFireTemplePillarInsertedInGroundCol, &collisionHeader);
+        DynaPolyUty_bgdi_SG2KSG(&gFireTemplePillarInsertedInGroundCol, &collisionHeader);
     }
 
-    this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, thisx, collisionHeader);
+    this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, thisx, collisionHeader);
 }
 
-void BgHidanHrock_Destroy(Actor* thisx, PlayState* play) {
+void Bg_Hidan_Hrock_actor_dt(Actor* thisx, PlayState* play) {
     BgHidanHrock* this = (BgHidanHrock*)thisx;
 
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
-    Collider_DestroyTris(play, &this->collider);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
+    ClObjTris_dt_nzf(play, &this->collider);
 }
 
-void func_808894A4(BgHidanHrock* this, PlayState* play) {
+static void mode_wait(BgHidanHrock* this, PlayState* play) {
 }
 
-void func_808894B0(BgHidanHrock* this, PlayState* play) {
+static void mode_yure(BgHidanHrock* this, PlayState* play) {
     if (this->unk_168 != 0) {
         this->unk_168--;
     }
 
     this->dyna.actor.world.pos.x =
-        (Math_SinS(this->dyna.actor.world.rot.y + (this->unk_168 << 0xE)) * 5.0f) + this->dyna.actor.home.pos.x;
+        (sin_s(this->dyna.actor.world.rot.y + (this->unk_168 << 0xE)) * 5.0f) + this->dyna.actor.home.pos.x;
     this->dyna.actor.world.pos.z =
-        (Math_CosS(this->dyna.actor.world.rot.y + (this->unk_168 << 0xE)) * 5.0f) + this->dyna.actor.home.pos.z;
+        (cos_s(this->dyna.actor.world.rot.y + (this->unk_168 << 0xE)) * 5.0f) + this->dyna.actor.home.pos.z;
 
     if (!(this->unk_168 % 4)) {
-        Rumble_Request(this->dyna.actor.xyzDistToPlayerSq, 180, 10, 100);
-        Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_BLOCK_SHAKE);
+        z_vibctl2_vib_setQ(this->dyna.actor.xyzDistToPlayerSq, 180, 10, 100);
+        Actor_SE_set(&this->dyna.actor, NA_SE_EV_BLOCK_SHAKE);
     }
 
     if (this->unk_168 == 0) {
@@ -182,35 +182,35 @@ void func_808894B0(BgHidanHrock* this, PlayState* play) {
             this->dyna.actor.home.pos.y -= 240.0f;
         }
 
-        this->actionFunc = func_8088960C;
+        this->actionFunc = mode_drop;
         this->dyna.actor.world.pos.x = this->dyna.actor.home.pos.x;
         this->dyna.actor.world.pos.z = this->dyna.actor.home.pos.z;
     }
 }
 
-void func_8088960C(BgHidanHrock* this, PlayState* play) {
+static void mode_drop(BgHidanHrock* this, PlayState* play) {
     this->dyna.actor.velocity.y++;
 
-    if (Math_StepToF(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y, this->dyna.actor.velocity.y)) {
+    if (chase_f(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y, this->dyna.actor.velocity.y)) {
         this->dyna.actor.flags &= ~(ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED);
-        Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_BLOCK_BOUND);
+        Actor_SE_set(&this->dyna.actor, NA_SE_EV_BLOCK_BOUND);
 
         if (this->dyna.actor.params == 0) {
             if (play->roomCtx.curRoom.num == 10) {
                 this->dyna.actor.room = 10;
             } else {
-                Actor_Kill(&this->dyna.actor);
+                Actor_delete(&this->dyna.actor);
             }
         }
 
-        this->actionFunc = func_808894A4;
+        this->actionFunc = mode_wait;
     }
 }
 
-void func_808896B8(BgHidanHrock* this, PlayState* play) {
+void mode_damage_wait(BgHidanHrock* this, PlayState* play) {
     if (this->collider.base.acFlags & AC_HIT) {
         this->collider.base.acFlags &= ~AC_HIT;
-        this->actionFunc = func_808894B0;
+        this->actionFunc = mode_yure;
         this->dyna.actor.flags |= ACTOR_FLAG_UPDATE_CULLING_DISABLED;
 
         if (this->dyna.actor.params == 0) {
@@ -218,30 +218,30 @@ void func_808896B8(BgHidanHrock* this, PlayState* play) {
         }
 
         this->unk_168 = 20;
-        Flags_SetSwitch(play, this->unk_16A);
+        Actor_Environment_sw_On(play, this->unk_16A);
     } else {
-        CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
+        CollisionCheck_setAC(play, &play->colChkCtx, &this->collider.base);
     }
 
-    if (DynaPolyActor_IsPlayerOnTop(&this->dyna)) {
-        Math_StepToF(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y - 5.0f, 1.0f);
+    if (MoveBG_checkRidePlayerStatus(&this->dyna)) {
+        chase_f(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y - 5.0f, 1.0f);
     } else {
-        Math_StepToF(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y, 1.0f);
+        chase_f(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y, 1.0f);
     }
 }
 
-void BgHidanHrock_Update(Actor* thisx, PlayState* play) {
+void Bg_Hidan_Hrock_actor_move(Actor* thisx, PlayState* play) {
     BgHidanHrock* this = (BgHidanHrock*)thisx;
 
     this->actionFunc(this, play);
 }
 
-void BgHidanHrock_Draw(Actor* thisx, PlayState* play) {
-    static Gfx* dlists[] = {
+void Bg_Hidan_Hrock_actor_draw(Actor* thisx, PlayState* play) {
+    static Gfx* display_model[] = {
         gFireTempleTallestPillarAboveRoomBeforeBossDL,
         gFireTemplePillarInsertedInGroundDL,
         gFireTemplePillarInsertedInGroundDL,
     };
 
-    Gfx_DrawDListOpa(play, dlists[thisx->params]);
+    Cheap_gfx_display(play, display_model[thisx->params]);
 }

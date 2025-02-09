@@ -5,7 +5,7 @@
 #include "assets/misc/link_animetion/link_animetion.h"
 #include "assets/objects/gameplay_keep/gameplay_keep.h"
 
-Gfx sTransTriforceDL[] = {
+static Gfx fbdemo_triforce_gfx_init[] = {
     gsDPPipeSync(),
     gsSPTexture(0x8000, 0x8000, 0, G_TX_RENDERTILE, G_ON),
     gsSPClearGeometryMode(G_ZBUFFER | G_SHADE | G_CULL_BOTH | G_FOG | G_LIGHTING | G_TEXTURE_GEN | G_TEXTURE_GEN_LINEAR
@@ -17,7 +17,7 @@ Gfx sTransTriforceDL[] = {
     gsSPEndDisplayList(),
 };
 
-Vtx sTransTriforceVtx[] = {
-#include "assets/code/fbdemo_triforce/sTransTriforceVtx.vtx.inc"
+static Vtx triangle_vtx[] = {
+#include "assets/code/fbdemo_triforce/triangle_vtx.vtx.inc"
 };
 

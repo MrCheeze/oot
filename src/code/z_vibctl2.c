@@ -13,25 +13,25 @@
  */
 #include "global.h"
 
-RumbleMgr sRumbleMgr;
+RumbleMgr sys_vibctl2;
 
 /**
  * Padmgr callback to update the state of rumble on Vertical Retrace.
  *
  * Unlike every other function in this file, this runs on the padmgr thread.
  */
-void Rumble_Update(PadMgr* padMgr, void* arg) {
-    RumbleMgr_Update(&sRumbleMgr);
-    PadMgr_RumbleSet(padMgr, sRumbleMgr.rumbleEnable);
+void z_vibctl2_callback(PadMgr* padMgr, void* arg) {
+    vibctl2_move(&sys_vibctl2);
+    padmgr_RumbleSetTbl(padMgr, sys_vibctl2.rumbleEnable);
 }
 
 /**
  * Forces the rumble state to use the supplied parameters.
- * The parameters are the same as in `Rumble_Request`.
+ * The parameters are the same as in `z_vibctl2_vib_setQ`.
  *
- * @see Rumble_Request
+ * @see z_vibctl2_vib_setQ
  */
-void Rumble_Override(f32 distSq, u8 sourceStrength, u8 duration, u8 decreaseRate) {
+void z_vibctl2_vib_force_set(f32 distSq, u8 sourceStrength, u8 duration, u8 decreaseRate) {
     s32 dist;
     s32 strength;
 
@@ -46,11 +46,11 @@ void Rumble_Override(f32 distSq, u8 sourceStrength, u8 duration, u8 decreaseRate
         strength = sourceStrength - (dist * 255) / 1000;
 
         if (strength > 0) {
-            // Note: sRumbleMgr is a shared resource between the graph and padmgr threads, no locking is done
+            // Note: sys_vibctl2 is a shared resource between the graph and padmgr threads, no locking is done
             // to ensure that the entire request is written before it is possibly used.
-            sRumbleMgr.overrideStrength = strength;
-            sRumbleMgr.overrideDuration = duration;
-            sRumbleMgr.overrideDecreaseRate = decreaseRate;
+            sys_vibctl2.overrideStrength = strength;
+            sys_vibctl2.overrideDuration = duration;
+            sys_vibctl2.overrideDecreaseRate = decreaseRate;
         }
     }
 }
@@ -75,7 +75,7 @@ void Rumble_Override(f32 distSq, u8 sourceStrength, u8 duration, u8 decreaseRate
  * @param decreaseRate
  *     The amount by which to lower the strength every Vertical Retrace once duration has hit 0.
  */
-void Rumble_Request(f32 distSq, u8 sourceStrength, u8 duration, u8 decreaseRate) {
+void z_vibctl2_vib_setQ(f32 distSq, u8 sourceStrength, u8 duration, u8 decreaseRate) {
     s32 dist;
     s32 strength;
     s32 i;
@@ -92,13 +92,13 @@ void Rumble_Request(f32 distSq, u8 sourceStrength, u8 duration, u8 decreaseRate)
 
         for (i = 0; i < RUMBLE_MAX_REQUESTS; i++) {
             // Search for an empty slot
-            if (sRumbleMgr.reqStrengths[i] == 0) {
+            if (sys_vibctl2.reqStrengths[i] == 0) {
                 if (strength > 0) {
-                    // Note: sRumbleMgr is a shared resource between the graph and padmgr threads, no locking is done
+                    // Note: sys_vibctl2 is a shared resource between the graph and padmgr threads, no locking is done
                     // to ensure that the entire request is written before it is possibly used.
-                    sRumbleMgr.reqStrengths[i] = strength;
-                    sRumbleMgr.reqDurations[i] = duration;
-                    sRumbleMgr.reqDecreaseRates[i] = decreaseRate;
+                    sys_vibctl2.reqStrengths[i] = strength;
+                    sys_vibctl2.reqDurations[i] = duration;
+                    sys_vibctl2.reqDecreaseRates[i] = decreaseRate;
                 }
                 break;
             }
@@ -106,30 +106,30 @@ void Rumble_Request(f32 distSq, u8 sourceStrength, u8 duration, u8 decreaseRate)
     }
 }
 
-void Rumble_Init(void) {
-    RumbleMgr_Init(&sRumbleMgr);
-    PADMGR_SET_RETRACE_CALLACK(&gPadMgr, Rumble_Update, NULL);
+void z_vibctl2_init(void) {
+    vibctl2_init(&sys_vibctl2);
+    PADMGR_SET_RETRACE_CALLACK(&padmgr, z_vibctl2_callback, NULL);
 }
 
-void Rumble_Destroy(void) {
-    PadMgr* padmgr = &gPadMgr;
+void z_vibctl2_cleanup(void) {
+    PadMgr* padmgr_ = &padmgr;
 
-    PADMGR_UNSET_RETRACE_CALLACK(padmgr, Rumble_Update, NULL);
-    RumbleMgr_Destroy(&sRumbleMgr);
+    PADMGR_UNSET_RETRACE_CALLACK(padmgr_, z_vibctl2_callback, NULL);
+    vibctl2_cleanup(&sys_vibctl2);
 }
 
-s32 Rumble_Controller1HasRumblePak(void) {
-    return gPadMgr.pakType[0] == CONT_PAK_RUMBLE;
+s32 z_vibctl2_RumblePackIsConnected(void) {
+    return padmgr.pakType[0] == CONT_PAK_RUMBLE;
 }
 
-void Rumble_Reset(void) {
-    sRumbleMgr.state = RUMBLE_STATE_RESET;
+void z_vibctl2_StageInit(void) {
+    sys_vibctl2.state = RUMBLE_STATE_RESET;
 }
 
-void Rumble_ClearRequests(void) {
-    sRumbleMgr.state = RUMBLE_STATE_CLEAR;
+void z_vibctl2_StageCancel(void) {
+    sys_vibctl2.state = RUMBLE_STATE_CLEAR;
 }
 
-void Rumble_SetUpdateEnabled(u32 enable) {
-    sRumbleMgr.updateEnabled = !!enable;
+void z_vibctl2_pause(u32 enable) {
+    sys_vibctl2.updateEnabled = !!enable;
 }

@@ -515,13 +515,13 @@ typedef struct CutsceneContext {
     /* 0x28 */ CsCmdActorCue* actorCues[10]; // "npcdemopnt"
 } CutsceneContext; // size = 0x50
 
-void Cutscene_InitContext(struct PlayState* play, CutsceneContext* csCtx);
-void Cutscene_StartManual(struct PlayState* play, CutsceneContext* csCtx);
-void Cutscene_StopManual(struct PlayState* play, CutsceneContext* csCtx);
-void Cutscene_UpdateManual(struct PlayState* play, CutsceneContext* csCtx);
-void Cutscene_UpdateScripted(struct PlayState* play, CutsceneContext* csCtx);
-void Cutscene_HandleEntranceTriggers(struct PlayState* play);
-void Cutscene_HandleConditionalTriggers(struct PlayState* play);
-void Cutscene_SetScript(struct PlayState* play, void* script);
+void Demo_play_ct(struct PlayState* play, CutsceneContext* csCtx);
+void Demo_play_start(struct PlayState* play, CutsceneContext* csCtx);
+void Demo_play_end(struct PlayState* play, CutsceneContext* csCtx);
+void Demo_play_move(struct PlayState* play, CutsceneContext* csCtx);
+void Tool_Demo_play_move(struct PlayState* play, CutsceneContext* csCtx);
+void SpotShowKansi(struct PlayState* play);
+void DemoStartKansi(struct PlayState* play);
+void set_showdata(struct PlayState* play, void* script);
 
 #endif

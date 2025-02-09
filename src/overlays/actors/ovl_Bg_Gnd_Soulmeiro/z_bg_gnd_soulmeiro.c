@@ -21,14 +21,14 @@
 
 #define FLAGS 0
 
-void BgGndSoulmeiro_Init(Actor* thisx, PlayState* play);
-void BgGndSoulmeiro_Destroy(Actor* thisx, PlayState* play);
-void BgGndSoulmeiro_Update(Actor* thisx, PlayState* play);
-void BgGndSoulmeiro_Draw(Actor* thisx, PlayState* play);
+void Bg_Gnd_Soulmeiro_Actor_ct(Actor* thisx, PlayState* play);
+void Bg_Gnd_Soulmeiro_Actor_dt(Actor* thisx, PlayState* play);
+void Bg_Gnd_Soulmeiro_Actor_move(Actor* thisx, PlayState* play);
+void Bg_Gnd_Soulmeiro_Actor_draw(Actor* thisx, PlayState* play);
 
-void func_8087AF38(BgGndSoulmeiro* this, PlayState* play);
-void func_8087B284(BgGndSoulmeiro* this, PlayState* play);
-void func_8087B350(BgGndSoulmeiro* this, PlayState* play);
+void roof_burn(BgGndSoulmeiro* this, PlayState* play);
+static void move_wait(BgGndSoulmeiro* this, PlayState* play);
+static void move_wait2(BgGndSoulmeiro* this, PlayState* play);
 
 ActorProfile Bg_Gnd_Soulmeiro_Profile = {
     /**/ ACTOR_BG_GND_SOULMEIRO,
@@ -36,13 +36,13 @@ ActorProfile Bg_Gnd_Soulmeiro_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_DEMO_KEKKAI,
     /**/ sizeof(BgGndSoulmeiro),
-    /**/ BgGndSoulmeiro_Init,
-    /**/ BgGndSoulmeiro_Destroy,
-    /**/ BgGndSoulmeiro_Update,
-    /**/ BgGndSoulmeiro_Draw,
+    /**/ Bg_Gnd_Soulmeiro_Actor_ct,
+    /**/ Bg_Gnd_Soulmeiro_Actor_dt,
+    /**/ Bg_Gnd_Soulmeiro_Actor_move,
+    /**/ Bg_Gnd_Soulmeiro_Actor_draw,
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit SoulmeiroOcInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -62,58 +62,58 @@ static ColliderCylinderInit sCylinderInit = {
     { 50, 20, 20, { 0, 0, 0 } },
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDistance, 1000, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeScale, 1000, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDownward, 1000, ICHAIN_STOP),
 };
 
-void BgGndSoulmeiro_Init(Actor* thisx, PlayState* play) {
+void Bg_Gnd_Soulmeiro_Actor_ct(Actor* thisx, PlayState* play) {
     s32 pad;
     BgGndSoulmeiro* this = (BgGndSoulmeiro*)thisx;
 
-    Actor_ProcessInitChain(&this->actor, sInitChain);
+    ValueSet_process(&this->actor, value_init);
     this->actionFunc = NULL;
 
     switch (PARAMS_GET_U(this->actor.params, 0, 8)) {
         case 0:
-            Collider_InitCylinder(play, &this->collider);
-            Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
-            this->actionFunc = func_8087B284;
-            if (Flags_GetSwitch(play, PARAMS_GET_U(this->actor.params, 8, 6))) {
+            ClObjPipe_ct(play, &this->collider);
+            ClObjPipe_set5(play, &this->collider, &this->actor, &SoulmeiroOcInfoData);
+            this->actionFunc = move_wait;
+            if (Actor_Environment_sw_Check(play, PARAMS_GET_U(this->actor.params, 8, 6))) {
 
-                Actor_Spawn(&play->actorCtx, play, ACTOR_MIR_RAY, this->actor.world.pos.x, this->actor.world.pos.y,
+                Actor_info_make_actor(&play->actorCtx, play, ACTOR_MIR_RAY, this->actor.world.pos.x, this->actor.world.pos.y,
                             this->actor.world.pos.z, 0, 0, 0, 9);
                 this->actor.draw = NULL;
-                Actor_Kill(&this->actor);
+                Actor_delete(&this->actor);
                 return;
             } else {
-                this->actor.draw = BgGndSoulmeiro_Draw;
+                this->actor.draw = Bg_Gnd_Soulmeiro_Actor_draw;
             }
             break;
         case 1:
         case 2:
-            if (Flags_GetSwitch(play, PARAMS_GET_U(this->actor.params, 8, 6))) {
-                this->actor.draw = BgGndSoulmeiro_Draw;
+            if (Actor_Environment_sw_Check(play, PARAMS_GET_U(this->actor.params, 8, 6))) {
+                this->actor.draw = Bg_Gnd_Soulmeiro_Actor_draw;
             } else {
                 this->actor.draw = NULL;
             }
-            this->actionFunc = func_8087B350;
+            this->actionFunc = move_wait2;
             break;
     }
 }
 
-void BgGndSoulmeiro_Destroy(Actor* thisx, PlayState* play) {
+void Bg_Gnd_Soulmeiro_Actor_dt(Actor* thisx, PlayState* play) {
     BgGndSoulmeiro* this = (BgGndSoulmeiro*)thisx;
 
     if (PARAMS_GET_U(this->actor.params, 0, 8) == 0) {
-        Collider_DestroyCylinder(play, &this->collider);
+        ClObjPipe_dt(play, &this->collider);
     }
 }
 
-void func_8087AF38(BgGndSoulmeiro* this, PlayState* play) {
-    static Vec3f zeroVec = { 0.0f, 0.0f, 0.0f };
+void roof_burn(BgGndSoulmeiro* this, PlayState* play) {
+    static Vec3f zero_vec = { 0.0f, 0.0f, 0.0f };
     Vec3f vecA;
     Vec3f vecB;
     Actor* thisx = &this->actor;
@@ -123,19 +123,19 @@ void func_8087AF38(BgGndSoulmeiro* this, PlayState* play) {
     }
 
     if (this->unk_198 == 20) {
-        Flags_SetSwitch(play, PARAMS_GET_U(thisx->params, 8, 6));
+        Actor_Environment_sw_On(play, PARAMS_GET_U(thisx->params, 8, 6));
         thisx->draw = NULL;
     }
 
     // This should be this->unk_198 == 0, this is required to match
     if (!this->unk_198) {
-        Flags_SetSwitch(play, PARAMS_GET_U(thisx->params, 8, 6));
-        Actor_Kill(&this->actor);
-        Actor_Spawn(&play->actorCtx, play, ACTOR_MIR_RAY, thisx->world.pos.x, thisx->world.pos.y, thisx->world.pos.z, 0,
+        Actor_Environment_sw_On(play, PARAMS_GET_U(thisx->params, 8, 6));
+        Actor_delete(&this->actor);
+        Actor_info_make_actor(&play->actorCtx, play, ACTOR_MIR_RAY, thisx->world.pos.x, thisx->world.pos.y, thisx->world.pos.z, 0,
                     0, 0, 9);
     } else if ((this->unk_198 % 6) == 0) {
         s32 i;
-        s16 temp_2 = Rand_ZeroOne() * (10922.0f); // This should be: 0x10000 / 6.0f
+        s16 temp_2 = fqrand() * (10922.0f); // This should be: 0x10000 / 6.0f
         s16 temp_1;
         f32 temp_3;
         f32 temp_4;
@@ -145,57 +145,57 @@ void func_8087AF38(BgGndSoulmeiro* this, PlayState* play) {
         vecB.y = thisx->world.pos.y;
 
         for (i = 0; i < 6; i++) {
-            temp_1 = Rand_CenteredFloat(0x2800) + temp_2;
-            temp_3 = Math_SinS(temp_1);
-            temp_4 = Math_CosS(temp_1);
+            temp_1 = rnd_fx(0x2800) + temp_2;
+            temp_3 = sin_s(temp_1);
+            temp_4 = cos_s(temp_1);
 
             vecB.x = thisx->world.pos.x + (120.0f * temp_3);
             vecB.z = thisx->world.pos.z + (120.0f * temp_4);
-            distXZ = Math_Vec3f_DistXZ(&thisx->home.pos, &vecB) * (1.0f / 120.0f);
+            distXZ = search_position_distanceXZ(&thisx->home.pos, &vecB) * (1.0f / 120.0f);
             if (distXZ < 0.7f) {
-                temp_3 = Math_SinS(temp_1 + 0x8000);
-                temp_4 = Math_CosS(temp_1 + 0x8000);
+                temp_3 = sin_s(temp_1 + 0x8000);
+                temp_4 = cos_s(temp_1 + 0x8000);
                 vecB.x = thisx->world.pos.x + (120.0f * temp_3);
                 vecB.z = thisx->world.pos.z + (120.0f * temp_4);
-                distXZ = Math_Vec3f_DistXZ(&thisx->home.pos, &vecB) * (1.0f / 120.0f);
+                distXZ = search_position_distanceXZ(&thisx->home.pos, &vecB) * (1.0f / 120.0f);
             }
 
             vecA.x = 4.0f * temp_3 * distXZ;
             vecA.y = 0.0f;
             vecA.z = 4.0f * temp_4 * distXZ;
-            EffectSsDeadDb_Spawn(play, &thisx->home.pos, &vecA, &zeroVec, 60, 6, 255, 255, 150, 170, 255, 0, 0, 1, 14,
+            _Effect_SS_Db_ct(play, &thisx->home.pos, &vecA, &zero_vec, 60, 6, 255, 255, 150, 170, 255, 0, 0, 1, 14,
                                  true);
             temp_2 += 0x2AAA;
         }
     }
 }
 
-void func_8087B284(BgGndSoulmeiro* this, PlayState* play) {
+static void move_wait(BgGndSoulmeiro* this, PlayState* play) {
     s32 pad;
 
-    if (!Flags_GetSwitch(play, PARAMS_GET_U(this->actor.params, 8, 6))) {
-        this->actor.draw = BgGndSoulmeiro_Draw;
+    if (!Actor_Environment_sw_Check(play, PARAMS_GET_U(this->actor.params, 8, 6))) {
+        this->actor.draw = Bg_Gnd_Soulmeiro_Actor_draw;
         if (this->collider.base.acFlags & AC_HIT) {
-            Audio_PlaySfxGeneral(NA_SE_SY_CORRECT_CHIME, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+            Nai_FxFlagEntry(NA_SE_SY_CORRECT_CHIME, &_dummy_zero_f, 4, &_dummy_one,
+                                 &_dummy_one, &_dummy_zero_s8);
             this->unk_198 = 40;
-            this->actionFunc = func_8087AF38;
+            this->actionFunc = roof_burn;
         } else {
-            Collider_UpdateCylinder(&this->actor, &this->collider);
-            CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
+            CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
+            CollisionCheck_setAC(play, &play->colChkCtx, &this->collider.base);
         }
     }
 }
 
-void func_8087B350(BgGndSoulmeiro* this, PlayState* play) {
-    if (Flags_GetSwitch(play, PARAMS_GET_U(this->actor.params, 8, 6))) {
-        this->actor.draw = BgGndSoulmeiro_Draw;
+static void move_wait2(BgGndSoulmeiro* this, PlayState* play) {
+    if (Actor_Environment_sw_Check(play, PARAMS_GET_U(this->actor.params, 8, 6))) {
+        this->actor.draw = Bg_Gnd_Soulmeiro_Actor_draw;
     } else {
         this->actor.draw = NULL;
     }
 }
 
-void BgGndSoulmeiro_Update(Actor* thisx, PlayState* play) {
+void Bg_Gnd_Soulmeiro_Actor_move(Actor* thisx, PlayState* play) {
     BgGndSoulmeiro* this = (BgGndSoulmeiro*)thisx;
 
     if (this->actionFunc != NULL) {
@@ -203,8 +203,8 @@ void BgGndSoulmeiro_Update(Actor* thisx, PlayState* play) {
     }
 }
 
-void BgGndSoulmeiro_Draw(Actor* thisx, PlayState* play) {
-    static Gfx* dLists[] = {
+void Bg_Gnd_Soulmeiro_Actor_draw(Actor* thisx, PlayState* play) {
+    static Gfx* shape_model[] = {
         gSpiritTrialWebDL,
         gSpiritTrialLightSourceDL,
         gSpiritTrialLightFloorDL,
@@ -216,16 +216,16 @@ void BgGndSoulmeiro_Draw(Actor* thisx, PlayState* play) {
     switch (params) {
         case 0:
             OPEN_DISPS(play->state.gfxCtx, "../z_bg_gnd_soulmeiro.c", 398);
-            Gfx_SetupDL_25Xlu(play->state.gfxCtx);
+            _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
             MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx, "../z_bg_gnd_soulmeiro.c", 400);
-            gSPDisplayList(POLY_XLU_DISP++, dLists[params]);
+            gSPDisplayList(POLY_XLU_DISP++, shape_model[params]);
             CLOSE_DISPS(play->state.gfxCtx, "../z_bg_gnd_soulmeiro.c", 403);
             break;
         case 1:
-            Gfx_DrawDListXlu(play, dLists[params]);
+            Cheap_gfx_display_xlu(play, shape_model[params]);
             break;
         case 2:
-            Gfx_DrawDListOpa(play, dLists[params]);
+            Cheap_gfx_display(play, shape_model[params]);
             break;
     }
 }

@@ -25,20 +25,20 @@
 
 #define FLAGS 0
 
-void EnItem00_Init(Actor* thisx, PlayState* play);
-void EnItem00_Destroy(Actor* thisx, PlayState* play);
-void EnItem00_Update(Actor* thisx, PlayState* play);
-void EnItem00_Draw(Actor* thisx, PlayState* play);
+void En_Item00_Actor_ct(Actor* thisx, PlayState* play);
+void En_Item00_Actor_dt(Actor* thisx, PlayState* play);
+void En_Item00_Actor_move(Actor* thisx, PlayState* play);
+void En_Item00_Actor_draw(Actor* thisx, PlayState* play);
 
-void func_8001DFC8(EnItem00* this, PlayState* play);
-void func_8001E1C8(EnItem00* this, PlayState* play);
-void func_8001E304(EnItem00* this, PlayState* play);
-void EnItem00_Collected(EnItem00* this, PlayState* play);
+void En_Item00_Actor_mode_wait(EnItem00* this, PlayState* play);
+void En_Item00_Actor_mode_drop(EnItem00* this, PlayState* play);
+void En_Item00_Actor_mode_drop2(EnItem00* this, PlayState* play);
+void En_Item00_Actor_mode_drop3(EnItem00* this, PlayState* play);
 
-void EnItem00_DrawRupee(EnItem00* this, PlayState* play);
-void EnItem00_DrawCollectible(EnItem00* this, PlayState* play);
-void EnItem00_DrawHeartContainer(EnItem00* this, PlayState* play);
-void EnItem00_DrawHeartPiece(EnItem00* this, PlayState* play);
+void rupee_draw(EnItem00* this, PlayState* play);
+void txt_item_draw(EnItem00* this, PlayState* play);
+void heart_draw2(EnItem00* this, PlayState* play);
+void heart_draw3(EnItem00* this, PlayState* play);
 
 ActorProfile En_Item00_Profile = {
     /**/ ACTOR_EN_ITEM00,
@@ -46,13 +46,13 @@ ActorProfile En_Item00_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(EnItem00),
-    /**/ EnItem00_Init,
-    /**/ EnItem00_Destroy,
-    /**/ EnItem00_Update,
-    /**/ EnItem00_Draw,
+    /**/ En_Item00_Actor_ct,
+    /**/ En_Item00_Actor_dt,
+    /**/ En_Item00_Actor_move,
+    /**/ En_Item00_Actor_draw,
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit OcInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -72,26 +72,26 @@ static ColliderCylinderInit sCylinderInit = {
     { 10, 30, 0, { 0, 0, 0 } },
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_F32(lockOnArrowOffset, 2000, ICHAIN_STOP),
 };
 
-static Color_RGBA8 sEffectPrimColor = { 255, 255, 127, 0 };
-static Color_RGBA8 sEffectEnvColor = { 255, 255, 255, 0 };
-static Vec3f sEffectVelocity = { 0.0f, 0.1f, 0.0f };
-static Vec3f sEffectAccel = { 0.0f, 0.01f, 0.0f };
+static Color_RGBA8 kirakira_prim = { 255, 255, 127, 0 };
+static Color_RGBA8 kirakira_env = { 255, 255, 255, 0 };
+static Vec3f kirakira_vec = { 0.0f, 0.1f, 0.0f };
+static Vec3f kirakira_acc = { 0.0f, 0.01f, 0.0f };
 
-static void* sRupeeTex[] = {
+static void* r_model[] = {
     gRupeeGreenTex, gRupeeBlueTex, gRupeeRedTex, gRupeePinkTex, gRupeeOrangeTex,
 };
 
-static void* sItemDropTex[] = {
+static void* txt_model[] = {
     gDropRecoveryHeartTex, gDropBombTex,       gDropArrows1Tex,   gDropArrows2Tex,
     gDropArrows3Tex,       gDropBombTex,       gDropDekuNutTex,   gDropDekuStickTex,
     gDropMagicLargeTex,    gDropMagicSmallTex, gDropDekuSeedsTex, gDropKeySmallTex,
 };
 
-static u8 sItemDropIds[] = {
+static u8 item_tbl[] = {
     // 0
     ITEM00_RUPEE_GREEN,
     ITEM00_RUPEE_BLUE,
@@ -363,7 +363,7 @@ static u8 sItemDropIds[] = {
     ITEM00_FLEXIBLE,
 };
 
-static u8 sDropQuantities[] = {
+static u8 item_tbl2[] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 0
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 1
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 2
@@ -381,11 +381,11 @@ static u8 sDropQuantities[] = {
     3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, // 14
 };
 
-void EnItem00_SetupAction(EnItem00* this, EnItem00ActionFunc actionFunc) {
+void En_Item00_actor_set_process(EnItem00* this, EnItem00ActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
 
-void EnItem00_Init(Actor* thisx, PlayState* play) {
+void En_Item00_Actor_ct(Actor* thisx, PlayState* play) {
     EnItem00* this = (EnItem00*)thisx;
     s32 pad;
     f32 yOffset = 980.0f;
@@ -398,14 +398,14 @@ void EnItem00_Init(Actor* thisx, PlayState* play) {
 
     this->actor.params &= 0xFF;
 
-    if (Flags_GetCollectible(play, this->collectibleFlag)) {
-        Actor_Kill(&this->actor);
+    if (Actor_Environment_item_Check(play, this->collectibleFlag)) {
+        Actor_delete(&this->actor);
         return;
     }
 
-    Actor_ProcessInitChain(&this->actor, sInitChain);
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
+    ValueSet_process(&this->actor, value_init);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set5(play, &this->collider, &this->actor, &OcInfoData);
 
     this->unk_158 = 1;
 
@@ -413,43 +413,43 @@ void EnItem00_Init(Actor* thisx, PlayState* play) {
         case ITEM00_RUPEE_GREEN:
         case ITEM00_RUPEE_BLUE:
         case ITEM00_RUPEE_RED:
-            Actor_SetScale(&this->actor, 0.015f);
+            Actor_set_scale(&this->actor, 0.015f);
             this->scale = 0.015f;
             yOffset = 750.0f;
             break;
         case ITEM00_SMALL_KEY:
             this->unk_158 = 0;
-            Actor_SetScale(&this->actor, 0.03f);
+            Actor_set_scale(&this->actor, 0.03f);
             this->scale = 0.03f;
             yOffset = 350.0f;
             break;
         case ITEM00_HEART_PIECE:
             this->unk_158 = 0;
             yOffset = 650.0f;
-            Actor_SetScale(&this->actor, 0.02f);
+            Actor_set_scale(&this->actor, 0.02f);
             this->scale = 0.02f;
             break;
         case ITEM00_RECOVERY_HEART:
-            this->actor.home.rot.z = Rand_CenteredFloat(65535.0f);
+            this->actor.home.rot.z = rnd_fx(65535.0f);
             yOffset = 430.0f;
-            Actor_SetScale(&this->actor, 0.02f);
+            Actor_set_scale(&this->actor, 0.02f);
             this->scale = 0.02f;
             break;
         case ITEM00_HEART_CONTAINER:
             yOffset = 430.0f;
             this->unk_158 = 0;
-            Actor_SetScale(&this->actor, 0.02f);
+            Actor_set_scale(&this->actor, 0.02f);
             this->scale = 0.02f;
             break;
         case ITEM00_ARROWS_SINGLE:
             yOffset = 400.0f;
-            Actor_SetScale(&this->actor, 0.02f);
+            Actor_set_scale(&this->actor, 0.02f);
             this->scale = 0.02f;
             break;
         case ITEM00_ARROWS_SMALL:
         case ITEM00_ARROWS_MEDIUM:
         case ITEM00_ARROWS_LARGE:
-            Actor_SetScale(&this->actor, 0.035f);
+            Actor_set_scale(&this->actor, 0.035f);
             this->scale = 0.035f;
             yOffset = 250.0f;
             break;
@@ -460,43 +460,43 @@ void EnItem00_Init(Actor* thisx, PlayState* play) {
         case ITEM00_MAGIC_SMALL:
         case ITEM00_SEEDS:
         case ITEM00_BOMBS_SPECIAL:
-            Actor_SetScale(&this->actor, 0.03f);
+            Actor_set_scale(&this->actor, 0.03f);
             this->scale = 0.03f;
             yOffset = 320.0f;
             break;
         case ITEM00_MAGIC_LARGE:
-            Actor_SetScale(&this->actor, 0.045 - 1e-10);
+            Actor_set_scale(&this->actor, 0.045 - 1e-10);
             this->scale = 0.045 - 1e-10;
             yOffset = 320.0f;
             break;
         case ITEM00_RUPEE_ORANGE:
-            Actor_SetScale(&this->actor, 0.045 - 1e-10);
+            Actor_set_scale(&this->actor, 0.045 - 1e-10);
             this->scale = 0.045 - 1e-10;
             yOffset = 750.0f;
             break;
         case ITEM00_RUPEE_PURPLE:
-            Actor_SetScale(&this->actor, 0.03f);
+            Actor_set_scale(&this->actor, 0.03f);
             this->scale = 0.03f;
             yOffset = 750.0f;
             break;
         case ITEM00_FLEXIBLE:
             yOffset = 500.0f;
-            Actor_SetScale(&this->actor, 0.01f);
+            Actor_set_scale(&this->actor, 0.01f);
             this->scale = 0.01f;
             break;
         case ITEM00_SHIELD_DEKU:
-            this->actor.objectSlot = Object_GetSlot(&play->objectCtx, OBJECT_GI_SHIELD_1);
-            Actor_SetObjectDependency(play, &this->actor);
-            Actor_SetScale(&this->actor, 0.5f);
+            this->actor.objectSlot = Object_Exchange_bank_check(&play->objectCtx, OBJECT_GI_SHIELD_1);
+            Actor_set_segment(play, &this->actor);
+            Actor_set_scale(&this->actor, 0.5f);
             this->scale = 0.5f;
             yOffset = 0.0f;
             shadowScale = 0.6f;
             this->actor.world.rot.x = 0x4000;
             break;
         case ITEM00_SHIELD_HYLIAN:
-            this->actor.objectSlot = Object_GetSlot(&play->objectCtx, OBJECT_GI_SHIELD_2);
-            Actor_SetObjectDependency(play, &this->actor);
-            Actor_SetScale(&this->actor, 0.5f);
+            this->actor.objectSlot = Object_Exchange_bank_check(&play->objectCtx, OBJECT_GI_SHIELD_2);
+            Actor_set_segment(play, &this->actor);
+            Actor_set_scale(&this->actor, 0.5f);
             this->scale = 0.5f;
             yOffset = 0.0f;
             shadowScale = 0.6f;
@@ -504,9 +504,9 @@ void EnItem00_Init(Actor* thisx, PlayState* play) {
             break;
         case ITEM00_TUNIC_ZORA:
         case ITEM00_TUNIC_GORON:
-            this->actor.objectSlot = Object_GetSlot(&play->objectCtx, OBJECT_GI_CLOTHES);
-            Actor_SetObjectDependency(play, &this->actor);
-            Actor_SetScale(&this->actor, 0.5f);
+            this->actor.objectSlot = Object_Exchange_bank_check(&play->objectCtx, OBJECT_GI_CLOTHES);
+            Actor_set_segment(play, &this->actor);
+            Actor_set_scale(&this->actor, 0.5f);
             this->scale = 0.5f;
             yOffset = 0.0f;
             shadowScale = 0.6f;
@@ -515,13 +515,13 @@ void EnItem00_Init(Actor* thisx, PlayState* play) {
     }
 
     this->unk_156 = 0;
-    ActorShape_Init(&this->actor.shape, yOffset, ActorShadow_DrawCircle, shadowScale);
+    Shape_Info_init(&this->actor.shape, yOffset, Actor_shadow_circle, shadowScale);
     this->actor.shape.shadowAlpha = 180;
     this->actor.focus.pos = this->actor.world.pos;
     this->getItemId = GI_NONE;
 
     if (!spawnParam8000) {
-        EnItem00_SetupAction(this, func_8001DFC8);
+        En_Item00_actor_set_process(this, En_Item00_Actor_mode_wait);
         this->despawnTimer = -1;
         return;
     }
@@ -535,41 +535,41 @@ void EnItem00_Init(Actor* thisx, PlayState* play) {
 
     switch (this->actor.params) {
         case ITEM00_RUPEE_GREEN:
-            Item_Give(play, ITEM_RUPEE_GREEN);
+            item_get_setting(play, ITEM_RUPEE_GREEN);
             break;
         case ITEM00_RUPEE_BLUE:
-            Item_Give(play, ITEM_RUPEE_BLUE);
+            item_get_setting(play, ITEM_RUPEE_BLUE);
             break;
         case ITEM00_RUPEE_RED:
-            Item_Give(play, ITEM_RUPEE_RED);
+            item_get_setting(play, ITEM_RUPEE_RED);
             break;
         case ITEM00_RUPEE_PURPLE:
-            Item_Give(play, ITEM_RUPEE_PURPLE);
+            item_get_setting(play, ITEM_RUPEE_PURPLE);
             break;
         case ITEM00_RUPEE_ORANGE:
-            Item_Give(play, ITEM_RUPEE_GOLD);
+            item_get_setting(play, ITEM_RUPEE_GOLD);
             break;
         case ITEM00_RECOVERY_HEART:
-            Item_Give(play, ITEM_RECOVERY_HEART);
+            item_get_setting(play, ITEM_RECOVERY_HEART);
             break;
         case ITEM00_FLEXIBLE:
-            Health_ChangeBy(play, 0x70);
+            life_meter_play(play, 0x70);
             break;
         case ITEM00_BOMBS_A:
         case ITEM00_BOMBS_B:
-            Item_Give(play, ITEM_BOMBS_5);
+            item_get_setting(play, ITEM_BOMBS_5);
             break;
         case ITEM00_ARROWS_SINGLE:
-            Item_Give(play, ITEM_BOW);
+            item_get_setting(play, ITEM_BOW);
             break;
         case ITEM00_ARROWS_SMALL:
-            Item_Give(play, ITEM_ARROWS_5);
+            item_get_setting(play, ITEM_ARROWS_5);
             break;
         case ITEM00_ARROWS_MEDIUM:
-            Item_Give(play, ITEM_ARROWS_10);
+            item_get_setting(play, ITEM_ARROWS_10);
             break;
         case ITEM00_ARROWS_LARGE:
-            Item_Give(play, ITEM_ARROWS_30);
+            item_get_setting(play, ITEM_ARROWS_30);
             break;
         case ITEM00_MAGIC_LARGE:
             getItemId = GI_MAGIC_JAR_SMALL;
@@ -578,7 +578,7 @@ void EnItem00_Init(Actor* thisx, PlayState* play) {
             getItemId = GI_MAGIC_JAR_LARGE;
             break;
         case ITEM00_SMALL_KEY:
-            Item_Give(play, ITEM_SMALL_KEY);
+            item_get_setting(play, ITEM_SMALL_KEY);
             break;
         case ITEM00_SEEDS:
             getItemId = GI_DEKU_SEEDS_5;
@@ -599,21 +599,21 @@ void EnItem00_Init(Actor* thisx, PlayState* play) {
             break;
     }
 
-    if ((getItemId != GI_NONE) && !Actor_HasParent(&this->actor, play)) {
-        Actor_OfferGetItemNearby(&this->actor, play, getItemId);
+    if ((getItemId != GI_NONE) && !Actor_carry_check(&this->actor, play)) {
+        Actor_carry_request_set(&this->actor, play, getItemId);
     }
 
-    EnItem00_SetupAction(this, EnItem00_Collected);
+    En_Item00_actor_set_process(this, En_Item00_Actor_mode_drop3);
     this->actionFunc(this, play);
 }
 
-void EnItem00_Destroy(Actor* thisx, PlayState* play) {
+void En_Item00_Actor_dt(Actor* thisx, PlayState* play) {
     EnItem00* this = (EnItem00*)thisx;
 
-    Collider_DestroyCylinder(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider);
 }
 
-void func_8001DFC8(EnItem00* this, PlayState* play) {
+void En_Item00_Actor_mode_wait(EnItem00* this, PlayState* play) {
     if ((this->actor.params <= ITEM00_RUPEE_RED) ||
         ((this->actor.params == ITEM00_RECOVERY_HEART) && (this->despawnTimer < 0)) ||
         (this->actor.params == ITEM00_HEART_PIECE)) {
@@ -621,25 +621,25 @@ void func_8001DFC8(EnItem00* this, PlayState* play) {
     } else {
         if ((this->actor.params >= ITEM00_SHIELD_DEKU) && (this->actor.params != ITEM00_BOMBS_SPECIAL)) {
             if (this->despawnTimer == -1) {
-                if (Math_SmoothStepToS(&this->actor.shape.rot.x, this->actor.world.rot.x - 0x4000, 2, 3000, 1500) ==
+                if (add_calc_short_angle2(&this->actor.shape.rot.x, this->actor.world.rot.x - 0x4000, 2, 3000, 1500) ==
                     0) {
                     this->despawnTimer = -2;
                 }
             } else {
-                if (Math_SmoothStepToS(&this->actor.shape.rot.x, -this->actor.world.rot.x - 0x4000, 2, 3000, 1500) ==
+                if (add_calc_short_angle2(&this->actor.shape.rot.x, -this->actor.world.rot.x - 0x4000, 2, 3000, 1500) ==
                     0) {
                     this->despawnTimer = -1;
                 }
             }
-            Math_SmoothStepToS(&this->actor.world.rot.x, 0, 2, 2500, 500);
+            add_calc_short_angle2(&this->actor.world.rot.x, 0, 2, 2500, 500);
         }
     }
 
     if (this->actor.params == ITEM00_HEART_PIECE) {
-        this->actor.shape.yOffset = Math_SinS(this->actor.shape.rot.y) * 150.0f + 850.0f;
+        this->actor.shape.yOffset = sin_s(this->actor.shape.rot.y) * 150.0f + 850.0f;
     }
 
-    Math_SmoothStepToF(&this->actor.speed, 0.0f, 1.0f, 0.5f, 0.0f);
+    add_calc(&this->actor.speed, 0.0f, 1.0f, 0.5f, 0.0f);
 
     if (this->unk_154 == 0) {
         if ((this->actor.params != ITEM00_SMALL_KEY) && (this->actor.params != ITEM00_HEART_PIECE) &&
@@ -651,16 +651,16 @@ void func_8001DFC8(EnItem00* this, PlayState* play) {
     if (this->despawnTimer == 0) {
         if ((this->actor.params != ITEM00_SMALL_KEY) && (this->actor.params != ITEM00_HEART_PIECE) &&
             (this->actor.params != ITEM00_HEART_CONTAINER)) {
-            Actor_Kill(&this->actor);
+            Actor_delete(&this->actor);
         }
     }
 
     if ((this->actor.gravity != 0.0f) && !(this->actor.bgCheckFlags & BGCHECKFLAG_GROUND)) {
-        EnItem00_SetupAction(this, func_8001E1C8);
+        En_Item00_actor_set_process(this, En_Item00_Actor_mode_drop);
     }
 }
 
-void func_8001E1C8(EnItem00* this, PlayState* play) {
+void En_Item00_Actor_mode_drop(EnItem00* this, PlayState* play) {
     f32 originalVelocity;
     Vec3f effectPos;
 
@@ -669,17 +669,17 @@ void func_8001E1C8(EnItem00* this, PlayState* play) {
     }
 
     if (play->gameplayFrames & 1) {
-        effectPos.x = this->actor.world.pos.x + Rand_CenteredFloat(10.0f);
-        effectPos.y = this->actor.world.pos.y + Rand_CenteredFloat(10.0f);
-        effectPos.z = this->actor.world.pos.z + Rand_CenteredFloat(10.0f);
-        EffectSsKiraKira_SpawnSmall(play, &effectPos, &sEffectVelocity, &sEffectAccel, &sEffectPrimColor,
-                                    &sEffectEnvColor);
+        effectPos.x = this->actor.world.pos.x + rnd_fx(10.0f);
+        effectPos.y = this->actor.world.pos.y + rnd_fx(10.0f);
+        effectPos.z = this->actor.world.pos.z + rnd_fx(10.0f);
+        Effect_SS_KiraKira_ct(play, &effectPos, &kirakira_vec, &kirakira_acc, &kirakira_prim,
+                                    &kirakira_env);
     }
 
     if (this->actor.bgCheckFlags & (BGCHECKFLAG_GROUND | BGCHECKFLAG_GROUND_TOUCH)) {
         originalVelocity = this->actor.velocity.y;
         if (originalVelocity > -2.0f) {
-            EnItem00_SetupAction(this, func_8001DFC8);
+            En_Item00_actor_set_process(this, En_Item00_Actor_mode_wait);
             this->actor.velocity.y = 0.0f;
         } else {
             this->actor.velocity.y = originalVelocity * -0.8f;
@@ -688,7 +688,7 @@ void func_8001E1C8(EnItem00* this, PlayState* play) {
     }
 }
 
-void func_8001E304(EnItem00* this, PlayState* play) {
+void En_Item00_Actor_mode_drop2(EnItem00* this, PlayState* play) {
     s32 pad;
     Vec3f pos;
     s32 rotOffset;
@@ -704,9 +704,9 @@ void func_8001E304(EnItem00* this, PlayState* play) {
             }
             this->actor.home.rot.z += (s16)((this->actor.velocity.y + 3.0f) * 1000.0f);
             this->actor.world.pos.x +=
-                Math_CosS(this->actor.yawTowardsPlayer) * (-3.0f * Math_CosS(this->actor.home.rot.z));
+                cos_s(this->actor.yawTowardsPlayer) * (-3.0f * cos_s(this->actor.home.rot.z));
             this->actor.world.pos.z +=
-                Math_SinS(this->actor.yawTowardsPlayer) * (-3.0f * Math_CosS(this->actor.home.rot.z));
+                sin_s(this->actor.yawTowardsPlayer) * (-3.0f * cos_s(this->actor.home.rot.z));
         }
     }
 
@@ -728,26 +728,26 @@ void func_8001E304(EnItem00* this, PlayState* play) {
     }
 
     if (!(play->gameplayFrames & 1)) {
-        pos.x = this->actor.world.pos.x + (Rand_ZeroOne() - 0.5f) * 10.0f;
-        pos.y = this->actor.world.pos.y + (Rand_ZeroOne() - 0.5f) * 10.0f;
-        pos.z = this->actor.world.pos.z + (Rand_ZeroOne() - 0.5f) * 10.0f;
-        EffectSsKiraKira_SpawnSmall(play, &pos, &sEffectVelocity, &sEffectAccel, &sEffectPrimColor, &sEffectEnvColor);
+        pos.x = this->actor.world.pos.x + (fqrand() - 0.5f) * 10.0f;
+        pos.y = this->actor.world.pos.y + (fqrand() - 0.5f) * 10.0f;
+        pos.z = this->actor.world.pos.z + (fqrand() - 0.5f) * 10.0f;
+        Effect_SS_KiraKira_ct(play, &pos, &kirakira_vec, &kirakira_acc, &kirakira_prim, &kirakira_env);
     }
 
     if (this->actor.bgCheckFlags & (BGCHECKFLAG_GROUND | BGCHECKFLAG_GROUND_TOUCH)) {
-        EnItem00_SetupAction(this, func_8001DFC8);
+        En_Item00_actor_set_process(this, En_Item00_Actor_mode_wait);
         this->actor.shape.rot.z = 0;
         this->actor.velocity.y = 0.0f;
         this->actor.speed = 0.0f;
     }
 }
 
-void EnItem00_Collected(EnItem00* this, PlayState* play) {
+void En_Item00_Actor_mode_drop3(EnItem00* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     if (this->getItemId != GI_NONE) {
-        if (!Actor_HasParent(&this->actor, play)) {
-            Actor_OfferGetItem(&this->actor, play, this->getItemId, 50.0f, 80.0f);
+        if (!Actor_carry_check(&this->actor, play)) {
+            Actor_carry_request_set2(&this->actor, play, this->getItemId, 50.0f, 80.0f);
             this->despawnTimer++;
         } else {
             this->getItemId = GI_NONE;
@@ -755,7 +755,7 @@ void EnItem00_Collected(EnItem00* this, PlayState* play) {
     }
 
     if (this->despawnTimer == 0) {
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
         return;
     }
 
@@ -768,7 +768,7 @@ void EnItem00_Collected(EnItem00* this, PlayState* play) {
     }
 
     // bounces up and down above player's head
-    this->actor.world.pos.y += 40.0f + Math_SinS(this->despawnTimer * 15000) * (this->despawnTimer * 0.3f);
+    this->actor.world.pos.y += 40.0f + sin_s(this->despawnTimer * 15000) * (this->despawnTimer * 0.3f);
 
     if (LINK_IS_ADULT) {
         this->actor.world.pos.y += 20.0f;
@@ -776,9 +776,9 @@ void EnItem00_Collected(EnItem00* this, PlayState* play) {
 }
 
 // The BSS in the function acted weird in the past. It is matching now but might cause issues in the future
-void EnItem00_Update(Actor* thisx, PlayState* play) {
-    static u32 D_80157D90;
-    static s16 D_80157D94[1];
+void En_Item00_Actor_move(Actor* thisx, PlayState* play) {
+    static u32 frame_b;
+    static s16 flg[1];
     s16* params;
     Actor* dynaActor;
     s32 getItemId = GI_NONE;
@@ -797,8 +797,8 @@ void EnItem00_Update(Actor* thisx, PlayState* play) {
     }
 
     this->actionFunc(this, play);
-    Math_SmoothStepToF(&this->actor.scale.x, this->scale, 0.1f, this->scale * 0.1f, 0.0f);
-    temp = &D_80157D90;
+    add_calc(&this->actor.scale.x, this->scale, 0.1f, this->scale * 0.1f, 0.0f);
+    temp = &frame_b;
 
     this->actor.scale.z = this->actor.scale.x;
     this->actor.scale.y = this->actor.scale.x;
@@ -806,8 +806,8 @@ void EnItem00_Update(Actor* thisx, PlayState* play) {
     if (this->actor.gravity) {
         if (this->actor.bgCheckFlags & (BGCHECKFLAG_GROUND | BGCHECKFLAG_GROUND_TOUCH)) {
             if (*temp != play->gameplayFrames) {
-                D_80157D90 = play->gameplayFrames;
-                D_80157D94[0] = 0;
+                frame_b = play->gameplayFrames;
+                flg[0] = 0;
                 for (i = 0; i < 50; i++) {
                     if (play->colCtx.dyna.bgActorFlags[i] & BGACTOR_IN_USE) {
                         dynaActor = play->colCtx.dyna.bgActors[i].actor;
@@ -815,7 +815,7 @@ void EnItem00_Update(Actor* thisx, PlayState* play) {
                             if ((dynaActor->world.pos.x != dynaActor->prevPos.x) ||
                                 (dynaActor->world.pos.y != dynaActor->prevPos.y) ||
                                 (dynaActor->world.pos.z != dynaActor->prevPos.z)) {
-                                D_80157D94[0]++;
+                                flg[0]++;
                                 break;
                             }
                         }
@@ -825,27 +825,27 @@ void EnItem00_Update(Actor* thisx, PlayState* play) {
 
         } else {
             sp3A = 1;
-            Actor_MoveXZGravity(&this->actor);
+            Actor_position_moveF(&this->actor);
         }
 
-        if (sp3A || D_80157D94[0]) {
-            Actor_UpdateBgCheckInfo(play, &this->actor, 10.0f, 15.0f, 15.0f,
+        if (sp3A || flg[0]) {
+            Actor_BGcheck2(play, &this->actor, 10.0f, 15.0f, 15.0f,
                                     UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2 | UPDBGCHECKINFO_FLAG_3 |
                                         UPDBGCHECKINFO_FLAG_4);
 
             if (this->actor.floorHeight <= -10000.0f) {
-                Actor_Kill(&this->actor);
+                Actor_delete(&this->actor);
                 return;
             }
         }
     }
 
-    Collider_UpdateCylinder(&this->actor, &this->collider);
-    CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
+    CollisionCheck_setAC(play, &play->colChkCtx, &this->collider.base);
 
     if ((this->actor.params == ITEM00_SHIELD_DEKU) || (this->actor.params == ITEM00_SHIELD_HYLIAN) ||
         (this->actor.params == ITEM00_TUNIC_ZORA) || (this->actor.params == ITEM00_TUNIC_GORON)) {
-        this->actor.shape.yOffset = Math_CosS(this->actor.shape.rot.x) * 37.0f;
+        this->actor.shape.yOffset = cos_s(this->actor.shape.rot.x) * 37.0f;
         this->actor.shape.yOffset = ABS(this->actor.shape.yOffset);
     }
 
@@ -855,7 +855,7 @@ void EnItem00_Update(Actor* thisx, PlayState* play) {
 
     if (!((this->actor.xzDistToPlayer <= 30.0f) && (this->actor.yDistToPlayer >= -50.0f) &&
           (this->actor.yDistToPlayer <= 50.0f))) {
-        if (!Actor_HasParent(&this->actor, play)) {
+        if (!Actor_carry_check(&this->actor, play)) {
             return;
         }
     }
@@ -866,19 +866,19 @@ void EnItem00_Update(Actor* thisx, PlayState* play) {
 
     switch (this->actor.params) {
         case ITEM00_RUPEE_GREEN:
-            Item_Give(play, ITEM_RUPEE_GREEN);
+            item_get_setting(play, ITEM_RUPEE_GREEN);
             break;
         case ITEM00_RUPEE_BLUE:
-            Item_Give(play, ITEM_RUPEE_BLUE);
+            item_get_setting(play, ITEM_RUPEE_BLUE);
             break;
         case ITEM00_RUPEE_RED:
-            Item_Give(play, ITEM_RUPEE_RED);
+            item_get_setting(play, ITEM_RUPEE_RED);
             break;
         case ITEM00_RUPEE_PURPLE:
-            Item_Give(play, ITEM_RUPEE_PURPLE);
+            item_get_setting(play, ITEM_RUPEE_PURPLE);
             break;
         case ITEM00_RUPEE_ORANGE:
-            Item_Give(play, ITEM_RUPEE_GOLD);
+            item_get_setting(play, ITEM_RUPEE_GOLD);
             break;
         case ITEM00_STICK:
             getItemId = GI_DEKU_STICKS_1;
@@ -887,26 +887,26 @@ void EnItem00_Update(Actor* thisx, PlayState* play) {
             getItemId = GI_DEKU_NUTS_5;
             break;
         case ITEM00_RECOVERY_HEART:
-            Item_Give(play, ITEM_RECOVERY_HEART);
+            item_get_setting(play, ITEM_RECOVERY_HEART);
             break;
         case ITEM00_FLEXIBLE:
-            Health_ChangeBy(play, 0x70);
+            life_meter_play(play, 0x70);
             break;
         case ITEM00_BOMBS_A:
         case ITEM00_BOMBS_B:
-            Item_Give(play, ITEM_BOMBS_5);
+            item_get_setting(play, ITEM_BOMBS_5);
             break;
         case ITEM00_ARROWS_SINGLE:
-            Item_Give(play, ITEM_BOW);
+            item_get_setting(play, ITEM_BOW);
             break;
         case ITEM00_ARROWS_SMALL:
-            Item_Give(play, ITEM_ARROWS_5);
+            item_get_setting(play, ITEM_ARROWS_5);
             break;
         case ITEM00_ARROWS_MEDIUM:
-            Item_Give(play, ITEM_ARROWS_10);
+            item_get_setting(play, ITEM_ARROWS_10);
             break;
         case ITEM00_ARROWS_LARGE:
-            Item_Give(play, ITEM_ARROWS_30);
+            item_get_setting(play, ITEM_ARROWS_30);
             break;
         case ITEM00_SEEDS:
             getItemId = GI_DEKU_SEEDS_5;
@@ -944,8 +944,8 @@ void EnItem00_Update(Actor* thisx, PlayState* play) {
 
     params = &this->actor.params;
 
-    if ((getItemId != GI_NONE) && !Actor_HasParent(&this->actor, play)) {
-        Actor_OfferGetItemNearby(&this->actor, play, getItemId);
+    if ((getItemId != GI_NONE) && !Actor_carry_check(&this->actor, play)) {
+        Actor_carry_request_set(&this->actor, play, getItemId);
     }
 
     switch (*params) {
@@ -956,28 +956,28 @@ void EnItem00_Update(Actor* thisx, PlayState* play) {
         case ITEM00_SHIELD_HYLIAN:
         case ITEM00_TUNIC_ZORA:
         case ITEM00_TUNIC_GORON:
-            if (Actor_HasParent(&this->actor, play)) {
-                Flags_SetCollectible(play, this->collectibleFlag);
-                Actor_Kill(&this->actor);
+            if (Actor_carry_check(&this->actor, play)) {
+                Actor_Environment_item_On(play, this->collectibleFlag);
+                Actor_delete(&this->actor);
             }
             return;
     }
 
     if ((*params <= ITEM00_RUPEE_RED) || (*params == ITEM00_RUPEE_ORANGE)) {
-        Audio_PlaySfxGeneral(NA_SE_SY_GET_RUPY, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        Nai_FxFlagEntry(NA_SE_SY_GET_RUPY, &_dummy_zero_f, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
     } else if (getItemId != GI_NONE) {
-        if (Actor_HasParent(&this->actor, play)) {
-            Flags_SetCollectible(play, this->collectibleFlag);
-            Actor_Kill(&this->actor);
+        if (Actor_carry_check(&this->actor, play)) {
+            Actor_Environment_item_On(play, this->collectibleFlag);
+            Actor_delete(&this->actor);
         }
         return;
     } else {
-        Audio_PlaySfxGeneral(NA_SE_SY_GET_ITEM, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        Nai_FxFlagEntry(NA_SE_SY_GET_ITEM, &_dummy_zero_f, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
     }
 
-    Flags_SetCollectible(play, this->collectibleFlag);
+    Actor_Environment_item_On(play, this->collectibleFlag);
 
     this->despawnTimer = 15;
     this->unk_154 = 35;
@@ -986,13 +986,13 @@ void EnItem00_Update(Actor* thisx, PlayState* play) {
     this->actor.velocity.y = 0;
     this->actor.gravity = 0;
 
-    Actor_SetScale(&this->actor, this->scale);
+    Actor_set_scale(&this->actor, this->scale);
 
     this->getItemId = GI_NONE;
-    EnItem00_SetupAction(this, EnItem00_Collected);
+    En_Item00_actor_set_process(this, En_Item00_Actor_mode_drop3);
 }
 
-void EnItem00_Draw(Actor* thisx, PlayState* play) {
+void En_Item00_Actor_draw(Actor* thisx, PlayState* play) {
     EnItem00* this = (EnItem00*)thisx;
     f32 mtxScale;
 
@@ -1003,28 +1003,28 @@ void EnItem00_Draw(Actor* thisx, PlayState* play) {
             case ITEM00_RUPEE_RED:
             case ITEM00_RUPEE_ORANGE:
             case ITEM00_RUPEE_PURPLE:
-                EnItem00_DrawRupee(this, play);
+                rupee_draw(this, play);
                 break;
             case ITEM00_HEART_PIECE:
-                EnItem00_DrawHeartPiece(this, play);
+                heart_draw3(this, play);
                 break;
             case ITEM00_HEART_CONTAINER:
-                EnItem00_DrawHeartContainer(this, play);
+                heart_draw2(this, play);
                 break;
             case ITEM00_RECOVERY_HEART:
                 if (this->despawnTimer < 0) {
                     if (this->despawnTimer == -1) {
-                        s8 objectSlot = Object_GetSlot(&play->objectCtx, OBJECT_GI_HEART);
+                        s8 objectSlot = Object_Exchange_bank_check(&play->objectCtx, OBJECT_GI_HEART);
 
-                        if (Object_IsLoaded(&play->objectCtx, objectSlot)) {
+                        if (Object_Exchange_bank_dma_check(&play->objectCtx, objectSlot)) {
                             this->actor.objectSlot = objectSlot;
-                            Actor_SetObjectDependency(play, &this->actor);
+                            Actor_set_segment(play, &this->actor);
                             this->despawnTimer = -2;
                         }
                     } else {
                         mtxScale = 16.0f;
-                        Matrix_Scale(mtxScale, mtxScale, mtxScale, MTXMODE_APPLY);
-                        GetItem_Draw(play, GID_RECOVERY_HEART);
+                        Matrix_scale(mtxScale, mtxScale, mtxScale, MTXMODE_APPLY);
+                        Draw_GetItemType(play, GID_RECOVERY_HEART);
                     }
                     break;
                 }
@@ -1042,19 +1042,19 @@ void EnItem00_Draw(Actor* thisx, PlayState* play) {
             case ITEM00_MAGIC_SMALL:
             case ITEM00_SEEDS:
             case ITEM00_SMALL_KEY:
-                EnItem00_DrawCollectible(this, play);
+                txt_item_draw(this, play);
                 break;
             case ITEM00_SHIELD_DEKU:
-                GetItem_Draw(play, GID_SHIELD_DEKU);
+                Draw_GetItemType(play, GID_SHIELD_DEKU);
                 break;
             case ITEM00_SHIELD_HYLIAN:
-                GetItem_Draw(play, GID_SHIELD_HYLIAN);
+                Draw_GetItemType(play, GID_SHIELD_HYLIAN);
                 break;
             case ITEM00_TUNIC_ZORA:
-                GetItem_Draw(play, GID_TUNIC_ZORA);
+                Draw_GetItemType(play, GID_TUNIC_ZORA);
                 break;
             case ITEM00_TUNIC_GORON:
-                GetItem_Draw(play, GID_TUNIC_GORON);
+                Draw_GetItemType(play, GID_TUNIC_GORON);
                 break;
             case ITEM00_FLEXIBLE:
                 break;
@@ -1065,14 +1065,14 @@ void EnItem00_Draw(Actor* thisx, PlayState* play) {
 /**
  * Draw Function used for Rupee types of En_Item00.
  */
-void EnItem00_DrawRupee(EnItem00* this, PlayState* play) {
+void rupee_draw(EnItem00* this, PlayState* play) {
     s32 pad;
     s32 texIndex;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_item00.c", 1546);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
-    func_8002EBCC(&this->actor, play, 0);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
+    Actor_HiliteReflect_set_init(&this->actor, play, 0);
 
     if (this->actor.params <= ITEM00_RUPEE_RED) {
         texIndex = this->actor.params;
@@ -1082,7 +1082,7 @@ void EnItem00_DrawRupee(EnItem00* this, PlayState* play) {
 
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_en_item00.c", 1562);
 
-    gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(sRupeeTex[texIndex]));
+    gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(r_model[texIndex]));
 
     gSPDisplayList(POLY_OPA_DISP++, gRupeeDL);
 
@@ -1092,12 +1092,12 @@ void EnItem00_DrawRupee(EnItem00* this, PlayState* play) {
 /**
  * Draw Function used for most collectible types of En_Item00 (ammo, bombs, sticks, nuts, magic...).
  */
-void EnItem00_DrawCollectible(EnItem00* this, PlayState* play) {
+void txt_item_draw(EnItem00* this, PlayState* play) {
     s32 texIndex = this->actor.params - 3;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_item00.c", 1594);
 
-    POLY_OPA_DISP = Play_SetFog(play, POLY_OPA_DISP);
+    POLY_OPA_DISP = game_play_set_fog(play, POLY_OPA_DISP);
 
     if (this->actor.params == ITEM00_BOMBS_SPECIAL) {
         texIndex = 1;
@@ -1105,9 +1105,9 @@ void EnItem00_DrawCollectible(EnItem00* this, PlayState* play) {
         texIndex -= 3;
     }
 
-    POLY_OPA_DISP = Gfx_SetupDL_66(POLY_OPA_DISP);
+    POLY_OPA_DISP = gfx_softsprite_z(POLY_OPA_DISP);
 
-    gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(sItemDropTex[texIndex]));
+    gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(txt_model[texIndex]));
 
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_en_item00.c", 1607);
     gSPDisplayList(POLY_OPA_DISP++, gItemDropDL);
@@ -1118,18 +1118,18 @@ void EnItem00_DrawCollectible(EnItem00* this, PlayState* play) {
 /**
  * Draw Function used for the Heart Container type of En_Item00.
  */
-void EnItem00_DrawHeartContainer(EnItem00* this, PlayState* play) {
+void heart_draw2(EnItem00* this, PlayState* play) {
     s32 pad;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_item00.c", 1623);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
-    func_8002EBCC(&this->actor, play, 0);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
+    Actor_HiliteReflect_set_init(&this->actor, play, 0);
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_en_item00.c", 1634);
     gSPDisplayList(POLY_OPA_DISP++, gHeartPieceExteriorDL);
 
-    Gfx_SetupDL_25Xlu(play->state.gfxCtx);
-    func_8002ED80(&this->actor, play, 0);
+    _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
+    Actor_HiliteReflect_xlu_set_init(&this->actor, play, 0);
     MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx, "../z_en_item00.c", 1644);
     gSPDisplayList(POLY_XLU_DISP++, gHeartContainerInteriorDL);
 
@@ -1139,13 +1139,13 @@ void EnItem00_DrawHeartContainer(EnItem00* this, PlayState* play) {
 /**
  * Draw Function used for the Piece of Heart type of En_Item00.
  */
-void EnItem00_DrawHeartPiece(EnItem00* this, PlayState* play) {
+void heart_draw3(EnItem00* this, PlayState* play) {
     s32 pad;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_item00.c", 1658);
 
-    Gfx_SetupDL_25Xlu(play->state.gfxCtx);
-    func_8002ED80(&this->actor, play, 0);
+    _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
+    Actor_HiliteReflect_xlu_set_init(&this->actor, play, 0);
     MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx, "../z_en_item00.c", 1670);
     gSPDisplayList(POLY_XLU_DISP++, gHeartPieceInteriorDL);
 
@@ -1156,7 +1156,7 @@ void EnItem00_DrawHeartPiece(EnItem00* this, PlayState* play) {
  * Converts a given drop type ID based on link's current age, health and owned items.
  * Returns a new drop type ID or -1 to cancel the drop.
  */
-s16 func_8001F404(s16 dropId) {
+s16 name_chk(s16 dropId) {
     if (LINK_IS_ADULT) {
         if (dropId == ITEM00_SEEDS) {
             dropId = ITEM00_ARROWS_SMALL;
@@ -1175,13 +1175,13 @@ s16 func_8001F404(s16 dropId) {
         ((dropId == ITEM00_ARROWS_SMALL || dropId == ITEM00_ARROWS_MEDIUM || dropId == ITEM00_ARROWS_LARGE) &&
          INV_CONTENT(ITEM_BOW) == ITEM_NONE) ||
         ((dropId == ITEM00_MAGIC_LARGE || dropId == ITEM00_MAGIC_SMALL) &&
-         gSaveContext.save.info.playerData.magicLevel == 0) ||
+         z_common_data.save.info.playerData.magicLevel == 0) ||
         ((dropId == ITEM00_SEEDS) && INV_CONTENT(ITEM_SLINGSHOT) == ITEM_NONE)) {
         return -1;
     }
 
     if (dropId == ITEM00_RECOVERY_HEART &&
-        gSaveContext.save.info.playerData.healthCapacity == gSaveContext.save.info.playerData.health) {
+        z_common_data.save.info.playerData.healthCapacity == z_common_data.save.info.playerData.health) {
         return ITEM00_RUPEE_GREEN;
     }
 
@@ -1190,7 +1190,7 @@ s16 func_8001F404(s16 dropId) {
 
 // External functions used by other actors to drop collectibles, which usually results in spawning an En_Item00 actor.
 
-EnItem00* Item_DropCollectible(PlayState* play, Vec3f* spawnPos, s16 params) {
+EnItem00* Item_set0(PlayState* play, Vec3f* spawnPos, s16 params) {
     s32 pad[2];
     EnItem00* spawnedActor = NULL;
     s16 param4000 = params & 0x4000;
@@ -1201,25 +1201,25 @@ EnItem00* Item_DropCollectible(PlayState* play, Vec3f* spawnPos, s16 params) {
 
     if (((params & 0x00FF) == ITEM00_FLEXIBLE) && !param4000) {
         // TODO: Prevent the cast to EnItem00 here since this is a different actor (En_Elf)
-        spawnedActor = (EnItem00*)Actor_Spawn(&play->actorCtx, play, ACTOR_EN_ELF, spawnPos->x, spawnPos->y + 40.0f,
+        spawnedActor = (EnItem00*)Actor_info_make_actor(&play->actorCtx, play, ACTOR_EN_ELF, spawnPos->x, spawnPos->y + 40.0f,
                                               spawnPos->z, 0, 0, 0, FAIRY_HEAL_TIMED);
-        EffectSsDeadSound_SpawnStationary(play, spawnPos, NA_SE_EV_BUTTERFRY_TO_FAIRY, true, DEADSOUND_REPEAT_MODE_OFF,
+        Effect_sound_ct(play, spawnPos, NA_SE_EV_BUTTERFRY_TO_FAIRY, true, DEADSOUND_REPEAT_MODE_OFF,
                                           40);
     } else {
         if (!param8000) {
-            params = func_8001F404(params & 0x00FF);
+            params = name_chk(params & 0x00FF);
         }
 
         if (params != -1) {
-            spawnedActor = (EnItem00*)Actor_Spawn(&play->actorCtx, play, ACTOR_EN_ITEM00, spawnPos->x, spawnPos->y,
+            spawnedActor = (EnItem00*)Actor_info_make_actor(&play->actorCtx, play, ACTOR_EN_ITEM00, spawnPos->x, spawnPos->y,
                                                   spawnPos->z, 0, 0, 0, params | param8000 | param3F00);
             if ((spawnedActor != NULL) && !param8000) {
                 spawnedActor->actor.velocity.y = !param4000 ? 8.0f : -2.0f;
                 spawnedActor->actor.speed = 2.0f;
                 spawnedActor->actor.gravity = -0.9f;
-                spawnedActor->actor.world.rot.y = Rand_CenteredFloat(65536.0f);
-                Actor_SetScale(&spawnedActor->actor, 0.0f);
-                EnItem00_SetupAction(spawnedActor, func_8001E304);
+                spawnedActor->actor.world.rot.y = rnd_fx(65536.0f);
+                Actor_set_scale(&spawnedActor->actor, 0.0f);
+                En_Item00_actor_set_process(spawnedActor, En_Item00_Actor_mode_drop2);
                 spawnedActor->despawnTimer = 220;
                 if ((spawnedActor->actor.params != ITEM00_SMALL_KEY) &&
                     (spawnedActor->actor.params != ITEM00_HEART_PIECE) &&
@@ -1233,7 +1233,7 @@ EnItem00* Item_DropCollectible(PlayState* play, Vec3f* spawnPos, s16 params) {
     return spawnedActor;
 }
 
-EnItem00* Item_DropCollectible2(PlayState* play, Vec3f* spawnPos, s16 params) {
+EnItem00* Item_set1(PlayState* play, Vec3f* spawnPos, s16 params) {
     EnItem00* spawnedActor = NULL;
     s32 pad;
     s16 param4000 = params & 0x4000;
@@ -1244,20 +1244,20 @@ EnItem00* Item_DropCollectible2(PlayState* play, Vec3f* spawnPos, s16 params) {
 
     if (((params & 0x00FF) == ITEM00_FLEXIBLE) && !param4000) {
         // TODO: Prevent the cast to EnItem00 here since this is a different actor (En_Elf)
-        spawnedActor = (EnItem00*)Actor_Spawn(&play->actorCtx, play, ACTOR_EN_ELF, spawnPos->x, spawnPos->y + 40.0f,
+        spawnedActor = (EnItem00*)Actor_info_make_actor(&play->actorCtx, play, ACTOR_EN_ELF, spawnPos->x, spawnPos->y + 40.0f,
                                               spawnPos->z, 0, 0, 0, FAIRY_HEAL_TIMED);
-        EffectSsDeadSound_SpawnStationary(play, spawnPos, NA_SE_EV_BUTTERFRY_TO_FAIRY, true, DEADSOUND_REPEAT_MODE_OFF,
+        Effect_sound_ct(play, spawnPos, NA_SE_EV_BUTTERFRY_TO_FAIRY, true, DEADSOUND_REPEAT_MODE_OFF,
                                           40);
     } else {
-        params = func_8001F404(params & 0x00FF);
+        params = name_chk(params & 0x00FF);
         if (params != -1) {
-            spawnedActor = (EnItem00*)Actor_Spawn(&play->actorCtx, play, ACTOR_EN_ITEM00, spawnPos->x, spawnPos->y,
+            spawnedActor = (EnItem00*)Actor_info_make_actor(&play->actorCtx, play, ACTOR_EN_ITEM00, spawnPos->x, spawnPos->y,
                                                   spawnPos->z, 0, 0, 0, params | param8000 | param3F00);
             if ((spawnedActor != NULL) && !param8000) {
                 spawnedActor->actor.velocity.y = 0.0f;
                 spawnedActor->actor.speed = 0.0f;
                 spawnedActor->actor.gravity = param4000 ? 0.0f : -0.9f;
-                spawnedActor->actor.world.rot.y = Rand_CenteredFloat(65536.0f);
+                spawnedActor->actor.world.rot.y = rnd_fx(65536.0f);
                 spawnedActor->actor.flags |= ACTOR_FLAG_UPDATE_CULLING_DISABLED;
             }
         }
@@ -1266,12 +1266,12 @@ EnItem00* Item_DropCollectible2(PlayState* play, Vec3f* spawnPos, s16 params) {
     return spawnedActor;
 }
 
-void Item_DropCollectibleRandom(PlayState* play, Actor* fromActor, Vec3f* spawnPos, s16 params) {
+void Item_Set_Std(PlayState* play, Actor* fromActor, Vec3f* spawnPos, s16 params) {
     s32 pad;
     EnItem00* spawnedActor;
     s16 dropQuantity;
     s16 param8000;
-    s16 dropTableIndex = Rand_ZeroOne() * 16.0f;
+    s16 dropTableIndex = fqrand() * 16.0f;
     u8 dropId;
 
     param8000 = params & 0x8000;
@@ -1305,34 +1305,34 @@ void Item_DropCollectibleRandom(PlayState* play, Actor* fromActor, Vec3f* spawnP
         if (fromActor->dropFlag & 0x20) {
             dropId = ITEM00_RUPEE_PURPLE;
         } else {
-            dropId = sItemDropIds[params + dropTableIndex];
+            dropId = item_tbl[params + dropTableIndex];
         }
     } else {
-        dropId = sItemDropIds[params + dropTableIndex];
+        dropId = item_tbl[params + dropTableIndex];
     }
 
     if (dropId == ITEM00_FLEXIBLE) {
-        if (gSaveContext.save.info.playerData.health <= 0x10) { // 1 heart or less
-            Actor_Spawn(&play->actorCtx, play, ACTOR_EN_ELF, spawnPos->x, spawnPos->y + 40.0f, spawnPos->z, 0, 0, 0,
+        if (z_common_data.save.info.playerData.health <= 0x10) { // 1 heart or less
+            Actor_info_make_actor(&play->actorCtx, play, ACTOR_EN_ELF, spawnPos->x, spawnPos->y + 40.0f, spawnPos->z, 0, 0, 0,
                         FAIRY_HEAL_TIMED);
-            EffectSsDeadSound_SpawnStationary(play, spawnPos, NA_SE_EV_BUTTERFRY_TO_FAIRY, true,
+            Effect_sound_ct(play, spawnPos, NA_SE_EV_BUTTERFRY_TO_FAIRY, true,
                                               DEADSOUND_REPEAT_MODE_OFF, 40);
             return;
-        } else if (gSaveContext.save.info.playerData.health <= 0x30) { // 3 hearts or less
+        } else if (z_common_data.save.info.playerData.health <= 0x30) { // 3 hearts or less
             params = 0xB * 0x10;
             dropTableIndex = 0x0;
             dropId = ITEM00_RECOVERY_HEART;
-        } else if (gSaveContext.save.info.playerData.health <= 0x50) { // 5 hearts or less
+        } else if (z_common_data.save.info.playerData.health <= 0x50) { // 5 hearts or less
             params = 0xA * 0x10;
             dropTableIndex = 0x0;
             dropId = ITEM00_RECOVERY_HEART;
-        } else if ((gSaveContext.save.info.playerData.magicLevel != 0) &&
-                   (gSaveContext.save.info.playerData.magic == 0)) { // Empty magic meter
+        } else if ((z_common_data.save.info.playerData.magicLevel != 0) &&
+                   (z_common_data.save.info.playerData.magic == 0)) { // Empty magic meter
             params = 0xA * 0x10;
             dropTableIndex = 0x0;
             dropId = ITEM00_MAGIC_LARGE;
-        } else if ((gSaveContext.save.info.playerData.magicLevel != 0) &&
-                   (gSaveContext.save.info.playerData.magic <= (gSaveContext.save.info.playerData.magicLevel >> 1))) {
+        } else if ((z_common_data.save.info.playerData.magicLevel != 0) &&
+                   (z_common_data.save.info.playerData.magic <= (z_common_data.save.info.playerData.magicLevel >> 1))) {
             params = 0xA * 0x10;
             dropTableIndex = 0x0;
             dropId = ITEM00_MAGIC_SMALL;
@@ -1348,7 +1348,7 @@ void Item_DropCollectibleRandom(PlayState* play, Actor* fromActor, Vec3f* spawnP
             params = 0xD * 0x10;
             dropTableIndex = 0x0;
             dropId = ITEM00_BOMBS_A;
-        } else if (gSaveContext.save.info.playerData.rupees < 11) {
+        } else if (z_common_data.save.info.playerData.rupees < 11) {
             params = 0xA * 0x10;
             dropTableIndex = 0x0;
             dropId = ITEM00_RUPEE_RED;
@@ -1358,20 +1358,20 @@ void Item_DropCollectibleRandom(PlayState* play, Actor* fromActor, Vec3f* spawnP
     }
 
     if (dropId != ITEM00_NONE) {
-        dropQuantity = sDropQuantities[params + dropTableIndex];
+        dropQuantity = item_tbl2[params + dropTableIndex];
         while (dropQuantity > 0) {
             if (!param8000) {
-                dropId = func_8001F404(dropId);
+                dropId = name_chk(dropId);
                 if (dropId != ITEM00_NONE) {
-                    spawnedActor = (EnItem00*)Actor_Spawn(&play->actorCtx, play, ACTOR_EN_ITEM00, spawnPos->x,
+                    spawnedActor = (EnItem00*)Actor_info_make_actor(&play->actorCtx, play, ACTOR_EN_ITEM00, spawnPos->x,
                                                           spawnPos->y, spawnPos->z, 0, 0, 0, dropId);
                     if ((spawnedActor != NULL) && (dropId != ITEM00_NONE)) {
                         spawnedActor->actor.velocity.y = 8.0f;
                         spawnedActor->actor.speed = 2.0f;
                         spawnedActor->actor.gravity = -0.9f;
-                        spawnedActor->actor.world.rot.y = Rand_ZeroOne() * 40000.0f;
-                        Actor_SetScale(&spawnedActor->actor, 0.0f);
-                        EnItem00_SetupAction(spawnedActor, func_8001E304);
+                        spawnedActor->actor.world.rot.y = fqrand() * 40000.0f;
+                        Actor_set_scale(&spawnedActor->actor, 0.0f);
+                        En_Item00_actor_set_process(spawnedActor, En_Item00_Actor_mode_drop2);
                         spawnedActor->actor.flags |= ACTOR_FLAG_UPDATE_CULLING_DISABLED;
                         if ((spawnedActor->actor.params != ITEM00_SMALL_KEY) &&
                             (spawnedActor->actor.params != ITEM00_HEART_PIECE) &&
@@ -1382,7 +1382,7 @@ void Item_DropCollectibleRandom(PlayState* play, Actor* fromActor, Vec3f* spawnP
                     }
                 }
             } else {
-                Item_DropCollectible(play, spawnPos, params | 0x8000);
+                Item_set0(play, spawnPos, params | 0x8000);
             }
             dropQuantity--;
         }

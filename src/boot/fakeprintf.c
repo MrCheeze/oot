@@ -14,7 +14,7 @@ void isPrintfInit(void) {
 }
 #endif
 
-void osSyncPrintfUnused(const char* fmt, ...) {
+void fakePrintf(const char* fmt, ...) {
     va_list args;
     va_start(args, fmt);
 

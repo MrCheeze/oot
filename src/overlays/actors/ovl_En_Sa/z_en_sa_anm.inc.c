@@ -1,4 +1,4 @@
-f32 func_80AF5894(EnSa* this) {
+static f32 anime_revers(EnSa* this) {
     f32 endFrame = this->skelAnime.endFrame;
     f32 startFrame = this->skelAnime.startFrame;
 
@@ -9,140 +9,140 @@ f32 func_80AF5894(EnSa* this) {
     return startFrame;
 }
 
-void func_80AF58B8(EnSa* this) {
+static void ply_1_2(EnSa* this) {
     switch (this->unk_20A) {
         case 0:
-            Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo2, ENSA_ANIM2_3);
+            npc_anime_ct(&this->skelAnime, animetbl, ENSA_ANIM2_3);
             this->unk_20A++;
             FALLTHROUGH;
         case 1:
-            if (Animation_OnFrame(&this->skelAnime, this->skelAnime.endFrame)) {
-                Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo2, ENSA_ANIM2_2);
+            if (Skeleton_Info_frame_check(&this->skelAnime, this->skelAnime.endFrame)) {
+                npc_anime_ct(&this->skelAnime, animetbl, ENSA_ANIM2_2);
                 this->unk_20A++;
             }
             break;
     }
 }
 
-void func_80AF594C(EnSa* this) {
+void ply_3_k(EnSa* this) {
     switch (this->unk_20A) {
         case 0:
-            Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo2, ENSA_ANIM2_8);
+            npc_anime_ct(&this->skelAnime, animetbl, ENSA_ANIM2_8);
             this->unk_20A++;
             FALLTHROUGH;
         case 1:
-            if (Animation_OnFrame(&this->skelAnime, this->skelAnime.endFrame)) {
-                Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo2, ENSA_ANIM2_9);
+            if (Skeleton_Info_frame_check(&this->skelAnime, this->skelAnime.endFrame)) {
+                npc_anime_ct(&this->skelAnime, animetbl, ENSA_ANIM2_9);
                 this->unk_20A++;
             }
             break;
     }
 }
 
-void func_80AF59E0(EnSa* this) {
+void ply_4_5(EnSa* this) {
     switch (this->unk_20A) {
         case 0:
-            Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo2, ENSA_ANIM2_1);
+            npc_anime_ct(&this->skelAnime, animetbl, ENSA_ANIM2_1);
             this->unk_20A++;
             FALLTHROUGH;
         case 1:
-            if (Animation_OnFrame(&this->skelAnime, this->skelAnime.endFrame)) {
-                Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo2, ENSA_ANIM2_7);
+            if (Skeleton_Info_frame_check(&this->skelAnime, this->skelAnime.endFrame)) {
+                npc_anime_ct(&this->skelAnime, animetbl, ENSA_ANIM2_7);
                 this->unk_20A++;
             }
             break;
     }
 }
 
-void func_80AF5A74(EnSa* this) {
+void ply_4rv_k(EnSa* this) {
     switch (this->unk_20A) {
         case 0:
-            Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo2, ENSA_ANIM2_1);
-            func_80AF5894(this);
+            npc_anime_ct(&this->skelAnime, animetbl, ENSA_ANIM2_1);
+            anime_revers(this);
             this->unk_20A++;
             FALLTHROUGH;
         case 1:
-            if (Animation_OnFrame(&this->skelAnime, this->skelAnime.endFrame)) {
-                Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo2, ENSA_ANIM2_9);
+            if (Skeleton_Info_frame_check(&this->skelAnime, this->skelAnime.endFrame)) {
+                npc_anime_ct(&this->skelAnime, animetbl, ENSA_ANIM2_9);
                 this->unk_20A++;
             }
             break;
     }
 }
 
-void func_80AF5B10(EnSa* this) {
+void ply_6_7(EnSa* this) {
     switch (this->unk_20A) {
         case 0:
-            Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo2, ENSA_ANIM2_6);
+            npc_anime_ct(&this->skelAnime, animetbl, ENSA_ANIM2_6);
             this->unk_20A++;
             FALLTHROUGH;
         case 1:
-            if (Animation_OnFrame(&this->skelAnime, this->skelAnime.endFrame)) {
-                Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo2, ENSA_ANIM2_4);
+            if (Skeleton_Info_frame_check(&this->skelAnime, this->skelAnime.endFrame)) {
+                npc_anime_ct(&this->skelAnime, animetbl, ENSA_ANIM2_4);
                 this->unk_20A++;
             }
             break;
     }
 }
 
-void func_80AF5BA4(EnSa* this) {
+void ply_6rv_k(EnSa* this) {
     switch (this->unk_20A) {
         case 0:
-            Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo2, ENSA_ANIM2_6);
-            func_80AF5894(this);
+            npc_anime_ct(&this->skelAnime, animetbl, ENSA_ANIM2_6);
+            anime_revers(this);
             this->unk_20A++;
             FALLTHROUGH;
         case 1:
-            if (Animation_OnFrame(&this->skelAnime, this->skelAnime.endFrame)) {
-                Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo2, ENSA_ANIM2_9);
+            if (Skeleton_Info_frame_check(&this->skelAnime, this->skelAnime.endFrame)) {
+                npc_anime_ct(&this->skelAnime, animetbl, ENSA_ANIM2_9);
                 this->unk_20A++;
             }
             break;
     }
 }
 
-void func_80AF5C40(EnSa* this) {
+void ply_8_9_k(EnSa* this) {
     switch (this->unk_20A) {
         case 0:
-            Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo2, ENSA_ANIM2_5);
+            npc_anime_ct(&this->skelAnime, animetbl, ENSA_ANIM2_5);
             this->unk_20A++;
             FALLTHROUGH;
         case 1:
-            if (Animation_OnFrame(&this->skelAnime, this->skelAnime.endFrame)) {
-                Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo2, ENSA_ANIM2_0);
+            if (Skeleton_Info_frame_check(&this->skelAnime, this->skelAnime.endFrame)) {
+                npc_anime_ct(&this->skelAnime, animetbl, ENSA_ANIM2_0);
                 this->unk_20A++;
             }
             break;
     }
 }
 
-void func_80AF5CD4(EnSa* this, u8 arg1) {
+static void set_play_anime_mode(EnSa* this, u8 arg1) {
     this->unk_20B = arg1;
     this->unk_20A = 0;
 }
 
-void func_80AF5CE4(EnSa* this) {
+void sa_chg_anime(EnSa* this) {
     switch (this->unk_20B) {
         case 1:
-            func_80AF58B8(this);
+            ply_1_2(this);
             break;
         case 2:
-            func_80AF594C(this);
+            ply_3_k(this);
             break;
         case 3:
-            func_80AF59E0(this);
+            ply_4_5(this);
             break;
         case 4:
-            func_80AF5A74(this);
+            ply_4rv_k(this);
             break;
         case 5:
-            func_80AF5B10(this);
+            ply_6_7(this);
             break;
         case 6:
-            func_80AF5BA4(this);
+            ply_6rv_k(this);
             break;
         case 7:
-            func_80AF5C40(this);
+            ply_8_9_k(this);
             break;
     }
 }

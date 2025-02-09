@@ -1,7 +1,7 @@
 #include "global.h"
 #include "z64quest_hint_commands.h"
 
-QuestHintCmd sChildSariaQuestHints[] = {
+QuestHintCmd child_na_message[] = {
     QUEST_HINT_STRENGTH_UPG(SKIP, 0, false, 3),
     QUEST_HINT_FLAG(CHECK, EVENTCHKINF_37, false, 0x61),
     QUEST_HINT_END(0x64),
@@ -18,7 +18,7 @@ QuestHintCmd sChildSariaQuestHints[] = {
     QUEST_HINT_END(0x69),
 };
 
-QuestHintCmd sAdultSariaQuestHints[] = {
+QuestHintCmd boy_na_message[] = {
     QUEST_HINT_MEDALLION(CHECK, ITEM_MEDALLION_FOREST, false, 0x6A),
     QUEST_HINT_MEDALLION(CHECK, ITEM_MEDALLION_FIRE, false, 0x6B),
     QUEST_HINT_MEDALLION(CHECK, ITEM_MEDALLION_WATER, false, 0x6B),
@@ -27,7 +27,7 @@ QuestHintCmd sAdultSariaQuestHints[] = {
     QUEST_HINT_END(0x6D),
 };
 
-u32 QuestHint_CheckCondition(QuestHintCmd* hintCmd) {
+u32 check_elf_message_Info(QuestHintCmd* hintCmd) {
     s32 type = hintCmd->byte0 & 0x1E;
     u16 flag;
 
@@ -35,11 +35,11 @@ u32 QuestHint_CheckCondition(QuestHintCmd* hintCmd) {
         case (QUEST_HINT_CONDITION_FLAG << 1):
             flag = 1 << (hintCmd->byte1 & 0x0F);
             return ((hintCmd->byte0 & 1) == 1) ==
-                   ((flag & gSaveContext.save.info.eventChkInf[(hintCmd->byte1 & 0xF0) >> 4]) != 0);
+                   ((flag & z_common_data.save.info.eventChkInf[(hintCmd->byte1 & 0xF0) >> 4]) != 0);
 
         case (QUEST_HINT_CONDITION_DUNGEON_ITEM << 1):
             return ((hintCmd->byte0 & 1) == 1) ==
-                   (CHECK_DUNGEON_ITEM(hintCmd->byte1 - ITEM_DUNGEON_BOSS_KEY, gSaveContext.mapIndex) != 0);
+                   (CHECK_DUNGEON_ITEM(hintCmd->byte1 - ITEM_DUNGEON_BOSS_KEY, z_common_data.mapIndex) != 0);
 
         case (QUEST_HINT_CONDITION_ITEM << 1):
             return ((hintCmd->byte0 & 1) == 1) == (hintCmd->byte3 == INV_CONTENT(hintCmd->byte1));
@@ -64,7 +64,7 @@ u32 QuestHint_CheckCondition(QuestHintCmd* hintCmd) {
 
                 case (QUEST_HINT_CONDITION_MAGIC << 4):
                     return ((hintCmd->byte0 & 1) == 1) ==
-                           (((void)0, gSaveContext.save.info.playerData.isMagicAcquired) != 0);
+                           (((void)0, z_common_data.save.info.playerData.isMagicAcquired) != 0);
             }
     }
 
@@ -74,13 +74,13 @@ u32 QuestHint_CheckCondition(QuestHintCmd* hintCmd) {
     return false;
 }
 
-u32 QuestHint_CheckConditionChain(QuestHintCmd** hintCmdPtr) {
+u32 and_elf_message_Info(QuestHintCmd** hintCmdPtr) {
     u32 allConditionsMet = true;
 
     while (((*hintCmdPtr)->byte0 & 0xE0) == (QUEST_HINT_TYPE_CHAIN << 5)) {
         // if any of the conditions checked in the chain are not met,
         // the whole chain is considered false
-        if (!QuestHint_CheckCondition(*hintCmdPtr)) {
+        if (!check_elf_message_Info(*hintCmdPtr)) {
             allConditionsMet = false;
         }
 
@@ -88,13 +88,13 @@ u32 QuestHint_CheckConditionChain(QuestHintCmd** hintCmdPtr) {
     }
 
     if (allConditionsMet) {
-        return QuestHint_CheckCondition(*hintCmdPtr);
+        return check_elf_message_Info(*hintCmdPtr);
     } else {
         return false;
     }
 }
 
-u32 QuestHint_CheckRandomCondition(QuestHintCmd** hintCmdPtr) {
+u32 rnd_elf_message_Info(QuestHintCmd** hintCmdPtr) {
     QuestHintCmd* hintCmd = *hintCmdPtr;
     u32 conditions[10];
     s32 i = 0;
@@ -102,7 +102,7 @@ u32 QuestHint_CheckRandomCondition(QuestHintCmd** hintCmdPtr) {
     s32 rand;
 
     do {
-        conditions[totalChecked] = QuestHint_CheckCondition(hintCmd);
+        conditions[totalChecked] = check_elf_message_Info(hintCmd);
         // i is incremented if the condition was met
         i += conditions[totalChecked];
         totalChecked++;
@@ -115,7 +115,7 @@ u32 QuestHint_CheckRandomCondition(QuestHintCmd** hintCmdPtr) {
     }
 
     // choose a random number between 0 and the total amount of conditions met
-    rand = Rand_ZeroFloat(i);
+    rand = rnd_f(i);
 
     for (i = 0; i < totalChecked; i++) {
         // keep decrementing the random number until it reaches 0 then use that hint
@@ -133,29 +133,29 @@ u32 QuestHint_CheckRandomCondition(QuestHintCmd** hintCmdPtr) {
     return false;
 }
 
-u16 QuestHint_GetTextIdFromScript(QuestHintCmd* hintCmd) {
+u16 roop_elf_msg(QuestHintCmd* hintCmd) {
     while (true) {
         switch (hintCmd->byte0 & 0xE0) {
             case (QUEST_HINT_TYPE_CHECK << 5):
-                if (QuestHint_CheckCondition(hintCmd)) {
+                if (check_elf_message_Info(hintCmd)) {
                     return hintCmd->byte2 | 0x100;
                 }
                 break;
 
             case (QUEST_HINT_TYPE_CHAIN << 5):
-                if (QuestHint_CheckConditionChain(&hintCmd)) {
+                if (and_elf_message_Info(&hintCmd)) {
                     return hintCmd->byte2 | 0x100;
                 }
                 break;
 
             case (QUEST_HINT_TYPE_RANDOM << 5):
-                if (QuestHint_CheckRandomCondition(&hintCmd)) {
+                if (rnd_elf_message_Info(&hintCmd)) {
                     return hintCmd->byte2 | 0x100;
                 }
                 break;
 
             case (QUEST_HINT_TYPE_SKIP << 5):
-                if (QuestHint_CheckCondition(hintCmd)) {
+                if (check_elf_message_Info(hintCmd)) {
                     hintCmd += hintCmd->byte2; // skip the specified amount
                     hintCmd--;                 // decrement by 1 because it will be incremented again below
                 }
@@ -173,27 +173,27 @@ u16 QuestHint_GetTextIdFromScript(QuestHintCmd* hintCmd) {
     }
 }
 
-u16 QuestHint_GetSariaTextId(PlayState* play) {
+u16 get_sa_message(PlayState* play) {
     Player* player = GET_PLAYER(play);
     QuestHintCmd* sariaQuestHints;
 
     if (!LINK_IS_ADULT) {
-        if (Actor_FindNearby(play, &player->actor, ACTOR_EN_SA, 4, 800.0f) == NULL) {
-            sariaQuestHints = sChildSariaQuestHints;
+        if (ActorSearch(play, &player->actor, ACTOR_EN_SA, 4, 800.0f) == NULL) {
+            sariaQuestHints = child_na_message;
         } else {
             return 0x0160; // Special text about Saria preferring to talk to you face-to-face
         }
     } else {
-        sariaQuestHints = sAdultSariaQuestHints;
+        sariaQuestHints = boy_na_message;
     }
 
-    return QuestHint_GetTextIdFromScript(sariaQuestHints);
+    return roop_elf_msg(sariaQuestHints);
 }
 
-u16 QuestHint_GetNaviTextId(PlayState* play) {
+u16 get_elf_message(PlayState* play) {
     if (play->naviQuestHints == NULL) {
         return 0;
     } else {
-        return QuestHint_GetTextIdFromScript(play->naviQuestHints);
+        return roop_elf_msg(play->naviQuestHints);
     }
 }

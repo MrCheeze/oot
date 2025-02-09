@@ -9,11 +9,11 @@
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED)
 
-void BgSpot17Funen_Init(Actor* thisx, PlayState* play);
-void BgSpot17Funen_Destroy(Actor* thisx, PlayState* play);
-void BgSpot17Funen_Update(Actor* thisx, PlayState* play);
-void func_808B746C(Actor* thisx, PlayState* play);
-void func_808B7478(Actor* thisx, PlayState* play);
+void Bg_Spot17_Funen_actor_ct(Actor* thisx, PlayState* play);
+void Bg_Spot17_Funen_actor_dt(Actor* thisx, PlayState* play);
+void Bg_Spot17_Funen_actor_move_WAIT(Actor* thisx, PlayState* play);
+void Bg_Spot17_Funen_actor_move(Actor* thisx, PlayState* play);
+void Bg_Spot17_Funen_actor_draw(Actor* thisx, PlayState* play);
 
 ActorProfile Bg_Spot17_Funen_Profile = {
     /**/ ACTOR_BG_SPOT17_FUNEN,
@@ -21,48 +21,48 @@ ActorProfile Bg_Spot17_Funen_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_SPOT17_OBJ,
     /**/ sizeof(BgSpot17Funen),
-    /**/ BgSpot17Funen_Init,
-    /**/ BgSpot17Funen_Destroy,
-    /**/ BgSpot17Funen_Update,
+    /**/ Bg_Spot17_Funen_actor_ct,
+    /**/ Bg_Spot17_Funen_actor_dt,
+    /**/ Bg_Spot17_Funen_actor_move_WAIT,
     /**/ NULL,
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_STOP),
 };
 
-void BgSpot17Funen_Init(Actor* thisx, PlayState* play) {
+void Bg_Spot17_Funen_actor_ct(Actor* thisx, PlayState* play) {
     BgSpot17Funen* this = (BgSpot17Funen*)thisx;
 
-    Actor_ProcessInitChain(&this->actor, sInitChain);
+    ValueSet_process(&this->actor, value_init);
     PRINTF("spot17 obj. 噴煙 (arg_data 0x%04x)\n", this->actor.params);
 }
 
-void BgSpot17Funen_Destroy(Actor* thisx, PlayState* play) {
+void Bg_Spot17_Funen_actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void BgSpot17Funen_Update(Actor* thisx, PlayState* play) {
+void Bg_Spot17_Funen_actor_move_WAIT(Actor* thisx, PlayState* play) {
     BgSpot17Funen* this = (BgSpot17Funen*)thisx;
 
-    this->actor.draw = func_808B7478;
-    this->actor.update = func_808B746C;
+    this->actor.draw = Bg_Spot17_Funen_actor_draw;
+    this->actor.update = Bg_Spot17_Funen_actor_move;
 }
 
-void func_808B746C(Actor* thisx, PlayState* play) {
+void Bg_Spot17_Funen_actor_move(Actor* thisx, PlayState* play) {
 }
 
-void func_808B7478(Actor* thisx, PlayState* play) {
+void Bg_Spot17_Funen_actor_draw(Actor* thisx, PlayState* play) {
     s32 pad;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_bg_spot17_funen.c", 153);
 
-    Gfx_SetupDL_25Xlu(play->state.gfxCtx);
-    Matrix_RotateY((s16)(Camera_GetCamDirYaw(GET_ACTIVE_CAM(play)) - thisx->shape.rot.y + 0x8000) * 9.58738019108e-05f,
+    _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
+    Matrix_rotateY((s16)(getRealCameraAngleY(GET_ACTIVE_CAM(play)) - thisx->shape.rot.y + 0x8000) * 9.58738019108e-05f,
                    MTXMODE_APPLY);
 
     MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx, "../z_bg_spot17_funen.c", 161);
     gSPSegment(POLY_XLU_DISP++, 0x08,
-               Gfx_TwoTexScroll(play->state.gfxCtx, G_TX_RENDERTILE, 0, (0 - play->gameplayFrames) & 0x7F, 0x20, 0x20,
+               two_tex_scroll(play->state.gfxCtx, G_TX_RENDERTILE, 0, (0 - play->gameplayFrames) & 0x7F, 0x20, 0x20,
                                 1, 0, (0 - play->gameplayFrames) & 0x7F, 0x20, 0x20));
     gSPDisplayList(POLY_XLU_DISP++, gCraterSmokeConeDL);
 

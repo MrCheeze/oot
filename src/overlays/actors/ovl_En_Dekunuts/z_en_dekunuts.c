@@ -12,23 +12,23 @@
 
 #define DEKUNUTS_FLOWER 10
 
-void EnDekunuts_Init(Actor* thisx, PlayState* play);
-void EnDekunuts_Destroy(Actor* thisx, PlayState* play);
-void EnDekunuts_Update(Actor* thisx, PlayState* play);
-void EnDekunuts_Draw(Actor* thisx, PlayState* play);
+void En_Dekunuts_actor_ct(Actor* thisx, PlayState* play);
+void En_Dekunuts_actor_dt(Actor* thisx, PlayState* play);
+void En_Dekunuts_actor_move(Actor* thisx, PlayState* play);
+void En_Dekunuts_actor_draw(Actor* thisx, PlayState* play);
 
-void EnDekunuts_SetupWait(EnDekunuts* this);
-void EnDekunuts_Wait(EnDekunuts* this, PlayState* play);
-void EnDekunuts_LookAround(EnDekunuts* this, PlayState* play);
-void EnDekunuts_Stand(EnDekunuts* this, PlayState* play);
-void EnDekunuts_ThrowNut(EnDekunuts* this, PlayState* play);
-void EnDekunuts_Burrow(EnDekunuts* this, PlayState* play);
-void EnDekunuts_BeginRun(EnDekunuts* this, PlayState* play);
-void EnDekunuts_Run(EnDekunuts* this, PlayState* play);
-void EnDekunuts_Gasp(EnDekunuts* this, PlayState* play);
-void EnDekunuts_BeDamaged(EnDekunuts* this, PlayState* play);
-void EnDekunuts_BeStunned(EnDekunuts* this, PlayState* play);
-void EnDekunuts_Die(EnDekunuts* this, PlayState* play);
+static void mode_head_up_init(EnDekunuts* this);
+static void mode_head_up(EnDekunuts* this, PlayState* play);
+static void mode_look_around(EnDekunuts* this, PlayState* play);
+static void mode_attack_wait(EnDekunuts* this, PlayState* play);
+static void mode_attack(EnDekunuts* this, PlayState* play);
+static void mode_head_down(EnDekunuts* this, PlayState* play);
+static void mode_jump(EnDekunuts* this, PlayState* play);
+static void mode_escape(EnDekunuts* this, PlayState* play);
+void mode_rest(EnDekunuts* this, PlayState* play);
+static void mode_damage(EnDekunuts* this, PlayState* play);
+static void mode_stop(EnDekunuts* this, PlayState* play);
+static void mode_down(EnDekunuts* this, PlayState* play);
 
 ActorProfile En_Dekunuts_Profile = {
     /**/ ACTOR_EN_DEKUNUTS,
@@ -36,13 +36,13 @@ ActorProfile En_Dekunuts_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_DEKUNUTS,
     /**/ sizeof(EnDekunuts),
-    /**/ EnDekunuts_Init,
-    /**/ EnDekunuts_Destroy,
-    /**/ EnDekunuts_Update,
-    /**/ EnDekunuts_Draw,
+    /**/ En_Dekunuts_actor_ct,
+    /**/ En_Dekunuts_actor_dt,
+    /**/ En_Dekunuts_actor_move,
+    /**/ En_Dekunuts_actor_draw,
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit DekunutsAcOcPipeData = {
     {
         COL_MATERIAL_HIT6,
         AT_NONE,
@@ -62,9 +62,9 @@ static ColliderCylinderInit sCylinderInit = {
     { 18, 32, 0, { 0, 0, 0 } },
 };
 
-static CollisionCheckInfoInit sColChkInfoInit = { 1, 18, 32, MASS_IMMOVABLE };
+static CollisionCheckInfoInit DekunutsStatusData = { 1, 18, 32, MASS_IMMOVABLE };
 
-static DamageTable sDamageTable = {
+static DamageTable DekunutsBtlData = {
     /* Deku nut      */ DMG_ENTRY(0, 0x1),
     /* Deku stick    */ DMG_ENTRY(2, 0x0),
     /* Slingshot     */ DMG_ENTRY(1, 0x0),
@@ -99,143 +99,143 @@ static DamageTable sDamageTable = {
     /* Unknown 2     */ DMG_ENTRY(0, 0x0),
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_S8(naviEnemyId, NAVI_ENEMY_MAD_SCRUB, ICHAIN_CONTINUE),
     ICHAIN_F32(gravity, -1, ICHAIN_CONTINUE),
     ICHAIN_F32(lockOnArrowOffset, 2600, ICHAIN_STOP),
 };
 
-void EnDekunuts_Init(Actor* thisx, PlayState* play) {
+void En_Dekunuts_actor_ct(Actor* thisx, PlayState* play) {
     EnDekunuts* this = (EnDekunuts*)thisx;
     s32 pad;
 
-    Actor_ProcessInitChain(&this->actor, sInitChain);
+    ValueSet_process(&this->actor, value_init);
     if (thisx->params == DEKUNUTS_FLOWER) {
         thisx->flags &= ~(ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE);
     } else {
-        ActorShape_Init(&thisx->shape, 0.0f, ActorShadow_DrawCircle, 35.0f);
-        SkelAnime_Init(play, &this->skelAnime, &gDekuNutsSkel, &gDekuNutsStandAnim, this->jointTable, this->morphTable,
+        Shape_Info_init(&thisx->shape, 0.0f, Actor_shadow_circle, 35.0f);
+        Skeleton_Info2_M_ct(play, &this->skelAnime, &gDekuNutsSkel, &gDekuNutsStandAnim, this->jointTable, this->morphTable,
                        25);
-        Collider_InitCylinder(play, &this->collider);
-        Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
-        CollisionCheck_SetInfo(&thisx->colChkInfo, &sDamageTable, &sColChkInfoInit);
+        ClObjPipe_ct(play, &this->collider);
+        ClObjPipe_set5(play, &this->collider, &this->actor, &DekunutsAcOcPipeData);
+        CollisionCheck_Status_set2(&thisx->colChkInfo, &DekunutsBtlData, &DekunutsStatusData);
         this->shotsPerRound = PARAMS_GET_U(thisx->params, 8, 8);
         thisx->params &= 0xFF;
         if ((this->shotsPerRound == 0xFF) || (this->shotsPerRound == 0)) {
             this->shotsPerRound = 1;
         }
-        EnDekunuts_SetupWait(this);
-        Actor_SpawnAsChild(&play->actorCtx, thisx, play, ACTOR_EN_DEKUNUTS, thisx->world.pos.x, thisx->world.pos.y,
+        mode_head_up_init(this);
+        Actor_info_make_child_actor(&play->actorCtx, thisx, play, ACTOR_EN_DEKUNUTS, thisx->world.pos.x, thisx->world.pos.y,
                            thisx->world.pos.z, 0, thisx->world.rot.y, 0, DEKUNUTS_FLOWER);
     }
 }
 
-void EnDekunuts_Destroy(Actor* thisx, PlayState* play) {
+void En_Dekunuts_actor_dt(Actor* thisx, PlayState* play) {
     EnDekunuts* this = (EnDekunuts*)thisx;
 
     if (this->actor.params != DEKUNUTS_FLOWER) {
-        Collider_DestroyCylinder(play, &this->collider);
+        ClObjPipe_dt(play, &this->collider);
     }
 }
 
-void EnDekunuts_SetupWait(EnDekunuts* this) {
-    Animation_PlayOnceSetSpeed(&this->skelAnime, &gDekuNutsUpAnim, 0.0f);
-    this->animFlagAndTimer = Rand_S16Offset(100, 50);
+static void mode_head_up_init(EnDekunuts* this) {
+    Skeleton_Info2_init_standard_speedset_stop(&this->skelAnime, &gDekuNutsUpAnim, 0.0f);
+    this->animFlagAndTimer = get_random_timer(100, 50);
     this->collider.dim.height = 5;
-    Math_Vec3f_Copy(&this->actor.world.pos, &this->actor.home.pos);
+    xyz_t_move(&this->actor.world.pos, &this->actor.home.pos);
     this->collider.base.acFlags &= ~AC_ON;
-    this->actionFunc = EnDekunuts_Wait;
+    this->actionFunc = mode_head_up;
 }
 
-void EnDekunuts_SetupLookAround(EnDekunuts* this) {
-    Animation_PlayLoop(&this->skelAnime, &gDekuNutsLookAroundAnim);
+static void mode_look_around_init(EnDekunuts* this) {
+    Skeleton_Info2_init_standard_repeat(&this->skelAnime, &gDekuNutsLookAroundAnim);
     this->animFlagAndTimer = 2;
-    this->actionFunc = EnDekunuts_LookAround;
+    this->actionFunc = mode_look_around;
 }
 
-void EnDekunuts_SetupThrowNut(EnDekunuts* this) {
-    Animation_PlayOnce(&this->skelAnime, &gDekuNutsSpitAnim);
+static void mode_attack_init(EnDekunuts* this) {
+    Skeleton_Info2_init_standard_stop(&this->skelAnime, &gDekuNutsSpitAnim);
     this->animFlagAndTimer = this->shotsPerRound;
-    this->actionFunc = EnDekunuts_ThrowNut;
+    this->actionFunc = mode_attack;
 }
 
-void EnDekunuts_SetupStand(EnDekunuts* this) {
-    Animation_MorphToLoop(&this->skelAnime, &gDekuNutsStandAnim, -3.0f);
-    if (this->actionFunc == EnDekunuts_ThrowNut) {
+static void mode_attack_wait_init(EnDekunuts* this) {
+    Skeleton_Info2_init_standard_repeat_morf(&this->skelAnime, &gDekuNutsStandAnim, -3.0f);
+    if (this->actionFunc == mode_attack) {
         this->animFlagAndTimer = 2 | 0x1000; // sets timer and flag
     } else {
         this->animFlagAndTimer = 1;
     }
-    this->actionFunc = EnDekunuts_Stand;
+    this->actionFunc = mode_attack_wait;
 }
 
-void EnDekunuts_SetupBurrow(EnDekunuts* this) {
-    Animation_MorphToPlayOnce(&this->skelAnime, &gDekuNutsBurrowAnim, -5.0f);
-    Actor_PlaySfx(&this->actor, NA_SE_EN_NUTS_DOWN);
-    this->actionFunc = EnDekunuts_Burrow;
+static void mode_head_down_init(EnDekunuts* this) {
+    Skeleton_Info2_init_standard_stop_morf(&this->skelAnime, &gDekuNutsBurrowAnim, -5.0f);
+    Actor_SE_set(&this->actor, NA_SE_EN_NUTS_DOWN);
+    this->actionFunc = mode_head_down;
 }
 
-void EnDekunuts_SetupBeginRun(EnDekunuts* this) {
-    Animation_MorphToPlayOnce(&this->skelAnime, &gDekuNutsUnburrowAnim, -3.0f);
+static void mode_jump_init(EnDekunuts* this) {
+    Skeleton_Info2_init_standard_stop_morf(&this->skelAnime, &gDekuNutsUnburrowAnim, -3.0f);
     this->collider.dim.height = 37;
     this->actor.colChkInfo.mass = 50;
-    Actor_PlaySfx(&this->actor, NA_SE_EN_NUTS_DAMAGE);
+    Actor_SE_set(&this->actor, NA_SE_EN_NUTS_DAMAGE);
     this->collider.base.acFlags &= ~AC_ON;
-    this->actionFunc = EnDekunuts_BeginRun;
+    this->actionFunc = mode_jump;
 }
 
-void EnDekunuts_SetupRun(EnDekunuts* this) {
-    Animation_PlayLoop(&this->skelAnime, &gDekuNutsRunAnim);
+static void mode_escape_init(EnDekunuts* this) {
+    Skeleton_Info2_init_standard_repeat(&this->skelAnime, &gDekuNutsRunAnim);
     this->animFlagAndTimer = 2;
     this->playWalkSfx = false;
     this->collider.base.acFlags |= AC_ON;
-    this->actionFunc = EnDekunuts_Run;
+    this->actionFunc = mode_escape;
 }
 
-void EnDekunuts_SetupGasp(EnDekunuts* this) {
-    Animation_PlayLoop(&this->skelAnime, &gDekuNutsGaspAnim);
+void mode_rest_init(EnDekunuts* this) {
+    Skeleton_Info2_init_standard_repeat(&this->skelAnime, &gDekuNutsGaspAnim);
     this->animFlagAndTimer = 3;
     this->actor.speed = 0.0f;
     if (this->runAwayCount != 0) {
         this->runAwayCount--;
     }
-    this->actionFunc = EnDekunuts_Gasp;
+    this->actionFunc = mode_rest;
 }
 
-void EnDekunuts_SetupBeDamaged(EnDekunuts* this) {
-    Animation_MorphToPlayOnce(&this->skelAnime, &gDekuNutsDamageAnim, -3.0f);
+static void mode_damage_init(EnDekunuts* this) {
+    Skeleton_Info2_init_standard_stop_morf(&this->skelAnime, &gDekuNutsDamageAnim, -3.0f);
     if (this->collider.elem.acHitElem->atDmgInfo.dmgFlags & (DMG_ARROW | DMG_SLINGSHOT)) {
         this->actor.world.rot.y = this->collider.base.ac->world.rot.y;
     } else {
-        this->actor.world.rot.y = Actor_WorldYawTowardActor(&this->actor, this->collider.base.ac) + 0x8000;
+        this->actor.world.rot.y = Actor_search_actor_angleY(&this->actor, this->collider.base.ac) + 0x8000;
     }
     this->collider.base.acFlags &= ~AC_ON;
-    this->actionFunc = EnDekunuts_BeDamaged;
+    this->actionFunc = mode_damage;
     this->actor.speed = 10.0f;
-    Actor_PlaySfx(&this->actor, NA_SE_EN_NUTS_DAMAGE);
-    Actor_PlaySfx(&this->actor, NA_SE_EN_NUTS_CUTBODY);
-    Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_OPA,
-                         Animation_GetLastFrame(&gDekuNutsDamageAnim));
+    Actor_SE_set(&this->actor, NA_SE_EN_NUTS_DAMAGE);
+    Actor_SE_set(&this->actor, NA_SE_EN_NUTS_CUTBODY);
+    Set_Fog(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_OPA,
+                         Si2_anime_end_frame(&gDekuNutsDamageAnim));
 }
 
-void EnDekunuts_SetupBeStunned(EnDekunuts* this) {
-    Animation_MorphToLoop(&this->skelAnime, &gDekuNutsDamageAnim, -3.0f);
+static void mode_stop_init(EnDekunuts* this) {
+    Skeleton_Info2_init_standard_repeat_morf(&this->skelAnime, &gDekuNutsDamageAnim, -3.0f);
     this->animFlagAndTimer = 5;
-    this->actionFunc = EnDekunuts_BeStunned;
+    this->actionFunc = mode_stop;
     this->actor.speed = 0.0f;
-    Actor_PlaySfx(&this->actor, NA_SE_EN_GOMA_JR_FREEZE);
-    Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_BLUE, 255, COLORFILTER_BUFFLAG_OPA,
-                         Animation_GetLastFrame(&gDekuNutsDamageAnim) * this->animFlagAndTimer);
+    Actor_SE_set(&this->actor, NA_SE_EN_GOMA_JR_FREEZE);
+    Set_Fog(&this->actor, COLORFILTER_COLORFLAG_BLUE, 255, COLORFILTER_BUFFLAG_OPA,
+                         Si2_anime_end_frame(&gDekuNutsDamageAnim) * this->animFlagAndTimer);
 }
 
-void EnDekunuts_SetupDie(EnDekunuts* this) {
-    Animation_PlayOnce(&this->skelAnime, &gDekuNutsDieAnim);
-    this->actionFunc = EnDekunuts_Die;
+static void mode_down_init(EnDekunuts* this) {
+    Skeleton_Info2_init_standard_stop(&this->skelAnime, &gDekuNutsDieAnim);
+    this->actionFunc = mode_down;
     this->actor.speed = 0.0f;
-    Actor_PlaySfx(&this->actor, NA_SE_EN_NUTS_DEAD);
+    Actor_SE_set(&this->actor, NA_SE_EN_NUTS_DEAD);
 }
 
-void EnDekunuts_Wait(EnDekunuts* this, PlayState* play) {
+static void mode_head_up(EnDekunuts* this, PlayState* play) {
     s32 hasSlowPlaybackSpeed = false;
 
     if (this->skelAnime.playSpeed < 0.5f) {
@@ -244,22 +244,22 @@ void EnDekunuts_Wait(EnDekunuts* this, PlayState* play) {
     if (hasSlowPlaybackSpeed && (this->animFlagAndTimer != 0)) {
         this->animFlagAndTimer--;
     }
-    if (Animation_OnFrame(&this->skelAnime, 9.0f)) {
+    if (Skeleton_Info_frame_check(&this->skelAnime, 9.0f)) {
         this->collider.base.acFlags |= AC_ON;
-    } else if (Animation_OnFrame(&this->skelAnime, 8.0f)) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_NUTS_UP);
+    } else if (Skeleton_Info_frame_check(&this->skelAnime, 8.0f)) {
+        Actor_SE_set(&this->actor, NA_SE_EN_NUTS_UP);
     }
 
     this->collider.dim.height = ((CLAMP(this->skelAnime.curFrame, 9.0f, 12.0f) - 9.0f) * 9.0f) + 5.0f;
     if (!hasSlowPlaybackSpeed && (this->actor.xzDistToPlayer < 120.0f)) {
-        EnDekunuts_SetupBurrow(this);
-    } else if (SkelAnime_Update(&this->skelAnime)) {
+        mode_head_down_init(this);
+    } else if (Skeleton_Info2_anime_play(&this->skelAnime)) {
         if (this->actor.xzDistToPlayer < 120.0f) {
-            EnDekunuts_SetupBurrow(this);
+            mode_head_down_init(this);
         } else if ((this->animFlagAndTimer == 0) && (this->actor.xzDistToPlayer > 320.0f)) {
-            EnDekunuts_SetupLookAround(this);
+            mode_look_around_init(this);
         } else {
-            EnDekunuts_SetupStand(this);
+            mode_attack_wait_init(this);
         }
     }
     if (hasSlowPlaybackSpeed &&
@@ -269,103 +269,103 @@ void EnDekunuts_Wait(EnDekunuts* this, PlayState* play) {
     }
 }
 
-void EnDekunuts_LookAround(EnDekunuts* this, PlayState* play) {
-    SkelAnime_Update(&this->skelAnime);
-    if (Animation_OnFrame(&this->skelAnime, 0.0f) && (this->animFlagAndTimer != 0)) {
+static void mode_look_around(EnDekunuts* this, PlayState* play) {
+    Skeleton_Info2_anime_play(&this->skelAnime);
+    if (Skeleton_Info_frame_check(&this->skelAnime, 0.0f) && (this->animFlagAndTimer != 0)) {
         this->animFlagAndTimer--;
     }
     if ((this->actor.xzDistToPlayer < 120.0f) || (this->animFlagAndTimer == 0)) {
-        EnDekunuts_SetupBurrow(this);
+        mode_head_down_init(this);
     }
 }
 
-void EnDekunuts_Stand(EnDekunuts* this, PlayState* play) {
-    SkelAnime_Update(&this->skelAnime);
-    if (Animation_OnFrame(&this->skelAnime, 0.0f) && (this->animFlagAndTimer != 0)) {
+static void mode_attack_wait(EnDekunuts* this, PlayState* play) {
+    Skeleton_Info2_anime_play(&this->skelAnime);
+    if (Skeleton_Info_frame_check(&this->skelAnime, 0.0f) && (this->animFlagAndTimer != 0)) {
         this->animFlagAndTimer--;
     }
     if (!(this->animFlagAndTimer & 0x1000)) {
-        Math_ApproachS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 2, 0xE38);
+        adds(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 2, 0xE38);
     }
     if (this->animFlagAndTimer == 0x1000) {
         if ((this->actor.xzDistToPlayer > 480.0f) || (this->actor.xzDistToPlayer < 120.0f)) {
-            EnDekunuts_SetupBurrow(this);
+            mode_head_down_init(this);
         } else {
-            EnDekunuts_SetupThrowNut(this);
+            mode_attack_init(this);
         }
     } else if (this->animFlagAndTimer == 0) {
-        EnDekunuts_SetupThrowNut(this);
+        mode_attack_init(this);
     }
 }
 
-void EnDekunuts_ThrowNut(EnDekunuts* this, PlayState* play) {
+static void mode_attack(EnDekunuts* this, PlayState* play) {
     Vec3f spawnPos;
 
-    Math_ApproachS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 2, 0xE38);
-    if (SkelAnime_Update(&this->skelAnime)) {
-        EnDekunuts_SetupStand(this);
-    } else if (Animation_OnFrame(&this->skelAnime, 6.0f)) {
-        spawnPos.x = this->actor.world.pos.x + (Math_SinS(this->actor.shape.rot.y) * 23.0f);
+    adds(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 2, 0xE38);
+    if (Skeleton_Info2_anime_play(&this->skelAnime)) {
+        mode_attack_wait_init(this);
+    } else if (Skeleton_Info_frame_check(&this->skelAnime, 6.0f)) {
+        spawnPos.x = this->actor.world.pos.x + (sin_s(this->actor.shape.rot.y) * 23.0f);
         spawnPos.y = this->actor.world.pos.y + 12.0f;
-        spawnPos.z = this->actor.world.pos.z + (Math_CosS(this->actor.shape.rot.y) * 23.0f);
-        if (Actor_Spawn(&play->actorCtx, play, ACTOR_EN_NUTSBALL, spawnPos.x, spawnPos.y, spawnPos.z,
+        spawnPos.z = this->actor.world.pos.z + (cos_s(this->actor.shape.rot.y) * 23.0f);
+        if (Actor_info_make_actor(&play->actorCtx, play, ACTOR_EN_NUTSBALL, spawnPos.x, spawnPos.y, spawnPos.z,
                         this->actor.shape.rot.x, this->actor.shape.rot.y, this->actor.shape.rot.z, 0) != NULL) {
-            Actor_PlaySfx(&this->actor, NA_SE_EN_NUTS_THROW);
+            Actor_SE_set(&this->actor, NA_SE_EN_NUTS_THROW);
         }
-    } else if ((this->animFlagAndTimer > 1) && Animation_OnFrame(&this->skelAnime, 12.0f)) {
-        Animation_MorphToPlayOnce(&this->skelAnime, &gDekuNutsSpitAnim, -3.0f);
+    } else if ((this->animFlagAndTimer > 1) && Skeleton_Info_frame_check(&this->skelAnime, 12.0f)) {
+        Skeleton_Info2_init_standard_stop_morf(&this->skelAnime, &gDekuNutsSpitAnim, -3.0f);
         if (this->animFlagAndTimer != 0) {
             this->animFlagAndTimer--;
         }
     }
 }
 
-void EnDekunuts_Burrow(EnDekunuts* this, PlayState* play) {
-    if (SkelAnime_Update(&this->skelAnime)) {
-        EnDekunuts_SetupWait(this);
+static void mode_head_down(EnDekunuts* this, PlayState* play) {
+    if (Skeleton_Info2_anime_play(&this->skelAnime)) {
+        mode_head_up_init(this);
     } else {
         this->collider.dim.height = ((3.0f - CLAMP(this->skelAnime.curFrame, 1.0f, 3.0f)) * 12.0f) + 5.0f;
     }
-    if (Animation_OnFrame(&this->skelAnime, 4.0f)) {
+    if (Skeleton_Info_frame_check(&this->skelAnime, 4.0f)) {
         this->collider.base.acFlags &= ~AC_ON;
     }
-    Math_ApproachF(&this->actor.world.pos.x, this->actor.home.pos.x, 0.5f, 3.0f);
-    Math_ApproachF(&this->actor.world.pos.z, this->actor.home.pos.z, 0.5f, 3.0f);
+    add_calc2(&this->actor.world.pos.x, this->actor.home.pos.x, 0.5f, 3.0f);
+    add_calc2(&this->actor.world.pos.z, this->actor.home.pos.z, 0.5f, 3.0f);
 }
 
-void EnDekunuts_BeginRun(EnDekunuts* this, PlayState* play) {
-    if (SkelAnime_Update(&this->skelAnime)) {
+static void mode_jump(EnDekunuts* this, PlayState* play) {
+    if (Skeleton_Info2_anime_play(&this->skelAnime)) {
         this->runDirection = this->actor.yawTowardsPlayer + 0x8000;
         this->runAwayCount = 3;
-        EnDekunuts_SetupRun(this);
+        mode_escape_init(this);
     }
-    Math_ApproachS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 2, 0xE38);
+    adds(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 2, 0xE38);
 }
 
-void EnDekunuts_Run(EnDekunuts* this, PlayState* play) {
+static void mode_escape(EnDekunuts* this, PlayState* play) {
     s16 diffRotInit;
     s16 diffRot;
     f32 phi_f0;
 
-    SkelAnime_Update(&this->skelAnime);
-    if (Animation_OnFrame(&this->skelAnime, 0.0f) && (this->animFlagAndTimer != 0)) {
+    Skeleton_Info2_anime_play(&this->skelAnime);
+    if (Skeleton_Info_frame_check(&this->skelAnime, 0.0f) && (this->animFlagAndTimer != 0)) {
         this->animFlagAndTimer--;
     }
     if (this->playWalkSfx) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_NUTS_WALK);
+        Actor_SE_set(&this->actor, NA_SE_EN_NUTS_WALK);
         this->playWalkSfx = false;
     } else {
         this->playWalkSfx = true;
     }
 
-    Math_StepToF(&this->actor.speed, 7.5f, 1.0f);
-    if (Math_SmoothStepToS(&this->actor.world.rot.y, this->runDirection, 1, 0xE38, 0xB6) == 0) {
+    chase_f(&this->actor.speed, 7.5f, 1.0f);
+    if (add_calc_short_angle2(&this->actor.world.rot.y, this->runDirection, 1, 0xE38, 0xB6) == 0) {
         if (this->actor.bgCheckFlags & BGCHECKFLAG_WATER) {
-            this->runDirection = Actor_WorldYawTowardPoint(&this->actor, &this->actor.home.pos);
+            this->runDirection = Actor_search_position_angleY(&this->actor, &this->actor.home.pos);
         } else if (this->actor.bgCheckFlags & BGCHECKFLAG_WALL) {
             this->runDirection = this->actor.wallYaw;
         } else if (this->runAwayCount == 0) {
-            diffRotInit = Actor_WorldYawTowardPoint(&this->actor, &this->actor.home.pos);
+            diffRotInit = Actor_search_position_angleY(&this->actor, &this->actor.home.pos);
             diffRot = diffRotInit - this->actor.yawTowardsPlayer;
             if (ABS(diffRot) > 0x2000) {
                 this->runDirection = diffRotInit;
@@ -379,130 +379,130 @@ void EnDekunuts_Run(EnDekunuts* this, PlayState* play) {
     }
 
     this->actor.shape.rot.y = this->actor.world.rot.y + 0x8000;
-    if ((this->runAwayCount == 0) && Actor_WorldDistXZToPoint(&this->actor, &this->actor.home.pos) < 20.0f &&
+    if ((this->runAwayCount == 0) && Actor_search_position_distanceXZ(&this->actor, &this->actor.home.pos) < 20.0f &&
         fabsf(this->actor.world.pos.y - this->actor.home.pos.y) < 2.0f) {
         this->actor.colChkInfo.mass = MASS_IMMOVABLE;
         this->actor.speed = 0.0f;
-        EnDekunuts_SetupBurrow(this);
+        mode_head_down_init(this);
     } else if (this->animFlagAndTimer == 0) {
-        EnDekunuts_SetupGasp(this);
+        mode_rest_init(this);
     }
 }
 
-void EnDekunuts_Gasp(EnDekunuts* this, PlayState* play) {
-    SkelAnime_Update(&this->skelAnime);
-    if (Animation_OnFrame(&this->skelAnime, 0.0f) && (this->animFlagAndTimer != 0)) {
+void mode_rest(EnDekunuts* this, PlayState* play) {
+    Skeleton_Info2_anime_play(&this->skelAnime);
+    if (Skeleton_Info_frame_check(&this->skelAnime, 0.0f) && (this->animFlagAndTimer != 0)) {
         this->animFlagAndTimer--;
     }
     if (this->animFlagAndTimer == 0) {
-        EnDekunuts_SetupRun(this);
+        mode_escape_init(this);
     }
 }
 
-void EnDekunuts_BeDamaged(EnDekunuts* this, PlayState* play) {
-    Math_StepToF(&this->actor.speed, 0.0f, 1.0f);
-    if (SkelAnime_Update(&this->skelAnime)) {
-        EnDekunuts_SetupDie(this);
+static void mode_damage(EnDekunuts* this, PlayState* play) {
+    chase_f(&this->actor.speed, 0.0f, 1.0f);
+    if (Skeleton_Info2_anime_play(&this->skelAnime)) {
+        mode_down_init(this);
     }
 }
 
-void EnDekunuts_BeStunned(EnDekunuts* this, PlayState* play) {
-    SkelAnime_Update(&this->skelAnime);
-    if (Animation_OnFrame(&this->skelAnime, 0.0f)) {
+static void mode_stop(EnDekunuts* this, PlayState* play) {
+    Skeleton_Info2_anime_play(&this->skelAnime);
+    if (Skeleton_Info_frame_check(&this->skelAnime, 0.0f)) {
         if (this->animFlagAndTimer != 0) {
             this->animFlagAndTimer--;
         }
         if (this->animFlagAndTimer == 0) {
-            EnDekunuts_SetupRun(this);
+            mode_escape_init(this);
         } else {
-            Actor_PlaySfx(&this->actor, NA_SE_EN_NUTS_FAINT);
+            Actor_SE_set(&this->actor, NA_SE_EN_NUTS_FAINT);
         }
     }
 }
 
-void EnDekunuts_Die(EnDekunuts* this, PlayState* play) {
-    static Vec3f effectVelAndAccel = { 0.0f, 0.0f, 0.0f };
+static void mode_down(EnDekunuts* this, PlayState* play) {
+    static Vec3f zero_vec = { 0.0f, 0.0f, 0.0f };
 
     s32 pad;
     Vec3f effectPos;
 
-    if (SkelAnime_Update(&this->skelAnime)) {
+    if (Skeleton_Info2_anime_play(&this->skelAnime)) {
         effectPos.x = this->actor.world.pos.x;
         effectPos.y = this->actor.world.pos.y + 18.0f;
         effectPos.z = this->actor.world.pos.z;
-        EffectSsDeadDb_Spawn(play, &effectPos, &effectVelAndAccel, &effectVelAndAccel, 200, 0, 255, 255, 255, 255, 150,
+        _Effect_SS_Db_ct(play, &effectPos, &zero_vec, &zero_vec, 200, 0, 255, 255, 255, 255, 150,
                              150, 150, 1, 13, 1);
         effectPos.y = this->actor.world.pos.y + 10.0f;
-        EffectSsHahen_SpawnBurst(play, &effectPos, 3.0f, 0, 12, 3, 15, HAHEN_OBJECT_DEFAULT, 10, NULL);
-        Item_DropCollectibleRandom(play, &this->actor, &this->actor.world.pos, 0x30);
+        Effect_Hahen_Kakusan_ct3(play, &effectPos, 3.0f, 0, 12, 3, 15, HAHEN_OBJECT_DEFAULT, 10, NULL);
+        Item_Set_Std(play, &this->actor, &this->actor.world.pos, 0x30);
         if (this->actor.child != NULL) {
-            Actor_ChangeCategory(play, &play->actorCtx, this->actor.child, ACTORCAT_PROP);
+            Actor_info_part_chg(play, &play->actorCtx, this->actor.child, ACTORCAT_PROP);
         }
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     }
 }
 
-void EnDekunuts_ColliderCheck(EnDekunuts* this, PlayState* play) {
+void En_Dekunuts_damage_proc(EnDekunuts* this, PlayState* play) {
     if (this->collider.base.acFlags & AC_HIT) {
         this->collider.base.acFlags &= ~AC_HIT;
-        Actor_SetDropFlag(&this->actor, &this->collider.elem, true);
+        Hit_bit_set(&this->actor, &this->collider.elem, true);
         if (this->actor.colChkInfo.mass == 50) {
             if ((this->actor.colChkInfo.damageEffect != 0) || (this->actor.colChkInfo.damage != 0)) {
                 if (this->actor.colChkInfo.damageEffect != 1) {
                     if (this->actor.colChkInfo.damageEffect == 2) {
-                        EffectSsFCircle_Spawn(play, &this->actor, &this->actor.world.pos, 40, 50);
+                        Effect_Fcircle_ct(play, &this->actor, &this->actor.world.pos, 40, 50);
                     }
-                    EnDekunuts_SetupBeDamaged(this);
-                    if (Actor_ApplyDamage(&this->actor) == 0) {
-                        Enemy_StartFinishingBlow(play, &this->actor);
+                    mode_damage_init(this);
+                    if (hp_down(&this->actor) == 0) {
+                        Actor_info_finish(play, &this->actor);
                     }
-                } else if (this->actionFunc != EnDekunuts_BeStunned) {
-                    EnDekunuts_SetupBeStunned(this);
+                } else if (this->actionFunc != mode_stop) {
+                    mode_stop_init(this);
                 }
             }
         } else {
-            EnDekunuts_SetupBeginRun(this);
+            mode_jump_init(this);
         }
     } else if ((this->actor.colChkInfo.mass == MASS_IMMOVABLE) && (play->actorCtx.unk_02 != 0)) {
-        EnDekunuts_SetupBeginRun(this);
+        mode_jump_init(this);
     }
 }
 
-void EnDekunuts_Update(Actor* thisx, PlayState* play) {
+void En_Dekunuts_actor_move(Actor* thisx, PlayState* play) {
     EnDekunuts* this = (EnDekunuts*)thisx;
     s32 pad;
 
     if (this->actor.params != DEKUNUTS_FLOWER) {
-        EnDekunuts_ColliderCheck(this, play);
+        En_Dekunuts_damage_proc(this, play);
         this->actionFunc(this, play);
-        Actor_MoveXZGravity(&this->actor);
-        Actor_UpdateBgCheckInfo(play, &this->actor, 20.0f, this->collider.dim.radius, this->collider.dim.height,
+        Actor_position_moveF(&this->actor);
+        Actor_BGcheck2(play, &this->actor, 20.0f, this->collider.dim.radius, this->collider.dim.height,
                                 UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2 | UPDBGCHECKINFO_FLAG_3 |
                                     UPDBGCHECKINFO_FLAG_4);
-        Collider_UpdateCylinder(&this->actor, &this->collider);
+        CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
         if (this->collider.base.acFlags & AC_ON) {
-            CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
+            CollisionCheck_setAC(play, &play->colChkCtx, &this->collider.base);
         }
-        CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
-        if (this->actionFunc == EnDekunuts_Wait) {
-            Actor_SetFocus(&this->actor, this->skelAnime.curFrame);
-        } else if (this->actionFunc == EnDekunuts_Burrow) {
-            Actor_SetFocus(&this->actor,
-                           20.0f - ((this->skelAnime.curFrame * 20.0f) / Animation_GetLastFrame(&gDekuNutsBurrowAnim)));
+        CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
+        if (this->actionFunc == mode_head_up) {
+            Actor_world_to_eye(&this->actor, this->skelAnime.curFrame);
+        } else if (this->actionFunc == mode_head_down) {
+            Actor_world_to_eye(&this->actor,
+                           20.0f - ((this->skelAnime.curFrame * 20.0f) / Si2_anime_end_frame(&gDekuNutsBurrowAnim)));
         } else {
-            Actor_SetFocus(&this->actor, 20.0f);
+            Actor_world_to_eye(&this->actor, 20.0f);
         }
     }
 }
 
-s32 EnDekunuts_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+s32 en_dekunuts_display1(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     EnDekunuts* this = (EnDekunuts*)thisx;
     f32 x;
     f32 y;
     f32 z;
     f32 curFrame;
 
-    if ((limbIndex == 7) && (this->actionFunc == EnDekunuts_ThrowNut)) {
+    if ((limbIndex == 7) && (this->actionFunc == mode_attack)) {
         curFrame = this->skelAnime.curFrame;
         if (curFrame <= 6.0f) {
             x = 1.0f - (curFrame * 0.0833f);
@@ -520,18 +520,18 @@ s32 EnDekunuts_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec
         } else {
             return false;
         }
-        Matrix_Scale(x, y, z, MTXMODE_APPLY);
+        Matrix_scale(x, y, z, MTXMODE_APPLY);
     }
     return false;
 }
 
-void EnDekunuts_Draw(Actor* thisx, PlayState* play) {
+void En_Dekunuts_actor_draw(Actor* thisx, PlayState* play) {
     EnDekunuts* this = (EnDekunuts*)thisx;
 
     if (this->actor.params == DEKUNUTS_FLOWER) {
-        Gfx_DrawDListOpa(play, gDekuNutsFlowerDL);
+        Cheap_gfx_display(play, gDekuNutsFlowerDL);
     } else {
-        SkelAnime_DrawOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, EnDekunuts_OverrideLimbDraw, NULL,
+        Si2_draw(play, this->skelAnime.skeleton, this->skelAnime.jointTable, en_dekunuts_display1, NULL,
                           this);
     }
 }

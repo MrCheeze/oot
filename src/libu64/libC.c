@@ -12,7 +12,7 @@ typedef struct InitFunc {
 } InitFunc;
 
 // .data
-void* sInitFuncs = NULL;
+void* __head = NULL;
 
 #if DEBUG_FEATURES
 char sNew[] = "new";
@@ -21,7 +21,7 @@ char sNew[] = "";
 #endif
 
 // possibly some kind of new() function
-void* func_800FC800(u32 size) {
+void* __nw__FUi(u32 size) {
     DECLARE_INTERRUPT_MASK
     void* ptr;
 
@@ -32,9 +32,9 @@ void* func_800FC800(u32 size) {
     }
 
 #if DEBUG_FEATURES
-    ptr = __osMallocDebug(&gSystemArena, size, sNew, 0);
+    ptr = __osMallocDebug(&arena, size, sNew, 0);
 #else
-    ptr = __osMalloc(&gSystemArena, size);
+    ptr = __osMalloc(&arena, size);
 #endif
 
     RESTORE_INTERRUPTS();
@@ -42,17 +42,17 @@ void* func_800FC800(u32 size) {
 }
 
 // possibly some kind of delete() function
-void func_800FC83C(void* ptr) {
+void __dl__FPv(void* ptr) {
     DECLARE_INTERRUPT_MASK
 
     DISABLE_INTERRUPTS();
     if (ptr != NULL) {
-        __osFree(&gSystemArena, ptr);
+        __osFree(&arena, ptr);
     }
     RESTORE_INTERRUPTS();
 }
 
-void func_800FC868(void* blk, u32 nBlk, u32 blkSize, arg3_800FC868 arg3) {
+void __vec_ct(void* blk, u32 nBlk, u32 blkSize, arg3_800FC868 arg3) {
     DECLARE_INTERRUPT_MASK
     u32 pos;
 
@@ -63,7 +63,7 @@ void func_800FC868(void* blk, u32 nBlk, u32 blkSize, arg3_800FC868 arg3) {
     RESTORE_INTERRUPTS();
 }
 
-void func_800FC8D8(void* blk, u32 nBlk, s32 blkSize, arg3_800FC8D8 arg3) {
+void __vec_dt(void* blk, u32 nBlk, s32 blkSize, arg3_800FC8D8 arg3) {
     DECLARE_INTERRUPT_MASK
     u32 pos;
 
@@ -74,14 +74,14 @@ void func_800FC8D8(void* blk, u32 nBlk, s32 blkSize, arg3_800FC8D8 arg3) {
     RESTORE_INTERRUPTS();
 }
 
-void* func_800FC948(void* blk, u32 nBlk, u32 blkSize, arg3_800FC948 arg3) {
+void* __vec_new(void* blk, u32 nBlk, u32 blkSize, arg3_800FC948 arg3) {
     DECLARE_INTERRUPT_MASK
     u32 pos;
 
     DISABLE_INTERRUPTS();
 
     if (blk == NULL) {
-        blk = func_800FC800(nBlk * blkSize);
+        blk = __nw__FUi(nBlk * blkSize);
     }
 
     if (blk != NULL && arg3 != NULL) {
@@ -96,7 +96,7 @@ void* func_800FC948(void* blk, u32 nBlk, u32 blkSize, arg3_800FC948 arg3) {
     return blk;
 }
 
-void func_800FCA18(void* blk, u32 nBlk, u32 blkSize, arg3_800FCA18 arg3, s32 arg4) {
+void __vec_delete(void* blk, u32 nBlk, u32 blkSize, arg3_800FCA18 arg3, s32 arg4) {
     DECLARE_INTERRUPT_MASK
     u32 pos;
     u32 end;
@@ -115,15 +115,15 @@ void func_800FCA18(void* blk, u32 nBlk, u32 blkSize, arg3_800FCA18 arg3, s32 arg
         }
 
         if (arg4 != 0) {
-            func_800FC83C(blk);
+            __dl__FPv(blk);
         }
     }
 
     RESTORE_INTERRUPTS();
 }
 
-void func_800FCB34(void) {
-    InitFunc* initFunc = (InitFunc*)&sInitFuncs;
+void __CallLibGlobalCtors(void) {
+    InitFunc* initFunc = (InitFunc*)&__head;
     u32 nextOffset = initFunc->nextOffset;
     InitFunc* prev = NULL;
 
@@ -139,15 +139,15 @@ void func_800FCB34(void) {
         prev = initFunc;
     }
 
-    sInitFuncs = prev;
+    __head = prev;
 }
 
-void SystemHeap_Init(void* start, u32 size) {
+void osInitializeCPP(void* start, u32 size) {
 #if PLATFORM_N64
-    __osMallocInit(&gSystemArena, start, size);
+    __osMallocInit(&arena, start, size);
 #else
-    SystemArena_Init(start, size);
+    MallocInit(start, size);
 #endif
 
-    func_800FCB34();
+    __CallLibGlobalCtors();
 }

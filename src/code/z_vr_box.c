@@ -13,43 +13,6 @@ typedef struct SkyboxFaceParams {
 // Converts texture coordinate values to s10.5 fixed point
 #define TC(x) ((s16)((x)*32))
 
-// Texture offsets for each face in the static segment buffer
-u32 sSkybox256TexOffsets[4] = {
-    256 * 256 * 0,
-    256 * 256 * 1,
-    256 * 256 * 2,
-    256 * 256 * 3,
-};
-
-// Maps vertex buffer index to coordinate buffer index
-u16 sSkybox256VtxBufIndices[2][32] = {
-    {
-        0, 2, 10, 12, 2, 4, 12, 14, 10, 12, 20, 22, 12, 14, 22, 24,
-        1, 3, 5,  6,  7, 8, 9,  11, 13, 15, 16, 17, 18, 19, 21, 23,
-    },
-    {
-        20, 22, 30, 32, 22, 24, 32, 34, 30, 32, 40, 42, 32, 34, 42, 44,
-        21, 23, 25, 26, 27, 28, 29, 31, 33, 35, 36, 37, 38, 39, 41, 43,
-    },
-};
-
-// S coordinates for all faces
-s16 sSkybox256TexSCoords[5] = {
-    TC(126 * 0), TC(126 * 1), TC(126 * 2), TC(126 * 3), TC(126 * 4),
-};
-
-// T coordinates for all faces
-s16 sSkybox256TexTCoords[9] = {
-    TC(62 * 0), TC(62 * 1), TC(62 * 2), TC(62 * 3), TC(62 * 4), TC(62 * 5), TC(62 * 6), TC(62 * 7), TC(62 * 8),
-};
-
-// Maps vertex index to vertex buffer index
-s16 sSkybox256VtxIndices[64] = {
-    0,  16, 19, 18, 16, 1,  20, 19, 1,  17, 21, 20, 17, 5,  22, 21, 18, 19, 23, 2,  19, 20,
-    3,  23, 20, 21, 24, 3,  21, 22, 7,  24, 2,  23, 26, 25, 23, 3,  27, 26, 3,  24, 28, 27,
-    24, 7,  29, 28, 25, 26, 30, 10, 26, 27, 11, 30, 27, 28, 31, 11, 28, 29, 15, 31,
-};
-
 /**
  * Build the vertex and display list data for a skybox with 256x256 face textures.
  *
@@ -59,8 +22,46 @@ s16 sSkybox256VtxIndices[64] = {
  *
  * Each texture dimension is padded to the next power of 2, resulting in a final size of 256x256.
  */
-s32 Skybox_CalculateFace256(SkyboxContext* skyboxCtx, Vtx* roomVtx, s32 roomVtxStartIndex, s32 xStart, s32 yStart,
+s32 Block_tileRectangle256(SkyboxContext* skyboxCtx, Vtx* roomVtx, s32 roomVtxStartIndex, s32 xStart, s32 yStart,
                             s32 zStart, s32 innerIncrVal, s32 outerIncrVal, s32 faceNum, s32 dlistBufStartIndex) {
+    // Texture offsets for each face in the static segment buffer
+    static u32 map_size[4] = {
+        256 * 256 * 0,
+        256 * 256 * 1,
+        256 * 256 * 2,
+        256 * 256 * 3,
+    };
+
+    // Maps vertex buffer index to coordinate buffer index
+    static u16 index_data0[2][32] = {
+        {
+            0, 2, 10, 12, 2, 4, 12, 14, 10, 12, 20, 22, 12, 14, 22, 24,
+            1, 3, 5,  6,  7, 8, 9,  11, 13, 15, 16, 17, 18, 19, 21, 23,
+        },
+        {
+            20, 22, 30, 32, 22, 24, 32, 34, 30, 32, 40, 42, 32, 34, 42, 44,
+            21, 23, 25, 26, 27, 28, 29, 31, 33, 35, 36, 37, 38, 39, 41, 43,
+        },
+    };
+
+    // S coordinates for all faces
+    static s16 vtx_s0[5] = {
+        TC(126 * 0), TC(126 * 1), TC(126 * 2), TC(126 * 3), TC(126 * 4),
+    };
+
+    // T coordinates for all faces
+    static s16 vtx_t0[9] = {
+        TC(62 * 0), TC(62 * 1), TC(62 * 2), TC(62 * 3), TC(62 * 4), TC(62 * 5), TC(62 * 6), TC(62 * 7), TC(62 * 8),
+    };
+
+    // Maps vertex index to vertex buffer index
+    static s16 vtxpt[64] = {
+        0,  16, 19, 18, 16, 1,  20, 19, 1,  17, 21, 20, 17, 5,  22, 21, 18, 19, 23, 2,  19, 20,
+        3,  23, 20, 21, 24, 3,  21, 22, 7,  24, 2,  23, 26, 25, 23, 3,  27, 26, 3,  24, 28, 27,
+        24, 7,  29, 28, 25, 26, 30, 10, 26, 27, 11, 30, 27, 28, 31, 11, 28, 29, 15, 31,
+    };
+
+
     u32 innerIncr;
     s32 outerIncr;
     s32 n;
@@ -93,8 +94,8 @@ s32 Skybox_CalculateFace256(SkyboxContext* skyboxCtx, Vtx* roomVtx, s32 roomVtxS
                     zPoints[k] = zStart;
                     xPoints[k] = innerIncr;
                     yPoints[k] = outerIncr;
-                    tcS[k] = sSkybox256TexSCoords[j];
-                    tcT[k] = sSkybox256TexTCoords[i];
+                    tcS[k] = vtx_s0[j];
+                    tcT[k] = vtx_t0[i];
                     innerIncr += innerIncrVal;
                 }
                 outerIncr += outerIncrVal;
@@ -112,8 +113,8 @@ s32 Skybox_CalculateFace256(SkyboxContext* skyboxCtx, Vtx* roomVtx, s32 roomVtxS
                     xPoints[k] = xStart;
                     yPoints[k] = outerIncr;
                     zPoints[k] = innerIncr;
-                    tcS[k] = sSkybox256TexSCoords[j];
-                    tcT[k] = sSkybox256TexTCoords[i];
+                    tcS[k] = vtx_s0[j];
+                    tcT[k] = vtx_t0[i];
                     innerIncr += innerIncrVal;
                 }
                 outerIncr += outerIncrVal;
@@ -131,8 +132,8 @@ s32 Skybox_CalculateFace256(SkyboxContext* skyboxCtx, Vtx* roomVtx, s32 roomVtxS
                     yPoints[k] = yStart;
                     xPoints[k] = innerIncr;
                     zPoints[k] = outerIncr;
-                    tcS[k] = sSkybox256TexSCoords[j];
-                    tcT[k] = sSkybox256TexTCoords[i];
+                    tcS[k] = vtx_s0[j];
+                    tcT[k] = vtx_t0[i];
                     innerIncr += innerIncrVal;
                 }
                 outerIncr += outerIncrVal;
@@ -150,7 +151,7 @@ s32 Skybox_CalculateFace256(SkyboxContext* skyboxCtx, Vtx* roomVtx, s32 roomVtxS
 
         // Generate and load Vertex structures
         for (i = 0; i < 32; i++) {
-            index = sSkybox256VtxBufIndices[n][i];
+            index = index_data0[n][i];
 
             roomVtx[roomVtxStartIndex + i].v.ob[0] = xPoints[index];
             roomVtx[roomVtxStartIndex + i].v.ob[1] = yPoints[index];
@@ -171,12 +172,12 @@ s32 Skybox_CalculateFace256(SkyboxContext* skyboxCtx, Vtx* roomVtx, s32 roomVtxS
         // Draw face, load the texture in several tiles to work around TMEM size limitations
         for (vtxIdx = 0, l = 0; l < 4; l++, ult += 31) {
             for (uls = 0, m = 0; m < 4; m++, uls += 63, vtxIdx += 4) {
-                gDPLoadTextureTile(skyboxCtx->gfx++, (u8*)skyboxCtx->staticSegments[0] + sSkybox256TexOffsets[faceNum],
+                gDPLoadTextureTile(skyboxCtx->gfx++, (u8*)skyboxCtx->staticSegments[0] + map_size[faceNum],
                                    G_IM_FMT_CI, G_IM_SIZ_8b, 256, 0, uls, ult, uls + 63, ult + 31, 0,
                                    G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOMIRROR | G_TX_WRAP,
                                    G_TX_NOMASK, G_TX_NOLOD);
-                gSP1Quadrangle(skyboxCtx->gfx++, sSkybox256VtxIndices[vtxIdx + 1], sSkybox256VtxIndices[vtxIdx + 2],
-                               sSkybox256VtxIndices[vtxIdx + 3], sSkybox256VtxIndices[vtxIdx + 0], 3);
+                gSP1Quadrangle(skyboxCtx->gfx++, vtxpt[vtxIdx + 1], vtxpt[vtxIdx + 2],
+                               vtxpt[vtxIdx + 3], vtxpt[vtxIdx + 0], 3);
             }
         }
         gSPEndDisplayList(skyboxCtx->gfx++);
@@ -184,48 +185,48 @@ s32 Skybox_CalculateFace256(SkyboxContext* skyboxCtx, Vtx* roomVtx, s32 roomVtxS
     return roomVtxStartIndex;
 }
 
-// Texture offsets for each face in the static segment buffer
-u32 sSkybox128TexOffsets[6] = {
-    128 * 64 * 0, 128 * 64 * 1, 128 * 64 * 2, 128 * 64 * 3, 128 * 64 * 4, 128 * 64 * 4 + 128 * 128,
-};
-
-// Maps vertex buffer index to coordinate buffer index
-u16 sSkybox128VtxBufIndices[32] = {
-    0, 2, 10, 12, 2, 4, 12, 14, 10, 12, 20, 22, 12, 14, 22, 24, 1, 3, 5, 6, 7, 8, 9, 11, 13, 15, 16, 17, 18, 19, 21, 23,
-};
-
-// S coordinates for all faces
-s16 sSkybox128TexSCoords[5] = {
-    TC(62 * 0), TC(62 * 1), TC(62 * 2), TC(62 * 3), TC(62 * 4),
-};
-
-// T coordinates for top and bottom faces
-s16 sSkybox128TexTCoordsXZ[5] = {
-    TC(62 * 0), TC(62 * 1), TC(62 * 2), TC(62 * 3), TC(62 * 4),
-};
-
-// T coordinates for side faces
-s16 sSkybox128TexTCoords[5] = {
-    TC(62 * 0), TC(62 * 1), TC(62 * 2), TC(62 * 1), TC(62 * 0),
-};
-
-// Maps vertex index to vertex buffer index
-s16 sSkybox128VtxIndices[64] = {
-    0,  16, 19, 18, 16, 1,  20, 19, 1,  17, 21, 20, 17, 5,  22, 21, 18, 19, 23, 2,  19, 20,
-    3,  23, 20, 21, 24, 3,  21, 22, 7,  24, 2,  23, 26, 25, 23, 3,  27, 26, 3,  24, 28, 27,
-    24, 7,  29, 28, 25, 26, 30, 10, 26, 27, 11, 30, 27, 28, 31, 11, 28, 29, 15, 31,
-};
-
 /**
  * Build the vertex and display list data for a skybox with 128x128 and 128x64 face textures.
  *
  * While the textures are nominally 128x128 (128x64) the 4x4 (4x2) tiles that cover it are only 31x31,
- * therefore only a 125x125 (125x63) area is ever sampled (see `Skybox_CalculateFace256` for more details)
+ * therefore only a 125x125 (125x63) area is ever sampled (see `Block_tileRectangle256` for more details)
  *
  * Each texture dimension is padded to the next power of 2, resulting in a final size of 128x128 (128x64)
  */
-s32 Skybox_CalculateFace128(SkyboxContext* skyboxCtx, Vtx* roomVtx, s32 roomVtxStartIndex, s32 xStart, s32 yStart,
+s32 Block_tileRectangle(SkyboxContext* skyboxCtx, Vtx* roomVtx, s32 roomVtxStartIndex, s32 xStart, s32 yStart,
                             s32 zStart, s32 innerIncrVal, s32 outerIncrVal, s32 faceNum) {
+    // Texture offsets for each face in the static segment buffer
+    static u32 map_size[6] = {
+        128 * 64 * 0, 128 * 64 * 1, 128 * 64 * 2, 128 * 64 * 3, 128 * 64 * 4, 128 * 64 * 4 + 128 * 128,
+    };
+
+    // Maps vertex buffer index to coordinate buffer index
+    static u16 index_data0[32] = {
+        0, 2, 10, 12, 2, 4, 12, 14, 10, 12, 20, 22, 12, 14, 22, 24, 1, 3, 5, 6, 7, 8, 9, 11, 13, 15, 16, 17, 18, 19, 21, 23,
+    };
+
+    // S coordinates for all faces
+    static s16 vtx_s0[5] = {
+        TC(62 * 0), TC(62 * 1), TC(62 * 2), TC(62 * 3), TC(62 * 4),
+    };
+
+    // T coordinates for top and bottom faces
+    static s16 vtx_t0[5] = {
+        TC(62 * 0), TC(62 * 1), TC(62 * 2), TC(62 * 3), TC(62 * 4),
+    };
+
+    // T coordinates for side faces
+    static s16 vtx_t000[5] = {
+        TC(62 * 0), TC(62 * 1), TC(62 * 2), TC(62 * 1), TC(62 * 0),
+    };
+
+    // Maps vertex index to vertex buffer index
+    static s16 vtxpt[64] = {
+        0,  16, 19, 18, 16, 1,  20, 19, 1,  17, 21, 20, 17, 5,  22, 21, 18, 19, 23, 2,  19, 20,
+        3,  23, 20, 21, 24, 3,  21, 22, 7,  24, 2,  23, 26, 25, 23, 3,  27, 26, 3,  24, 28, 27,
+        24, 7,  29, 28, 25, 26, 30, 10, 26, 27, 11, 30, 27, 28, 31, 11, 28, 29, 15, 31,
+    };
+
     s32 i;
     s32 j;
     s32 k;
@@ -257,8 +258,8 @@ s32 Skybox_CalculateFace128(SkyboxContext* skyboxCtx, Vtx* roomVtx, s32 roomVtxS
                     zPoints[k] = zStart;
                     xPoints[k] = innerIncr;
                     yPoints[k] = outerIncr;
-                    tcS[k] = sSkybox128TexSCoords[j];
-                    tcT[k] = sSkybox128TexTCoords[i];
+                    tcS[k] = vtx_s0[j];
+                    tcT[k] = vtx_t000[i];
                     innerIncr += innerIncrVal;
                 }
                 outerIncr += outerIncrVal;
@@ -276,8 +277,8 @@ s32 Skybox_CalculateFace128(SkyboxContext* skyboxCtx, Vtx* roomVtx, s32 roomVtxS
                     xPoints[k] = xStart;
                     yPoints[k] = outerIncr;
                     zPoints[k] = innerIncr;
-                    tcS[k] = sSkybox128TexSCoords[j];
-                    tcT[k] = sSkybox128TexTCoords[i];
+                    tcS[k] = vtx_s0[j];
+                    tcT[k] = vtx_t000[i];
                     innerIncr += innerIncrVal;
                 }
                 outerIncr += outerIncrVal;
@@ -295,8 +296,8 @@ s32 Skybox_CalculateFace128(SkyboxContext* skyboxCtx, Vtx* roomVtx, s32 roomVtxS
                     yPoints[k] = yStart;
                     xPoints[k] = innerIncr;
                     zPoints[k] = outerIncr;
-                    tcS[k] = sSkybox128TexSCoords[j];
-                    tcT[k] = sSkybox128TexTCoordsXZ[i];
+                    tcS[k] = vtx_s0[j];
+                    tcT[k] = vtx_t0[i];
                     innerIncr += innerIncrVal;
                 }
                 outerIncr += outerIncrVal;
@@ -311,7 +312,7 @@ s32 Skybox_CalculateFace128(SkyboxContext* skyboxCtx, Vtx* roomVtx, s32 roomVtxS
 
     // Generate and load Vertex structures
     for (i = 0; i < 32; i++) {
-        index = sSkybox128VtxBufIndices[i];
+        index = index_data0[i];
 
         roomVtx[roomVtxStartIndex + i].v.ob[0] = xPoints[index];
         roomVtx[roomVtxStartIndex + i].v.ob[1] = yPoints[index];
@@ -336,16 +337,16 @@ s32 Skybox_CalculateFace128(SkyboxContext* skyboxCtx, Vtx* roomVtx, s32 roomVtxS
         ult = 0;
         for (vtxIdx = 0, l = 0; l < 4; l++, ult += 31) {
             for (uls = 0, m = 0; m < 4; m++, uls += 31, vtxIdx += 4) {
-                gDPLoadMultiTile(skyboxCtx->gfx++, (u8*)skyboxCtx->staticSegments[0] + sSkybox128TexOffsets[faceNum], 0,
+                gDPLoadMultiTile(skyboxCtx->gfx++, (u8*)skyboxCtx->staticSegments[0] + map_size[faceNum], 0,
                                  G_TX_RENDERTILE, G_IM_FMT_CI, G_IM_SIZ_8b, 128, 0, uls, ult, uls + 31, ult + 31, 0,
                                  G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOMIRROR | G_TX_WRAP,
                                  G_TX_NOMASK, G_TX_NOLOD);
-                gDPLoadMultiTile(skyboxCtx->gfx++, (u8*)skyboxCtx->staticSegments[1] + sSkybox128TexOffsets[faceNum],
+                gDPLoadMultiTile(skyboxCtx->gfx++, (u8*)skyboxCtx->staticSegments[1] + map_size[faceNum],
                                  0x80, 1, G_IM_FMT_CI, G_IM_SIZ_8b, 128, 0, uls, ult, uls + 31, ult + 31, 0,
                                  G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOMIRROR | G_TX_WRAP,
                                  G_TX_NOMASK, G_TX_NOLOD);
-                gSP1Quadrangle(skyboxCtx->gfx++, sSkybox128VtxIndices[vtxIdx + 1], sSkybox128VtxIndices[vtxIdx + 2],
-                               sSkybox128VtxIndices[vtxIdx + 3], sSkybox128VtxIndices[vtxIdx + 0], 3);
+                gSP1Quadrangle(skyboxCtx->gfx++, vtxpt[vtxIdx + 1], vtxpt[vtxIdx + 2],
+                               vtxpt[vtxIdx + 3], vtxpt[vtxIdx + 0], 3);
             }
         }
     } else {
@@ -354,31 +355,31 @@ s32 Skybox_CalculateFace128(SkyboxContext* skyboxCtx, Vtx* roomVtx, s32 roomVtxS
         ult = 0;
         for (vtxIdx = 0, l = 0; l < 2; l++, ult += 31) {
             for (uls = 0, m = 0; m < 4; m++, uls += 31, vtxIdx += 4) {
-                gDPLoadMultiTile(skyboxCtx->gfx++, (u8*)skyboxCtx->staticSegments[0] + sSkybox128TexOffsets[faceNum], 0,
+                gDPLoadMultiTile(skyboxCtx->gfx++, (u8*)skyboxCtx->staticSegments[0] + map_size[faceNum], 0,
                                  G_TX_RENDERTILE, G_IM_FMT_CI, G_IM_SIZ_8b, 128, 0, uls, ult, uls + 31, ult + 31, 0,
                                  G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOMIRROR | G_TX_WRAP,
                                  G_TX_NOMASK, G_TX_NOLOD);
-                gDPLoadMultiTile(skyboxCtx->gfx++, (u8*)skyboxCtx->staticSegments[1] + sSkybox128TexOffsets[faceNum],
+                gDPLoadMultiTile(skyboxCtx->gfx++, (u8*)skyboxCtx->staticSegments[1] + map_size[faceNum],
                                  0x80, 1, G_IM_FMT_CI, G_IM_SIZ_8b, 128, 0, uls, ult, uls + 31, ult + 31, 0,
                                  G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOMIRROR | G_TX_WRAP,
                                  G_TX_NOMASK, G_TX_NOLOD);
-                gSP1Quadrangle(skyboxCtx->gfx++, sSkybox128VtxIndices[vtxIdx + 1], sSkybox128VtxIndices[vtxIdx + 2],
-                               sSkybox128VtxIndices[vtxIdx + 3], sSkybox128VtxIndices[vtxIdx + 0], 3);
+                gSP1Quadrangle(skyboxCtx->gfx++, vtxpt[vtxIdx + 1], vtxpt[vtxIdx + 2],
+                               vtxpt[vtxIdx + 3], vtxpt[vtxIdx + 0], 3);
             }
         }
         ult -= 31;
         for (l = 0; l < 2; l++, ult -= 31) {
             for (uls = 0, m = 0; m < 4; m++, uls += 31, vtxIdx += 4) {
-                gDPLoadMultiTile(skyboxCtx->gfx++, (u8*)skyboxCtx->staticSegments[0] + sSkybox128TexOffsets[faceNum], 0,
+                gDPLoadMultiTile(skyboxCtx->gfx++, (u8*)skyboxCtx->staticSegments[0] + map_size[faceNum], 0,
                                  G_TX_RENDERTILE, G_IM_FMT_CI, G_IM_SIZ_8b, 128, 0, uls, ult, uls + 31, ult + 31, 0,
                                  G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOMIRROR | G_TX_WRAP,
                                  G_TX_NOMASK, G_TX_NOLOD);
-                gDPLoadMultiTile(skyboxCtx->gfx++, (u8*)skyboxCtx->staticSegments[1] + sSkybox128TexOffsets[faceNum],
+                gDPLoadMultiTile(skyboxCtx->gfx++, (u8*)skyboxCtx->staticSegments[1] + map_size[faceNum],
                                  0x80, 1, G_IM_FMT_CI, G_IM_SIZ_8b, 128, 0, uls, ult, uls + 31, ult + 31, 0,
                                  G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOMIRROR | G_TX_WRAP,
                                  G_TX_NOMASK, G_TX_NOLOD);
-                gSP1Quadrangle(skyboxCtx->gfx++, sSkybox128VtxIndices[vtxIdx + 1], sSkybox128VtxIndices[vtxIdx + 2],
-                               sSkybox128VtxIndices[vtxIdx + 3], sSkybox128VtxIndices[vtxIdx + 0], 3);
+                gSP1Quadrangle(skyboxCtx->gfx++, vtxpt[vtxIdx + 1], vtxpt[vtxIdx + 2],
+                               vtxpt[vtxIdx + 3], vtxpt[vtxIdx + 0], 3);
             }
         }
     }
@@ -386,7 +387,7 @@ s32 Skybox_CalculateFace128(SkyboxContext* skyboxCtx, Vtx* roomVtx, s32 roomVtxS
     return roomVtxStartIndex;
 }
 
-SkyboxFaceParams sSkybox256FaceParams[4] = {
+SkyboxFaceParams Cafe1[4] = {
     { -126, 124, -126, 63, -31 },
     { 126, 124, -126, 63, -31 },
     { 126, 124, 126, -63, -31 },
@@ -397,7 +398,7 @@ SkyboxFaceParams sSkybox256FaceParams[4] = {
  * Computes the display list for a skybox where each face is a 256x256 CI8 texture.
  * The number of faces is determined by the skybox id or from the drawType field in SkyboxContext.
  */
-void Skybox_Calculate256(SkyboxContext* skyboxCtx, s16 skyboxId) {
+void vr_box_set_block256(SkyboxContext* skyboxCtx, s16 skyboxId) {
     s32 faceNum;
     s32 dlistBufStartIndex;
     s32 roomVtxStartIndex = 0;
@@ -405,34 +406,34 @@ void Skybox_Calculate256(SkyboxContext* skyboxCtx, s16 skyboxId) {
     if (skyboxId == SKYBOX_BAZAAR || (skyboxId > SKYBOX_HOUSE_KAKARIKO && skyboxId <= SKYBOX_BOMBCHU_SHOP)) {
         // 2 faces, one in xy plane and one in yz plane
         for (dlistBufStartIndex = 0, faceNum = 0; faceNum < 2; faceNum++, dlistBufStartIndex += 2) {
-            roomVtxStartIndex = Skybox_CalculateFace256(
-                skyboxCtx, skyboxCtx->roomVtx, roomVtxStartIndex, sSkybox256FaceParams[faceNum].xStart,
-                sSkybox256FaceParams[faceNum].yStart, sSkybox256FaceParams[faceNum].zStart,
-                sSkybox256FaceParams[faceNum].outerIncrVal, sSkybox256FaceParams[faceNum].innerIncrVal, faceNum,
+            roomVtxStartIndex = Block_tileRectangle256(
+                skyboxCtx, skyboxCtx->roomVtx, roomVtxStartIndex, Cafe1[faceNum].xStart,
+                Cafe1[faceNum].yStart, Cafe1[faceNum].zStart,
+                Cafe1[faceNum].outerIncrVal, Cafe1[faceNum].innerIncrVal, faceNum,
                 dlistBufStartIndex);
         }
     } else if (skyboxCtx->drawType == SKYBOX_DRAW_256_3FACE) {
         // 3 faces, 2 in xy plane and 1 in yz plane
         for (dlistBufStartIndex = 0, faceNum = 0; faceNum < 3; faceNum++, dlistBufStartIndex += 2) {
-            roomVtxStartIndex = Skybox_CalculateFace256(
-                skyboxCtx, skyboxCtx->roomVtx, roomVtxStartIndex, sSkybox256FaceParams[faceNum].xStart,
-                sSkybox256FaceParams[faceNum].yStart, sSkybox256FaceParams[faceNum].zStart,
-                sSkybox256FaceParams[faceNum].outerIncrVal, sSkybox256FaceParams[faceNum].innerIncrVal, faceNum,
+            roomVtxStartIndex = Block_tileRectangle256(
+                skyboxCtx, skyboxCtx->roomVtx, roomVtxStartIndex, Cafe1[faceNum].xStart,
+                Cafe1[faceNum].yStart, Cafe1[faceNum].zStart,
+                Cafe1[faceNum].outerIncrVal, Cafe1[faceNum].innerIncrVal, faceNum,
                 dlistBufStartIndex);
         }
     } else {
         // 4 faces, 2 in xy plane and 2 in yz plane
         for (dlistBufStartIndex = 0, faceNum = 0; faceNum < 4; faceNum++, dlistBufStartIndex += 2) {
-            roomVtxStartIndex = Skybox_CalculateFace256(
-                skyboxCtx, skyboxCtx->roomVtx, roomVtxStartIndex, sSkybox256FaceParams[faceNum].xStart,
-                sSkybox256FaceParams[faceNum].yStart, sSkybox256FaceParams[faceNum].zStart,
-                sSkybox256FaceParams[faceNum].outerIncrVal, sSkybox256FaceParams[faceNum].innerIncrVal, faceNum,
+            roomVtxStartIndex = Block_tileRectangle256(
+                skyboxCtx, skyboxCtx->roomVtx, roomVtxStartIndex, Cafe1[faceNum].xStart,
+                Cafe1[faceNum].yStart, Cafe1[faceNum].zStart,
+                Cafe1[faceNum].outerIncrVal, Cafe1[faceNum].innerIncrVal, faceNum,
                 dlistBufStartIndex);
         }
     }
 }
 
-SkyboxFaceParams sSkybox128FaceParams[6] = {
+SkyboxFaceParams Cafe0[6] = {
     { -64, 64, -64, 32, -32 }, { 64, 64, 64, -32, -32 }, { -64, 64, 64, -32, -32 },
     { 64, 64, -64, 32, -32 },  { -64, 64, 64, 32, -32 }, { -64, -64, -64, 32, 32 },
 };
@@ -441,19 +442,19 @@ SkyboxFaceParams sSkybox128FaceParams[6] = {
  * Computes the display list for a skybox with up to 6 faces, where the sides are 128x64 CI8 textures and the
  * top/bottom faces are 128x128 CI8 textures.
  */
-void Skybox_Calculate128(SkyboxContext* skyboxCtx, s32 nFaces) {
+void vr_box_set_block(SkyboxContext* skyboxCtx, s32 nFaces) {
     s32 roomVtxStartIndex = 0;
     s32 faceNum;
 
     for (faceNum = 0; faceNum < nFaces; faceNum++) {
-        roomVtxStartIndex = Skybox_CalculateFace128(
-            skyboxCtx, skyboxCtx->roomVtx, roomVtxStartIndex, sSkybox128FaceParams[faceNum].xStart,
-            sSkybox128FaceParams[faceNum].yStart, sSkybox128FaceParams[faceNum].zStart,
-            sSkybox128FaceParams[faceNum].outerIncrVal, sSkybox128FaceParams[faceNum].innerIncrVal, faceNum);
+        roomVtxStartIndex = Block_tileRectangle(
+            skyboxCtx, skyboxCtx->roomVtx, roomVtxStartIndex, Cafe0[faceNum].xStart,
+            Cafe0[faceNum].yStart, Cafe0[faceNum].zStart,
+            Cafe0[faceNum].outerIncrVal, Cafe0[faceNum].innerIncrVal, faceNum);
     }
 }
 
-void Skybox_Setup(PlayState* play, SkyboxContext* skyboxCtx, s16 skyboxId) {
+void vr_box_dmacopy(PlayState* play, SkyboxContext* skyboxCtx, s16 skyboxId) {
     u32 size;
     s16 i;
     u8 skybox1Index;
@@ -464,22 +465,22 @@ void Skybox_Setup(PlayState* play, SkyboxContext* skyboxCtx, s16 skyboxId) {
     switch (skyboxId) {
         case SKYBOX_NORMAL_SKY:
             skyboxConfig = 0;
-            if (gSaveContext.retainWeatherMode && !IS_CUTSCENE_LAYER && gWeatherMode > WEATHER_MODE_CLEAR &&
-                gWeatherMode <= WEATHER_MODE_HEAVY_RAIN) {
+            if (z_common_data.retainWeatherMode && !IS_CUTSCENE_LAYER && E_wether_flg > WEATHER_MODE_CLEAR &&
+                E_wether_flg <= WEATHER_MODE_HEAVY_RAIN) {
                 skyboxConfig = 1;
             }
 
-            for (i = 0; i < ARRAY_COUNT(gTimeBasedSkyboxConfigs[skyboxConfig]); i++) {
-                if (gSaveContext.skyboxTime >= gTimeBasedSkyboxConfigs[skyboxConfig][i].startTime &&
-                    (gSaveContext.skyboxTime < gTimeBasedSkyboxConfigs[skyboxConfig][i].endTime ||
-                     gTimeBasedSkyboxConfigs[skyboxConfig][i].endTime == 0xFFFF)) {
-                    play->envCtx.skybox1Index = skybox1Index = gTimeBasedSkyboxConfigs[skyboxConfig][i].skybox1Index;
-                    play->envCtx.skybox2Index = skybox2Index = gTimeBasedSkyboxConfigs[skyboxConfig][i].skybox2Index;
-                    if (gTimeBasedSkyboxConfigs[skyboxConfig][i].changeSkybox) {
+            for (i = 0; i < ARRAY_COUNT(vrbox_chg[skyboxConfig]); i++) {
+                if (z_common_data.skyboxTime >= vrbox_chg[skyboxConfig][i].startTime &&
+                    (z_common_data.skyboxTime < vrbox_chg[skyboxConfig][i].endTime ||
+                     vrbox_chg[skyboxConfig][i].endTime == 0xFFFF)) {
+                    play->envCtx.skybox1Index = skybox1Index = vrbox_chg[skyboxConfig][i].skybox1Index;
+                    play->envCtx.skybox2Index = skybox2Index = vrbox_chg[skyboxConfig][i].skybox2Index;
+                    if (vrbox_chg[skyboxConfig][i].changeSkybox) {
                         play->envCtx.skyboxBlend =
-                            Environment_LerpWeight(gTimeBasedSkyboxConfigs[skyboxConfig][i].endTime,
-                                                   gTimeBasedSkyboxConfigs[skyboxConfig][i].startTime,
-                                                   ((void)0, gSaveContext.skyboxTime)) *
+                            get_parcent(vrbox_chg[skyboxConfig][i].endTime,
+                                                   vrbox_chg[skyboxConfig][i].startTime,
+                                                   ((void)0, z_common_data.skyboxTime)) *
                             255.0f;
                     } else {
                         play->envCtx.skyboxBlend = 0;
@@ -488,43 +489,43 @@ void Skybox_Setup(PlayState* play, SkyboxContext* skyboxCtx, s16 skyboxId) {
                 }
             }
 
-            size = gNormalSkyFiles[skybox1Index].file.vromEnd - gNormalSkyFiles[skybox1Index].file.vromStart;
+            size = vrbox_tenso[skybox1Index].file.vromEnd - vrbox_tenso[skybox1Index].file.vromStart;
             skyboxCtx->staticSegments[0] = GAME_STATE_ALLOC(&play->state, size, "../z_vr_box.c", 1054);
             ASSERT(skyboxCtx->staticSegments[0] != NULL, "vr_box->vr_box_staticSegment[0] != NULL", "../z_vr_box.c",
                    1055);
 
-            DMA_REQUEST_SYNC(skyboxCtx->staticSegments[0], gNormalSkyFiles[skybox1Index].file.vromStart, size,
+            DMA_REQUEST_SYNC(skyboxCtx->staticSegments[0], vrbox_tenso[skybox1Index].file.vromStart, size,
                              "../z_vr_box.c", 1058);
 
-            size = gNormalSkyFiles[skybox2Index].file.vromEnd - gNormalSkyFiles[skybox2Index].file.vromStart;
+            size = vrbox_tenso[skybox2Index].file.vromEnd - vrbox_tenso[skybox2Index].file.vromStart;
             skyboxCtx->staticSegments[1] = GAME_STATE_ALLOC(&play->state, size, "../z_vr_box.c", 1060);
             ASSERT(skyboxCtx->staticSegments[1] != NULL, "vr_box->vr_box_staticSegment[1] != NULL", "../z_vr_box.c",
                    1061);
 
-            DMA_REQUEST_SYNC(skyboxCtx->staticSegments[1], gNormalSkyFiles[skybox2Index].file.vromStart, size,
+            DMA_REQUEST_SYNC(skyboxCtx->staticSegments[1], vrbox_tenso[skybox2Index].file.vromStart, size,
                              "../z_vr_box.c", 1064);
 
             if ((skybox1Index & 1) ^ ((skybox1Index & 4) >> 2)) {
-                size = gNormalSkyFiles[skybox1Index].palette.vromEnd - gNormalSkyFiles[skybox1Index].palette.vromStart;
+                size = vrbox_tenso[skybox1Index].palette.vromEnd - vrbox_tenso[skybox1Index].palette.vromStart;
 
                 skyboxCtx->palettes = GAME_STATE_ALLOC(&play->state, size * 2, "../z_vr_box.c", 1072);
 
                 ASSERT(skyboxCtx->palettes != NULL, "vr_box->vr_box_staticSegment[2] != NULL", "../z_vr_box.c", 1073);
 
-                DMA_REQUEST_SYNC(skyboxCtx->palettes, gNormalSkyFiles[skybox1Index].palette.vromStart, size,
+                DMA_REQUEST_SYNC(skyboxCtx->palettes, vrbox_tenso[skybox1Index].palette.vromStart, size,
                                  "../z_vr_box.c", 1075);
-                DMA_REQUEST_SYNC((u8*)skyboxCtx->palettes + size, gNormalSkyFiles[skybox2Index].palette.vromStart, size,
+                DMA_REQUEST_SYNC((u8*)skyboxCtx->palettes + size, vrbox_tenso[skybox2Index].palette.vromStart, size,
                                  "../z_vr_box.c", 1077);
             } else {
-                size = gNormalSkyFiles[skybox1Index].palette.vromEnd - gNormalSkyFiles[skybox1Index].palette.vromStart;
+                size = vrbox_tenso[skybox1Index].palette.vromEnd - vrbox_tenso[skybox1Index].palette.vromStart;
 
                 skyboxCtx->palettes = GAME_STATE_ALLOC(&play->state, size * 2, "../z_vr_box.c", 1085);
 
                 ASSERT(skyboxCtx->palettes != NULL, "vr_box->vr_box_staticSegment[2] != NULL", "../z_vr_box.c", 1086);
 
-                DMA_REQUEST_SYNC(skyboxCtx->palettes, gNormalSkyFiles[skybox2Index].palette.vromStart, size,
+                DMA_REQUEST_SYNC(skyboxCtx->palettes, vrbox_tenso[skybox2Index].palette.vromStart, size,
                                  "../z_vr_box.c", 1088);
-                DMA_REQUEST_SYNC((u8*)skyboxCtx->palettes + size, gNormalSkyFiles[skybox1Index].palette.vromStart, size,
+                DMA_REQUEST_SYNC((u8*)skyboxCtx->palettes + size, vrbox_tenso[skybox1Index].palette.vromStart, size,
                                  "../z_vr_box.c", 1090);
             }
             break;
@@ -1017,12 +1018,12 @@ void Skybox_Setup(PlayState* play, SkyboxContext* skyboxCtx, s16 skyboxId) {
     }
 }
 
-void Skybox_Init(GameState* state, SkyboxContext* skyboxCtx, s16 skyboxId) {
+void vr_box_ct(GameState* state, SkyboxContext* skyboxCtx, s16 skyboxId) {
     skyboxCtx->drawType = SKYBOX_DRAW_128;
     skyboxCtx->rot.x = skyboxCtx->rot.y = skyboxCtx->rot.z = 0.0f;
 
     // DMA required assets based on skybox id
-    Skybox_Setup((PlayState*)state, skyboxCtx, skyboxId);
+    vr_box_dmacopy((PlayState*)state, skyboxCtx, skyboxId);
     PRINTF("\n\n\n＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊\n\n\n"
            "ＴＹＰＥ＝%d"
            "\n\n\n＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊\n\n\n",
@@ -1039,7 +1040,7 @@ void Skybox_Init(GameState* state, SkyboxContext* skyboxCtx, s16 skyboxId) {
             skyboxCtx->roomVtx = GAME_STATE_ALLOC(state, 8 * 32 * sizeof(Vtx), "../z_vr_box.c", 1639);
             ASSERT(skyboxCtx->roomVtx != NULL, "vr_box->roomVtx != NULL", "../z_vr_box.c", 1640);
 
-            Skybox_Calculate256(skyboxCtx, skyboxId);
+            vr_box_set_block256(skyboxCtx, skyboxId);
         } else {
             skyboxCtx->dListBuf = GAME_STATE_ALLOC(state, 12 * 150 * sizeof(Gfx), "../z_vr_box.c", 1643);
             ASSERT(skyboxCtx->dListBuf != NULL, "vr_box->dpList != NULL", "../z_vr_box.c", 1644);
@@ -1048,12 +1049,12 @@ void Skybox_Init(GameState* state, SkyboxContext* skyboxCtx, s16 skyboxId) {
                 skyboxCtx->roomVtx = GAME_STATE_ALLOC(state, 6 * 32 * sizeof(Vtx), "../z_vr_box.c", 1648);
                 ASSERT(skyboxCtx->roomVtx != NULL, "vr_box->roomVtx != NULL", "../z_vr_box.c", 1649);
 
-                Skybox_Calculate128(skyboxCtx, 6); // compute all 6 faces
+                vr_box_set_block(skyboxCtx, 6); // compute all 6 faces
             } else {
                 skyboxCtx->roomVtx = GAME_STATE_ALLOC(state, 5 * 32 * sizeof(Vtx), "../z_vr_box.c", 1653);
                 ASSERT(skyboxCtx->roomVtx != NULL, "vr_box->roomVtx != NULL", "../z_vr_box.c", 1654);
 
-                Skybox_Calculate128(skyboxCtx, 5); // compute 5 faces, excludes the bottom face
+                vr_box_set_block(skyboxCtx, 5); // compute 5 faces, excludes the bottom face
             }
         }
         PRINTF_RST();

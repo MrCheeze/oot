@@ -4,7 +4,7 @@
  * This file implements an unused transition system that takes the current screen, partitions it into large tiles, and
  * can apply an effect to them.
  *
- * The screen is divided into 7 rows and 10 columns of tiles. (`gScreenWidth`/ 10 = `gScreenHeight` / 7 = 0x20)
+ * The screen is divided into 7 rows and 10 columns of tiles. (`ScreenWidth`/ 10 = `ScreenHeight` / 7 = 0x20)
  *
  * @note The only coded effect has a visual effect to blend the tiles to a single point, which looks like the screen
  * gets sucked into.
@@ -15,7 +15,7 @@
 extern u16 D_0F000000[];
 
 // Unused background; a blue rectangle with a grey border that fills the screen
-Gfx sTransTileBackgroundDL[] = {
+Gfx clearcfb_dl[] = {
     gsDPPipeSync(),
     gsDPSetCycleType(G_CYC_FILL),
     gsDPSetColorImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 320, D_0F000000),
@@ -28,7 +28,7 @@ Gfx sTransTileBackgroundDL[] = {
     gsSPEndDisplayList(),
 };
 
-Gfx sTransTileSetupDL[] = {
+Gfx fbdemo_gfx_init[] = {
     gsDPPipeSync(),
     gsSPTexture(0x8000, 0x8000, 0, G_TX_RENDERTILE, G_ON),
     gsSPClearGeometryMode(G_ZBUFFER | G_SHADE | G_CULL_BOTH | G_FOG | G_LIGHTING | G_TEXTURE_GEN |
@@ -56,7 +56,7 @@ Gfx sTransTileSetupDL[] = {
     }                                                     \
     (void)0
 
-void TransitionTile_InitGraphics(TransitionTile* this) {
+void fbdemo_init_gfx(TransitionTile* this) {
     s32 frame;
     s32 col;
     s32 col2;
@@ -118,7 +118,7 @@ void TransitionTile_InitGraphics(TransitionTile* this) {
     LOG_NUM("gp - this->gfxtbl", gfx - this->gfx, "../z_fbdemo.c", 145);
 }
 
-void TransitionTile_InitVtxData(TransitionTile* this) {
+void fbdemo_init_data(TransitionTile* this) {
     s32 row;
     s32 col;
 
@@ -130,10 +130,10 @@ void TransitionTile_InitVtxData(TransitionTile* this) {
     }
 }
 
-void TransitionTile_Destroy(TransitionTile* this) {
+void fbdemo_cleanup(TransitionTile* this) {
     PRINTF("fbdemo_cleanup(%08x)\n", this);
     PRINTF("msleep(100);\n");
-    Sleep_Msec(100);
+    msleep(100);
 
     if (this->vtxData != NULL) {
         SYSTEM_ARENA_FREE(this->vtxData, "../z_fbdemo.c", 180);
@@ -153,7 +153,7 @@ void TransitionTile_Destroy(TransitionTile* this) {
     }
 }
 
-TransitionTile* TransitionTile_Init(TransitionTile* this, s32 cols, s32 rows) {
+TransitionTile* fbdemo_init(TransitionTile* this, s32 cols, s32 rows) {
     PRINTF("fbdemo_init(%08x, %d, %d)\n", this, cols, rows);
     bzero(this, sizeof(TransitionTile));
     this->frame = 0;
@@ -185,14 +185,14 @@ TransitionTile* TransitionTile_Init(TransitionTile* this, s32 cols, s32 rows) {
         return NULL;
     }
 
-    TransitionTile_InitGraphics(this);
-    TransitionTile_InitVtxData(this);
+    fbdemo_init_gfx(this);
+    fbdemo_init_data(this);
     this->frame = 0;
 
     return this;
 }
 
-void TransitionTile_SetVtx(TransitionTile* this) {
+void fbdemo_update(TransitionTile* this) {
     s32 row;
     s32 col;
     Vtx* vtx;
@@ -208,16 +208,16 @@ void TransitionTile_SetVtx(TransitionTile* this) {
     }
 }
 
-void TransitionTile_Draw(TransitionTile* this, Gfx** gfxP) {
+void fbdemo_draw(TransitionTile* this, Gfx** gfxP) {
     Gfx* gfx = *gfxP;
 
-    gSPDisplayList(gfx++, sTransTileSetupDL);
-    TransitionTile_SetVtx(this);
+    gSPDisplayList(gfx++, fbdemo_gfx_init);
+    fbdemo_update(this);
     gSPMatrix(gfx++, &this->projection, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_PROJECTION);
     gSPMatrix(gfx++, &this->modelView, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
     gSPSegment(gfx++, 0xA, this->frame == 0 ? this->vtxFrame1 : this->vtxFrame2);
     gSPSegment(gfx++, 0xB, this->zBuffer);
-    gSPDisplayList(gfx++, sTransTileSetupDL);
+    gSPDisplayList(gfx++, fbdemo_gfx_init);
     gSPDisplayList(gfx++, this->gfx);
     gDPPipeSync(gfx++);
     this->frame ^= 1;
@@ -227,7 +227,7 @@ void TransitionTile_Draw(TransitionTile* this, Gfx** gfxP) {
 /**
  * Blends tiles which has the visual effect of sucking those tiles into a single point
  */
-void TransitionTile_Suck(TransitionTile* this) {
+void fbdemo_move_type_A(TransitionTile* this) {
     s32 row;
     s32 col;
     f32 diffX;
@@ -250,9 +250,9 @@ void TransitionTile_Suck(TransitionTile* this) {
     }
 }
 
-void TransitionTile_Update(TransitionTile* this) {
+void fbdemo_move(TransitionTile* this) {
 }
 
-s32 func_800B23F0(TransitionTile* this) {
+s32 fbdemo_is_finish(TransitionTile* this) {
     return 0;
 }

@@ -10,13 +10,13 @@
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void BgSpot01Objects2_Init(Actor* thisx, PlayState* play);
-void BgSpot01Objects2_Destroy(Actor* thisx, PlayState* play);
-void BgSpot01Objects2_Update(Actor* thisx, PlayState* play);
+void Bg_Spot01_Objects2_actor_ct(Actor* thisx, PlayState* play);
+void Bg_Spot01_Objects2_actor_dt(Actor* thisx, PlayState* play);
+void Bg_Spot01_Objects2_actor_move(Actor* thisx, PlayState* play);
 
-void func_808AC2BC(BgSpot01Objects2* this, PlayState* play);
-void func_808AC474(BgSpot01Objects2* this, PlayState* play);
-void func_808AC4A4(Actor* thisx, PlayState* play);
+void mode_bank_change_wait(BgSpot01Objects2* this, PlayState* play);
+static void mode_wait(BgSpot01Objects2* this, PlayState* play);
+void Bg_Spot01_Objects2_actor_draw(Actor* thisx, PlayState* play);
 
 ActorProfile Bg_Spot01_Objects2_Profile = {
     /**/ ACTOR_BG_SPOT01_OBJECTS2,
@@ -24,25 +24,25 @@ ActorProfile Bg_Spot01_Objects2_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(BgSpot01Objects2),
-    /**/ BgSpot01Objects2_Init,
-    /**/ BgSpot01Objects2_Destroy,
-    /**/ BgSpot01Objects2_Update,
+    /**/ Bg_Spot01_Objects2_actor_ct,
+    /**/ Bg_Spot01_Objects2_actor_dt,
+    /**/ Bg_Spot01_Objects2_actor_move,
     /**/ NULL,
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_F32(cullingVolumeDistance, 12800, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeScale, 2000, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDownward, 1500, ICHAIN_CONTINUE),
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_STOP),
 };
 
-static Gfx* D_808AC510[] = {
+static Gfx* shape_model[] = {
     gKakarikoPotionShopSignDL,   gKakarikoShootingGallerySignDL, gKakarikoBazaarSignDL,
     gKakarikoConstructionSiteDL, gKakarikoShootingGalleryDL,
 };
 
-void BgSpot01Objects2_Init(Actor* thisx, PlayState* play) {
+void Bg_Spot01_Objects2_actor_ct(Actor* thisx, PlayState* play) {
     BgSpot01Objects2* this = (BgSpot01Objects2*)thisx;
 
     switch (PARAMS_GET_U(this->dyna.actor.params, 0, 3)) {
@@ -59,24 +59,24 @@ void BgSpot01Objects2_Init(Actor* thisx, PlayState* play) {
     }
 
     if (this->objectId >= 0) {
-        this->requiredObjectSlot = Object_GetSlot(&play->objectCtx, this->objectId);
+        this->requiredObjectSlot = Object_Exchange_bank_check(&play->objectCtx, this->objectId);
         if (this->requiredObjectSlot < 0) {
             // "There was no bank setting."
             PRINTF("-----------------------------バンク設定ありませんでした.");
-            Actor_Kill(&this->dyna.actor);
+            Actor_delete(&this->dyna.actor);
             return;
         }
     } else {
-        Actor_Kill(&this->dyna.actor);
+        Actor_delete(&this->dyna.actor);
     }
-    this->actionFunc = func_808AC2BC;
-    Actor_ProcessInitChain(&this->dyna.actor, sInitChain);
+    this->actionFunc = mode_bank_change_wait;
+    ValueSet_process(&this->dyna.actor, value_init);
 }
 
-void BgSpot01Objects2_Destroy(Actor* thisx, PlayState* play) {
+void Bg_Spot01_Objects2_actor_dt(Actor* thisx, PlayState* play) {
 }
 
-s32 func_808AC22C(Path* pathList, Vec3f* pos, s32 path, s32 waypoint) {
+static s32 func_get_rail_pos(Path* pathList, Vec3f* pos, s32 path, s32 waypoint) {
     Vec3s* pointPos = &((Vec3s*)SEGMENTED_TO_VIRTUAL((pathList + path)->points))[waypoint];
 
     pos->x = pointPos->x;
@@ -85,31 +85,31 @@ s32 func_808AC22C(Path* pathList, Vec3f* pos, s32 path, s32 waypoint) {
     return 0;
 }
 
-void func_808AC2BC(BgSpot01Objects2* this, PlayState* play) {
+void mode_bank_change_wait(BgSpot01Objects2* this, PlayState* play) {
     CollisionHeader* colHeader = NULL;
     Actor* thisx = &this->dyna.actor;
     s32 pad;
     Vec3f position;
 
-    if (Object_IsLoaded(&play->objectCtx, this->requiredObjectSlot)) {
+    if (Object_Exchange_bank_dma_check(&play->objectCtx, this->requiredObjectSlot)) {
         // "---- Successful bank switching!!"
         PRINTF("-----バンク切り換え成功！！\n");
-        gSegments[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[this->requiredObjectSlot].segment);
+        SegmentBaseAddress[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[this->requiredObjectSlot].segment);
 
         this->dyna.actor.objectSlot = this->requiredObjectSlot;
-        DynaPolyActor_Init(&this->dyna, DYNA_TRANSFORM_POS);
+        MoveBG_ct(&this->dyna, DYNA_TRANSFORM_POS);
 
         switch (PARAMS_GET_U(this->dyna.actor.params, 0, 3)) {
             case 4: // Shooting gallery
-                CollisionHeader_GetVirtual(&gKakarikoShootingGalleryCol, &colHeader);
-                this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, thisx, colHeader);
+                DynaPolyUty_bgdi_SG2KSG(&gKakarikoShootingGalleryCol, &colHeader);
+                this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, thisx, colHeader);
                 break;
             case 3: // Shooting Gallery, spawns Carpenter Sabooro during the day
-                CollisionHeader_GetVirtual(&object_spot01_matoyab_col, &colHeader);
-                this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, thisx, colHeader);
+                DynaPolyUty_bgdi_SG2KSG(&object_spot01_matoyab_col, &colHeader);
+                this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, thisx, colHeader);
                 if (IS_DAY) {
-                    func_808AC22C(play->pathList, &position, PARAMS_GET_U((s32)thisx->params, 8, 8), 0);
-                    Actor_SpawnAsChild(&play->actorCtx, thisx, play, ACTOR_EN_DAIKU_KAKARIKO, position.x, position.y,
+                    func_get_rail_pos(play->pathList, &position, PARAMS_GET_U((s32)thisx->params, 8, 8), 0);
+                    Actor_info_make_child_actor(&play->actorCtx, thisx, play, ACTOR_EN_DAIKU_KAKARIKO, position.x, position.y,
                                        position.z, thisx->world.rot.x, thisx->world.rot.y, thisx->world.rot.z,
                                        (PARAMS_GET_U((s32)thisx->params, 8, 8) << 8) + 1);
                 }
@@ -120,20 +120,20 @@ void func_808AC2BC(BgSpot01Objects2* this, PlayState* play) {
                 break;
         }
 
-        this->dyna.actor.draw = func_808AC4A4;
-        this->actionFunc = func_808AC474;
+        this->dyna.actor.draw = Bg_Spot01_Objects2_actor_draw;
+        this->actionFunc = mode_wait;
     }
 }
 
-void func_808AC474(BgSpot01Objects2* this, PlayState* play) {
+static void mode_wait(BgSpot01Objects2* this, PlayState* play) {
 }
 
-void BgSpot01Objects2_Update(Actor* thisx, PlayState* play) {
+void Bg_Spot01_Objects2_actor_move(Actor* thisx, PlayState* play) {
     BgSpot01Objects2* this = (BgSpot01Objects2*)thisx;
 
     this->actionFunc(this, play);
 }
 
-void func_808AC4A4(Actor* thisx, PlayState* play) {
-    Gfx_DrawDListOpa(play, D_808AC510[PARAMS_GET_U(thisx->params, 0, 3)]);
+void Bg_Spot01_Objects2_actor_draw(Actor* thisx, PlayState* play) {
+    Cheap_gfx_display(play, shape_model[PARAMS_GET_U(thisx->params, 0, 3)]);
 }

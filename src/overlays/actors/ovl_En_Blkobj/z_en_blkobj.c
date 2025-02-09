@@ -9,15 +9,15 @@
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED)
 
-void EnBlkobj_Init(Actor* thisx, PlayState* play);
-void EnBlkobj_Destroy(Actor* thisx, PlayState* play);
-void EnBlkobj_Update(Actor* thisx, PlayState* play);
-void EnBlkobj_Draw(Actor* thisx, PlayState* play);
+void En_Blkobj_Actor_ct(Actor* thisx, PlayState* play);
+void En_Blkobj_Actor_dt(Actor* thisx, PlayState* play);
+void En_Blkobj_Actor_move(Actor* thisx, PlayState* play);
+void En_Blkobj_Actor_draw(Actor* thisx, PlayState* play);
 
-void EnBlkobj_Wait(EnBlkobj* this, PlayState* play);
-void EnBlkobj_SpawnDarkLink(EnBlkobj* this, PlayState* play);
-void EnBlkobj_DarkLinkFight(EnBlkobj* this, PlayState* play);
-void EnBlkobj_DoNothing(EnBlkobj* this, PlayState* play);
+static void move_wait(EnBlkobj* this, PlayState* play);
+void move_start_wait(EnBlkobj* this, PlayState* play);
+void move_fight_wait(EnBlkobj* this, PlayState* play);
+static void move_stop(EnBlkobj* this, PlayState* play);
 
 ActorProfile En_Blkobj_Profile = {
     /**/ ACTOR_EN_BLKOBJ,
@@ -25,81 +25,81 @@ ActorProfile En_Blkobj_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_BLKOBJ,
     /**/ sizeof(EnBlkobj),
-    /**/ EnBlkobj_Init,
-    /**/ EnBlkobj_Destroy,
-    /**/ EnBlkobj_Update,
-    /**/ EnBlkobj_Draw,
+    /**/ En_Blkobj_Actor_ct,
+    /**/ En_Blkobj_Actor_dt,
+    /**/ En_Blkobj_Actor_move,
+    /**/ En_Blkobj_Actor_draw,
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F(scale, 1, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDistance, 800, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeScale, 200, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDownward, 300, ICHAIN_STOP),
 };
 
-static Gfx sSetupOpaDL[] = {
+static Gfx render_mode_opa[] = {
     gsDPSetRenderMode(G_RM_FOG_SHADE_A, G_RM_AA_ZB_OPA_SURF2),
     gsSPEndDisplayList(),
 };
 
-static Gfx sSetupXluDL[] = {
+static Gfx render_mode_xlu[] = {
     gsDPSetRenderMode(G_RM_FOG_SHADE_A, G_RM_AA_ZB_XLU_SURF2),
     gsSPEndDisplayList(),
 };
 
-void EnBlkobj_SetupAction(EnBlkobj* this, EnBlkobjActionFunc actionFunc) {
+void En_Blkobj_actor_set_process(EnBlkobj* this, EnBlkobjActionFunc actionFunc) {
     this->actionFunc = actionFunc;
     this->timer = 0;
 }
 
-void EnBlkobj_Init(Actor* thisx, PlayState* play) {
+void En_Blkobj_Actor_ct(Actor* thisx, PlayState* play) {
     s32 pad;
     EnBlkobj* this = (EnBlkobj*)thisx;
     CollisionHeader* colHeader = NULL;
 
-    Actor_ProcessInitChain(&this->dyna.actor, sInitChain);
-    DynaPolyActor_Init(&this->dyna, 0);
-    if (Flags_GetClear(play, this->dyna.actor.room)) {
+    ValueSet_process(&this->dyna.actor, value_init);
+    MoveBG_ct(&this->dyna, 0);
+    if (Actor_Environment_room_clear_Check(play, this->dyna.actor.room)) {
         this->alpha = 255;
-        EnBlkobj_SetupAction(this, EnBlkobj_DoNothing);
+        En_Blkobj_actor_set_process(this, move_stop);
     } else {
-        CollisionHeader_GetVirtual(&gIllusionRoomCol, &colHeader);
-        this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
-        EnBlkobj_SetupAction(this, EnBlkobj_Wait);
+        DynaPolyUty_bgdi_SG2KSG(&gIllusionRoomCol, &colHeader);
+        this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
+        En_Blkobj_actor_set_process(this, move_wait);
     }
 }
 
-void EnBlkobj_Destroy(Actor* thisx, PlayState* play) {
+void En_Blkobj_Actor_dt(Actor* thisx, PlayState* play) {
     s32 pad;
     EnBlkobj* this = (EnBlkobj*)thisx;
 
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
 }
 
-void EnBlkobj_Wait(EnBlkobj* this, PlayState* play) {
+static void move_wait(EnBlkobj* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     if (this->dyna.actor.xzDistToPlayer < 120.0f) {
-        EnBlkobj_SetupAction(this, EnBlkobj_SpawnDarkLink);
+        En_Blkobj_actor_set_process(this, move_start_wait);
     }
     player->stateFlags2 |= PLAYER_STATE2_26;
 }
 
-void EnBlkobj_SpawnDarkLink(EnBlkobj* this, PlayState* play) {
+void move_start_wait(EnBlkobj* this, PlayState* play) {
     if (!(this->dyna.actor.flags & ACTOR_FLAG_INSIDE_CULLING_VOLUME)) {
-        Actor_Spawn(&play->actorCtx, play, ACTOR_EN_TORCH2, this->dyna.actor.world.pos.x, this->dyna.actor.world.pos.y,
+        Actor_info_make_actor(&play->actorCtx, play, ACTOR_EN_TORCH2, this->dyna.actor.world.pos.x, this->dyna.actor.world.pos.y,
                     this->dyna.actor.world.pos.z, 0, this->dyna.actor.yawTowardsPlayer, 0, 0);
-        EnBlkobj_SetupAction(this, EnBlkobj_DarkLinkFight);
+        En_Blkobj_actor_set_process(this, move_fight_wait);
     }
 }
 
-void EnBlkobj_DarkLinkFight(EnBlkobj* this, PlayState* play) {
+void move_fight_wait(EnBlkobj* this, PlayState* play) {
     s32 alphaMod;
 
     if (this->timer == 0) {
-        if (Actor_Find(&play->actorCtx, ACTOR_EN_TORCH2, ACTORCAT_BOSS) == NULL) {
-            Flags_SetClear(play, this->dyna.actor.room);
+        if (Actor_info_name_search(&play->actorCtx, ACTOR_EN_TORCH2, ACTORCAT_BOSS) == NULL) {
+            Actor_Environment_room_clear_On(play, this->dyna.actor.room);
             this->timer++;
         }
     } else if (this->timer++ > 100) {
@@ -110,31 +110,31 @@ void EnBlkobj_DarkLinkFight(EnBlkobj* this, PlayState* play) {
         this->alpha += alphaMod;
         if (this->alpha > 255) {
             this->alpha = 255;
-            EnBlkobj_SetupAction(this, EnBlkobj_DoNothing);
-            DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+            En_Blkobj_actor_set_process(this, move_stop);
+            DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
         }
     }
 }
 
-void EnBlkobj_DoNothing(EnBlkobj* this, PlayState* play) {
+static void move_stop(EnBlkobj* this, PlayState* play) {
 }
 
-void EnBlkobj_Update(Actor* thisx, PlayState* play) {
+void En_Blkobj_Actor_move(Actor* thisx, PlayState* play) {
     s32 pad;
     EnBlkobj* this = (EnBlkobj*)thisx;
 
     this->actionFunc(this, play);
 }
 
-void EnBlkobj_DrawAlpha(PlayState* play, Gfx* dList, s32 alpha) {
+void shape_display_set(PlayState* play, Gfx* dList, s32 alpha) {
     Gfx* segment;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_blkobj.c", 322);
 
     if (alpha == 255) {
-        segment = sSetupOpaDL;
+        segment = render_mode_opa;
     } else {
-        segment = sSetupXluDL;
+        segment = render_mode_xlu;
     }
 
     gSPSegment(POLY_XLU_DISP++, 0x08, segment);
@@ -144,7 +144,7 @@ void EnBlkobj_DrawAlpha(PlayState* play, Gfx* dList, s32 alpha) {
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_blkobj.c", 330);
 }
 
-void EnBlkobj_Draw(Actor* thisx, PlayState* play) {
+void En_Blkobj_Actor_draw(Actor* thisx, PlayState* play) {
     s32 pad;
     EnBlkobj* this = (EnBlkobj*)thisx;
     s32 illusionAlpha;
@@ -152,21 +152,21 @@ void EnBlkobj_Draw(Actor* thisx, PlayState* play) {
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_blkobj.c", 349);
 
-    Gfx_SetupDL_25Xlu(play->state.gfxCtx);
+    _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
 
     gameplayFrames = play->gameplayFrames % 128;
 
     gSPSegment(
         POLY_XLU_DISP++, 0x0D,
-        Gfx_TwoTexScroll(play->state.gfxCtx, G_TX_RENDERTILE, gameplayFrames, 0, 32, 32, 1, gameplayFrames, 0, 32, 32));
+        two_tex_scroll(play->state.gfxCtx, G_TX_RENDERTILE, gameplayFrames, 0, 32, 32, 1, gameplayFrames, 0, 32, 32));
     MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx, "../z_en_blkobj.c", 363);
 
     if (this->alpha != 0) {
-        EnBlkobj_DrawAlpha(play, gIllusionRoomNormalDL, this->alpha);
+        shape_display_set(play, gIllusionRoomNormalDL, this->alpha);
     }
     illusionAlpha = 255 - this->alpha;
     if (illusionAlpha != 0) {
-        EnBlkobj_DrawAlpha(play, gIllusionRoomIllusionDL, illusionAlpha);
+        shape_display_set(play, gIllusionRoomIllusionDL, illusionAlpha);
     }
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_blkobj.c", 375);

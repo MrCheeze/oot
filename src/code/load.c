@@ -1,16 +1,16 @@
 #include "global.h"
 
-s32 JpegDecoder_ProcessMcu(JpegHuffmanTable* hTable0, JpegHuffmanTable* hTable1, u16* mcu, s16* unk);
-s32 JpegDecoder_ParseNextSymbol(JpegHuffmanTable* hTable, s16* outCoeff, s8* outZeroCount);
-u16 JpegDecoder_ReadBits(u8 len);
+s32 _loadOneBlock(JpegHuffmanTable* hTable0, JpegHuffmanTable* hTable1, u16* mcu, s16* unk);
+s32 __decode(JpegHuffmanTable* hTable, s16* outCoeff, s8* outZeroCount);
+u16 ___getCode(u8 len);
 
-u8* sJpegBitStreamPtr;
-u32 sJpegBitStreamByteIdx;
-u8 sJpegBitStreamBitIdx;
-u8 sJpegBitStreamDontSkip;
-u32 sJpegBitStreamCurWord;
+u8* STREAM;
+u32 CURRENT;
+u8 POINTER;
+u8 THROUGH;
+u32 BUFFER;
 
-s32 JpegDecoder_Decode(JpegDecoder* decoder, u16* mcuBuff, s32 count, u8 isFollowing, JpegDecoderState* state) {
+s32 jpgLoad(JpegDecoder* decoder, u16* mcuBuff, s32 count, u8 isFollowing, JpegDecoderState* state) {
     s16 pad;
     s16 unk0;
     s16 unk1;
@@ -25,7 +25,7 @@ s32 JpegDecoder_Decode(JpegDecoder* decoder, u16* mcuBuff, s32 count, u8 isFollo
     JpegHuffmanTable* hTable3;
 
     inc = 0;
-    sJpegBitStreamPtr = decoder->imageData;
+    STREAM = decoder->imageData;
     if (decoder->mode == 0) {
         unkCount = 2;
     } else {
@@ -41,18 +41,18 @@ s32 JpegDecoder_Decode(JpegDecoder* decoder, u16* mcuBuff, s32 count, u8 isFollo
     hTable3 = decoder->hTablePtrs[3];
 
     if (!isFollowing) {
-        sJpegBitStreamByteIdx = 0;
-        sJpegBitStreamBitIdx = 32;
-        sJpegBitStreamCurWord = 0;
-        sJpegBitStreamDontSkip = 0;
+        CURRENT = 0;
+        POINTER = 32;
+        BUFFER = 0;
+        THROUGH = 0;
         unk0 = 0;
         unk1 = 0;
         unk2 = 0;
     } else {
-        sJpegBitStreamByteIdx = state->byteIdx;
-        sJpegBitStreamBitIdx = state->bitIdx;
-        sJpegBitStreamCurWord = state->curWord;
-        sJpegBitStreamDontSkip = state->dontSkip;
+        CURRENT = state->byteIdx;
+        POINTER = state->bitIdx;
+        BUFFER = state->curWord;
+        THROUGH = state->dontSkip;
         unk0 = state->unk_0C;
         unk1 = state->unk_0E;
         unk2 = state->unk_10;
@@ -60,18 +60,18 @@ s32 JpegDecoder_Decode(JpegDecoder* decoder, u16* mcuBuff, s32 count, u8 isFollo
 
     while (count != 0) {
         for (idx = 0; idx < unkCount; idx++) {
-            if (JpegDecoder_ProcessMcu(hTable0, hTable1, mcuBuff, &unk0)) {
+            if (_loadOneBlock(hTable0, hTable1, mcuBuff, &unk0)) {
                 return 2;
             }
             mcuBuff += 8 * 8;
         }
 
-        if (JpegDecoder_ProcessMcu(hTable2, hTable3, mcuBuff, &unk1)) {
+        if (_loadOneBlock(hTable2, hTable3, mcuBuff, &unk1)) {
             return 2;
         }
         mcuBuff += 8 * 8;
 
-        if (JpegDecoder_ProcessMcu(hTable2, hTable3, mcuBuff, &unk2)) {
+        if (_loadOneBlock(hTable2, hTable3, mcuBuff, &unk2)) {
             return 2;
         }
 
@@ -80,29 +80,29 @@ s32 JpegDecoder_Decode(JpegDecoder* decoder, u16* mcuBuff, s32 count, u8 isFollo
         mcuBuff += inc;
     }
 
-    state->byteIdx = sJpegBitStreamByteIdx;
-    state->bitIdx = sJpegBitStreamBitIdx;
-    state->curWord = sJpegBitStreamCurWord;
-    state->dontSkip = sJpegBitStreamDontSkip;
+    state->byteIdx = CURRENT;
+    state->bitIdx = POINTER;
+    state->curWord = BUFFER;
+    state->dontSkip = THROUGH;
     state->unk_0C = unk0;
     state->unk_0E = unk1;
     state->unk_10 = unk2;
     return 0;
 }
 
-s32 JpegDecoder_ProcessMcu(JpegHuffmanTable* hTable0, JpegHuffmanTable* hTable1, u16* mcu, s16* unk) {
+s32 _loadOneBlock(JpegHuffmanTable* hTable0, JpegHuffmanTable* hTable1, u16* mcu, s16* unk) {
     s8 i = 0;
     s8 zeroCount;
     s16 coeff;
 
-    if (JpegDecoder_ParseNextSymbol(hTable0, &coeff, &zeroCount)) {
+    if (__decode(hTable0, &coeff, &zeroCount)) {
         return 1;
     }
 
     *unk += coeff;
     mcu[i++] = *unk;
     while (i < 8 * 8) {
-        if (JpegDecoder_ParseNextSymbol(hTable1, &coeff, &zeroCount) != 0) {
+        if (__decode(hTable1, &coeff, &zeroCount) != 0) {
             return 1;
         }
 
@@ -128,11 +128,11 @@ s32 JpegDecoder_ProcessMcu(JpegHuffmanTable* hTable0, JpegHuffmanTable* hTable1,
     return 0;
 }
 
-s32 JpegDecoder_ParseNextSymbol(JpegHuffmanTable* hTable, s16* outCoeff, s8* outZeroCount) {
+s32 __decode(JpegHuffmanTable* hTable, s16* outCoeff, s8* outZeroCount) {
     u8 codeIdx;
     u8 sym;
     u16 codeOff = 0;
-    u16 buff = JpegDecoder_ReadBits(16);
+    u16 buff = ___getCode(16);
 
     for (codeIdx = 0; codeIdx < 16; codeIdx++) {
         if (hTable->codesB[codeIdx] == 0xFFFF) {
@@ -153,10 +153,10 @@ s32 JpegDecoder_ParseNextSymbol(JpegHuffmanTable* hTable, s16* outCoeff, s8* out
     *outZeroCount = sym >> 4;
     sym &= 0xF;
 
-    sJpegBitStreamBitIdx += codeIdx - 15;
+    POINTER += codeIdx - 15;
     *outCoeff = 0;
     if (sym) {
-        *outCoeff = JpegDecoder_ReadBits(sym);
+        *outCoeff = ___getCode(sym);
         if (*outCoeff < (1 << (sym - 1))) {
             *outCoeff += (-1U << sym) + 1;
         }
@@ -165,30 +165,30 @@ s32 JpegDecoder_ParseNextSymbol(JpegHuffmanTable* hTable, s16* outCoeff, s8* out
     return 0;
 }
 
-u16 JpegDecoder_ReadBits(u8 len) {
+u16 ___getCode(u8 len) {
     u8 byteCount;
     u8 data;
     s32 ret = 0;
     u32 temp;
 
-    for (byteCount = sJpegBitStreamBitIdx >> 3; byteCount > 0; byteCount--) {
-        data = sJpegBitStreamPtr[sJpegBitStreamByteIdx++];
-        if (sJpegBitStreamDontSkip) {
+    for (byteCount = POINTER >> 3; byteCount > 0; byteCount--) {
+        data = STREAM[CURRENT++];
+        if (THROUGH) {
             if (data == 0) {
-                data = sJpegBitStreamPtr[sJpegBitStreamByteIdx++];
+                data = STREAM[CURRENT++];
             }
         }
 
-        sJpegBitStreamDontSkip = (data == 0xFF) ? 1 : 0;
+        THROUGH = (data == 0xFF) ? 1 : 0;
 
-        sJpegBitStreamCurWord <<= 8;
-        sJpegBitStreamCurWord |= data;
-        sJpegBitStreamBitIdx -= 8;
+        BUFFER <<= 8;
+        BUFFER |= data;
+        POINTER -= 8;
     }
 
-    ret = sJpegBitStreamCurWord << sJpegBitStreamBitIdx;
+    ret = BUFFER << POINTER;
     temp = ret;
     ret = temp >> -len;
-    sJpegBitStreamBitIdx += len;
+    POINTER += len;
     return ret;
 }

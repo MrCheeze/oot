@@ -27,14 +27,14 @@ extern u32 __osBbSramSize;
 extern u32 __osBbSramAddress;
 extern u32 __osBbHackFlags;
 
-extern s8 D_80009430;
-extern vu8 gViConfigBlack;
-extern u8 gViConfigAdditionalScanLines;
-extern u32 gViConfigFeatures;
-extern f32 gViConfigXScale;
-extern f32 gViConfigYScale;
-extern OSPiHandle* gCartHandle;
-extern s32 gCurrentRegion;
+extern s8 vidirty;
+extern vu8 __viblack;
+extern u8 viextendvstart;
+extern u32 vispecial;
+extern f32 vixscale;
+extern f32 viyscale;
+extern OSPiHandle* carthandle;
+extern s32 z_locale_mode;
 extern u32 __osPiAccessQueueEnabled;
 extern OSViMode osViModePalLan1;
 extern s32 osViClock;
@@ -54,12 +54,12 @@ extern OSViContext* __osViCurr;
 extern OSViContext* __osViNext;
 extern OSViMode osViModeFpalLan1;
 extern u32 __additional_scanline;
-extern const char gBuildCreator[];
-extern const char gBuildDate[];
-extern const char gBuildMakeOption[];
-extern OSMesgQueue gPiMgrCmdQueue;
-extern OSViMode gViConfigMode;
-extern u8 gViConfigModeType;
+extern const char __Creator__[];
+extern const char __DateTime__[];
+extern const char __MakeOption__[];
+extern OSMesgQueue _PiMsgQ;
+extern OSViMode vimode;
+extern u8 vimode_no;
 extern OSMesgQueue __osPiAccessQueue;
 extern OSPiHandle __Dom1SpeedParam;
 extern OSPiHandle __Dom2SpeedParam;
@@ -67,162 +67,162 @@ extern OSTime __osCurrentTime;
 extern u32 __osBaseCounter;
 extern u32 __osViIntrCount;
 extern u32 __osTimerCounter;
-extern EffectSsOverlay gEffectSsOverlayTable[EFFECT_SS_TYPE_MAX];
-extern Gfx D_80116280[];
-extern ActorOverlay gActorOverlayTable[ACTOR_ID_MAX]; // original name: "actor_dlftbls" 801162A0
-extern s32 gMaxActorId; // original name: "MaxProfile"
-extern s32 gDebugCamEnabled;
-extern GameStateOverlay gGameStateOverlayTable[GAMESTATE_ID_MAX];
+extern EffectSsOverlay effect_ss2_dlftbls[EFFECT_SS_TYPE_MAX];
+extern Gfx Actor_change_render_mode[];
+extern ActorOverlay actor_dlftbls[ACTOR_ID_MAX]; // original name: "actor_dlftbls" 801162A0
+extern s32 actor_dlftbls_num; // original name: "MaxProfile"
+extern s32 debug_camera_sw;
+extern GameStateOverlay game_dlftbls[GAMESTATE_ID_MAX];
 extern s32 gZeldaArenaLogSeverity;
-extern MapData gMapDataTable;
-extern s16 gSpoilingItems[3];
-extern s16 gSpoilingItemReverts[3];
+extern MapData rom_map_exp_data_tbl;
+extern s16 Warashibe_item[3];
+extern s16 Warashibe_before_item[3];
 
-extern Gfx gEmptyDL[];
+extern Gfx dl_noop[];
 
-extern u16 gSramSlotOffsets[];
+extern u16 sram_save_address[];
 // 4 16-colors palettes
 extern u64 gMojiFontTLUTs[4][4]; // original name: "moji_tlut"
 extern u64 gMojiFontTex[]; // original name: "font_ff"
-extern u8 gBossMarkState;
+extern u8 LargeMapMark_MarkScaleMode;
 
 #if DEBUG_FEATURES
 extern u32 gIsCtrlr2Valid;
 #endif
-extern s16* gWaveSamples[9];
-extern f32 gBendPitchOneOctaveFrequencies[256];
-extern f32 gBendPitchTwoSemitonesFrequencies[256];
-extern f32 gPitchFrequencies[];
-extern u8 gDefaultShortNoteVelocityTable[16];
-extern u8 gDefaultShortNoteGateTimeTable[16];
-extern EnvelopePoint gDefaultEnvelope[4];
-extern NoteSubEu gZeroNoteSub;
-extern NoteSubEu gDefaultNoteSub;
-extern u16 gHaasEffectDelaySizes[64];
-extern s16 D_8012FBA8[];
-extern f32 gHeadsetPanVolume[128];
-extern f32 gStereoPanVolume[128];
-extern f32 gDefaultPanVolume[128];
-extern s16 gLowPassFilterData[16 * 8];
-extern s16 gHighPassFilterData[15 * 8];
-extern s32 gAudioContextInitialized;
-extern u8 gIsLargeSfxBank[7];
-extern u8 gChannelsPerBank[4][7];
-extern u8 gUsedChannelsPerBank[4][7];
-extern u8 gMorphaTransposeTable[16];
-extern u8* gFrogsSongPtr;
-extern OcarinaNote* gScarecrowLongSongPtr;
-extern u8* gScarecrowSpawnSongPtr;
-extern OcarinaSongButtons gOcarinaSongButtons[];
-extern SfxParams* gSfxParams[7];
+extern s16* WAVEMEM_TABLE[9];
+extern f32 PCENTTABLE[256];
+extern f32 PCENTTABLE2[256];
+extern f32 PITCHTABLE[];
+extern u8 DEFAULT_VTABLE[16];
+extern u8 DEFAULT_GTABLE[16];
+extern EnvelopePoint DEFAULT_ENV[4];
+extern NoteSubEu NA_CHINIT_TABLE;
+extern NoteSubEu NA_SVCINIT_TABLE;
+extern u16 CDELAYTABLE[64];
+extern s16 NOISEBOOK[];
+extern f32 PhoneLeft[128];
+extern f32 WideLeft[128];
+extern f32 StereoLeft[128];
+extern s16 LSF_TABLE[16 * 8];
+extern s16 HSF_TABLE[15 * 8];
+extern s32 AUDIO_SYSTEM_READY;
+extern u8 _se_handle_extend_senum[7];
+extern u8 _se_handle_sounds[4][7];
+extern u8 _se_handle_objsounds[4][7];
+extern u8 na_mofer_picth_up_table[16];
+extern u8* na_frog_tbl_ptr;
+extern OcarinaNote* na_oca_rec_buf_ptr;
+extern u8* na_oca_rec_buf2_ptr;
+extern OcarinaSongButtons na_oca_note[];
+extern SfxParams* se_indi_info_adrs[7];
 extern char D_80133390[];
 extern char D_80133398[];
-extern u8 gSfxRequestWriteIndex;
-extern u8 gSfxRequestReadIndex;
-extern SfxBankEntry* gSfxBanks[7];
-extern u8 gSfxBankSizes[];
-extern u8 gSfxChannelLayout;
-extern u16 D_801333D0;
-extern Vec3f gSfxDefaultPos;
-extern f32 gSfxDefaultFreqAndVolScale;
-extern s8 gSfxDefaultReverb;
+extern u8 _se_ent_writepoint;
+extern u8 _se_ent_readpoint;
+extern SfxBankEntry* EntrySeStatus[7];
+extern u8 SeEntryBufMax[];
+extern u8 se_scene_mode;
+extern u16 se_bgm_mute_flag;
+extern Vec3f _dummy_zero_f;
+extern f32 _dummy_one;
+extern s8 _dummy_zero_s8;
 #if DEBUG_FEATURES
 extern u8 D_801333F0;
 extern u8 gAudioSfxSwapOff;
 extern u8 D_801333F8;
 #endif
-extern u8 gSeqCmdWritePos;
-extern u8 gSeqCmdReadPos;
-extern u8 gStartSeqDisabled;
+extern u8 SeqFlagWritePoint;
+extern u8 SeqFlagReadPoint;
+extern u8 SeqStartCancel;
 #if DEBUG_FEATURES
 extern u8 gAudioDebugPrintSeqCmd;
 #endif
-extern u8 gSoundModeList[];
-extern u8 gAudioSpecId;
-extern u8 D_80133418;
-extern AudioSpec gAudioSpecs[18];
-extern s32 gOverlayLogSeverity;
+extern u8 SndOutTbl[];
+extern u8 SndSpecNum;
+extern u8 SpecBusyFlag;
+extern AudioSpec NA_SPEC_CONFIG[18];
+extern s32 loadfragment_verbose;
 extern s32 gSystemArenaLogSeverity;
 extern u8 __osPfsInodeCacheBank;
 extern s32 __osPfsLastChannel;
 
-extern TempoData gTempoData;
+extern TempoData AGC;
 extern AudioHeapInitSizes gAudioHeapInitSizes;
-extern s16 gOcarinaSongItemMap[];
-extern AudioTable gSoundFontTable;
-extern u8 gSequenceFontTable[];
-extern u8 gSequenceTable[];
-extern AudioTable gSampleBankTable;
+extern s16 ocarina_number[];
+extern AudioTable AudiobankHeaderStart;
+extern u8 AudiomapHeaderStart[];
+extern u8 AudioseqHeaderStart[];
+extern AudioTable AudiowaveHeaderStart;
 
-extern u8 gUseCutsceneCam;
-extern u16 D_8015FCCC;
-extern char D_8015FCD0[20];
-extern u8 D_8015FCE4;
-extern u16 gCamAtSplinePointsAppliedFrame;
-extern u16 gCamEyePointAppliedFrame;
-extern u16 gCamAtPointAppliedFrame;
+extern u8 DEMOCAM_SW;
+extern u16 E_demosetflg;
+extern char E_demokanri[20];
+extern u8 E_demo_no;
+extern u16 start_flame_bak2;
+extern u16 start_flame_bak3;
+extern u16 start_flame_bak4;
 
-extern LightningStrike gLightningStrike;
+extern LightningStrike Eleki;
 // TODO: These variables are here for BSS ordering but ideally they should not
 // be extern. This could be fixed by putting more stuff (e.g. struct definitions)
-// between gLightningStrike and gCustomLensFlareOn.
-extern s16 sLightningFlashAlpha;
-extern s16 sSunDepthTestX;
-extern s16 sSunDepthTestY;
-extern u8 gCustomLensFlareOn;
-extern Vec3f gCustomLensFlarePos;
-extern s16 gLensFlareScale;
-extern f32 gLensFlareColorIntensity;
-extern s16 gLensFlareGlareStrength;
-extern MapData* gMapData;
-extern f32 gBossMarkScale;
-extern u32 D_8016139C;
-extern PauseMapMarksData* gLoadedPauseMarkDataTable;
+// between Eleki and E_lf_flag.
+extern s16 E_eleki_alpha;
+extern s16 E_lens_x;
+extern s16 E_lens_y;
+extern u8 E_lf_flag;
+extern Vec3f E_lf_position;
+extern s16 E_lf_wscale;
+extern f32 E_lf_alpha;
+extern s16 E_lf_rectalpha;
+extern MapData* map_exp_data_tbl_p;
+extern f32 LargeMapMark_MarkScale;
+extern u32 LargeMapMark_NeedDraw;
+extern PauseMapMarksData* LargeMapMark_lmarkpos_p;
 
-extern PreNmiBuff* gAppNmiBufferPtr;
-extern Scheduler gScheduler;
-extern PadMgr gPadMgr;
-extern IrqMgr gIrqMgr;
-extern volatile OSTime gAudioThreadUpdateTimeTotalPerGfxTask;
-extern volatile OSTime gGfxTaskSentToNextReadyMinusAudioThreadUpdateTime;
-extern volatile OSTime gRSPAudioTimeTotal;
-extern volatile OSTime gRSPGfxTimeTotal;
-extern volatile OSTime gRDPTimeTotal;
-extern volatile OSTime gGraphUpdatePeriod;
-extern volatile OSTime gAudioThreadUpdateTimeStart;
-extern volatile OSTime gAudioThreadUpdateTimeAcc;
-extern volatile OSTime gRSPAudioTimeAcc;
-extern volatile OSTime gRSPGfxTimeAcc;
-extern volatile OSTime gRSPOtherTimeAcc;
-extern volatile OSTime D_8016A578;
-extern volatile OSTime gRDPTimeAcc;
+extern PreNmiBuff* z_nmibuf;
+extern Scheduler _sched;
+extern PadMgr padmgr;
+extern IrqMgr _irqmgr;
+extern volatile OSTime audio_cpu_time;
+extern volatile OSTime graph_cpu_time;
+extern volatile OSTime audio_rsp_time;
+extern volatile OSTime graph_rsp_time;
+extern volatile OSTime rdp_time;
+extern volatile OSTime frame_time;
+extern volatile OSTime audio_cpu_start_time;
+extern volatile OSTime audio_cpu_sum_time;
+extern volatile OSTime audio_rsp_sum_time;
+extern volatile OSTime graph_rsp_sum_time;
+extern volatile OSTime other_rsp_sum_time;
+extern volatile OSTime other_rsp_time;
+extern volatile OSTime rdp_sum_time;
 
-extern SfxBankEntry D_8016BAD0[9];
-extern SfxBankEntry D_8016BC80[12];
-extern SfxBankEntry D_8016BEC0[22];
-extern SfxBankEntry D_8016C2E0[20];
-extern SfxBankEntry D_8016C6A0[8];
-extern SfxBankEntry D_8016C820[3];
-extern SfxBankEntry D_8016C8B0[5];
-extern ActiveSfx gActiveSfx[7][MAX_CHANNELS_PER_BANK]; // total size = 0xA8
-extern u8 gSfxBankMuted[];
+extern SfxBankEntry EntrySeHandle_0[9];
+extern SfxBankEntry EntrySeHandle_1[12];
+extern SfxBankEntry EntrySeHandle_2[22];
+extern SfxBankEntry EntrySeHandle_3[20];
+extern SfxBankEntry EntrySeHandle_4[8];
+extern SfxBankEntry EntrySeHandle_5[3];
+extern SfxBankEntry EntrySeHandle_6[5];
+extern ActiveSfx play_next[7][MAX_CHANNELS_PER_BANK]; // total size = 0xA8
+extern u8 se_handle_lock_flag[];
 extern u16 gAudioSfxSwapSource[10];
 extern u16 gAudioSfxSwapTarget[10];
 extern u8 gAudioSfxSwapMode[10];
-extern ActiveSequence gActiveSeqs[4];
-extern AudioContext gAudioCtx;
-extern AudioCustomUpdateFunction gAudioCustomUpdateFunction;
+extern ActiveSequence SeqInterWork[4];
+extern AudioContext AG;
+extern AudioCustomUpdateFunction NA_VFRAME_CALLBACK;
 
 extern OSPifRam __osContPifRam;
 extern u8 __osContLastCmd;
 extern u8 __osMaxControllers;
 extern __OSInode __osPfsInodeCache;
 extern OSPifRam __osPfsPifRam;
-extern u16 gZBuffer[SCREEN_HEIGHT][SCREEN_WIDTH]; // 0x25800 bytes
-extern u64 gGfxSPTaskOutputBuffer[0x3000]; // 0x18000 bytes
-extern u64 gGfxSPTaskYieldBuffer[OS_YIELD_DATA_SIZE / sizeof(u64)]; // 0xC00 bytes
-extern u64 gGfxSPTaskStack[SP_DRAM_STACK_SIZE64]; // 0x400 bytes
-extern GfxPool gGfxPools[2]; // 0x24820 bytes
-extern u8 gAudioHeap[0x38000]; // 0x38000 bytes
+extern u16 sys_zb[SCREEN_HEIGHT][SCREEN_WIDTH]; // 0x25800 bytes
+extern u64 sys_fifo_buffer[0x3000]; // 0x18000 bytes
+extern u64 sys_yield_buffer[OS_YIELD_DATA_SIZE / sizeof(u64)]; // 0xC00 bytes
+extern u64 sys_dram_stack[SP_DRAM_STACK_SIZE64]; // 0x400 bytes
+extern GfxPool sys_dynamic[2]; // 0x24820 bytes
+extern u8 AUDIOHP[0x38000]; // 0x38000 bytes
 
 #endif

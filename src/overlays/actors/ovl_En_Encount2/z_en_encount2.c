@@ -23,16 +23,16 @@ typedef enum Encount2State {
     /* 0x2 */ ENCOUNT2_ACTIVE_GANONS_TOWER
 } Encount2State;
 
-void EnEncount2_Init(Actor* thisx, PlayState* play);
-void EnEncount2_Update(Actor* thisx, PlayState* play2);
-void EnEncount2_Draw(Actor* thisx, PlayState* play);
+void En_Encount2_actor_ct(Actor* thisx, PlayState* play);
+void En_Encount2_actor_move(Actor* thisx, PlayState* play2);
+void En_Encount2_actor_disp(Actor* thisx, PlayState* play);
 
-void EnEncount2_Wait(EnEncount2* this, PlayState* play);
-void EnEncount2_SpawnRocks(EnEncount2* this, PlayState* play);
+static void move_wait(EnEncount2* this, PlayState* play);
+void rock_up(EnEncount2* this, PlayState* play);
 
-void EnEncount2_SpawnEffect(EnEncount2* this, Vec3f* position, f32 scale);
-void EnEncount2_DrawEffects(Actor* thisx, PlayState* play);
-void EnEncount2_UpdateEffects(EnEncount2* this, PlayState* play);
+void encount1_eff_set(EnEncount2* this, Vec3f* position, f32 scale);
+void encount1_eff_disp(Actor* thisx, PlayState* play);
+void encount1_eff_move(EnEncount2* this, PlayState* play);
 
 ActorProfile En_Encount2_Profile = {
     /**/ ACTOR_EN_ENCOUNT2,
@@ -40,13 +40,13 @@ ActorProfile En_Encount2_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_EFC_STAR_FIELD,
     /**/ sizeof(EnEncount2),
-    /**/ EnEncount2_Init,
+    /**/ En_Encount2_actor_ct,
     /**/ NULL,
-    /**/ EnEncount2_Update,
-    /**/ EnEncount2_Draw,
+    /**/ En_Encount2_actor_move,
+    /**/ En_Encount2_actor_disp,
 };
 
-void EnEncount2_Init(Actor* thisx, PlayState* play) {
+void En_Encount2_actor_ct(Actor* thisx, PlayState* play) {
     EnEncount2* this = (EnEncount2*)thisx;
 
     if (play->sceneId != SCENE_DEATH_MOUNTAIN_TRAIL) {
@@ -59,7 +59,7 @@ void EnEncount2_Init(Actor* thisx, PlayState* play) {
         PRINTF(VT_FGCOL(GREEN) "☆☆☆☆☆ デスマウンテンエンカウント２セットされました ☆☆☆☆☆ %d\n" VT_RST,
                this->actor.params);
         if (LINK_IS_ADULT && GET_EVENTCHKINF(EVENTCHKINF_49)) { // flag for having used fire temple blue warp
-            Actor_Kill(thisx);
+            Actor_delete(thisx);
         }
     } else {
         PRINTF("\n\n");
@@ -68,10 +68,10 @@ void EnEncount2_Init(Actor* thisx, PlayState* play) {
                this->actor.params);
     }
 
-    this->actionFunc = EnEncount2_Wait;
+    this->actionFunc = move_wait;
 }
 
-void EnEncount2_Wait(EnEncount2* this, PlayState* play) {
+static void move_wait(EnEncount2* this, PlayState* play) {
     s32 pad;
     s16 quakeIndex;
     s16 spawnerState;
@@ -84,7 +84,7 @@ void EnEncount2_Wait(EnEncount2* this, PlayState* play) {
             (player->actor.world.pos.z > -3600.0f)) {
             spawnerState = ENCOUNT2_ACTIVE_DEATH_MOUNTAIN;
         }
-    } else if ((this->actor.xzDistToPlayer < 700.0f) && (Flags_GetSwitch(play, 0x37))) {
+    } else if ((this->actor.xzDistToPlayer < 700.0f) && (Actor_Environment_sw_Check(play, 0x37))) {
         s16 sceneId = play->sceneId;
 
         if (((sceneId == SCENE_GANON_BOSS) || (sceneId == SCENE_GANONS_TOWER_COLLAPSE_EXTERIOR) ||
@@ -104,10 +104,10 @@ void EnEncount2_Wait(EnEncount2* this, PlayState* play) {
             break;
         case ENCOUNT2_ACTIVE_DEATH_MOUNTAIN:
             if ((this->deathMountainSpawnerTimer == 1) || !this->isQuaking) {
-                quakeIndex = Quake_Request(GET_ACTIVE_CAM(play), QUAKE_TYPE_1);
-                Quake_SetSpeed(quakeIndex, 0x7FFF);
-                Quake_SetPerturbations(quakeIndex, 50, 0, 0, 0);
-                Quake_SetDuration(quakeIndex, 300);
+                quakeIndex = startQuake(GET_ACTIVE_CAM(play), QUAKE_TYPE_1);
+                setSpeedQuake(quakeIndex, 0x7FFF);
+                setScaleQuake(quakeIndex, 50, 0, 0, 0);
+                setTimerQuake(quakeIndex, 300);
                 this->isQuaking = true;
             }
             FALLTHROUGH;
@@ -119,13 +119,13 @@ void EnEncount2_Wait(EnEncount2* this, PlayState* play) {
             if (this->deathMountainSpawnerTimer == 0) {
                 this->deathMountainSpawnerTimer = 200;
                 this->numSpawnedRocks = 0;
-                this->actionFunc = EnEncount2_SpawnRocks;
+                this->actionFunc = rock_up;
             }
             break;
     }
 }
 
-void EnEncount2_SpawnRocks(EnEncount2* this, PlayState* play) {
+void rock_up(EnEncount2* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     EnFireRock* spawnedRock;
     f32 tempVec1X;
@@ -152,7 +152,7 @@ void EnEncount2_SpawnRocks(EnEncount2* this, PlayState* play) {
     if (!this->isNotDeathMountain) {
         if (this->deathMountainSpawnerTimer == 0) {
             this->deathMountainSpawnerTimer = 100;
-            this->actionFunc = EnEncount2_Wait;
+            this->actionFunc = move_wait;
             return;
         }
 
@@ -163,8 +163,8 @@ void EnEncount2_SpawnRocks(EnEncount2* this, PlayState* play) {
             spawnerState = ENCOUNT2_ACTIVE_DEATH_MOUNTAIN;
         }
 
-        Actor_PlaySfx(&this->actor, NA_SE_EV_VOLCANO - SFX_FLAG);
-    } else if ((this->actor.xzDistToPlayer < 700.0f) && (Flags_GetSwitch(play, 0x37) != 0)) {
+        Actor_SE_set(&this->actor, NA_SE_EV_VOLCANO - SFX_FLAG);
+    } else if ((this->actor.xzDistToPlayer < 700.0f) && (Actor_Environment_sw_Check(play, 0x37) != 0)) {
         s16 sceneId = play->sceneId;
 
         if (((sceneId == SCENE_GANON_BOSS) || (sceneId == SCENE_GANONS_TOWER_COLLAPSE_EXTERIOR) ||
@@ -193,15 +193,15 @@ void EnEncount2_SpawnRocks(EnEncount2* this, PlayState* play) {
 
         // Position between 160 and 200 units ahead of camera depending on camera pitch, plus a 400 unit offset in +y
         // (plus some random variation)
-        effectPos.x = Rand_CenteredFloat(200.0f) + (play->view.eye.x + (tempVec2X * 200.0f));
-        effectPos.y = Rand_CenteredFloat(50.0f) + tempVec1Y;
-        effectPos.z = Rand_CenteredFloat(200.0f) + (play->view.eye.z + (tempVec2Z * 200.0f));
-        effectScale = Rand_CenteredFloat(0.005f) + 0.007f;
+        effectPos.x = rnd_fx(200.0f) + (play->view.eye.x + (tempVec2X * 200.0f));
+        effectPos.y = rnd_fx(50.0f) + tempVec1Y;
+        effectPos.z = rnd_fx(200.0f) + (play->view.eye.z + (tempVec2Z * 200.0f));
+        effectScale = rnd_fx(0.005f) + 0.007f;
 
         if (spawnerState == ENCOUNT2_ACTIVE_DEATH_MOUNTAIN) {
-            EnEncount2_SpawnEffect(this, &effectPos, effectScale);
+            encount1_eff_set(this, &effectPos, effectScale);
         } else if (this->effectSpawnTimer == 0) {
-            EnEncount2_SpawnEffect(this, &effectPos, effectScale);
+            encount1_eff_set(this, &effectPos, effectScale);
             this->effectSpawnTimer = 5;
         }
 
@@ -209,20 +209,20 @@ void EnEncount2_SpawnRocks(EnEncount2* this, PlayState* play) {
             if (spawnerState == ENCOUNT2_ACTIVE_DEATH_MOUNTAIN) {
                 this->timerBetweenRockSpawns = 4;
                 spawnedRockType = FIRE_ROCK_SPAWNED_FALLING1;
-                if ((Rand_ZeroFloat(1.99f) < 1.0f) && !LINK_IS_ADULT) {
+                if ((rnd_f(1.99f) < 1.0f) && !LINK_IS_ADULT) {
                     // rock spawn pos X, Z near player
-                    tempVec2X = Rand_CenteredFloat(10.0f) + player->actor.world.pos.x;
-                    tempVec2Z = Rand_CenteredFloat(10.0f) + player->actor.world.pos.z;
+                    tempVec2X = rnd_fx(10.0f) + player->actor.world.pos.x;
+                    tempVec2Z = rnd_fx(10.0f) + player->actor.world.pos.z;
                 } else {
                     if (player->speedXZ != 0.0f) {
                         // rock spawn pos is between 300 and 600 units from the camera depending on the camera yaw.
                         // Rocks will generally spawn closer to the camera in the X axis than in the Z axis.
-                        tempVec2X = Rand_CenteredFloat(200.0f) + (play->view.eye.x + (tempVec2X * 300.0f));
-                        tempVec2Z = Rand_CenteredFloat(50.0f) + (play->view.eye.z + (tempVec2Z * 600.0f));
+                        tempVec2X = rnd_fx(200.0f) + (play->view.eye.x + (tempVec2X * 300.0f));
+                        tempVec2Z = rnd_fx(50.0f) + (play->view.eye.z + (tempVec2Z * 600.0f));
                     } else {
                         // rock spawn pos X, Z near player
-                        tempVec2X = Rand_CenteredFloat(10.0f) + player->actor.world.pos.x;
-                        tempVec2Z = Rand_CenteredFloat(10.0f) + player->actor.world.pos.z;
+                        tempVec2X = rnd_fx(10.0f) + player->actor.world.pos.x;
+                        tempVec2Z = rnd_fx(10.0f) + player->actor.world.pos.z;
                     }
                     spawnedRockType = FIRE_ROCK_SPAWNED_FALLING2;
                 }
@@ -230,16 +230,16 @@ void EnEncount2_SpawnRocks(EnEncount2* this, PlayState* play) {
                 this->timerBetweenRockSpawns = 50;
                 spawnedRockType = FIRE_ROCK_SPAWNED_FALLING2;
                 // rock spawn pos X,Z at a random position roughly 300 units ahead of camera
-                tempVec2X = Rand_CenteredFloat(100.0f) + tempVec1X;
-                tempVec2Z = Rand_CenteredFloat(100.0f) + tempVec1Z;
+                tempVec2X = rnd_fx(100.0f) + tempVec1X;
+                tempVec2Z = rnd_fx(100.0f) + tempVec1Z;
 
-                if (Rand_ZeroFloat(3.99f) < 1.0f) {
+                if (rnd_f(3.99f) < 1.0f) {
                     // rock spawn pos X,Z at a random position near player
-                    tempVec2X = Rand_CenteredFloat(70.0f) + player->actor.world.pos.x;
-                    tempVec2Z = Rand_CenteredFloat(70.0f) + player->actor.world.pos.z;
+                    tempVec2X = rnd_fx(70.0f) + player->actor.world.pos.x;
+                    tempVec2Z = rnd_fx(70.0f) + player->actor.world.pos.z;
                 }
             }
-            spawnedRock = (EnFireRock*)Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_EN_FIRE_ROCK,
+            spawnedRock = (EnFireRock*)Actor_info_make_child_actor(&play->actorCtx, &this->actor, play, ACTOR_EN_FIRE_ROCK,
                                                           tempVec2X, tempVec1Y, tempVec2Z, 0, 0, 0, spawnedRockType);
             if (spawnedRock != NULL) {
                 spawnedRock->spawner = this;
@@ -256,7 +256,7 @@ void EnEncount2_SpawnRocks(EnEncount2* this, PlayState* play) {
     }
 }
 
-void EnEncount2_Update(Actor* thisx, PlayState* play2) {
+void En_Encount2_actor_move(Actor* thisx, PlayState* play2) {
     EnEncount2* this = (EnEncount2*)thisx;
     PlayState* play = play2;
 
@@ -274,7 +274,7 @@ void EnEncount2_Update(Actor* thisx, PlayState* play2) {
 
     this->actionFunc(this, play);
 
-    EnEncount2_UpdateEffects(this, play);
+    encount1_eff_move(this, play);
 
     if (!this->isNotDeathMountain) {
         this->unk_17C = this->envEffectsTimer / 60.0f;
@@ -292,13 +292,13 @@ void EnEncount2_Update(Actor* thisx, PlayState* play2) {
     }
 }
 
-void EnEncount2_Draw(Actor* thisx, PlayState* play) {
+void En_Encount2_actor_disp(Actor* thisx, PlayState* play) {
     EnEncount2* this = (EnEncount2*)thisx;
 
-    EnEncount2_DrawEffects(&this->actor, play);
+    encount1_eff_disp(&this->actor, play);
 }
 
-void EnEncount2_SpawnEffect(EnEncount2* this, Vec3f* position, f32 scale) {
+void encount1_eff_set(EnEncount2* this, Vec3f* position, f32 scale) {
     EnEncount2Effect* effect = this->effects;
     s16 i;
 
@@ -309,16 +309,16 @@ void EnEncount2_SpawnEffect(EnEncount2* this, Vec3f* position, f32 scale) {
             effect->rot.x = 0.0f;
             effect->rot.y = 0.0f;
             effect->rot.z = 0.0f;
-            effect->moveDirection.x = Rand_CenteredFloat(20.0f);
+            effect->moveDirection.x = rnd_fx(20.0f);
             effect->moveDirection.y = -20.0f;
-            effect->moveDirection.z = Rand_CenteredFloat(20.0f);
+            effect->moveDirection.z = rnd_fx(20.0f);
             effect->isAlive = 1;
             break;
         }
     }
 }
 
-void EnEncount2_UpdateEffects(EnEncount2* this, PlayState* play) {
+void encount1_eff_move(EnEncount2* this, PlayState* play) {
     s16 i;
     EnEncount2Effect* effect = this->effects;
     Player* player = GET_PLAYER(play);
@@ -326,16 +326,16 @@ void EnEncount2_UpdateEffects(EnEncount2* this, PlayState* play) {
 
     for (i = 0; i < EN_ENCOUNT2_EFFECT_COUNT; effect++, i++) {
         if (effect->isAlive) {
-            effect->rot.x += Rand_ZeroOne() * 500.0f;
-            effect->rot.y += Rand_ZeroOne() * 500.0f;
-            effect->rot.z += Rand_ZeroOne() * 500.0f;
+            effect->rot.x += fqrand() * 500.0f;
+            effect->rot.y += fqrand() * 500.0f;
+            effect->rot.z += fqrand() * 500.0f;
             targetPos.x = effect->pos.x + effect->moveDirection.x;
             targetPos.y = effect->pos.y + effect->moveDirection.y;
             targetPos.z = effect->pos.z + effect->moveDirection.z;
-            Math_ApproachF(&effect->pos.x, targetPos.x, 0.3f, 30.0f);
-            Math_ApproachF(&effect->pos.y, targetPos.y, 0.8f, 250.0f);
-            Math_ApproachF(&effect->pos.z, targetPos.z, 0.3f, 30.0f);
-            Math_ApproachF(&effect->moveDirection.y, -20.0f, 0.9f, 1.0f);
+            add_calc2(&effect->pos.x, targetPos.x, 0.3f, 30.0f);
+            add_calc2(&effect->pos.y, targetPos.y, 0.8f, 250.0f);
+            add_calc2(&effect->pos.z, targetPos.z, 0.3f, 30.0f);
+            add_calc2(&effect->moveDirection.y, -20.0f, 0.9f, 1.0f);
 
             if (play->sceneId != SCENE_DEATH_MOUNTAIN_TRAIL) {
                 if (effect->pos.y < (player->actor.floorHeight - 50.0f)) {
@@ -348,7 +348,7 @@ void EnEncount2_UpdateEffects(EnEncount2* this, PlayState* play) {
     }
 }
 
-void EnEncount2_DrawEffects(Actor* thisx, PlayState* play) {
+void encount1_eff_disp(Actor* thisx, PlayState* play) {
     GraphicsContext* gfxCtx = play->state.gfxCtx;
     EnEncount2* this = (EnEncount2*)thisx;
     EnEncount2Effect* effect = this->effects;
@@ -357,7 +357,7 @@ void EnEncount2_DrawEffects(Actor* thisx, PlayState* play) {
 
     OPEN_DISPS(gfxCtx, "../z_en_encount2.c", 642);
 
-    objectSlot = Object_GetSlot(&play->objectCtx, OBJECT_EFC_STAR_FIELD);
+    objectSlot = Object_Exchange_bank_check(&play->objectCtx, OBJECT_EFC_STAR_FIELD);
 
     if (objectSlot >= 0) {
         gDPPipeSync(POLY_XLU_DISP++);
@@ -365,11 +365,11 @@ void EnEncount2_DrawEffects(Actor* thisx, PlayState* play) {
 
         for (i = 0; i < EN_ENCOUNT2_EFFECT_COUNT; effect++, i++) {
             if (effect->isAlive) {
-                Matrix_Translate(effect->pos.x, effect->pos.y, effect->pos.z, MTXMODE_NEW);
-                Matrix_RotateX(DEG_TO_RAD(effect->rot.x), MTXMODE_APPLY);
-                Matrix_RotateY(DEG_TO_RAD(effect->rot.y), MTXMODE_APPLY);
-                Matrix_RotateZ(DEG_TO_RAD(effect->rot.z), MTXMODE_APPLY);
-                Matrix_Scale(effect->scale, effect->scale, effect->scale, MTXMODE_APPLY);
+                Matrix_translate(effect->pos.x, effect->pos.y, effect->pos.z, MTXMODE_NEW);
+                Matrix_rotateX(DEG_TO_RAD(effect->rot.x), MTXMODE_APPLY);
+                Matrix_rotateY(DEG_TO_RAD(effect->rot.y), MTXMODE_APPLY);
+                Matrix_rotateZ(DEG_TO_RAD(effect->rot.z), MTXMODE_APPLY);
+                Matrix_scale(effect->scale, effect->scale, effect->scale, MTXMODE_APPLY);
                 gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, 255, 155, 55, 255);
                 gDPSetEnvColor(POLY_OPA_DISP++, 155, 255, 55, 255);
                 MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_en_encount2.c", 669);

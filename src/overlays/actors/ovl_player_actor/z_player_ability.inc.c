@@ -1,5 +1,5 @@
 // Used to map item IDs to item actions
-static s8 sItemActions[] = {
+static s8 item_type_data[] = {
     PLAYER_IA_DEKU_STICK,          // ITEM_DEKU_STICK
     PLAYER_IA_DEKU_NUT,            // ITEM_DEKU_NUT
     PLAYER_IA_BOMB,                // ITEM_BOMB

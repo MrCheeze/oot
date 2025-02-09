@@ -7,23 +7,23 @@
 #include "z_eff_ss_g_fire.h"
 #include "assets/objects/gameplay_keep/gameplay_keep.h"
 
-u32 EffectSsGFire_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
-void EffectSsGFire_Draw(PlayState* play, u32 index, EffectSs* this);
-void EffectSsGFire_Update(PlayState* play, u32 index, EffectSs* this);
+u32 Effect_SS2_G_Fire_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
+void Effect_SS_G_Fire_disp_mode(PlayState* play, u32 index, EffectSs* this);
+void Effect_SS_G_Fire_func_proc(PlayState* play, u32 index, EffectSs* this);
 
 EffectSsProfile Effect_Ss_G_Fire_Profile = {
     EFFECT_SS_G_FIRE,
-    EffectSsGFire_Init,
+    Effect_SS2_G_Fire_ct,
 };
 
-u32 EffectSsGFire_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
+u32 Effect_SS2_G_Fire_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
     EffectSsGFireInitParams* initParams = (EffectSsGFireInitParams*)initParamsx;
     Vec3f zeroVec = { 0.0f, 0.0f, 0.0f };
 
     this->velocity = this->accel = zeroVec;
     this->pos = initParams->pos;
-    this->draw = EffectSsGFire_Draw;
-    this->update = EffectSsGFire_Update;
+    this->draw = Effect_SS_G_Fire_disp_mode;
+    this->update = Effect_SS_G_Fire_func_proc;
     this->gfx = SEGMENTED_TO_VIRTUAL(gEffFireFootprintDL);
     this->life = 8;
     this->flags = 0;
@@ -42,16 +42,16 @@ u32 EffectSsGFire_Init(PlayState* play, u32 index, EffectSs* this, void* initPar
     return 1;
 }
 
-void EffectSsGFire_Draw(PlayState* play, u32 index, EffectSs* this) {
+void Effect_SS_G_Fire_disp_mode(PlayState* play, u32 index, EffectSs* this) {
     void* fireFootprintTextures[] = {
         gEffFireFootprint1Tex, gEffFireFootprint2Tex, gEffFireFootprint3Tex, gEffFireFootprint4Tex,
         gEffFireFootprint5Tex, gEffFireFootprint6Tex, gEffFireFootprint7Tex, gEffFireFootprint8Tex,
     };
     s16 texIdx = (this->rgTexIdx / 100) % 7;
 
-    EffectSs_DrawGEffect(play, this, fireFootprintTextures[texIdx]);
+    effect_disp_mode_sub(play, this, fireFootprintTextures[texIdx]);
 }
 
-void EffectSsGFire_Update(PlayState* play, u32 index, EffectSs* this) {
+void Effect_SS_G_Fire_func_proc(PlayState* play, u32 index, EffectSs* this) {
     this->rgTexIdx += this->rgTexIdxStep;
 }

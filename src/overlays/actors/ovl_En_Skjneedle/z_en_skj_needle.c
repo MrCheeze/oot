@@ -9,12 +9,12 @@
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE | ACTOR_FLAG_HOOKSHOT_PULLS_ACTOR)
 
-void EnSkjneedle_Init(Actor* thisx, PlayState* play);
-void EnSkjneedle_Destroy(Actor* thisx, PlayState* play);
-void EnSkjneedle_Update(Actor* thisx, PlayState* play2);
-void EnSkjneedle_Draw(Actor* thisx, PlayState* play);
+void En_Skjneedle_actor_ct(Actor* thisx, PlayState* play);
+void En_Skjneedle_actor_dt(Actor* thisx, PlayState* play);
+void En_Skjneedle_actor_move(Actor* thisx, PlayState* play2);
+void En_Skjneedle_actor_draw(Actor* thisx, PlayState* play);
 
-s32 EnSkjNeedle_CollisionCheck(EnSkjneedle* this);
+s32 Skjneedle_Cross(EnSkjneedle* this);
 
 ActorProfile En_Skjneedle_Profile = {
     /**/ ACTOR_EN_SKJNEEDLE,
@@ -22,13 +22,13 @@ ActorProfile En_Skjneedle_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_SKJ,
     /**/ sizeof(EnSkjneedle),
-    /**/ EnSkjneedle_Init,
-    /**/ EnSkjneedle_Destroy,
-    /**/ EnSkjneedle_Update,
-    /**/ EnSkjneedle_Draw,
+    /**/ En_Skjneedle_actor_ct,
+    /**/ En_Skjneedle_actor_dt,
+    /**/ En_Skjneedle_actor_move,
+    /**/ En_Skjneedle_actor_draw,
 };
 
-static ColliderCylinderInitType1 sCylinderInit = {
+static ColliderCylinderInitType1 EnSkjOcInfoData = {
     {
         COL_MATERIAL_HIT1,
         AT_ON | AT_TYPE_ENEMY,
@@ -47,29 +47,29 @@ static ColliderCylinderInitType1 sCylinderInit = {
     { 10, 4, -2, { 0, 0, 0 } },
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_U8(attentionRangeType, ATTENTION_RANGE_2, ICHAIN_CONTINUE),
     ICHAIN_F32(lockOnArrowOffset, 30, ICHAIN_STOP),
 };
 
-void EnSkjneedle_Init(Actor* thisx, PlayState* play) {
+void En_Skjneedle_actor_ct(Actor* thisx, PlayState* play) {
     EnSkjneedle* this = (EnSkjneedle*)thisx;
 
-    Actor_ProcessInitChain(&this->actor, sInitChain);
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinderType1(play, &this->collider, &this->actor, &sCylinderInit);
-    ActorShape_Init(&this->actor.shape, 0, ActorShadow_DrawCircle, 20.0f);
+    ValueSet_process(&this->actor, value_init);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set3(play, &this->collider, &this->actor, &EnSkjOcInfoData);
+    Shape_Info_init(&this->actor.shape, 0, Actor_shadow_circle, 20.0f);
     thisx->flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
-    Actor_SetScale(&this->actor, 0.01f);
+    Actor_set_scale(&this->actor, 0.01f);
 }
 
-void EnSkjneedle_Destroy(Actor* thisx, PlayState* play) {
+void En_Skjneedle_actor_dt(Actor* thisx, PlayState* play) {
     EnSkjneedle* this = (EnSkjneedle*)thisx;
 
-    Collider_DestroyCylinder(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider);
 }
 
-s32 EnSkjNeedle_CollisionCheck(EnSkjneedle* this) {
+s32 Skjneedle_Cross(EnSkjneedle* this) {
     if (this->collider.base.atFlags & AT_HIT) {
         this->collider.base.acFlags &= ~AC_HIT;
         return 1;
@@ -77,7 +77,7 @@ s32 EnSkjNeedle_CollisionCheck(EnSkjneedle* this) {
     return 0;
 }
 
-void EnSkjneedle_Update(Actor* thisx, PlayState* play2) {
+void En_Skjneedle_actor_move(Actor* thisx, PlayState* play2) {
     EnSkjneedle* this = (EnSkjneedle*)thisx;
     PlayState* play = play2;
 
@@ -85,25 +85,25 @@ void EnSkjneedle_Update(Actor* thisx, PlayState* play2) {
     if (this->killTimer != 0) {
         this->killTimer--;
     }
-    if (EnSkjNeedle_CollisionCheck(this) || this->killTimer == 0) {
-        Actor_Kill(&this->actor);
+    if (Skjneedle_Cross(this) || this->killTimer == 0) {
+        Actor_delete(&this->actor);
     } else {
-        Actor_SetScale(&this->actor, 0.01f);
-        Collider_UpdateCylinder(&this->actor, &this->collider);
-        CollisionCheck_SetAT(play, &play->colChkCtx, &this->collider.base);
-        CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
-        Actor_MoveXZGravity(&this->actor);
-        Actor_UpdateBgCheckInfo(play, &this->actor, 20.0f, 20.0f, 20.0f,
+        Actor_set_scale(&this->actor, 0.01f);
+        CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
+        CollisionCheck_setAT(play, &play->colChkCtx, &this->collider.base);
+        CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
+        Actor_position_moveF(&this->actor);
+        Actor_BGcheck2(play, &this->actor, 20.0f, 20.0f, 20.0f,
                                 UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_1 | UPDBGCHECKINFO_FLAG_2);
     }
 }
 
-void EnSkjneedle_Draw(Actor* thisx, PlayState* play) {
+void En_Skjneedle_actor_draw(Actor* thisx, PlayState* play) {
     s32 pad;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_skj_needle.c", 200);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_en_skj_needle.c", 205);
     gSPDisplayList(POLY_OPA_DISP++, gSkullKidNeedleDL);
 

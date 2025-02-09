@@ -1,7 +1,7 @@
 <Root>
     <File Name="ovl_En_Bili" OutName="z_en_bili">
-        <DList Name="D_809C16F0" Offset="0x0"/>
-        <DList Name="D_809C1700" Offset="0x10"/>
+        <DList Name="reverse_combine_mode" Offset="0x0"/>
+        <DList Name="normal_combine_mode" Offset="0x10"/>
 
     </File>
 </Root>

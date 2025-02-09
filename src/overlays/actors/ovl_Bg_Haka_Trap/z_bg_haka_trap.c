@@ -20,25 +20,25 @@
 
 #define FLAGS 0
 
-void BgHakaTrap_Init(Actor* thisx, PlayState* play);
-void BgHakaTrap_Destroy(Actor* thisx, PlayState* play);
-void BgHakaTrap_Update(Actor* thisx, PlayState* play);
-void BgHakaTrap_Draw(Actor* thisx, PlayState* play);
+void Bg_Haka_Trap_actor_ct(Actor* thisx, PlayState* play);
+void Bg_Haka_Trap_actor_dt(Actor* thisx, PlayState* play);
+void Bg_Haka_Trap_actor_move(Actor* thisx, PlayState* play);
+void Bg_Haka_Trap_actor_draw(Actor* thisx, PlayState* play);
 
-void func_8087FFC0(BgHakaTrap* this, PlayState* play);
-void func_808801B8(BgHakaTrap* this, PlayState* play);
-void func_808802D8(BgHakaTrap* this, PlayState* play);
-void func_80880484(BgHakaTrap* this, PlayState* play);
-void func_808805C0(BgHakaTrap* this, PlayState* play);
-void func_808806BC(BgHakaTrap* this, PlayState* play);
-void func_808808F4(BgHakaTrap* this, PlayState* play);
-void func_808809B0(BgHakaTrap* this, PlayState* play);
-void func_808809E4(BgHakaTrap* this, PlayState* play, s16 arg2);
-void func_80880AE8(BgHakaTrap* this, PlayState* play);
-void func_80880C0C(BgHakaTrap* this, PlayState* play);
-void func_80880D68(BgHakaTrap* this);
+void set_haka_trap_at_pipe(BgHakaTrap* this, PlayState* play);
+void mode_hasami_move(BgHakaTrap* this, PlayState* play);
+void mode_hasami_fire(BgHakaTrap* this, PlayState* play);
+void mode_girotin_down(BgHakaTrap* this, PlayState* play);
+void mode_girotin_up(BgHakaTrap* this, PlayState* play);
+void mode_kenzan_down(BgHakaTrap* this, PlayState* play);
+void mode_kenzan_up(BgHakaTrap* this, PlayState* play);
+void mode_fofo_stop(BgHakaTrap* this, PlayState* play);
+void fofo_set_player_power(BgHakaTrap* this, PlayState* play, s16 arg2);
+void mode_fofo_ready(BgHakaTrap* this, PlayState* play);
+void mode_fofo_rotate(BgHakaTrap* this, PlayState* play);
+void set_haka_hasami_ac_tris(BgHakaTrap* this);
 
-static UNK_TYPE D_80880F30 = 0;
+static UNK_TYPE work_flg = 0;
 
 ActorProfile Bg_Haka_Trap_Profile = {
     /**/ ACTOR_BG_HAKA_TRAP,
@@ -46,13 +46,13 @@ ActorProfile Bg_Haka_Trap_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_HAKA_OBJECTS,
     /**/ sizeof(BgHakaTrap),
-    /**/ BgHakaTrap_Init,
-    /**/ BgHakaTrap_Destroy,
-    /**/ BgHakaTrap_Update,
-    /**/ BgHakaTrap_Draw,
+    /**/ Bg_Haka_Trap_actor_ct,
+    /**/ Bg_Haka_Trap_actor_dt,
+    /**/ Bg_Haka_Trap_actor_move,
+    /**/ Bg_Haka_Trap_actor_draw,
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit HakaTrapAtPipeData = {
     {
         COL_MATERIAL_METAL,
         AT_ON | AT_TYPE_ENEMY,
@@ -72,7 +72,7 @@ static ColliderCylinderInit sCylinderInit = {
     { 30, 90, 0, { 0, 0, 0 } },
 };
 
-static ColliderTrisElementInit sTrisElementsInit[2] = {
+static ColliderTrisElementInit HakaHasamiAcTrisElemData[2] = {
     {
         {
             ELEM_MATERIAL_UNK0,
@@ -97,7 +97,7 @@ static ColliderTrisElementInit sTrisElementsInit[2] = {
     },
 };
 
-static ColliderTrisInit sTrisInit = {
+static ColliderTrisInit HakaHasamiAcTrisData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -107,27 +107,27 @@ static ColliderTrisInit sTrisInit = {
         COLSHAPE_TRIS,
     },
     2,
-    sTrisElementsInit,
+    HakaHasamiAcTrisElemData,
 };
 
-static CollisionCheckInfoInit sColChkInfoInit = { 0, 80, 100, MASS_IMMOVABLE };
+static CollisionCheckInfoInit HakaTrapStatusData = { 0, 80, 100, MASS_IMMOVABLE };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_STOP),
 };
 
-void BgHakaTrap_Init(Actor* thisx, PlayState* play) {
-    static UNK_TYPE D_80881014 = 0;
+void Bg_Haka_Trap_actor_ct(Actor* thisx, PlayState* play) {
+    static UNK_TYPE tmp_data = 0;
     BgHakaTrap* this = (BgHakaTrap*)thisx;
     s32 pad;
     CollisionHeader* colHeader = NULL;
 
-    Actor_ProcessInitChain(thisx, sInitChain);
+    ValueSet_process(thisx, value_init);
     thisx->params &= 0xFF;
 
     if (thisx->params != HAKA_TRAP_PROPELLER) {
-        Collider_InitCylinder(play, &this->colliderCylinder);
-        Collider_SetCylinder(play, &this->colliderCylinder, thisx, &sCylinderInit);
+        ClObjPipe_ct(play, &this->colliderCylinder);
+        ClObjPipe_set5(play, &this->colliderCylinder, thisx, &HakaTrapAtPipeData);
 
         if ((thisx->params == HAKA_TRAP_GUILLOTINE_SLOW) || (thisx->params == HAKA_TRAP_GUILLOTINE_FAST)) {
             this->timer = 20;
@@ -139,21 +139,21 @@ void BgHakaTrap_Init(Actor* thisx, PlayState* play) {
                 this->unk_16A = 1;
             }
 
-            this->actionFunc = func_80880484;
+            this->actionFunc = mode_girotin_down;
         } else {
-            DynaPolyActor_Init(&this->dyna, DYNA_TRANSFORM_POS);
+            MoveBG_ct(&this->dyna, DYNA_TRANSFORM_POS);
             thisx->flags |= ACTOR_FLAG_UPDATE_CULLING_DISABLED;
 
             if (thisx->params == HAKA_TRAP_SPIKED_BOX) {
-                CollisionHeader_GetVirtual(&object_haka_objects_Col_009CD0, &colHeader);
+                DynaPolyUty_bgdi_SG2KSG(&object_haka_objects_Col_009CD0, &colHeader);
                 this->timer = 30;
 
-                if (D_80881014 != 0) {
-                    this->actionFunc = func_808808F4;
-                    D_80881014 = 0;
+                if (tmp_data != 0) {
+                    this->actionFunc = mode_kenzan_up;
+                    tmp_data = 0;
                 } else {
-                    D_80881014 = 1;
-                    this->actionFunc = func_808806BC;
+                    tmp_data = 1;
+                    this->actionFunc = mode_kenzan_down;
                     thisx->velocity.y = 0.5f;
                 }
 
@@ -164,15 +164,15 @@ void BgHakaTrap_Init(Actor* thisx, PlayState* play) {
                 this->colliderCylinder.dim.height = 40;
             } else {
                 if (thisx->params == HAKA_TRAP_SPIKED_WALL) {
-                    CollisionHeader_GetVirtual(&object_haka_objects_Col_0081D0, &colHeader);
+                    DynaPolyUty_bgdi_SG2KSG(&object_haka_objects_Col_0081D0, &colHeader);
                     thisx->home.pos.x -= 200.0f;
                 } else {
                     thisx->home.pos.x += 200.0f;
-                    CollisionHeader_GetVirtual(&object_haka_objects_Col_008D10, &colHeader);
+                    DynaPolyUty_bgdi_SG2KSG(&object_haka_objects_Col_008D10, &colHeader);
                 }
 
-                Collider_InitTris(play, &this->colliderSpikes);
-                Collider_SetTris(play, &this->colliderSpikes, thisx, &sTrisInit, this->colliderSpikesItem);
+                ClObjTris_ct(play, &this->colliderSpikes);
+                ClObjTris_set5_nzm(play, &this->colliderSpikes, thisx, &HakaHasamiAcTrisData, this->colliderSpikesItem);
 
                 this->colliderCylinder.dim.radius = 18;
                 this->colliderCylinder.dim.height = 115;
@@ -180,49 +180,49 @@ void BgHakaTrap_Init(Actor* thisx, PlayState* play) {
                 this->colliderCylinder.elem.atElemFlags &= ~ATELEM_SFX_NORMAL;
                 this->colliderCylinder.elem.atElemFlags |= ATELEM_SFX_WOOD;
 
-                this->actionFunc = func_808801B8;
+                this->actionFunc = mode_hasami_move;
             }
 
-            this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, thisx, colHeader);
+            this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, thisx, colHeader);
         }
     } else {
         this->timer = 40;
-        this->actionFunc = func_808809B0;
+        this->actionFunc = mode_fofo_stop;
         thisx->cullingVolumeScale = 500.0f;
     }
 
-    CollisionCheck_SetInfo(&thisx->colChkInfo, NULL, &sColChkInfoInit);
+    CollisionCheck_Status_set2(&thisx->colChkInfo, NULL, &HakaTrapStatusData);
 }
 
-void BgHakaTrap_Destroy(Actor* thisx, PlayState* play) {
+void Bg_Haka_Trap_actor_dt(Actor* thisx, PlayState* play) {
     BgHakaTrap* this = (BgHakaTrap*)thisx;
 
     if (this->dyna.actor.params != HAKA_TRAP_PROPELLER) {
         if (this->dyna.actor.params != HAKA_TRAP_GUILLOTINE_SLOW) {
-            DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+            DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
             if ((this->dyna.actor.params == HAKA_TRAP_SPIKED_WALL) ||
                 (this->dyna.actor.params == HAKA_TRAP_SPIKED_WALL_2)) {
-                Collider_DestroyTris(play, &this->colliderSpikes);
+                ClObjTris_dt_nzf(play, &this->colliderSpikes);
             }
         }
 
-        Collider_DestroyCylinder(play, &this->colliderCylinder);
+        ClObjPipe_dt(play, &this->colliderCylinder);
     }
 
-    Audio_StopSfxByPos(&this->unk_16C);
+    Nai_StopAllObjFx(&this->unk_16C);
 }
 
-void func_8087FFC0(BgHakaTrap* this, PlayState* play) {
+void set_haka_trap_at_pipe(BgHakaTrap* this, PlayState* play) {
     f32 cosine;
     Vec3f sp28;
     f32 sine;
     f32 zNonNegative;
     Player* player = GET_PLAYER(play);
 
-    Actor_WorldToActorCoords(&this->dyna.actor, &sp28, &player->actor.world.pos);
+    Actor_search_position_project_distanceXZ(&this->dyna.actor, &sp28, &player->actor.world.pos);
 
-    sine = Math_SinS(this->dyna.actor.shape.rot.y);
-    cosine = Math_CosS(this->dyna.actor.shape.rot.y);
+    sine = sin_s(this->dyna.actor.shape.rot.y);
+    cosine = cos_s(this->dyna.actor.shape.rot.y);
     if (this->dyna.actor.params == HAKA_TRAP_GUILLOTINE_SLOW) {
         sp28.x = CLAMP(sp28.x, -50.0f, 50.0f);
         zNonNegative = (sp28.z >= 0.0f) ? 1.0f : -1.0f;
@@ -237,34 +237,34 @@ void func_8087FFC0(BgHakaTrap* this, PlayState* play) {
     this->colliderCylinder.dim.pos.z = this->dyna.actor.world.pos.z + sp28.x * sine + sp28.z * cosine;
 }
 
-void func_808801B8(BgHakaTrap* this, PlayState* play) {
-    static UNK_TYPE D_80881018 = 0;
+void mode_hasami_move(BgHakaTrap* this, PlayState* play) {
+    static UNK_TYPE stop_flg = 0;
     Player* player = GET_PLAYER(play);
 
-    if ((D_80880F30 == 0) && (!Player_InCsMode(play))) {
-        if (!Math_StepToF(&this->dyna.actor.world.pos.x, this->dyna.actor.home.pos.x, 0.5f)) {
-            Actor_PlaySfx_Flagged(&this->dyna.actor, NA_SE_EV_TRAP_OBJ_SLIDE - SFX_FLAG);
+    if ((work_flg == 0) && (!player_demo_check(play))) {
+        if (!chase_f(&this->dyna.actor.world.pos.x, this->dyna.actor.home.pos.x, 0.5f)) {
+            Actor_level_SE_set(&this->dyna.actor, NA_SE_EV_TRAP_OBJ_SLIDE - SFX_FLAG);
         } else if (this->dyna.actor.params == HAKA_TRAP_SPIKED_WALL) {
-            D_80881018 |= 1;
+            stop_flg |= 1;
         } else if (this->dyna.actor.params == HAKA_TRAP_SPIKED_WALL_2) {
-            D_80881018 |= 2;
+            stop_flg |= 2;
         }
     }
 
-    func_8087FFC0(this, play);
+    set_haka_trap_at_pipe(this, play);
 
     if (this->colliderSpikes.base.acFlags & AC_HIT) {
         this->timer = 20;
-        D_80880F30 = 1;
-        this->actionFunc = func_808802D8;
-    } else if (D_80881018 == 3) {
-        D_80881018 = 4;
+        work_flg = 1;
+        this->actionFunc = mode_hasami_fire;
+    } else if (stop_flg == 3) {
+        stop_flg = 4;
         player->actor.bgCheckFlags |= BGCHECKFLAG_CRUSHED;
     }
 }
 
-void func_808802D8(BgHakaTrap* this, PlayState* play) {
-    static Vec3f zeroVec = { 0.0f, 0.0f, 0.0f };
+void mode_hasami_fire(BgHakaTrap* this, PlayState* play) {
+    static Vec3f zero_vec = { 0.0f, 0.0f, 0.0f };
     Vec3f vector;
     f32 xScale;
     s32 i;
@@ -273,27 +273,27 @@ void func_808802D8(BgHakaTrap* this, PlayState* play) {
         this->timer--;
     }
 
-    Actor_PlaySfx_Flagged(&this->dyna.actor, NA_SE_EV_BURN_OUT - SFX_FLAG);
+    Actor_level_SE_set(&this->dyna.actor, NA_SE_EV_BURN_OUT - SFX_FLAG);
 
     for (i = 0; i < 2; i++) {
-        f32 rand = Rand_ZeroOne();
+        f32 rand = fqrand();
 
         xScale = (this->dyna.actor.params == HAKA_TRAP_SPIKED_WALL) ? -30.0f : 30.0f;
 
         vector.x = xScale * rand + this->dyna.actor.world.pos.x;
-        vector.y = Rand_ZeroOne() * 10.0f + this->dyna.actor.world.pos.y + 30.0f;
-        vector.z = Rand_CenteredFloat(320.0f) + this->dyna.actor.world.pos.z;
+        vector.y = fqrand() * 10.0f + this->dyna.actor.world.pos.y + 30.0f;
+        vector.z = rnd_fx(320.0f) + this->dyna.actor.world.pos.z;
 
-        EffectSsDeadDb_Spawn(play, &vector, &zeroVec, &zeroVec, 130, 20, 255, 255, 150, 170, 255, 0, 0, 1, 9, false);
+        _Effect_SS_Db_ct(play, &vector, &zero_vec, &zero_vec, 130, 20, 255, 255, 150, 170, 255, 0, 0, 1, 9, false);
     }
 
     if (this->timer == 0) {
-        D_80880F30 = 0;
-        Actor_Kill(&this->dyna.actor);
+        work_flg = 0;
+        Actor_delete(&this->dyna.actor);
     }
 }
 
-void func_80880484(BgHakaTrap* this, PlayState* play) {
+void mode_girotin_down(BgHakaTrap* this, PlayState* play) {
     s32 sp24;
     s32 timer;
 
@@ -308,43 +308,43 @@ void func_80880484(BgHakaTrap* this, PlayState* play) {
     }
 
     sp24 =
-        Math_StepToF(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y - 185.0f, this->dyna.actor.velocity.y);
+        chase_f(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y - 185.0f, this->dyna.actor.velocity.y);
     timer = this->timer;
 
     if ((timer == 10 && !this->unk_16A) || (timer == 13 && this->unk_16A)) {
-        Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_GUILLOTINE_BOUND);
+        Actor_SE_set(&this->dyna.actor, NA_SE_EV_GUILLOTINE_BOUND);
     }
 
     if (this->timer == 0) {
         this->dyna.actor.velocity.y = 0.0f;
         this->timer = (this->unk_16A) ? 10 : 40;
-        Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_GUILLOTINE_UP);
-        this->actionFunc = func_808805C0;
+        Actor_SE_set(&this->dyna.actor, NA_SE_EV_GUILLOTINE_UP);
+        this->actionFunc = mode_girotin_up;
     }
 
-    func_8087FFC0(this, play);
+    set_haka_trap_at_pipe(this, play);
 
     if (sp24 == 0) {
-        CollisionCheck_SetAT(play, &play->colChkCtx, &this->colliderCylinder.base);
+        CollisionCheck_setAT(play, &play->colChkCtx, &this->colliderCylinder.base);
     }
 }
 
-void func_808805C0(BgHakaTrap* this, PlayState* play) {
+void mode_girotin_up(BgHakaTrap* this, PlayState* play) {
     if (this->timer != 0) {
         this->timer--;
     }
 
     if (this->unk_16A) {
-        Math_StepToF(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y, 27.0f);
+        chase_f(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y, 27.0f);
     } else {
         if (this->timer > 20) {
-            Math_StepToF(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y - 90.0f, 9.0f);
+            chase_f(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y - 90.0f, 9.0f);
         } else {
-            Math_StepToF(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y, 4.5f);
+            chase_f(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y, 4.5f);
         }
 
         if (this->timer == 20) {
-            Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_GUILLOTINE_UP);
+            Actor_SE_set(&this->dyna.actor, NA_SE_EV_GUILLOTINE_UP);
         }
     }
 
@@ -352,13 +352,13 @@ void func_808805C0(BgHakaTrap* this, PlayState* play) {
         this->timer = 20;
         this->dyna.actor.world.pos.y = this->dyna.actor.home.pos.y;
         this->dyna.actor.velocity.y = 0.1f;
-        this->actionFunc = func_80880484;
+        this->actionFunc = mode_girotin_down;
     }
 
-    func_8087FFC0(this, play);
+    set_haka_trap_at_pipe(this, play);
 }
 
-void func_808806BC(BgHakaTrap* this, PlayState* play) {
+void mode_kenzan_down(BgHakaTrap* this, PlayState* play) {
     Vec3f vector;
     f32 floorHeight;
     f32 yIntersect;
@@ -379,7 +379,7 @@ void func_808806BC(BgHakaTrap* this, PlayState* play) {
 
     for (i = 0; i < 3; i++) {
         yIntersect =
-            BgCheck_EntityRaycastDown4(&play->colCtx, &this->dyna.actor.floorPoly, &bgId, &this->dyna.actor, &vector) -
+            T_BGCheck_ObjGroundCheck_aiac(&play->colCtx, &this->dyna.actor.floorPoly, &bgId, &this->dyna.actor, &vector) -
             25.0f;
         if (floorHeight < yIntersect) {
             floorHeight = yIntersect;
@@ -388,15 +388,15 @@ void func_808806BC(BgHakaTrap* this, PlayState* play) {
         vector.x -= 90.0f;
     }
 
-    if (Math_StepToF(&this->dyna.actor.world.pos.y, floorHeight, this->dyna.actor.velocity.y)) {
+    if (chase_f(&this->dyna.actor.world.pos.y, floorHeight, this->dyna.actor.velocity.y)) {
         if (this->dyna.actor.velocity.y > 0.01f) {
-            Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_TRAP_BOUND);
+            Actor_SE_set(&this->dyna.actor, NA_SE_EV_TRAP_BOUND);
         }
         this->dyna.actor.velocity.y = 0.0f;
     }
 
     if (this->dyna.actor.velocity.y >= 0.01f) {
-        Actor_PlaySfx_Flagged(&this->dyna.actor, NA_SE_EV_CHINETRAP_DOWN - SFX_FLAG);
+        Actor_level_SE_set(&this->dyna.actor, NA_SE_EV_CHINETRAP_DOWN - SFX_FLAG);
     }
 
     if (this->timer == 0) {
@@ -405,44 +405,44 @@ void func_808806BC(BgHakaTrap* this, PlayState* play) {
         this->unk_16A = (s16)this->dyna.actor.world.pos.y + 50.0f;
         this->unk_16A = CLAMP_MAX(this->unk_16A, this->dyna.actor.home.pos.y);
 
-        this->actionFunc = func_808808F4;
+        this->actionFunc = mode_kenzan_up;
     }
 }
 
-void func_808808F4(BgHakaTrap* this, PlayState* play) {
+void mode_kenzan_up(BgHakaTrap* this, PlayState* play) {
     if (this->timer != 0) {
         this->timer--;
     }
 
     if (this->timer > 20) {
-        this->unk_169 = Math_StepToF(&this->dyna.actor.world.pos.y, this->unk_16A, 15.0f);
+        this->unk_169 = chase_f(&this->dyna.actor.world.pos.y, this->unk_16A, 15.0f);
     } else {
-        this->unk_169 = Math_StepToF(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y, 20.0f);
+        this->unk_169 = chase_f(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y, 20.0f);
     }
 
     if (this->timer == 0) {
         this->timer = 30;
         this->dyna.actor.world.pos.y = this->dyna.actor.home.pos.y;
         this->dyna.actor.velocity.y = 0.5f;
-        this->actionFunc = func_808806BC;
+        this->actionFunc = mode_kenzan_down;
     }
 }
 
-void func_808809B0(BgHakaTrap* this, PlayState* play) {
+void mode_fofo_stop(BgHakaTrap* this, PlayState* play) {
     if (this->timer != 0) {
         this->timer -= 1;
     }
 
     if (this->timer == 0) {
-        this->actionFunc = func_80880AE8;
+        this->actionFunc = mode_fofo_ready;
     }
 }
 
-void func_808809E4(BgHakaTrap* this, PlayState* play, s16 arg2) {
+void fofo_set_player_power(BgHakaTrap* this, PlayState* play, s16 arg2) {
     Player* player = GET_PLAYER(play);
     Vec3f sp18;
 
-    Actor_WorldToActorCoords(&this->dyna.actor, &sp18, &player->actor.world.pos);
+    Actor_search_position_project_distanceXZ(&this->dyna.actor, &sp18, &player->actor.world.pos);
 
     if ((fabsf(sp18.x) < 70.0f) && (fabsf(sp18.y) < 100.0f) && (sp18.z < 500.0f) &&
         (GET_PLAYER(play)->currentBoots != PLAYER_BOOTS_IRON)) {
@@ -451,44 +451,44 @@ void func_808809E4(BgHakaTrap* this, PlayState* play, s16 arg2) {
     }
 }
 
-void func_80880AE8(BgHakaTrap* this, PlayState* play) {
+void mode_fofo_ready(BgHakaTrap* this, PlayState* play) {
     if (this->timer != 0) {
-        if (Math_ScaledStepToS(&this->dyna.actor.world.rot.z, 0, this->dyna.actor.world.rot.z * 0.03f + 5.0f)) {
+        if (chase_angle(&this->dyna.actor.world.rot.z, 0, this->dyna.actor.world.rot.z * 0.03f + 5.0f)) {
             this->timer = 40;
-            this->actionFunc = func_808809B0;
+            this->actionFunc = mode_fofo_stop;
         }
     } else {
-        if (Math_ScaledStepToS(&this->dyna.actor.world.rot.z, 0x3A00, this->dyna.actor.world.rot.z * 0.03f + 5.0f)) {
+        if (chase_angle(&this->dyna.actor.world.rot.z, 0x3A00, this->dyna.actor.world.rot.z * 0.03f + 5.0f)) {
             this->timer = 100;
-            this->actionFunc = func_80880C0C;
+            this->actionFunc = mode_fofo_rotate;
         }
     }
 
     this->dyna.actor.shape.rot.z += this->dyna.actor.world.rot.z;
     if (this->dyna.actor.world.rot.z >= 0x1801) {
-        Actor_PlaySfx_Flagged(&this->dyna.actor, NA_SE_EV_WIND_TRAP - SFX_FLAG);
+        Actor_level_SE_set(&this->dyna.actor, NA_SE_EV_WIND_TRAP - SFX_FLAG);
     }
 
-    func_808809E4(this, play, this->dyna.actor.world.rot.z);
+    fofo_set_player_power(this, play, this->dyna.actor.world.rot.z);
 }
 
-void func_80880C0C(BgHakaTrap* this, PlayState* play) {
+void mode_fofo_rotate(BgHakaTrap* this, PlayState* play) {
     if (this->timer != 0) {
         this->timer--;
     }
 
-    Actor_PlaySfx_Flagged(&this->dyna.actor, NA_SE_EV_WIND_TRAP - SFX_FLAG);
+    Actor_level_SE_set(&this->dyna.actor, NA_SE_EV_WIND_TRAP - SFX_FLAG);
 
     if (this->timer == 0) {
         this->timer = 1;
-        this->actionFunc = func_80880AE8;
+        this->actionFunc = mode_fofo_ready;
     }
 
     this->dyna.actor.shape.rot.z += this->dyna.actor.world.rot.z;
-    func_808809E4(this, play, this->dyna.actor.world.rot.z);
+    fofo_set_player_power(this, play, this->dyna.actor.world.rot.z);
 }
 
-void BgHakaTrap_Update(Actor* thisx, PlayState* play) {
+void Bg_Haka_Trap_actor_move(Actor* thisx, PlayState* play) {
     BgHakaTrap* this = (BgHakaTrap*)thisx;
     Vec3f* actorPos = &this->dyna.actor.world.pos;
 
@@ -498,62 +498,62 @@ void BgHakaTrap_Update(Actor* thisx, PlayState* play) {
         this->colliderCylinder.dim.pos.y = actorPos->y;
 
         if ((thisx->params == HAKA_TRAP_GUILLOTINE_SLOW) || (thisx->params == HAKA_TRAP_GUILLOTINE_FAST)) {
-            CollisionCheck_SetAC(play, &play->colChkCtx, &this->colliderCylinder.base);
-            CollisionCheck_SetOC(play, &play->colChkCtx, &this->colliderCylinder.base);
+            CollisionCheck_setAC(play, &play->colChkCtx, &this->colliderCylinder.base);
+            CollisionCheck_setOC(play, &play->colChkCtx, &this->colliderCylinder.base);
         } else {
-            if (this->actionFunc == func_808801B8) {
-                CollisionCheck_SetAC(play, &play->colChkCtx, &this->colliderSpikes.base);
+            if (this->actionFunc == mode_hasami_move) {
+                CollisionCheck_setAC(play, &play->colChkCtx, &this->colliderSpikes.base);
             }
 
-            CollisionCheck_SetAT(play, &play->colChkCtx, &this->colliderCylinder.base);
+            CollisionCheck_setAT(play, &play->colChkCtx, &this->colliderCylinder.base);
         }
     }
 }
 
-void func_80880D68(BgHakaTrap* this) {
+void set_haka_hasami_ac_tris(BgHakaTrap* this) {
     Vec3f vec3;
     Vec3f vec2;
     Vec3f vec1;
 
-    Matrix_MultVec3f(&sTrisElementsInit[0].dim.vtx[0], &vec1);
-    Matrix_MultVec3f(&sTrisElementsInit[0].dim.vtx[1], &vec2);
-    Matrix_MultVec3f(&sTrisElementsInit[0].dim.vtx[2], &vec3);
-    Collider_SetTrisVertices(&this->colliderSpikes, 0, &vec1, &vec2, &vec3);
+    Matrix_Position(&HakaHasamiAcTrisElemData[0].dim.vtx[0], &vec1);
+    Matrix_Position(&HakaHasamiAcTrisElemData[0].dim.vtx[1], &vec2);
+    Matrix_Position(&HakaHasamiAcTrisElemData[0].dim.vtx[2], &vec3);
+    CollisionCheck_Uty_setTrisPos(&this->colliderSpikes, 0, &vec1, &vec2, &vec3);
 
-    Matrix_MultVec3f(&sTrisElementsInit[1].dim.vtx[2], &vec2);
-    Collider_SetTrisVertices(&this->colliderSpikes, 1, &vec1, &vec3, &vec2);
+    Matrix_Position(&HakaHasamiAcTrisElemData[1].dim.vtx[2], &vec2);
+    CollisionCheck_Uty_setTrisPos(&this->colliderSpikes, 1, &vec1, &vec3, &vec2);
 }
 
-void BgHakaTrap_Draw(Actor* thisx, PlayState* play) {
-    static Gfx* sDLists[5] = {
+void Bg_Haka_Trap_actor_draw(Actor* thisx, PlayState* play) {
+    static Gfx* shape_model[5] = {
         object_haka_objects_DL_007610, object_haka_objects_DL_009860, object_haka_objects_DL_007EF0,
         object_haka_objects_DL_008A20, object_haka_objects_DL_0072C0,
     };
-    static Color_RGBA8 D_8088103C = { 0, 0, 0, 0 };
+    static Color_RGBA8 hasami_fog = { 0, 0, 0, 0 };
     BgHakaTrap* this = (BgHakaTrap*)thisx;
     s32 pad;
     Vec3f sp2C;
 
-    if (this->actionFunc == func_808802D8) {
-        func_80026230(play, &D_8088103C, this->timer + 20, 0x28);
+    if (this->actionFunc == mode_hasami_fire) {
+        Eff_Set_Fog2(play, &hasami_fog, this->timer + 20, 0x28);
     }
 
-    Gfx_DrawDListOpa(play, sDLists[this->dyna.actor.params]);
+    Cheap_gfx_display(play, shape_model[this->dyna.actor.params]);
 
-    if (this->actionFunc == func_808801B8) {
-        func_80880D68(this);
+    if (this->actionFunc == mode_hasami_move) {
+        set_haka_hasami_ac_tris(this);
     }
 
-    if (this->actionFunc == func_808802D8) {
-        func_80026608(play);
+    if (this->actionFunc == mode_hasami_fire) {
+        Eff_Off_Fog(play);
     }
 
-    if ((this->actionFunc == func_808808F4) && !this->unk_169) {
+    if ((this->actionFunc == mode_kenzan_up) && !this->unk_169) {
         sp2C.x = this->dyna.actor.world.pos.x;
         sp2C.z = this->dyna.actor.world.pos.z;
         sp2C.y = this->dyna.actor.world.pos.y + 110.0f;
 
-        SkinMatrix_Vec3fMtxFMultXYZ(&play->viewProjectionMtxF, &sp2C, &this->unk_16C);
-        Sfx_PlaySfxAtPos(&this->unk_16C, NA_SE_EV_BRIDGE_CLOSE - SFX_FLAG);
+        Skin_Matrix_MulVector(&play->viewProjectionMtxF, &sp2C, &this->unk_16C);
+        Na_StartObjectSe_F(&this->unk_16C, NA_SE_EV_BRIDGE_CLOSE - SFX_FLAG);
     }
 }

@@ -1,6 +1,6 @@
 #include "z_boss_sst.h"
 
-static ColliderJntSphElementInit sJntSphItemsInitHand[11] = {
+static ColliderJntSphElementInit SstHandAllJntSphElemData[11] = {
     {
         {
             ELEM_MATERIAL_UNK1,
@@ -124,7 +124,7 @@ static ColliderJntSphElementInit sJntSphItemsInitHand[11] = {
     },
 };
 
-static ColliderJntSphInit sJntSphInitHand = {
+static ColliderJntSphInit SstHandAllJntSphData = {
     {
         COL_MATERIAL_HIT0,
         AT_TYPE_ENEMY,
@@ -134,10 +134,10 @@ static ColliderJntSphInit sJntSphInitHand = {
         COLSHAPE_JNTSPH,
     },
     11,
-    sJntSphItemsInitHand,
+    SstHandAllJntSphElemData,
 };
 
-static ColliderJntSphElementInit sJntSphItemsInitHead[11] = {
+static ColliderJntSphElementInit SstBodyAllJntSphElemData[11] = {
     {
         {
             ELEM_MATERIAL_UNK1,
@@ -261,7 +261,7 @@ static ColliderJntSphElementInit sJntSphItemsInitHead[11] = {
     },
 };
 
-static ColliderJntSphInit sJntSphInitHead = {
+static ColliderJntSphInit SstBodyAllJntSphData = {
     {
         COL_MATERIAL_HARD,
         AT_TYPE_ENEMY,
@@ -271,10 +271,10 @@ static ColliderJntSphInit sJntSphInitHead = {
         COLSHAPE_JNTSPH,
     },
     11,
-    sJntSphItemsInitHead,
+    SstBodyAllJntSphElemData,
 };
 
-static ColliderCylinderInit sCylinderInitHead = {
+static ColliderCylinderInit SstBodyEyeAcOcPipeData = {
     {
         COL_MATERIAL_HIT0,
         AT_NONE,
@@ -294,7 +294,7 @@ static ColliderCylinderInit sCylinderInitHead = {
     { 85, 100, -50, { 0, 0, 0 } },
 };
 
-static ColliderCylinderInit sCylinderInitHand = {
+static ColliderCylinderInit SstBlastAtPipeData = {
     {
         COL_MATERIAL_NONE,
         AT_TYPE_ENEMY,
@@ -314,9 +314,9 @@ static ColliderCylinderInit sCylinderInitHand = {
     { 85, 1, 0, { 0, 0, 0 } },
 };
 
-static CollisionCheckInfoInit sColChkInfoInit = { 36, 100, 100, 200 };
+static CollisionCheckInfoInit SstStatusData = { 36, 100, 100, 200 };
 
-static DamageTable sDamageTable = {
+static DamageTable SstBtlData = {
     /* Deku nut      */ DMG_ENTRY(0, 0x0),
     /* Deku stick    */ DMG_ENTRY(2, 0x0),
     /* Slingshot     */ DMG_ENTRY(1, 0x0),

@@ -9,9 +9,9 @@
 
 #define FLAGS 0
 
-void DoorToki_Init(Actor* thisx, PlayState* play);
-void DoorToki_Destroy(Actor* thisx, PlayState* play);
-void DoorToki_Update(Actor* thisx, PlayState* play);
+void Door_Toki_actor_ct(Actor* thisx, PlayState* play);
+void Door_Toki_actor_dt(Actor* thisx, PlayState* play);
+void Door_Toki_actor_move(Actor* thisx, PlayState* play);
 
 ActorProfile Door_Toki_Profile = {
     /**/ ACTOR_DOOR_TOKI,
@@ -19,39 +19,39 @@ ActorProfile Door_Toki_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_TOKI_OBJECTS,
     /**/ sizeof(DoorToki),
-    /**/ DoorToki_Init,
-    /**/ DoorToki_Destroy,
-    /**/ DoorToki_Update,
+    /**/ Door_Toki_actor_ct,
+    /**/ Door_Toki_actor_dt,
+    /**/ Door_Toki_actor_move,
     /**/ NULL,
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F_DIV1000(scale, 1000, ICHAIN_STOP),
 };
 
-void DoorToki_Init(Actor* thisx, PlayState* play) {
+void Door_Toki_actor_ct(Actor* thisx, PlayState* play) {
     s32 pad;
     DoorToki* this = (DoorToki*)thisx;
     CollisionHeader* colHeader = NULL;
 
-    Actor_ProcessInitChain(&this->dyna.actor, sInitChain);
-    DynaPolyActor_Init(&this->dyna, 0);
-    CollisionHeader_GetVirtual(&gDoorTokiCol, &colHeader);
-    this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
+    ValueSet_process(&this->dyna.actor, value_init);
+    MoveBG_ct(&this->dyna, 0);
+    DynaPolyUty_bgdi_SG2KSG(&gDoorTokiCol, &colHeader);
+    this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
 }
 
-void DoorToki_Destroy(Actor* thisx, PlayState* play) {
+void Door_Toki_actor_dt(Actor* thisx, PlayState* play) {
     DoorToki* this = (DoorToki*)thisx;
 
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
 }
 
-void DoorToki_Update(Actor* thisx, PlayState* play) {
+void Door_Toki_actor_move(Actor* thisx, PlayState* play) {
     DoorToki* this = (DoorToki*)thisx;
 
     if (GET_EVENTCHKINF(EVENTCHKINF_OPENED_DOOR_OF_TIME)) {
-        DynaPoly_DisableCollision(play, &play->colCtx.dyna, this->dyna.bgId);
+        DynaPolygonInfo_setThrough(play, &play->colCtx.dyna, this->dyna.bgId);
     } else {
-        DynaPoly_EnableCollision(play, &play->colCtx.dyna, this->dyna.bgId);
+        DynaPolygonInfo_clearThrough(play, &play->colCtx.dyna, this->dyna.bgId);
     }
 }

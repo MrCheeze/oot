@@ -1,6 +1,6 @@
 #include "global.h"
 
-void GameAlloc_Log(GameAlloc* this) {
+void gamealloc_display(GameAlloc* this) {
     GameAllocEntry* iter;
 
     PRINTF("this = %08x\n", this);
@@ -13,7 +13,7 @@ void GameAlloc_Log(GameAlloc* this) {
 }
 
 #if DEBUG_FEATURES
-void* GameAlloc_MallocDebug(GameAlloc* this, u32 size, const char* file, int line) {
+void* gamealloc_mallocDebug(GameAlloc* this, u32 size, const char* file, int line) {
     GameAllocEntry* ptr = SystemArena_MallocDebug(size + sizeof(GameAllocEntry), file, line);
 
     if (ptr != NULL) {
@@ -30,7 +30,7 @@ void* GameAlloc_MallocDebug(GameAlloc* this, u32 size, const char* file, int lin
 }
 #endif
 
-void* GameAlloc_Malloc(GameAlloc* this, u32 size) {
+void* gamealloc_malloc(GameAlloc* this, u32 size) {
     GameAllocEntry* ptr = SYSTEM_ARENA_MALLOC(size + sizeof(GameAllocEntry), "../gamealloc.c", 93);
 
     if (ptr != NULL) {
@@ -46,7 +46,7 @@ void* GameAlloc_Malloc(GameAlloc* this, u32 size) {
     }
 }
 
-void GameAlloc_Free(GameAlloc* this, void* data) {
+void gamealloc_free(GameAlloc* this, void* data) {
     GameAllocEntry* ptr;
 
     if (data != NULL) {
@@ -60,7 +60,7 @@ void GameAlloc_Free(GameAlloc* this, void* data) {
     }
 }
 
-void GameAlloc_Cleanup(GameAlloc* this) {
+void gamealloc_cleanup(GameAlloc* this) {
     GameAllocEntry* next = this->base.next;
     GameAllocEntry* cur;
 
@@ -75,7 +75,7 @@ void GameAlloc_Cleanup(GameAlloc* this) {
     this->base.prev = &this->base;
 }
 
-void GameAlloc_Init(GameAlloc* this) {
+void gamealloc_init(GameAlloc* this) {
     this->head = &this->base;
     this->base.next = &this->base;
     this->base.prev = &this->base;

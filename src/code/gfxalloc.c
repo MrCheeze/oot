@@ -1,15 +1,15 @@
 #include "global.h"
 
-Gfx* Gfx_Open(Gfx* gfx) {
+Gfx* gfxopen(Gfx* gfx) {
     return gfx + 1;
 }
 
-Gfx* Gfx_Close(Gfx* gfx, Gfx* dst) {
+Gfx* gfxclose(Gfx* gfx, Gfx* dst) {
     gSPBranchList(gfx, dst);
     return dst;
 }
 
-void* Gfx_Alloc(Gfx** gfxP, u32 size) {
+void* gfxalloc(Gfx** gfxP, u32 size) {
     u8* ptr;
     Gfx* dst;
 

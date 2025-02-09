@@ -1,22 +1,22 @@
 #include "global.h"
 #include "versions.h"
 
-void Interface_Destroy(PlayState* play) {
-    Map_Destroy(play);
+void parameter_dt(PlayState* play) {
+    map_exp_dt(play);
 }
 
 #define ICON_ITEM_SEGMENT_SIZE (4 * ITEM_ICON_SIZE)
 
-void Interface_Init(PlayState* play) {
+void parameter_ct(PlayState* play) {
     InterfaceContext* interfaceCtx = &play->interfaceCtx;
     u32 parameterSize;
     u16 doActionOffset;
     u8 timerId;
 
-    gSaveContext.sunsSongState = SUNSSONG_INACTIVE;
-    gSaveContext.nextHudVisibilityMode = gSaveContext.hudVisibilityMode = HUD_VISIBILITY_NO_CHANGE;
+    z_common_data.sunsSongState = SUNSSONG_INACTIVE;
+    z_common_data.nextHudVisibilityMode = z_common_data.hudVisibilityMode = HUD_VISIBILITY_NO_CHANGE;
 
-    View_Init(&interfaceCtx->view, play->state.gfxCtx);
+    initView(&interfaceCtx->view, play->state.gfxCtx);
 
     interfaceCtx->unk_1EC = interfaceCtx->unk_1EE = interfaceCtx->unk_1F0 = 0;
     interfaceCtx->unk_1F4 = 0.0f;
@@ -51,15 +51,15 @@ void Interface_Init(PlayState* play) {
     ASSERT(interfaceCtx->doActionSegment != NULL, "parameter->do_actionSegment != NULL", "../z_construct.c", 169);
 
 #if OOT_NTSC
-    if (gSaveContext.language == LANGUAGE_JPN) {
+    if (z_common_data.language == LANGUAGE_JPN) {
         doActionOffset = (LANGUAGE_JPN * DO_ACTION_MAX + DO_ACTION_ATTACK) * DO_ACTION_TEX_SIZE;
     } else {
         doActionOffset = (LANGUAGE_ENG * DO_ACTION_MAX + DO_ACTION_ATTACK) * DO_ACTION_TEX_SIZE;
     }
 #else
-    if (gSaveContext.language == LANGUAGE_ENG) {
+    if (z_common_data.language == LANGUAGE_ENG) {
         doActionOffset = (LANGUAGE_ENG * DO_ACTION_MAX + DO_ACTION_ATTACK) * DO_ACTION_TEX_SIZE;
-    } else if (gSaveContext.language == LANGUAGE_GER) {
+    } else if (z_common_data.language == LANGUAGE_GER) {
         doActionOffset = (LANGUAGE_GER * DO_ACTION_MAX + DO_ACTION_ATTACK) * DO_ACTION_TEX_SIZE;
     } else {
         doActionOffset = (LANGUAGE_FRA * DO_ACTION_MAX + DO_ACTION_ATTACK) * DO_ACTION_TEX_SIZE;
@@ -70,15 +70,15 @@ void Interface_Init(PlayState* play) {
                      2 * DO_ACTION_TEX_SIZE, "../z_construct.c", 174);
 
 #if OOT_NTSC
-    if (gSaveContext.language == LANGUAGE_JPN) {
+    if (z_common_data.language == LANGUAGE_JPN) {
         doActionOffset = (LANGUAGE_JPN * DO_ACTION_MAX + DO_ACTION_RETURN) * DO_ACTION_TEX_SIZE;
     } else {
         doActionOffset = (LANGUAGE_ENG * DO_ACTION_MAX + DO_ACTION_RETURN) * DO_ACTION_TEX_SIZE;
     }
 #else
-    if (gSaveContext.language == LANGUAGE_ENG) {
+    if (z_common_data.language == LANGUAGE_ENG) {
         doActionOffset = (LANGUAGE_ENG * DO_ACTION_MAX + DO_ACTION_RETURN) * DO_ACTION_TEX_SIZE;
-    } else if (gSaveContext.language == LANGUAGE_GER) {
+    } else if (z_common_data.language == LANGUAGE_GER) {
         doActionOffset = (LANGUAGE_GER * DO_ACTION_MAX + DO_ACTION_RETURN) * DO_ACTION_TEX_SIZE;
     } else {
         doActionOffset = (LANGUAGE_FRA * DO_ACTION_MAX + DO_ACTION_RETURN) * DO_ACTION_TEX_SIZE;
@@ -97,88 +97,88 @@ void Interface_Init(PlayState* play) {
 
     ASSERT(interfaceCtx->iconItemSegment != NULL, "parameter->icon_itemSegment != NULL", "../z_construct.c", 193);
 
-    PRINTF("Register_Item[%x, %x, %x, %x]\n", gSaveContext.save.info.equips.buttonItems[0],
-           gSaveContext.save.info.equips.buttonItems[1], gSaveContext.save.info.equips.buttonItems[2],
-           gSaveContext.save.info.equips.buttonItems[3]);
+    PRINTF("Register_Item[%x, %x, %x, %x]\n", z_common_data.save.info.equips.buttonItems[0],
+           z_common_data.save.info.equips.buttonItems[1], z_common_data.save.info.equips.buttonItems[2],
+           z_common_data.save.info.equips.buttonItems[3]);
 
-    if (gSaveContext.save.info.equips.buttonItems[0] < 0xF0) {
+    if (z_common_data.save.info.equips.buttonItems[0] < 0xF0) {
         DMA_REQUEST_SYNC(interfaceCtx->iconItemSegment + (0 * ITEM_ICON_SIZE),
 
-                         GET_ITEM_ICON_VROM(gSaveContext.save.info.equips.buttonItems[0]), ITEM_ICON_SIZE,
+                         GET_ITEM_ICON_VROM(z_common_data.save.info.equips.buttonItems[0]), ITEM_ICON_SIZE,
                          "../z_construct.c", 198);
-    } else if (gSaveContext.save.info.equips.buttonItems[0] != 0xFF) {
+    } else if (z_common_data.save.info.equips.buttonItems[0] != 0xFF) {
         DMA_REQUEST_SYNC(interfaceCtx->iconItemSegment + (0 * ITEM_ICON_SIZE),
 
-                         GET_ITEM_ICON_VROM(gSaveContext.save.info.equips.buttonItems[0]), ITEM_ICON_SIZE,
+                         GET_ITEM_ICON_VROM(z_common_data.save.info.equips.buttonItems[0]), ITEM_ICON_SIZE,
                          "../z_construct.c", 203);
     }
 
-    if (gSaveContext.save.info.equips.buttonItems[1] < 0xF0) {
+    if (z_common_data.save.info.equips.buttonItems[1] < 0xF0) {
         DMA_REQUEST_SYNC(interfaceCtx->iconItemSegment + (1 * ITEM_ICON_SIZE),
-                         GET_ITEM_ICON_VROM(gSaveContext.save.info.equips.buttonItems[1]), ITEM_ICON_SIZE,
+                         GET_ITEM_ICON_VROM(z_common_data.save.info.equips.buttonItems[1]), ITEM_ICON_SIZE,
                          "../z_construct.c", 209);
     }
 
-    if (gSaveContext.save.info.equips.buttonItems[2] < 0xF0) {
+    if (z_common_data.save.info.equips.buttonItems[2] < 0xF0) {
         DMA_REQUEST_SYNC(interfaceCtx->iconItemSegment + (2 * ITEM_ICON_SIZE),
-                         GET_ITEM_ICON_VROM(gSaveContext.save.info.equips.buttonItems[2]), ITEM_ICON_SIZE,
+                         GET_ITEM_ICON_VROM(z_common_data.save.info.equips.buttonItems[2]), ITEM_ICON_SIZE,
                          "../z_construct.c", 214);
     }
 
-    if (gSaveContext.save.info.equips.buttonItems[3] < 0xF0) {
+    if (z_common_data.save.info.equips.buttonItems[3] < 0xF0) {
         DMA_REQUEST_SYNC(interfaceCtx->iconItemSegment + (3 * ITEM_ICON_SIZE),
-                         GET_ITEM_ICON_VROM(gSaveContext.save.info.equips.buttonItems[3]), ITEM_ICON_SIZE,
+                         GET_ITEM_ICON_VROM(z_common_data.save.info.equips.buttonItems[3]), ITEM_ICON_SIZE,
                          "../z_construct.c", 219);
     }
 
-    PRINTF("ＥＶＥＮＴ＝%d\n", ((void)0, gSaveContext.timerState));
+    PRINTF("ＥＶＥＮＴ＝%d\n", ((void)0, z_common_data.timerState));
 
-    if ((gSaveContext.timerState == TIMER_STATE_ENV_HAZARD_TICK) ||
-        (gSaveContext.timerState == TIMER_STATE_DOWN_TICK) ||
-        (gSaveContext.subTimerState == SUBTIMER_STATE_DOWN_TICK) ||
-        (gSaveContext.subTimerState == SUBTIMER_STATE_UP_TICK)) {
-        PRINTF("restart_flag=%d\n", ((void)0, gSaveContext.respawnFlag));
+    if ((z_common_data.timerState == TIMER_STATE_ENV_HAZARD_TICK) ||
+        (z_common_data.timerState == TIMER_STATE_DOWN_TICK) ||
+        (z_common_data.subTimerState == SUBTIMER_STATE_DOWN_TICK) ||
+        (z_common_data.subTimerState == SUBTIMER_STATE_UP_TICK)) {
+        PRINTF("restart_flag=%d\n", ((void)0, z_common_data.respawnFlag));
 
-        if ((gSaveContext.respawnFlag == -1) || (gSaveContext.respawnFlag == 1)) {
-            if (gSaveContext.timerState == TIMER_STATE_ENV_HAZARD_TICK) {
-                gSaveContext.timerState = TIMER_STATE_ENV_HAZARD_INIT;
-                gSaveContext.timerX[TIMER_ID_MAIN] = 140;
-                gSaveContext.timerY[TIMER_ID_MAIN] = 80;
+        if ((z_common_data.respawnFlag == -1) || (z_common_data.respawnFlag == 1)) {
+            if (z_common_data.timerState == TIMER_STATE_ENV_HAZARD_TICK) {
+                z_common_data.timerState = TIMER_STATE_ENV_HAZARD_INIT;
+                z_common_data.timerX[TIMER_ID_MAIN] = 140;
+                z_common_data.timerY[TIMER_ID_MAIN] = 80;
             }
         }
 
-        if ((gSaveContext.timerState == TIMER_STATE_ENV_HAZARD_TICK) ||
-            (gSaveContext.timerState == TIMER_STATE_DOWN_TICK)) {
+        if ((z_common_data.timerState == TIMER_STATE_ENV_HAZARD_TICK) ||
+            (z_common_data.timerState == TIMER_STATE_DOWN_TICK)) {
             timerId = TIMER_ID_MAIN;
         } else {
             timerId = TIMER_ID_SUB;
         }
 
-        gSaveContext.timerX[timerId] = 26;
+        z_common_data.timerX[timerId] = 26;
 
-        if (gSaveContext.save.info.playerData.healthCapacity > 0xA0) {
-            gSaveContext.timerY[timerId] = 54; // two rows of hearts
+        if (z_common_data.save.info.playerData.healthCapacity > 0xA0) {
+            z_common_data.timerY[timerId] = 54; // two rows of hearts
         } else {
-            gSaveContext.timerY[timerId] = 46; // one row of hearts
+            z_common_data.timerY[timerId] = 46; // one row of hearts
         }
     }
 #if OOT_VERSION < PAL_1_0
-    else if ((gSaveContext.timerState >= TIMER_STATE_UP_INIT) && (gSaveContext.timerState <= TIMER_STATE_UP_FREEZE))
+    else if ((z_common_data.timerState >= TIMER_STATE_UP_INIT) && (z_common_data.timerState <= TIMER_STATE_UP_FREEZE))
 #else
     // No "else"
-    if ((gSaveContext.timerState >= TIMER_STATE_UP_INIT) && (gSaveContext.timerState <= TIMER_STATE_UP_FREEZE))
+    if ((z_common_data.timerState >= TIMER_STATE_UP_INIT) && (z_common_data.timerState <= TIMER_STATE_UP_FREEZE))
 #endif
     {
-        gSaveContext.timerState = TIMER_STATE_OFF;
+        z_common_data.timerState = TIMER_STATE_OFF;
         PRINTF(T("タイマー停止！！！！！！！！！！！！！！！！！！！！！  = %d\n",
                  "Timer Stop!!!!!!!!!!!!!!!!!!!!!  = %d\n"),
-               gSaveContext.timerState);
+               z_common_data.timerState);
     }
 
     PRINTF(T("ＰＡＲＡＭＥＴＥＲ領域＝%x\n", "Parameter Area = %x\n"), parameterSize + 0x5300);
 
-    Health_InitMeter(play);
-    Map_Init(play);
+    initial_LifeMeterColorAnimation(play);
+    map_exp_ct(play);
 
     interfaceCtx->unk_23C = interfaceCtx->unk_242 = 0;
 
@@ -202,11 +202,11 @@ void Interface_Init(PlayState* play) {
 #define TEXTBOX_SEGMENT_SIZE \
     (MESSAGE_STATIC_TEX_SIZE + MAX(MAX(ITEM_ICON_SIZE, QUEST_ICON_SIZE), 2 * MESSAGE_TEXTURE_STATIC_TEX_SIZE))
 
-void Message_Init(PlayState* play) {
+void message_ct(PlayState* play) {
     MessageContext* msgCtx = &play->msgCtx;
     Font* font = &msgCtx->font;
 
-    Message_SetTables();
+    message_tbl_p_init();
 
     play->msgCtx.ocarinaMode = OCARINA_MODE_00;
 
@@ -215,7 +215,7 @@ void Message_Init(PlayState* play) {
     msgCtx->textId = msgCtx->textboxEndType = msgCtx->choiceIndex = msgCtx->ocarinaAction = msgCtx->textUnskippable = 0;
     msgCtx->textColorAlpha = 255;
 
-    View_Init(&msgCtx->view, play->state.gfxCtx);
+    initView(&msgCtx->view, play->state.gfxCtx);
 
     msgCtx->textboxSegment = GAME_STATE_ALLOC(&play->state, TEXTBOX_SEGMENT_SIZE, "../z_construct.c", 349);
 
@@ -224,12 +224,12 @@ void Message_Init(PlayState* play) {
     PRINTF(T("吹き出しgame_alloc=%x\n", "Textbox game_alloc=%x\n"), TEXTBOX_SEGMENT_SIZE);
     ASSERT(msgCtx->textboxSegment != NULL, "message->fukidashiSegment != NULL", "../z_construct.c", 352);
 
-    Font_LoadOrderedFont(font);
+    kscope_kanfont_get(font);
 
     YREG(31) = 0;
 }
 
-void Regs_InitDataImpl(void) {
+void YREG_data_ct(void) {
     YREG(8) = 10;
     YREG(14) = 0;
     R_SCENE_CAM_TYPE = SCENE_CAM_TYPE_DEFAULT;
@@ -603,7 +603,7 @@ void Regs_InitDataImpl(void) {
     WREG(94) = 3;
     WREG(95) = 6;
 
-    if (gSaveContext.gameMode == GAMEMODE_NORMAL) {
+    if (z_common_data.gameMode == GAMEMODE_NORMAL) {
         R_TEXTBOX_X = 52;
         R_TEXTBOX_Y = 36;
         VREG(2) = 214;
@@ -695,11 +695,11 @@ void Regs_InitDataImpl(void) {
     VREG(89) = 0;
     R_GAME_OVER_RUMBLE_STRENGTH = 126;
     R_GAME_OVER_RUMBLE_DURATION = 124;
-    //! @bug This is eventually cast to a u8 after some scaling in `GameOver_Update`, negative numbers typically
+    //! @bug This is eventually cast to a u8 after some scaling in `gameover_move`, negative numbers typically
     //! become large (fast) decrease rates
     R_GAME_OVER_RUMBLE_DECREASE_RATE = -63;
 }
 
-void Regs_InitData(PlayState* play) {
-    Regs_InitDataImpl();
+void save_area_ct(PlayState* play) {
+    YREG_data_ct();
 }

@@ -42,15 +42,15 @@ incbins:
     vram: 0x80115920
     size: 0x60
 variables:
-  gMtxClear: 0x800FE2E0
-  sJpnMessageEntryTable: 0x80109ECC
-  sNesMessageEntryTable: 0x8010E00C
-  sStaffMessageEntryTable: 0x8011222C
-  gSoundFontTable: 0x80112CC0
-  gSequenceFontTable: 0x80112F30
-  gSequenceTable: 0x801130F0
-  gSampleBankTable: 0x801137E0
-  sShadowTex: 0x80AE1D60
+  Mtx_clear: 0x800FE2E0
+  message_tbl: 0x80109ECC
+  message_tbl_nes: 0x8010E00C
+  message_tbl_staff: 0x8011222C
+  AudiobankHeaderStart: 0x80112CC0
+  AudiomapHeaderStart: 0x80112F30
+  AudioseqHeaderStart: 0x801130F0
+  AudiowaveHeaderStart: 0x801137E0
+  js_jyutan_sahdow_txt: 0x80AE1D60
 assets:
 - name: misc/link_animetion
   xml_path: assets/xml/misc/link_animetion.xml

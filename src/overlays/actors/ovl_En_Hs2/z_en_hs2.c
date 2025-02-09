@@ -10,11 +10,11 @@
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY)
 
-void EnHs2_Init(Actor* thisx, PlayState* play);
-void EnHs2_Destroy(Actor* thisx, PlayState* play);
-void EnHs2_Update(Actor* thisx, PlayState* play);
-void EnHs2_Draw(Actor* thisx, PlayState* play);
-void func_80A6F1A4(EnHs2* this, PlayState* play);
+void En_Hs2_Actor_ct(Actor* thisx, PlayState* play);
+void En_Hs2_Actor_dt(Actor* thisx, PlayState* play);
+void En_Hs2_Actor_move(Actor* thisx, PlayState* play);
+void En_Hs2_Actor_draw(Actor* thisx, PlayState* play);
+static void matsu(EnHs2* this, PlayState* play);
 
 ActorProfile En_Hs2_Profile = {
     /**/ ACTOR_EN_HS2,
@@ -22,13 +22,13 @@ ActorProfile En_Hs2_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_HS,
     /**/ sizeof(EnHs2),
-    /**/ EnHs2_Init,
-    /**/ EnHs2_Destroy,
-    /**/ EnHs2_Update,
-    /**/ EnHs2_Draw,
+    /**/ En_Hs2_Actor_ct,
+    /**/ En_Hs2_Actor_dt,
+    /**/ En_Hs2_Actor_move,
+    /**/ En_Hs2_Actor_draw,
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit EnHsOcInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -48,32 +48,32 @@ static ColliderCylinderInit sCylinderInit = {
     { 40, 40, 0, { 0, 0, 0 } },
 };
 
-void EnHs2_Init(Actor* thisx, PlayState* play) {
+void En_Hs2_Actor_ct(Actor* thisx, PlayState* play) {
     EnHs2* this = (EnHs2*)thisx;
     s32 pad;
 
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 36.0f);
-    SkelAnime_InitFlex(play, &this->skelAnime, &object_hs_Skel_006260, &object_hs_Anim_0005C0, this->jointTable,
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 36.0f);
+    Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &object_hs_Skel_006260, &object_hs_Anim_0005C0, this->jointTable,
                        this->morphTable, 16);
-    Animation_PlayLoop(&this->skelAnime, &object_hs_Anim_0005C0);
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
+    Skeleton_Info2_init_standard_repeat(&this->skelAnime, &object_hs_Anim_0005C0);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set5(play, &this->collider, &this->actor, &EnHsOcInfoData);
     this->actor.colChkInfo.mass = MASS_IMMOVABLE;
-    Actor_SetScale(&this->actor, 0.01f);
+    Actor_set_scale(&this->actor, 0.01f);
     PRINTF(VT_FGCOL(CYAN) " ヒヨコの店(子人の時) \n" VT_RST);
-    this->actionFunc = func_80A6F1A4;
+    this->actionFunc = matsu;
     this->unk_2A8 = 0;
     this->actor.attentionRangeType = ATTENTION_RANGE_6;
 }
 
-void EnHs2_Destroy(Actor* thisx, PlayState* play) {
+void En_Hs2_Actor_dt(Actor* thisx, PlayState* play) {
     EnHs2* this = (EnHs2*)thisx;
 
-    Collider_DestroyCylinder(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider);
 }
 
-s32 func_80A6F0B4(EnHs2* this, PlayState* play, u16 textId, EnHs2ActionFunc actionFunc) {
-    if (Actor_TalkOfferAccepted(&this->actor, play)) {
+static s32 kihon_process(EnHs2* this, PlayState* play, u16 textId, EnHs2ActionFunc actionFunc) {
+    if (Actor_talk_check(&this->actor, play)) {
         this->actionFunc = actionFunc;
         return 1;
     }
@@ -82,52 +82,52 @@ s32 func_80A6F0B4(EnHs2* this, PlayState* play, u16 textId, EnHs2ActionFunc acti
     if (ABS((s16)(this->actor.yawTowardsPlayer - this->actor.shape.rot.y)) < 0x2151 &&
         this->actor.xzDistToPlayer < 100.0f) {
         this->unk_2A8 |= 0x1;
-        Actor_OfferTalk(&this->actor, play, 100.0f);
+        Actor_talk_request2(&this->actor, play, 100.0f);
     }
     return 0;
 }
 
-void func_80A6F164(EnHs2* this, PlayState* play) {
-    if (Actor_TextboxIsClosing(&this->actor, play)) {
-        this->actionFunc = func_80A6F1A4;
+static void talk_matsu(EnHs2* this, PlayState* play) {
+    if (Actor_talk_end_check(&this->actor, play)) {
+        this->actionFunc = matsu;
     }
     this->unk_2A8 |= 0x1;
 }
 
-void func_80A6F1A4(EnHs2* this, PlayState* play) {
-    u16 textId = MaskReaction_GetTextId(play, MASK_REACTION_SET_CARPENTERS_SON);
+static void matsu(EnHs2* this, PlayState* play) {
+    u16 textId = get_mask_message(play, MASK_REACTION_SET_CARPENTERS_SON);
 
     if (textId == 0) {
         textId = 0x5069;
     }
 
-    func_80A6F0B4(this, play, textId, func_80A6F164);
+    kihon_process(this, play, textId, talk_matsu);
 }
 
-void EnHs2_Update(Actor* thisx, PlayState* play) {
+void En_Hs2_Actor_move(Actor* thisx, PlayState* play) {
     EnHs2* this = (EnHs2*)thisx;
     s32 pad;
 
-    Collider_UpdateCylinder(&this->actor, &this->collider);
-    CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
-    Actor_MoveXZGravity(&this->actor);
-    Actor_UpdateBgCheckInfo(play, &this->actor, 0.0f, 0.0f, 0.0f, UPDBGCHECKINFO_FLAG_2);
-    if (SkelAnime_Update(&this->skelAnime)) {
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
+    CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
+    Actor_position_moveF(&this->actor);
+    Actor_BGcheck2(play, &this->actor, 0.0f, 0.0f, 0.0f, UPDBGCHECKINFO_FLAG_2);
+    if (Skeleton_Info2_anime_play(&this->skelAnime)) {
         this->skelAnime.curFrame = 0.0f;
     }
     this->actionFunc(this, play);
     if (this->unk_2A8 & 0x1) {
-        Actor_TrackPlayer(play, &this->actor, &this->unk_29C, &this->unk_2A2, this->actor.focus.pos);
+        eye_move2(play, &this->actor, &this->unk_29C, &this->unk_2A2, this->actor.focus.pos);
         this->unk_2A8 &= ~1;
     } else {
-        Math_SmoothStepToS(&this->unk_29C.x, 12800, 6, 6200, 100);
-        Math_SmoothStepToS(&this->unk_29C.y, 0, 6, 6200, 100);
-        Math_SmoothStepToS(&this->unk_2A2.x, 0, 6, 6200, 100);
-        Math_SmoothStepToS(&this->unk_2A2.y, 0, 6, 6200, 100);
+        add_calc_short_angle2(&this->unk_29C.x, 12800, 6, 6200, 100);
+        add_calc_short_angle2(&this->unk_29C.y, 0, 6, 6200, 100);
+        add_calc_short_angle2(&this->unk_2A2.x, 0, 6, 6200, 100);
+        add_calc_short_angle2(&this->unk_2A2.y, 0, 6, 6200, 100);
     }
 }
 
-s32 EnHs2_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+static s32 before_display(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     EnHs2* this = (EnHs2*)thisx;
 
     switch (limbIndex) {
@@ -149,19 +149,19 @@ s32 EnHs2_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* p
     return false;
 }
 
-void EnHs2_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
-    static Vec3f D_80A6F4CC = { 300.0f, 1000.0f, 0.0f };
+static void after_display(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
+    static Vec3f pos = { 300.0f, 1000.0f, 0.0f };
     EnHs2* this = (EnHs2*)thisx;
 
     if (limbIndex == 9) {
-        Matrix_MultVec3f(&D_80A6F4CC, &this->actor.focus.pos);
+        Matrix_Position(&pos, &this->actor.focus.pos);
     }
 }
 
-void EnHs2_Draw(Actor* thisx, PlayState* play) {
+void En_Hs2_Actor_draw(Actor* thisx, PlayState* play) {
     EnHs2* this = (EnHs2*)thisx;
 
-    Gfx_SetupDL_37Opa(play->state.gfxCtx);
-    SkelAnime_DrawFlexOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
-                          EnHs2_OverrideLimbDraw, EnHs2_PostLimbDraw, this);
+    _polygon_z_light_fog_prim(play->state.gfxCtx);
+    Si2_draw_SV(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
+                          before_display, after_display, this);
 }

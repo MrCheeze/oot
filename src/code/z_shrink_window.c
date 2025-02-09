@@ -6,54 +6,54 @@ typedef enum LetterboxState {
     /* 2 */ LETTERBOX_STATE_SHRINKING
 } LetterboxState;
 
-s32 sLetterboxState = LETTERBOX_STATE_IDLE;
+s32 shrink_window_action = LETTERBOX_STATE_IDLE;
 
-s32 sLetterboxSizeTarget = 0;
-s32 sLetterboxSize = 0;
+s32 shrink_window_value = 0;
+s32 shrink_window_nowval = 0;
 
-void Letterbox_SetSizeTarget(s32 target) {
+void shrink_window_setval(s32 target) {
     if (R_HREG_MODE == HREG_MODE_LETTERBOX && R_LETTERBOX_ENABLE_LOGS == 1) {
         PRINTF("shrink_window_setval(%d)\n", target);
     }
 
-    sLetterboxSizeTarget = target;
+    shrink_window_value = target;
 }
 
-u32 Letterbox_GetSizeTarget(void) {
-    return sLetterboxSizeTarget;
+u32 shrink_window_getval(void) {
+    return shrink_window_value;
 }
 
-void Letterbox_SetSize(s32 size) {
+void shrink_window_setnowval(s32 size) {
     if (R_HREG_MODE == HREG_MODE_LETTERBOX && R_LETTERBOX_ENABLE_LOGS == 1) {
         PRINTF("shrink_window_setnowval(%d)\n", size);
     }
 
-    sLetterboxSize = size;
+    shrink_window_nowval = size;
 }
 
-u32 Letterbox_GetSize(void) {
-    return sLetterboxSize;
+u32 shrink_window_getnowval(void) {
+    return shrink_window_nowval;
 }
 
-void Letterbox_Init(void) {
+void shrink_window_init(void) {
     if (R_HREG_MODE == HREG_MODE_LETTERBOX && R_LETTERBOX_ENABLE_LOGS == 1) {
         PRINTF("shrink_window_init()\n");
     }
 
-    sLetterboxState = LETTERBOX_STATE_IDLE;
-    sLetterboxSizeTarget = 0;
-    sLetterboxSize = 0;
+    shrink_window_action = LETTERBOX_STATE_IDLE;
+    shrink_window_value = 0;
+    shrink_window_nowval = 0;
 }
 
-void Letterbox_Destroy(void) {
+void shrink_window_cleanup(void) {
     if (R_HREG_MODE == HREG_MODE_LETTERBOX && R_LETTERBOX_ENABLE_LOGS == 1) {
         PRINTF("shrink_window_cleanup()\n");
     }
 
-    sLetterboxSize = 0;
+    shrink_window_nowval = 0;
 }
 
-void Letterbox_Update(s32 updateRate) {
+void shrink_window_move(s32 updateRate) {
     s32 step;
 
     if (updateRate == 3) {
@@ -62,28 +62,28 @@ void Letterbox_Update(s32 updateRate) {
         step = 30 / updateRate;
     }
 
-    if (sLetterboxSize < sLetterboxSizeTarget) {
-        if (sLetterboxState != LETTERBOX_STATE_GROWING) {
-            sLetterboxState = LETTERBOX_STATE_GROWING;
+    if (shrink_window_nowval < shrink_window_value) {
+        if (shrink_window_action != LETTERBOX_STATE_GROWING) {
+            shrink_window_action = LETTERBOX_STATE_GROWING;
         }
 
-        if (sLetterboxSize + step < sLetterboxSizeTarget) {
-            sLetterboxSize += step;
+        if (shrink_window_nowval + step < shrink_window_value) {
+            shrink_window_nowval += step;
         } else {
-            sLetterboxSize = sLetterboxSizeTarget;
+            shrink_window_nowval = shrink_window_value;
         }
-    } else if (sLetterboxSizeTarget < sLetterboxSize) {
-        if (sLetterboxState != LETTERBOX_STATE_SHRINKING) {
-            sLetterboxState = LETTERBOX_STATE_SHRINKING;
+    } else if (shrink_window_value < shrink_window_nowval) {
+        if (shrink_window_action != LETTERBOX_STATE_SHRINKING) {
+            shrink_window_action = LETTERBOX_STATE_SHRINKING;
         }
 
-        if (sLetterboxSizeTarget < sLetterboxSize - step) {
-            sLetterboxSize -= step;
+        if (shrink_window_value < shrink_window_nowval - step) {
+            shrink_window_nowval -= step;
         } else {
-            sLetterboxSize = sLetterboxSizeTarget;
+            shrink_window_nowval = shrink_window_value;
         }
     } else {
-        sLetterboxState = LETTERBOX_STATE_IDLE;
+        shrink_window_action = LETTERBOX_STATE_IDLE;
     }
 
     if (DEBUG_FEATURES && (R_HREG_MODE == HREG_MODE_LETTERBOX)) {
@@ -102,9 +102,9 @@ void Letterbox_Update(s32 updateRate) {
             HREG(89) = 0;
         }
 
-        R_LETTERBOX_STATE = sLetterboxState;
-        R_LETTERBOX_SIZE = sLetterboxSize;
-        R_LETTERBOX_TARGET_SIZE = sLetterboxSizeTarget;
+        R_LETTERBOX_STATE = shrink_window_action;
+        R_LETTERBOX_SIZE = shrink_window_nowval;
+        R_LETTERBOX_TARGET_SIZE = shrink_window_value;
         R_LETTERBOX_STEP = step;
     }
 }

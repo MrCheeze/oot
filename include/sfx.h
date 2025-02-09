@@ -97,7 +97,7 @@ typedef enum SfxId {
 } SfxId;
 
 // These limits are due to the way Sequence 0 is programmed. There is also a global limit of 512 entries for every bank
-// enforced in Audio_PlayActiveSfx in sfx.c
+// enforced in Nai_FxNowPlayCheck in sfx.c
 static_assert(NA_SE_PL_END - (NA_SE_PL_BASE + 1) <= 256, "Player Bank SFX Table is limited to 256 entries due to Sequence 0");
 static_assert(NA_SE_IT_END - (NA_SE_IT_BASE + 1) <= 128, "Item Bank SFX Table is limited to 128 entries due to Sequence 0");
 static_assert(NA_SE_EV_END - (NA_SE_EV_BASE + 1) <= 256, "Environment Bank SFX Table is limited to 256 entries due to Sequence 0");
@@ -155,27 +155,27 @@ typedef struct SfxParams {
 #define SFX_DIST_SCALING 10.0f
 #endif
 
-void Audio_SetSfxBanksMute(u16 muteMask);
-void Audio_QueueSeqCmdMute(u8 channelIndex);
-void Audio_ClearBGMMute(u8 channelIndex);
-void Audio_PlaySfxGeneral(u16 sfxId, Vec3f* pos, u8 token, f32* freqScale, f32* vol, s8* reverbAdd);
-void Audio_ProcessSfxRequest(void);
-void Audio_ChooseActiveSfx(u8 bankId);
-void Audio_PlayActiveSfx(u8 bankId);
-void Audio_StopSfxByBank(u8 bankId);
-void Audio_RemoveSfxFromBankByPos(u8 bankId, Vec3f* pos);
-void Audio_StopSfxByPosAndBank(u8 bankId, Vec3f* pos);
-void Audio_StopSfxByPos(Vec3f* pos);
-void Audio_StopSfxByPosAndId(Vec3f* pos, u16 sfxId);
-void Audio_StopSfxByTokenAndId(u8 token, u16 sfxId);
-void Audio_StopSfxById(u32 sfxId);
-void Audio_ProcessSfxRequests(void);
-void func_800F8F88(void);
-u8 Audio_IsSfxPlaying(u32 sfxId);
-void Audio_ResetSfx(void);
+void Nai_FxSetLockFlag(u16 muteMask);
+void Nai_FxSetBgmMuteFlag(u8 channelIndex);
+void Nai_FxClearBgmMuteFlag(u8 channelIndex);
+void Nai_FxFlagEntry(u16 sfxId, Vec3f* pos, u8 token, f32* freqScale, f32* vol, s8* reverbAdd);
+void Nai_EntryBufferFx(void);
+void Nai_FxNextPlayCheck(u8 bankId);
+void Nai_FxNowPlayCheck(u8 bankId);
+void Nai_StopAllHandleFx(u8 bankId);
+void Nai_StopAllObjHandleFx2(u8 bankId, Vec3f* pos);
+void Nai_StopAllObjHandleFx(u8 bankId, Vec3f* pos);
+void Nai_StopAllObjFx(Vec3f* pos);
+void Nai_StopObjFlagFx(Vec3f* pos, u16 sfxId);
+void Nai_StopPlayerFlagFx(u8 token, u16 sfxId);
+void Nai_StopFx(u32 sfxId);
+void Nai_FxBufFlagCheck(void);
+void Nai_FxPlayCheck(void);
+u8 Nai_FxFlagCheck(u32 sfxId);
+void Nai_fx_inter_init(void);
 
-extern Vec3f gSfxDefaultPos;
-extern f32 gSfxDefaultFreqAndVolScale;
-extern s8 gSfxDefaultReverb;
+extern Vec3f _dummy_zero_f;
+extern f32 _dummy_one;
+extern s8 _dummy_zero_s8;
 
 #endif

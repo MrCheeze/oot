@@ -4,37 +4,37 @@
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void DemoIk_Init(Actor* thisx, PlayState* play);
-void DemoIk_Destroy(Actor* thisx, PlayState* play);
-void DemoIk_Update(Actor* thisx, PlayState* play);
-void DemoIk_Draw(Actor* thisx, PlayState* play);
+void Demo_Ik_Actor_ct(Actor* thisx, PlayState* play);
+void Demo_Ik_Actor_dt(Actor* thisx, PlayState* play);
+void Demo_Ik_main(Actor* thisx, PlayState* play);
+void Demo_Ik_draw(Actor* thisx, PlayState* play);
 
-void DemoIk_Type1Init(DemoIk* this, PlayState* play);
-void DemoIk_Type2Init(DemoIk* this, PlayState* play);
+void Demo_Ik_inArmer_Init(DemoIk* this, PlayState* play);
+void Demo_Ik_inFace_Init(DemoIk* this, PlayState* play);
 
-void DemoIk_Type1Action0(DemoIk* this, PlayState* play);
-void DemoIk_Type1Action1(DemoIk* this, PlayState* play);
-void DemoIk_Type1Action2(DemoIk* this, PlayState* play);
-void DemoIk_Type2Action0(DemoIk* this, PlayState* play);
-void DemoIk_Type2Action1(DemoIk* this, PlayState* play);
-void DemoIk_Type2Action2(DemoIk* this, PlayState* play);
+void Demo_Ik_main_wait(DemoIk* this, PlayState* play);
+void Demo_Ik_main_stick(DemoIk* this, PlayState* play);
+void Demo_Ik_main_drop(DemoIk* this, PlayState* play);
+void Demo_Ik_inFace_main_wait(DemoIk* this, PlayState* play);
+void Demo_Ik_inFace_main_stick(DemoIk* this, PlayState* play);
+void Demo_Ik_inFace_main_drop(DemoIk* this, PlayState* play);
 
-void DemoIk_DrawNothing(DemoIk* this, PlayState* play);
-void DemoIk_Type1Draw(DemoIk* this, PlayState* play);
-void DemoIk_Type2Draw(DemoIk* this, PlayState* play);
+void Demo_Ik_draw_none(DemoIk* this, PlayState* play);
+void Demo_Ik_draw_normal(DemoIk* this, PlayState* play);
+void Demo_Ik_inFace_draw_normal(DemoIk* this, PlayState* play);
 
-void DemoIk_Destroy(Actor* thisx, PlayState* play) {
+void Demo_Ik_Actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void DemoIk_BgCheck(DemoIk* this, PlayState* play) {
-    Actor_UpdateBgCheckInfo(play, &this->actor, 75.0f, 30.0f, 30.0f, UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
+void Demo_Ik_BGcheck(DemoIk* this, PlayState* play) {
+    Actor_BGcheck2(play, &this->actor, 75.0f, 30.0f, 30.0f, UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
 }
 
-s32 DemoIk_UpdateSkelAnime(DemoIk* this) {
-    return SkelAnime_Update(&this->skelAnime);
+s32 Demo_Ik_Animation_Base(DemoIk* this) {
+    return Skeleton_Info2_anime_play(&this->skelAnime);
 }
 
-CsCmdActorCue* DemoIk_GetCue(PlayState* play, s32 cueChannel) {
+CsCmdActorCue* Demo_Ik_Get_npcdemopnt(PlayState* play, s32 cueChannel) {
     if (play->csCtx.state != CS_STATE_IDLE) {
         CsCmdActorCue* cue = play->csCtx.actorCues[cueChannel];
 
@@ -44,8 +44,8 @@ CsCmdActorCue* DemoIk_GetCue(PlayState* play, s32 cueChannel) {
     return NULL;
 }
 
-s32 DemoIk_CheckForCue(PlayState* play, u16 cueId, s32 cueChannel) {
-    CsCmdActorCue* cue = DemoIk_GetCue(play, cueChannel);
+s32 Demo_Ik_Check_npcdemopnt(PlayState* play, u16 cueId, s32 cueChannel) {
+    CsCmdActorCue* cue = Demo_Ik_Get_npcdemopnt(play, cueChannel);
 
     if ((cue != NULL) && (cue->id == cueId)) {
         return 1;
@@ -53,20 +53,20 @@ s32 DemoIk_CheckForCue(PlayState* play, u16 cueId, s32 cueChannel) {
     return 0;
 }
 
-void DemoIk_SetMove(DemoIk* this, PlayState* play) {
+void Demo_Ik_Movement_byAnimation(DemoIk* this, PlayState* play) {
     this->skelAnime.movementFlags |= ANIM_FLAG_UPDATE_XZ;
-    AnimTaskQueue_AddActorMovement(play, &this->actor, &this->skelAnime, 1.0f);
+    Skeleton_Proc_Anime_Move_init(play, &this->actor, &this->skelAnime, 1.0f);
 }
 
-void DemoIk_EndMove(DemoIk* this) {
+void En_Ik_End_Movement_byAnimation(DemoIk* this) {
     this->skelAnime.movementFlags &= ~ANIM_FLAG_UPDATE_XZ;
 }
 
-f32 DemoIk_GetCurFrame(DemoIk* this) {
+f32 Demo_Ik_Get_anime_frame(DemoIk* this) {
     return this->skelAnime.curFrame;
 }
 
-Gfx* DemoIk_SetColors(GraphicsContext* gfxCtx, u8 primR, u8 primG, u8 primB, u8 envR, u8 envG, u8 envB) {
+Gfx* Demo_Ik_Setcolor(GraphicsContext* gfxCtx, u8 primR, u8 primG, u8 primB, u8 envR, u8 envG, u8 envB) {
     Gfx* head = GRAPH_ALLOC(gfxCtx, 3 * sizeof(Gfx));
     Gfx* entry = head;
 
@@ -80,43 +80,43 @@ Gfx* DemoIk_SetColors(GraphicsContext* gfxCtx, u8 primR, u8 primG, u8 primB, u8 
 
 #include "z_demo_ik_inFace.inc.c"
 
-static DemoIkActionFunc sActionFuncs[] = {
-    DemoIk_Type1Action0, DemoIk_Type1Action1, DemoIk_Type1Action2,
-    DemoIk_Type2Action0, DemoIk_Type2Action1, DemoIk_Type2Action2,
-};
+void Demo_Ik_main(Actor* thisx, PlayState* play) {
+    static DemoIkActionFunc proc[] = {
+        Demo_Ik_main_wait, Demo_Ik_main_stick, Demo_Ik_main_drop,
+        Demo_Ik_inFace_main_wait, Demo_Ik_inFace_main_stick, Demo_Ik_inFace_main_drop,
+    };
 
-void DemoIk_Update(Actor* thisx, PlayState* play) {
     s32 pad;
     DemoIk* this = (DemoIk*)thisx;
 
-    if (this->actionMode < 0 || this->actionMode >= ARRAY_COUNT(sActionFuncs) ||
-        sActionFuncs[this->actionMode] == NULL) {
+    if (this->actionMode < 0 || this->actionMode >= ARRAY_COUNT(proc) ||
+        proc[this->actionMode] == NULL) {
         // "The main mode is strange"
         PRINTF(VT_FGCOL(RED) "メインモードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
         return;
     }
-    sActionFuncs[this->actionMode](this, play);
+    proc[this->actionMode](this, play);
 }
 
-void DemoIk_DrawNothing(DemoIk* this, PlayState* play) {
+void Demo_Ik_draw_none(DemoIk* this, PlayState* play) {
 }
 
-static DemoIkDrawFunc sDrawFuncs[] = {
-    DemoIk_DrawNothing,
-    DemoIk_Type1Draw,
-    DemoIk_Type2Draw,
-};
+void Demo_Ik_draw(Actor* thisx, PlayState* play) {
+    static DemoIkDrawFunc proc[] = {
+        Demo_Ik_draw_none,
+        Demo_Ik_draw_normal,
+        Demo_Ik_inFace_draw_normal,
+    };
 
-void DemoIk_Draw(Actor* thisx, PlayState* play) {
     s32 pad;
     DemoIk* this = (DemoIk*)thisx;
 
-    if (this->drawMode < 0 || this->drawMode >= ARRAY_COUNT(sDrawFuncs) || sDrawFuncs[this->drawMode] == NULL) {
+    if (this->drawMode < 0 || this->drawMode >= ARRAY_COUNT(proc) || proc[this->drawMode] == NULL) {
         // "The draw mode is strange"
         PRINTF(VT_FGCOL(RED) "描画モードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
         return;
     }
-    sDrawFuncs[this->drawMode](this, play);
+    proc[this->drawMode](this, play);
 }
 
 ActorProfile Demo_Ik_Profile = {
@@ -125,19 +125,19 @@ ActorProfile Demo_Ik_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_IK,
     /**/ sizeof(DemoIk),
-    /**/ DemoIk_Init,
-    /**/ DemoIk_Destroy,
-    /**/ DemoIk_Update,
-    /**/ DemoIk_Draw,
+    /**/ Demo_Ik_Actor_ct,
+    /**/ Demo_Ik_Actor_dt,
+    /**/ Demo_Ik_main,
+    /**/ Demo_Ik_draw,
 };
 
-void DemoIk_Init(Actor* thisx, PlayState* play) {
+void Demo_Ik_Actor_ct(Actor* thisx, PlayState* play) {
     s32 pad;
     DemoIk* this = (DemoIk*)thisx;
 
     if (this->actor.params == 0 || this->actor.params == 1 || this->actor.params == 2) {
-        DemoIk_Type1Init(this, play);
+        Demo_Ik_inArmer_Init(this, play);
     } else {
-        DemoIk_Type2Init(this, play);
+        Demo_Ik_inFace_Init(this, play);
     }
 }

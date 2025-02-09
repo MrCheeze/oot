@@ -3,12 +3,12 @@
 
 #include "ultra64.h"
 
-void Letterbox_SetSizeTarget(s32 target);
-u32 Letterbox_GetSizeTarget(void);
-void Letterbox_SetSize(s32 size);
-u32 Letterbox_GetSize(void);
-void Letterbox_Init(void);
-void Letterbox_Destroy(void);
-void Letterbox_Update(s32 updateRate);
+void shrink_window_setval(s32 target);
+u32 shrink_window_getval(void);
+void shrink_window_setnowval(s32 size);
+u32 shrink_window_getnowval(void);
+void shrink_window_init(void);
+void shrink_window_cleanup(void);
+void shrink_window_move(s32 updateRate);
 
 #endif

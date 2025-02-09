@@ -4,26 +4,26 @@
 #include "ultra64.h"
 #include "global.h"
 
-extern u8 gAmmoItems[];
-extern s16 gVtxPageMapWorldQuadsWidth[];
-extern s16 gVtxPageMapWorldQuadsHeight[];
-extern char gSlotAgeReqs[];
-extern char gEquipAgeReqs[EQUIP_TYPE_MAX][4];
-extern char gItemAgeReqs[];
-extern u8 gAreaGsFlags[];
+extern u8 number_item[];
+extern s16 partvtx_mapg_xsz[];
+extern s16 partvtx_mapg_ysz[];
+extern char select_popup_data[];
+extern char equipment_popup_data[EQUIP_TYPE_MAX][4];
+extern char checkcheck_wb_data[];
+extern u8 kin_sta_suu[];
 
 #define AGE_REQ_ADULT LINK_AGE_ADULT
 #define AGE_REQ_CHILD LINK_AGE_CHILD
 #define AGE_REQ_NONE 9
 
 #define CHECK_AGE_REQ_SLOT(slot) \
-    ((gSlotAgeReqs[slot] == AGE_REQ_NONE) || gSlotAgeReqs[slot] == ((void)0, gSaveContext.save.linkAge))
+    ((select_popup_data[slot] == AGE_REQ_NONE) || select_popup_data[slot] == ((void)0, z_common_data.save.linkAge))
 
 #define CHECK_AGE_REQ_EQUIP(y, x) \
-    ((gEquipAgeReqs[y][x] == AGE_REQ_NONE) || (gEquipAgeReqs[y][x] == ((void)0, gSaveContext.save.linkAge)))
+    ((equipment_popup_data[y][x] == AGE_REQ_NONE) || (equipment_popup_data[y][x] == ((void)0, z_common_data.save.linkAge)))
 
 #define CHECK_AGE_REQ_ITEM(item) \
-    ((gItemAgeReqs[item] == AGE_REQ_NONE) || (gItemAgeReqs[item] == ((void)0, gSaveContext.save.linkAge)))
+    ((checkcheck_wb_data[item] == AGE_REQ_NONE) || (checkcheck_wb_data[item] == ((void)0, z_common_data.save.linkAge)))
 
 // Each page's background is made of a 3x5 grid of quads
 #define PAGE_BG_COLS 3
@@ -165,26 +165,26 @@ typedef enum ItemQuad {
     /* 41 */ ITEM_QUAD_MAX
 } ItemQuad;
 
-void KaleidoScope_DrawQuestStatus(PlayState* play, GraphicsContext* gfxCtx);
-s32 KaleidoScope_UpdateQuestStatusPoint(PauseContext* pauseCtx, s32 point);
-void KaleidoScope_DrawDebugEditor(PlayState* play);
-void KaleidoScope_DrawPlayerWork(PlayState* play);
-void KaleidoScope_DrawEquipment(PlayState* play);
-void KaleidoScope_SetCursorPos(PauseContext* pauseCtx, u16 index, Vtx* vtx);
-void KaleidoScope_DrawItemSelect(PlayState* play);
-void KaleidoScope_UpdateItemEquip(PlayState* play);
-void KaleidoScope_DrawDungeonMap(PlayState* play, GraphicsContext* gfxCtx);
-void KaleidoScope_DrawWorldMap(PlayState* play, GraphicsContext* gfxCtx);
-void KaleidoScope_UpdatePrompt(PlayState* play);
-Gfx* KaleidoScope_QuadTextureIA4(Gfx* gfx, void* texture, s16 width, s16 height, u16 point);
-Gfx* KaleidoScope_QuadTextureIA8(Gfx* gfx, void* texture, s16 width, s16 height, u16 point);
-void KaleidoScope_MoveCursorToSpecialPos(PlayState* play, u16 specialPos);
-void KaleidoScope_DrawQuadTextureRGBA32(GraphicsContext* gfxCtx, void* texture, u16 width, u16 height, u16 point);
-void KaleidoScope_ProcessPlayerPreRender();
-void KaleidoScope_SetupPlayerPreRender(PlayState* play);
-void KaleidoScope_DrawCursor(PlayState* play, u16 pageIndex);
-void KaleidoScope_UpdateDungeonMap(PlayState* play);
+void collect_disp(PlayState* play, GraphicsContext* gfxCtx);
+s32 item_check(PauseContext* pauseCtx, s32 point);
+void kaleido_scope_debug_draw(PlayState* play);
+void equipment_player_disp(PlayState* play);
+void equipment_disp(PlayState* play);
+void cursol_defalute(PauseContext* pauseCtx, u16 index, Vtx* vtx);
+void item_select_disp(PlayState* play);
+void item_move(PlayState* play);
+void dungeon_map_disp(PlayState* play, GraphicsContext* gfxCtx);
+void field_map_disp(PlayState* play, GraphicsContext* gfxCtx);
+void reset_disp(PlayState* play);
+Gfx* texture_QuadrangleIA4(Gfx* gfx, void* texture, s16 width, s16 height, u16 point);
+Gfx* texture_QuadrangleIA8(Gfx* gfx, void* texture, s16 width, s16 height, u16 point);
+void key_arrangement(PlayState* play, u16 specialPos);
+void kaleido_scope_item_set(GraphicsContext* gfxCtx, void* texture, u16 width, u16 height, u16 point);
+void anti_end();
+void anti(PlayState* play);
+void cursor_draw(PlayState* play, u16 pageIndex);
+void map_dma(PlayState* play);
 
-void PauseMapMark_Draw(PlayState* play);
+void LargeMapMarkDisplay(PlayState* play);
 
 #endif

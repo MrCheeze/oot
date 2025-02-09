@@ -99,7 +99,7 @@ s32 func_801C8C1C(struct_801E0D18* arg0) {
 
     do {
         var_s0 = 0;
-        Sleep_Msec(60);
+        msleep(60);
         func_801C82E0(arg0);
 
         switch (arg0->unk_68) {
@@ -169,7 +169,7 @@ s32 func_801C8DC0(struct_801E0D18* arg0) {
         if (temp_v0 != 9) {
             return temp_v0;
         }
-        Sleep_Msec(60);
+        msleep(60);
     }
 }
 
@@ -178,7 +178,7 @@ s32 func_801C8E70(struct_801E0D18* arg0) {
     s32 temp_v0;
 
     while (true) {
-        Sleep_Msec(60);
+        msleep(60);
         func_801C8298(arg0);
 
         switch (arg0->unk_68) {
@@ -297,7 +297,7 @@ s32 func_801C912C(struct_801E0D18* arg0) {
             }
         }
 
-        Sleep_Msec(250);
+        msleep(250);
     } while (i++ < 30);
 
     return func_801C8BC0(arg0);

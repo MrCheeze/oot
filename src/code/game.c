@@ -10,11 +10,11 @@
 
 #pragma increment_block_number "gc-eu:128 gc-eu-mq:128 gc-jp:128 gc-jp-ce:128 gc-jp-mq:128 gc-us:128 gc-us-mq:128 hiratsu3:128"
 
-SpeedMeter D_801664D0;
-VisCvg sVisCvg;
-VisZBuf sVisZBuf;
-VisMono sVisMono;
-ViMode sViMode;
+SpeedMeter speed_meter;
+VisCvg z_viscvg;
+VisZBuf z_viszbuf;
+VisMono z_vismono;
+ViMode z_vimode;
 
 #if DEBUG_FEATURES
 FaultClient sGameFaultClient;
@@ -25,55 +25,55 @@ void GameState_FaultPrint(void) {
     s32 i;
 
     PRINTF("last_button=%04x\n", sLastButtonPressed);
-    Fault_DrawText(120, 180, "%08x", sLastButtonPressed);
+    faultprint_PosPrintf(120, 180, "%08x", sLastButtonPressed);
     for (i = 0; i < ARRAY_COUNT(sBtnChars); i++) {
         if (sLastButtonPressed & (1 << i)) {
-            Fault_DrawText((i * 8) + 120, 190, "%c", sBtnChars[i]);
+            faultprint_PosPrintf((i * 8) + 120, 190, "%c", sBtnChars[i]);
         }
     }
 }
 #endif
 
-void GameState_SetFBFilter(Gfx** gfxP) {
+void debug_filter(Gfx** gfxP) {
     Gfx* gfx = *gfxP;
 
     if ((R_FB_FILTER_TYPE >= FB_FILTER_CVG_RGB) && (R_FB_FILTER_TYPE <= FB_FILTER_CVG_RGB_FOG)) {
         // Visualize coverage
-        sVisCvg.vis.type = FB_FILTER_TO_CVG_TYPE(R_FB_FILTER_TYPE);
-        sVisCvg.vis.primColor.r = R_FB_FILTER_PRIM_COLOR(0);
-        sVisCvg.vis.primColor.g = R_FB_FILTER_PRIM_COLOR(1);
-        sVisCvg.vis.primColor.b = R_FB_FILTER_PRIM_COLOR(2);
-        sVisCvg.vis.primColor.a = R_FB_FILTER_A;
-        VisCvg_Draw(&sVisCvg, &gfx);
+        z_viscvg.vis.type = FB_FILTER_TO_CVG_TYPE(R_FB_FILTER_TYPE);
+        z_viscvg.vis.primColor.r = R_FB_FILTER_PRIM_COLOR(0);
+        z_viscvg.vis.primColor.g = R_FB_FILTER_PRIM_COLOR(1);
+        z_viscvg.vis.primColor.b = R_FB_FILTER_PRIM_COLOR(2);
+        z_viscvg.vis.primColor.a = R_FB_FILTER_A;
+        z_viscvg_draw(&z_viscvg, &gfx);
     } else if ((R_FB_FILTER_TYPE == FB_FILTER_ZBUF_IA) || (R_FB_FILTER_TYPE == FB_FILTER_ZBUF_RGBA)) {
         // Visualize z-buffer
-        sVisZBuf.vis.type = (R_FB_FILTER_TYPE == FB_FILTER_ZBUF_RGBA);
-        sVisZBuf.vis.primColor.r = R_FB_FILTER_PRIM_COLOR(0);
-        sVisZBuf.vis.primColor.g = R_FB_FILTER_PRIM_COLOR(1);
-        sVisZBuf.vis.primColor.b = R_FB_FILTER_PRIM_COLOR(2);
-        sVisZBuf.vis.primColor.a = R_FB_FILTER_A;
-        sVisZBuf.vis.envColor.r = R_FB_FILTER_ENV_COLOR(0);
-        sVisZBuf.vis.envColor.g = R_FB_FILTER_ENV_COLOR(1);
-        sVisZBuf.vis.envColor.b = R_FB_FILTER_ENV_COLOR(2);
-        sVisZBuf.vis.envColor.a = R_FB_FILTER_A;
-        VisZBuf_Draw(&sVisZBuf, &gfx);
+        z_viszbuf.vis.type = (R_FB_FILTER_TYPE == FB_FILTER_ZBUF_RGBA);
+        z_viszbuf.vis.primColor.r = R_FB_FILTER_PRIM_COLOR(0);
+        z_viszbuf.vis.primColor.g = R_FB_FILTER_PRIM_COLOR(1);
+        z_viszbuf.vis.primColor.b = R_FB_FILTER_PRIM_COLOR(2);
+        z_viszbuf.vis.primColor.a = R_FB_FILTER_A;
+        z_viszbuf.vis.envColor.r = R_FB_FILTER_ENV_COLOR(0);
+        z_viszbuf.vis.envColor.g = R_FB_FILTER_ENV_COLOR(1);
+        z_viszbuf.vis.envColor.b = R_FB_FILTER_ENV_COLOR(2);
+        z_viszbuf.vis.envColor.a = R_FB_FILTER_A;
+        z_viszbuf_draw(&z_viszbuf, &gfx);
     } else if (R_FB_FILTER_TYPE == FB_FILTER_MONO) {
         // Monochrome filter
-        sVisMono.vis.type = 0;
-        sVisMono.vis.primColor.r = R_FB_FILTER_PRIM_COLOR(0);
-        sVisMono.vis.primColor.g = R_FB_FILTER_PRIM_COLOR(1);
-        sVisMono.vis.primColor.b = R_FB_FILTER_PRIM_COLOR(2);
-        sVisMono.vis.primColor.a = R_FB_FILTER_A;
-        sVisMono.vis.envColor.r = R_FB_FILTER_ENV_COLOR(0);
-        sVisMono.vis.envColor.g = R_FB_FILTER_ENV_COLOR(1);
-        sVisMono.vis.envColor.b = R_FB_FILTER_ENV_COLOR(2);
-        sVisMono.vis.envColor.a = R_FB_FILTER_A;
-        VisMono_Draw(&sVisMono, &gfx);
+        z_vismono.vis.type = 0;
+        z_vismono.vis.primColor.r = R_FB_FILTER_PRIM_COLOR(0);
+        z_vismono.vis.primColor.g = R_FB_FILTER_PRIM_COLOR(1);
+        z_vismono.vis.primColor.b = R_FB_FILTER_PRIM_COLOR(2);
+        z_vismono.vis.primColor.a = R_FB_FILTER_A;
+        z_vismono.vis.envColor.r = R_FB_FILTER_ENV_COLOR(0);
+        z_vismono.vis.envColor.g = R_FB_FILTER_ENV_COLOR(1);
+        z_vismono.vis.envColor.b = R_FB_FILTER_ENV_COLOR(2);
+        z_vismono.vis.envColor.a = R_FB_FILTER_A;
+        z_vismono_draw(&z_vismono, &gfx);
     }
     *gfxP = gfx;
 }
 
-void func_800C4344(GameState* gameState) {
+void game_move_first(GameState* gameState) {
 #if DEBUG_FEATURES
     Input* selectedInput;
     s32 hexDumpSize;
@@ -107,8 +107,8 @@ void func_800C4344(GameState* gameState) {
         Regs_UpdateEditor(&gameState->input[1]);
     }
 
-    gDmaMgrVerbose = HREG(60);
-    gDmaMgrDmaBuffSize = SREG(21) != 0 ? ALIGN16(SREG(21)) : DMAMGR_DEFAULT_BUFSIZE;
+    _dma_verbose = HREG(60);
+    _dma_split_size = SREG(21) != 0 ? ALIGN16(SREG(21)) : DMAMGR_DEFAULT_BUFSIZE;
     gSystemArenaLogSeverity = HREG(61);
     gZeldaArenaLogSeverity = HREG(62);
 
@@ -136,7 +136,7 @@ void func_800C4344(GameState* gameState) {
 }
 
 #if DEBUG_FEATURES
-void GameState_DrawInputDisplay(u16 input, Gfx** gfxP) {
+void game_debug_draw_lastInputDisplay(u16 input, Gfx** gfxP) {
     static const u16 sInpDispBtnColors[] = {
         GPACK_RGBA5551(255, 255, 0, 1),   GPACK_RGBA5551(255, 255, 0, 1),   GPACK_RGBA5551(255, 255, 0, 1),
         GPACK_RGBA5551(255, 255, 0, 1),   GPACK_RGBA5551(120, 120, 120, 1), GPACK_RGBA5551(120, 120, 120, 1),
@@ -168,34 +168,34 @@ void GameState_DrawInputDisplay(u16 input, Gfx** gfxP) {
 }
 #endif
 
-void GameState_Draw(GameState* gameState, GraphicsContext* gfxCtx) {
+void game_debug_draw_last(GameState* gameState, GraphicsContext* gfxCtx) {
     Gfx* newDList;
     Gfx* polyOpaP;
 
     OPEN_DISPS(gfxCtx, "../game.c", 746);
 
-    newDList = Gfx_Open(polyOpaP = POLY_OPA_DISP);
+    newDList = gfxopen(polyOpaP = POLY_OPA_DISP);
     gSPDisplayList(OVERLAY_DISP++, newDList);
 
     if (R_ENABLE_FB_FILTER == 1) {
-        GameState_SetFBFilter(&newDList);
+        debug_filter(&newDList);
     }
 
 #if DEBUG_FEATURES
     sLastButtonPressed = gameState->input[0].press.button | gameState->input[0].cur.button;
     if (R_DISABLE_INPUT_DISPLAY == 0) {
-        GameState_DrawInputDisplay(sLastButtonPressed, &newDList);
+        game_debug_draw_lastInputDisplay(sLastButtonPressed, &newDList);
     }
 
     if (R_ENABLE_AUDIO_DBG & 1) {
         s32 pad;
         GfxPrint printer;
 
-        GfxPrint_Init(&printer);
-        GfxPrint_Open(&printer, newDList);
-        AudioDebug_Draw(&printer);
-        newDList = GfxPrint_Close(&printer);
-        GfxPrint_Destroy(&printer);
+        gfxprint_init(&printer);
+        gfxprint_open(&printer, newDList);
+        Na_AudioPrint(&printer);
+        newDList = gfxprint_close(&printer);
+        gfxprint_cleanup(&printer);
     }
 #endif
 
@@ -207,47 +207,47 @@ void GameState_Draw(GameState* gameState, GraphicsContext* gfxCtx) {
 #endif
         PRINTF(T("ハイラル滅亡まであと %08x バイト(game_alloc)\n",
                  "%08x bytes left until Hyrule is destroyed (game_alloc)\n"),
-               THA_GetRemaining(&gameState->tha));
+               THA_getFreeBytes(&gameState->tha));
         R_ENABLE_ARENA_DBG = 0;
     }
 
     gSPEndDisplayList(newDList++);
-    Gfx_Close(polyOpaP, newDList);
+    gfxclose(polyOpaP, newDList);
     POLY_OPA_DISP = newDList;
 
     CLOSE_DISPS(gfxCtx, "../game.c", 800);
 
-    Debug_DrawText(gfxCtx);
+    Debug_mode_output(gfxCtx);
 
     if (R_ENABLE_ARENA_DBG != 0) {
-        SpeedMeter_DrawTimeEntries(&D_801664D0, gfxCtx);
-        SpeedMeter_DrawAllocEntries(&D_801664D0, gfxCtx, gameState);
+        speed_meter_draw(&speed_meter, gfxCtx);
+        speed_meter_draw_memory(&speed_meter, gfxCtx, gameState);
     }
 }
 
-void GameState_SetFrameBuffer(GraphicsContext* gfxCtx) {
+void game_draw_first(GraphicsContext* gfxCtx) {
     OPEN_DISPS(gfxCtx, "../game.c", 814);
 
     gSPSegment(POLY_OPA_DISP++, 0, 0);
     gSPSegment(POLY_OPA_DISP++, 0xF, gfxCtx->curFrameBuffer);
-    gSPSegment(POLY_OPA_DISP++, 0xE, gZBuffer);
+    gSPSegment(POLY_OPA_DISP++, 0xE, sys_zb);
     gSPSegment(POLY_XLU_DISP++, 0, 0);
     gSPSegment(POLY_XLU_DISP++, 0xF, gfxCtx->curFrameBuffer);
-    gSPSegment(POLY_XLU_DISP++, 0xE, gZBuffer);
+    gSPSegment(POLY_XLU_DISP++, 0xE, sys_zb);
     gSPSegment(OVERLAY_DISP++, 0, 0);
     gSPSegment(OVERLAY_DISP++, 0xF, gfxCtx->curFrameBuffer);
-    gSPSegment(OVERLAY_DISP++, 0xE, gZBuffer);
+    gSPSegment(OVERLAY_DISP++, 0xE, sys_zb);
 
     CLOSE_DISPS(gfxCtx, "../game.c", 838);
 }
 
-void func_800C49F4(GraphicsContext* gfxCtx) {
+void game_draw_last(GraphicsContext* gfxCtx) {
     Gfx* newDlist;
     Gfx* polyOpaP;
 
     OPEN_DISPS(gfxCtx, "../game.c", 846);
 
-    newDlist = Gfx_Open(polyOpaP = POLY_OPA_DISP);
+    newDlist = gfxopen(polyOpaP = POLY_OPA_DISP);
     gSPDisplayList(OVERLAY_DISP++, newDlist);
 
 #if PLATFORM_N64
@@ -257,22 +257,22 @@ void func_800C49F4(GraphicsContext* gfxCtx) {
 #endif
 
     gSPEndDisplayList(newDlist++);
-    Gfx_Close(polyOpaP, newDlist);
+    gfxclose(polyOpaP, newDlist);
     POLY_OPA_DISP = newDlist;
 
     CLOSE_DISPS(gfxCtx, "../game.c", 865);
 }
 
-void PadMgr_RequestPadData(PadMgr* padMgr, Input* inputs, s32 gameRequest);
+void padmgr_RequestPadData(PadMgr* padMgr, Input* inputs, s32 gameRequest);
 
-void GameState_ReqPadData(GameState* gameState) {
-    PadMgr_RequestPadData(&gPadMgr, gameState->input, true);
+void game_get_controller(GameState* gameState) {
+    padmgr_RequestPadData(&padmgr, gameState->input, true);
 }
 
-void GameState_Update(GameState* gameState) {
+void game_main(GameState* gameState) {
     GraphicsContext* gfxCtx = gameState->gfxCtx;
 
-    GameState_SetFrameBuffer(gfxCtx);
+    game_draw_first(gfxCtx);
 
     gameState->main(gameState);
 
@@ -285,13 +285,13 @@ void GameState_Update(GameState* gameState) {
     }
 #endif
 
-    func_800C4344(gameState);
+    game_move_first(gameState);
 
 #if OOT_VERSION < PAL_1_0
     if (R_VI_MODE_EDIT_STATE != VI_MODE_EDIT_STATE_INACTIVE) {
-        ViMode_Update(&sViMode, &gameState->input[0]);
-        gfxCtx->viMode = &sViMode.customViMode;
-        gfxCtx->viFeatures = sViMode.viFeatures;
+        z_vimode_move(&z_vimode, &gameState->input[0]);
+        gfxCtx->viMode = &z_vimode.customViMode;
+        gfxCtx->viFeatures = z_vimode.viFeatures;
     }
 #endif
 
@@ -299,22 +299,22 @@ void GameState_Update(GameState* gameState) {
     if (SREG(63) == 1u) {
         if (R_VI_MODE_EDIT_STATE < VI_MODE_EDIT_STATE_INACTIVE) {
             R_VI_MODE_EDIT_STATE = VI_MODE_EDIT_STATE_INACTIVE;
-            gfxCtx->viMode = &gViConfigMode;
-            gfxCtx->viFeatures = gViConfigFeatures;
-            gfxCtx->xScale = gViConfigXScale;
-            gfxCtx->yScale = gViConfigYScale;
+            gfxCtx->viMode = &vimode;
+            gfxCtx->viFeatures = vispecial;
+            gfxCtx->xScale = vixscale;
+            gfxCtx->yScale = viyscale;
         } else if (R_VI_MODE_EDIT_STATE > VI_MODE_EDIT_STATE_INACTIVE) {
-            ViMode_Update(&sViMode, &gameState->input[0]);
-            gfxCtx->viMode = &sViMode.customViMode;
-            gfxCtx->viFeatures = sViMode.viFeatures;
+            z_vimode_move(&z_vimode, &gameState->input[0]);
+            gfxCtx->viMode = &z_vimode.customViMode;
+            gfxCtx->viFeatures = z_vimode.viFeatures;
             gfxCtx->xScale = 1.0f;
             gfxCtx->yScale = 1.0f;
         }
     } else if (SREG(63) >= 2) {
-        gfxCtx->viMode = &gViConfigMode;
-        gfxCtx->viFeatures = gViConfigFeatures;
-        gfxCtx->xScale = gViConfigXScale;
-        gfxCtx->yScale = gViConfigYScale;
+        gfxCtx->viMode = &vimode;
+        gfxCtx->viFeatures = vispecial;
+        gfxCtx->xScale = vixscale;
+        gfxCtx->yScale = viyscale;
 
         if (SREG(63) == 6 || (SREG(63) == 2u && (u32)osTvType == OS_TV_NTSC)) {
             gfxCtx->viMode = &osViModeNtscLan1;
@@ -343,7 +343,7 @@ void GameState_Update(GameState* gameState) {
         if (R_VI_INIT != HREG_MODE_VI) {
             R_VI_INIT = HREG_MODE_VI;
             R_VI_NEXT_Y_SCALE_MODE = 0;
-            R_VI_NEXT_ADDI_SCAN_LINES = gViConfigAdditionalScanLines;
+            R_VI_NEXT_ADDI_SCAN_LINES = viextendvstart;
             R_VI_CUR_ADDI_SCAN_LINES = 0;
             R_VI_CUR_Y_SCALE_MODE = 0;
         }
@@ -362,40 +362,40 @@ void GameState_Update(GameState* gameState) {
             R_VI_CUR_ADDI_SCAN_LINES = R_VI_NEXT_ADDI_SCAN_LINES;
             R_VI_CUR_Y_SCALE_MODE = R_VI_NEXT_Y_SCALE_MODE;
 
-            gViConfigAdditionalScanLines = R_VI_NEXT_ADDI_SCAN_LINES;
-            gViConfigYScale = R_VI_NEXT_Y_SCALE_MODE == 0
-                                  ? ((f32)SCREEN_HEIGHT) / (gViConfigAdditionalScanLines + (f32)SCREEN_HEIGHT)
+            viextendvstart = R_VI_NEXT_ADDI_SCAN_LINES;
+            viyscale = R_VI_NEXT_Y_SCALE_MODE == 0
+                                  ? ((f32)SCREEN_HEIGHT) / (viextendvstart + (f32)SCREEN_HEIGHT)
                                   : 1.0f;
-            D_80009430 = 1;
+            vidirty = 1;
         }
     }
 #endif
 
     if (R_PAUSE_BG_PRERENDER_STATE != (u32)PAUSE_BG_PRERENDER_PROCESS) {
-        GameState_Draw(gameState, gfxCtx);
-        func_800C49F4(gfxCtx);
+        game_debug_draw_last(gameState, gfxCtx);
+        game_draw_last(gfxCtx);
     }
 
     gameState->frames++;
 }
 
-void GameState_InitArena(GameState* gameState, size_t size) {
+void game_init_hyral(GameState* gameState, size_t size) {
     void* arena;
 
     PRINTF(T("ハイラル確保 サイズ＝%u バイト\n", "Hyrule reserved size = %u bytes\n"), size);
     arena = GAME_ALLOC_MALLOC(&gameState->alloc, size, "../game.c", 992);
 
     if (arena != NULL) {
-        THA_Init(&gameState->tha, arena, size);
+        THA_ct(&gameState->tha, arena, size);
         PRINTF(T("ハイラル確保成功\n", "Hyrule successfully secured\n"));
     } else {
-        THA_Init(&gameState->tha, NULL, 0);
+        THA_ct(&gameState->tha, NULL, 0);
         PRINTF(T("ハイラル確保失敗\n", "Failure to secure Hyrule\n"));
         HUNGUP_AND_CRASH("../game.c", LN4(895, 898, 985, 999, 999));
     }
 }
 
-void GameState_Realloc(GameState* gameState, size_t size) {
+void game_resize_hyral(GameState* gameState, size_t size) {
     GameAlloc* alloc = &gameState->alloc;
     void* gameArena;
     u32 systemMaxFree;
@@ -403,10 +403,10 @@ void GameState_Realloc(GameState* gameState, size_t size) {
     u32 systemAlloc;
     void* thaStart = gameState->tha.start;
 
-    THA_Destroy(&gameState->tha);
-    GameAlloc_Free(alloc, thaStart);
+    THA_dt(&gameState->tha);
+    gamealloc_free(alloc, thaStart);
     PRINTF(T("ハイラル一時解放!!\n", "Hyrule temporarily released!!\n"));
-    SystemArena_GetSizes(&systemMaxFree, &systemFree, &systemAlloc);
+    GetFreeArena(&systemMaxFree, &systemFree, &systemAlloc);
     if ((systemMaxFree - 0x10) < size) {
         PRINTF("%c", BEL);
         PRINTF_COLOR_RED();
@@ -422,10 +422,10 @@ void GameState_Realloc(GameState* gameState, size_t size) {
 
     gameArena = GAME_ALLOC_MALLOC(alloc, size, "../game.c", 1033);
     if (gameArena != NULL) {
-        THA_Init(&gameState->tha, gameArena, size);
+        THA_ct(&gameState->tha, gameArena, size);
         PRINTF(T("ハイラル再確保成功\n", "Successful reacquisition of Hyrule\n"));
     } else {
-        THA_Init(&gameState->tha, NULL, 0);
+        THA_ct(&gameState->tha, NULL, 0);
         PRINTF(T("ハイラル再確保失敗\n", "Failure to secure Hyrule\n"));
 
 #if PLATFORM_GC && DEBUG_FEATURES
@@ -436,7 +436,7 @@ void GameState_Realloc(GameState* gameState, size_t size) {
     }
 }
 
-void GameState_Init(GameState* gameState, GameStateFunc init, GraphicsContext* gfxCtx) {
+void game_ct(GameState* gameState, GameStateFunc init, GraphicsContext* gfxCtx) {
     UNUSED_NDEBUG OSTime startTime;
     UNUSED_NDEBUG OSTime endTime;
 
@@ -458,14 +458,14 @@ void GameState_Init(GameState* gameState, GameStateFunc init, GraphicsContext* g
         PRINTF(T("game_set_next_game_null 処理時間 %d us\n", "game_set_next_game_null processing time %d us\n"),
                OS_CYCLES_TO_USEC(endTime - startTime));
         startTime = endTime;
-        GameAlloc_Init(&gameState->alloc);
+        gamealloc_init(&gameState->alloc);
     }
 
     endTime = osGetTime();
     PRINTF(T("gamealloc_init 処理時間 %d us\n", "gamealloc_init processing time %d us\n"),
            OS_CYCLES_TO_USEC(endTime - startTime));
     startTime = endTime;
-    GameState_InitArena(gameState, 0x100000);
+    game_init_hyral(gameState, 0x100000);
 
     R_UPDATE_RATE = 3;
     init(gameState);
@@ -474,66 +474,66 @@ void GameState_Init(GameState* gameState, GameStateFunc init, GraphicsContext* g
 
     startTime = endTime;
     LOG_UTILS_CHECK_NULL_POINTER("this->cleanup", gameState->destroy, "../game.c", 1088);
-    VisCvg_Init(&sVisCvg);
-    VisZBuf_Init(&sVisZBuf);
-    VisMono_Init(&sVisMono);
+    z_viscvg_init(&z_viscvg);
+    z_viszbuf_init(&z_viszbuf);
+    z_vismono_init(&z_vismono);
     if ((R_VI_MODE_EDIT_STATE == VI_MODE_EDIT_STATE_INACTIVE) || !DEBUG_FEATURES) {
-        ViMode_Init(&sViMode);
+        z_vimode_init(&z_vimode);
     }
-    SpeedMeter_Init(&D_801664D0);
-    Rumble_Init();
+    speed_meter_init(&speed_meter);
+    z_vibctl2_init();
     osSendMesg(&gameState->gfxCtx->queue, NULL, OS_MESG_BLOCK);
     endTime = osGetTime();
     PRINTF(T("その他初期化 処理時間 %d us\n", "Other initialization processing time %d us\n"),
            OS_CYCLES_TO_USEC(endTime - startTime));
 
 #if DEBUG_FEATURES
-    Fault_AddClient(&sGameFaultClient, GameState_FaultPrint, NULL, NULL);
+    fault_AddClient(&sGameFaultClient, GameState_FaultPrint, NULL, NULL);
 #endif
 
     PRINTF(T("game コンストラクタ終了\n", "game constructor end\n"));
 }
 
-void GameState_Destroy(GameState* gameState) {
+void game_dt(GameState* gameState) {
     PRINTF(T("game デストラクタ開始\n", "game destructor start\n"));
-    AudioMgr_StopAllSfx();
-    Audio_Update();
+    audio_StopAllSoundEffect();
+    Nas_AudioInput();
     osRecvMesg(&gameState->gfxCtx->queue, NULL, OS_MESG_BLOCK);
     LOG_UTILS_CHECK_NULL_POINTER("this->cleanup", gameState->destroy, "../game.c", 1139);
     if (gameState->destroy != NULL) {
         gameState->destroy(gameState);
     }
-    Rumble_Destroy();
-    SpeedMeter_Destroy(&D_801664D0);
-    VisCvg_Destroy(&sVisCvg);
-    VisZBuf_Destroy(&sVisZBuf);
-    VisMono_Destroy(&sVisMono);
+    z_vibctl2_cleanup();
+    speed_meter_cleanup(&speed_meter);
+    z_viscvg_cleanup(&z_viscvg);
+    z_viszbuf_cleanup(&z_viszbuf);
+    z_vismono_cleanup(&z_vismono);
     if ((R_VI_MODE_EDIT_STATE == VI_MODE_EDIT_STATE_INACTIVE) || !DEBUG_FEATURES) {
-        ViMode_Destroy(&sViMode);
+        z_vimode_cleanup(&z_vimode);
     }
-    THA_Destroy(&gameState->tha);
-    GameAlloc_Cleanup(&gameState->alloc);
+    THA_dt(&gameState->tha);
+    gamealloc_cleanup(&gameState->alloc);
 
 #if PLATFORM_GC && DEBUG_FEATURES
     SystemArena_Display();
 #endif
 
 #if DEBUG_FEATURES
-    Fault_RemoveClient(&sGameFaultClient);
+    fault_RemoveClient(&sGameFaultClient);
 #endif
 
     PRINTF(T("game デストラクタ終了\n", "game destructor end\n"));
 }
 
-GameStateFunc GameState_GetInit(GameState* gameState) {
+GameStateFunc game_get_next_game_init(GameState* gameState) {
     return gameState->init;
 }
 
-size_t GameState_GetSize(GameState* gameState) {
+size_t game_get_next_game_class_size(GameState* gameState) {
     return gameState->size;
 }
 
-u32 GameState_IsRunning(GameState* gameState) {
+u32 game_is_doing(GameState* gameState) {
     return gameState->running;
 }
 
@@ -541,17 +541,17 @@ u32 GameState_IsRunning(GameState* gameState) {
 void* GameState_Alloc(GameState* gameState, size_t size, const char* file, int line) {
     void* ret;
 
-    if (THA_IsCrash(&gameState->tha)) {
+    if (THA_isCrash(&gameState->tha)) {
         PRINTF(T("ハイラルは滅亡している\n", "Hyrule is destroyed\n"));
         ret = NULL;
-    } else if ((u32)THA_GetRemaining(&gameState->tha) < size) {
+    } else if ((u32)THA_getFreeBytes(&gameState->tha) < size) {
         PRINTF(T("滅亡寸前のハイラルには %d バイトの余力もない（滅亡まであと %d バイト）\n",
                  "Hyrule on the verge of extinction does not have %d bytes left (%d bytes until extinction)\n"),
-               size, THA_GetRemaining(&gameState->tha));
+               size, THA_getFreeBytes(&gameState->tha));
         ret = NULL;
     } else {
-        ret = THA_AllocTailAlign16(&gameState->tha, size);
-        if (THA_IsCrash(&gameState->tha)) {
+        ret = THA_alloc16(&gameState->tha, size);
+        if (THA_isCrash(&gameState->tha)) {
             PRINTF(T("ハイラルは滅亡してしまった\n", "Hyrule has been destroyed\n"));
             ret = NULL;
         }
@@ -565,10 +565,10 @@ void* GameState_Alloc(GameState* gameState, size_t size, const char* file, int l
 }
 
 void* GameState_AllocEndAlign16(GameState* gameState, size_t size) {
-    return THA_AllocTailAlign16(&gameState->tha, size);
+    return THA_alloc16(&gameState->tha, size);
 }
 #endif
 
-s32 GameState_GetArenaSize(GameState* gameState) {
-    return THA_GetRemaining(&gameState->tha);
+s32 game_getFreeBytes(GameState* gameState) {
+    return THA_getFreeBytes(&gameState->tha);
 }

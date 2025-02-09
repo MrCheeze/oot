@@ -24,7 +24,7 @@ typedef struct FaultCursorCoords {
     s32 y;
 } FaultCursorCoords; // size = 0x8
 
-u32 sFaultDrawerFont[] = {
+u32 font_00[] = {
     0x00DFFD00, 0x0AEEFFA0, 0x0DF22DD0, 0x06611DC0, 0x01122DD0, 0x06719900, 0x011EED10, 0x077EF700, 0x01562990,
     0x05589760, 0x0DD22990, 0x05599770, 0x04DFFD40, 0x026EF700, 0x00000000, 0x00000000, 0x08BFFB00, 0x0EFFFFC0,
     0x0BF00FB0, 0x0FF00330, 0x0FF00FF0, 0x0FF00220, 0x0CFBBF60, 0x0FFCCE20, 0x0DD44FF0, 0x0FF00220, 0x0FF00FF0,
@@ -56,7 +56,7 @@ u32 sFaultDrawerFont[] = {
     0x05546F50, 0x00A99800, 0x02222080, 0x02001888,
 };
 
-const char* sExceptionNames[] = {
+const char* cpuExceptions[] = {
     "Interrupt",
     "TLB modification",
     "TLB exception on load",
@@ -77,7 +77,7 @@ const char* sExceptionNames[] = {
     "Virtual coherency on data",
 };
 
-const char* sFpExceptionNames[] = {
+const char* fpuExceptions[] = {
     "Unimplemented operation", "Invalid operation", "Division by zero", "Overflow", "Underflow", "Inexact operation",
 };
 
@@ -86,9 +86,9 @@ s32 D_800FF9C4[7] = { 0 }; // Unused
 
 Input sFaultInputs[MAXCONTROLLERS];
 
-FaultMgr gFaultMgr;
+FaultMgr debugger;
 
-STACK(sFaultStack, 0x400);
+STACK(faultStack, 0x400);
 StackEntry sFaultStackInfo;
 FaultCursorCoords sFaultCursorPos;
 
@@ -97,31 +97,31 @@ vs32 gFaultMsgId;
 vs32 gFaultDisplayEnable;
 volatile OSThread* gFaultFaultedThread;
 
-void Fault_SleepImpl(u32 ms) {
-    Sleep_Msec(ms);
+void my_msleep(u32 ms) {
+    msleep(ms);
 }
 
-void Fault_WaitForInputImpl(void) {
+void fault_KeyWait2(void) {
     Input* inputs = sFaultInputs;
     u16 btnPress;
 
     do {
-        Fault_SleepImpl(0x10);
-        PadMgr_RequestPadData(&gPadMgr, inputs, 0);
+        my_msleep(0x10);
+        padmgr_RequestPadData(&padmgr, inputs, 0);
         btnPress = inputs[0].press.button;
     } while (!CHECK_BTN_ANY(btnPress, (BTN_A | BTN_B | BTN_START | BTN_CUP | BTN_CDOWN | BTN_CLEFT | BTN_CRIGHT)));
 }
 
-void Fault_WaitForInput(void) {
-    Fault_WaitForInputImpl();
+void fault_KeyWait(void) {
+    fault_KeyWait2();
 }
 
-void Fault_DrawRec(s32 x, s32 y, s32 w, s32 h, u16 color) {
+void QuarterRectangle(s32 x, s32 y, s32 w, s32 h, u16 color) {
     s32 i;
     s32 j;
     u16* fbPtr;
 
-    fbPtr = gFaultMgr.fb + (gFaultMgr.fbWidth * y) + x;
+    fbPtr = debugger.fb + (debugger.fbWidth * y) + x;
 
     for (i = 0; i < h; i++) {
         j = 0;
@@ -129,16 +129,16 @@ void Fault_DrawRec(s32 x, s32 y, s32 w, s32 h, u16 color) {
             *fbPtr = color;
             fbPtr++;
         }
-        fbPtr += gFaultMgr.fbWidth - w;
+        fbPtr += debugger.fbWidth - w;
     }
     osWritebackDCacheAll();
 }
 
-void Fault_DrawRecBlack(s32 x, s32 y, s32 w, s32 h) {
-    Fault_DrawRec(x, y, w, h, GPACK_RGBA5551(0, 0, 0, 1));
+void QuarterRectangleBlack(s32 x, s32 y, s32 w, s32 h) {
+    QuarterRectangle(x, y, w, h, GPACK_RGBA5551(0, 0, 0, 1));
 }
 
-void Fault_DrawCharImpl(s32 x, s32 y, char c) {
+void faultprint_PrintCharacterImpl(s32 x, s32 y, char c) {
     u32* dataPtr;
     s32 shift = c % 4;
     s32 i;
@@ -146,8 +146,8 @@ void Fault_DrawCharImpl(s32 x, s32 y, char c) {
     u16* fbPtr;
     u32 data;
 
-    dataPtr = sFaultDrawerFont + ((c / 8 * 0x10) + ((c & 4) >> 2));
-    fbPtr = gFaultMgr.fb + (gFaultMgr.fbWidth * y) + x;
+    dataPtr = font_00 + ((c / 8 * 0x10) + ((c & 4) >> 2));
+    fbPtr = debugger.fb + (debugger.fbWidth * y) + x;
 
     for (i = 0; i < 8; i++) {
         u32 mask;
@@ -162,46 +162,46 @@ void Fault_DrawCharImpl(s32 x, s32 y, char c) {
             mask >>= 4;
         }
         dataPtr += 2;
-        fbPtr += gFaultMgr.fbWidth - 8;
+        fbPtr += debugger.fbWidth - 8;
     }
     osWritebackDCacheAll();
 }
 
-void Fault_DrawChar(s32 x, s32 y, u8 c) {
-    Fault_DrawCharImpl(x, y, c);
+void faultprint_PrintCharacter(s32 x, s32 y, u8 c) {
+    faultprint_PrintCharacterImpl(x, y, c);
 }
 
-void Fault_DrawCornerRec(u16 color) {
-    Fault_DrawRec(22, 16, 8, 1, color);
+void ColorBox(u16 color) {
+    QuarterRectangle(22, 16, 8, 1, color);
 }
 
 void Fault_DrawCornerRecRed(void) {
-    Fault_DrawCornerRec(GPACK_RGBA5551(255, 0, 0, 1));
+    ColorBox(GPACK_RGBA5551(255, 0, 0, 1));
 }
 
 void Fault_DrawCornerRecYellow(void) {
-    Fault_DrawCornerRec(GPACK_RGBA5551(255, 255, 0, 1));
+    ColorBox(GPACK_RGBA5551(255, 255, 0, 1));
 }
 
 void func_800AE05C(void) {
 }
 
-void* Fault_PrintCallbackDraw(void* arg, const char* str, size_t len) {
+void* faultprint_callbackDraw(void* arg, const char* str, size_t len) {
     FaultCursorCoords* coords = arg;
 
     for (; len != 0; len--, str++) {
         if (*str == '\n') {
             coords->x = 320;
         } else {
-            Fault_DrawChar(coords->x, coords->y, *str);
+            faultprint_PrintCharacter(coords->x, coords->y, *str);
             coords->x += 6;
         }
         if (coords->x > 276) {
             coords->x = 22;
             coords->y += 8;
             if (coords->y > 208) {
-                Fault_WaitForInputImpl();
-                Fault_DrawRecBlack(22, 16, 276, 208);
+                fault_KeyWait2();
+                QuarterRectangleBlack(22, 16, 276, 208);
                 coords->y = 16;
             }
         }
@@ -209,7 +209,7 @@ void* Fault_PrintCallbackDraw(void* arg, const char* str, size_t len) {
     return coords;
 }
 
-void Fault_DrawText(s32 x, s32 y, const char* fmt, ...) {
+void faultprint_PosPrintf(s32 x, s32 y, const char* fmt, ...) {
     va_list args;
     FaultCursorCoords coords;
 
@@ -217,45 +217,45 @@ void Fault_DrawText(s32 x, s32 y, const char* fmt, ...) {
 
     coords.x = x - 8;
     coords.y = y;
-    _Printf(Fault_PrintCallbackDraw, &coords, fmt, args);
+    _Printf(faultprint_callbackDraw, &coords, fmt, args);
 
     va_end(args);
 }
 
-void Fault_SetCursor(s32 x, s32 y) {
+void faultprint_Locate(s32 x, s32 y) {
     sFaultCursorPos.x = x;
     sFaultCursorPos.y = y;
 }
 
 void func_800AE1F8(void) {
-    Fault_DrawRecBlack(22, 16, 276, 208);
+    QuarterRectangleBlack(22, 16, 276, 208);
     sFaultCursorPos.x = 22;
     sFaultCursorPos.y = 16;
 }
 
-s32 Fault_Printf(const char* fmt, ...) {
+s32 faultprint_Printf(const char* fmt, ...) {
     s32 ret;
     va_list args;
 
     va_start(args, fmt);
-    ret = _Printf(Fault_PrintCallbackDraw, &sFaultCursorPos, fmt, args);
+    ret = _Printf(faultprint_callbackDraw, &sFaultCursorPos, fmt, args);
     va_end(args);
 
     return ret;
 }
 
-void Fault_PrintFReg(s32 x, s32 y, s32 idx, f32* value) {
+void PrintFPURegs(s32 x, s32 y, s32 idx, f32* value) {
     u32 raw = *(u32*)value;
     s32 exp = ((raw & 0x7F800000) >> 23) - 127;
 
     if (((exp > -127) && (exp <= 127)) || (raw == 0)) {
-        Fault_DrawText(x, y, "F%02d:%.7e", idx, *value);
+        faultprint_PosPrintf(x, y, "F%02d:%.7e", idx, *value);
     } else {
-        Fault_DrawText(x, y, "F%02d:-------------", idx);
+        faultprint_PosPrintf(x, y, "F%02d:-------------", idx);
     }
 }
 
-void Fault_LogFReg(s32 idx, f32* value) {
+void PrintFPURegsOnIndy(s32 idx, f32* value) {
     u32 raw = *(u32*)value;
     s32 exp = ((raw & 0x7F800000) >> 23) - 127;
 
@@ -266,15 +266,15 @@ void Fault_LogFReg(s32 idx, f32* value) {
     }
 }
 
-void Fault_PrintFPCSR(s32 x, s32 y, s32 value) {
+void PrintFPUFlags(s32 x, s32 y, s32 value) {
     s32 i;
     u32 mask = FPCSR_CE;
 
-    Fault_DrawText(x, y, "FPCSR:%08xH", value);
+    faultprint_PosPrintf(x, y, "FPCSR:%08xH", value);
 
     for (i = 0; i < 6; i++) {
         if (value & mask) {
-            Fault_DrawText(x + 100, y, "(%s)", sFpExceptionNames[i]);
+            faultprint_PosPrintf(x + 100, y, "(%s)", fpuExceptions[i]);
             break;
         }
 
@@ -282,7 +282,7 @@ void Fault_PrintFPCSR(s32 x, s32 y, s32 value) {
     }
 }
 
-void Fault_LogFPCSR(s32 value) {
+void PrintFPUFlagsOnIndy(s32 value) {
     s32 i;
     u32 mask = FPCSR_CE;
 
@@ -290,7 +290,7 @@ void Fault_LogFPCSR(s32 value) {
 
     for (i = 0; i < 6; i++) {
         if (value & mask) {
-            osSyncPrintf("(%s)\n", sFpExceptionNames[i]);
+            osSyncPrintf("(%s)\n", fpuExceptions[i]);
             break;
         }
 
@@ -298,7 +298,7 @@ void Fault_LogFPCSR(s32 value) {
     }
 }
 
-void Fault_PrintThreadContext(OSThread* thread) {
+void PrintDebugInfo(OSThread* thread) {
     __OSThreadContext* ctx = &thread->context;
     s32 y;
     s16 causeStrIdx = _SHIFTR((u32)thread->context.cause, 2, 5);
@@ -310,68 +310,68 @@ void Fault_PrintThreadContext(OSThread* thread) {
         causeStrIdx = 17;
     }
 
-    Fault_DrawRecBlack(22, 16, 276, 24);
+    QuarterRectangleBlack(22, 16, 276, 24);
 
     y = 20;
-    Fault_DrawText(30, y, "THREAD:%d (%d:%s)", thread->id, causeStrIdx, sExceptionNames[causeStrIdx]);
+    faultprint_PosPrintf(30, y, "THREAD:%d (%d:%s)", thread->id, causeStrIdx, cpuExceptions[causeStrIdx]);
 
     y += 9;
-    Fault_DrawText(30, y, "PC:%08xH   SR:%08xH   VA:%08xH", ctx->pc, ctx->sr, ctx->badvaddr);
-
-    y += 13;
-    Fault_DrawRecBlack(22, 40, 276, 184);
-    Fault_DrawText(30, y, "AT:%08xH   V0:%08xH   V1:%08xH", (u32)ctx->at, (u32)ctx->v0, (u32)ctx->v1);
-    y += 9;
-    Fault_DrawText(30, y, "A0:%08xH   A1:%08xH   A2:%08xH", (u32)ctx->a0, (u32)ctx->a1, (u32)ctx->a2);
-    y += 9;
-    Fault_DrawText(30, y, "A3:%08xH   T0:%08xH   T1:%08xH", (u32)ctx->a3, (u32)ctx->t0, (u32)ctx->t1);
-    y += 9;
-    Fault_DrawText(30, y, "T2:%08xH   T3:%08xH   T4:%08xH", (u32)ctx->t2, (u32)ctx->t3, (u32)ctx->t4);
-    y += 9;
-    Fault_DrawText(30, y, "T5:%08xH   T6:%08xH   T7:%08xH", (u32)ctx->t5, (u32)ctx->t6, (u32)ctx->t7);
-    y += 9;
-    Fault_DrawText(30, y, "S0:%08xH   S1:%08xH   S2:%08xH", (u32)ctx->s0, (u32)ctx->s1, (u32)ctx->s2);
-    y += 9;
-    Fault_DrawText(30, y, "S3:%08xH   S4:%08xH   S5:%08xH", (u32)ctx->s3, (u32)ctx->s4, (u32)ctx->s5);
-    y += 9;
-    Fault_DrawText(30, y, "S6:%08xH   S7:%08xH   T8:%08xH", (u32)ctx->s6, (u32)ctx->s7, (u32)ctx->t8);
-    y += 9;
-    Fault_DrawText(30, y, "T9:%08xH   GP:%08xH   SP:%08xH", (u32)ctx->t9, (u32)ctx->gp, (u32)ctx->sp);
-    y += 9;
-    Fault_DrawText(30, y, "S8:%08xH   RA:%08xH   LO:%08xH", (u32)ctx->s8, (u32)ctx->ra, (u32)ctx->lo);
+    faultprint_PosPrintf(30, y, "PC:%08xH   SR:%08xH   VA:%08xH", ctx->pc, ctx->sr, ctx->badvaddr);
 
     y += 13;
-    Fault_PrintFPCSR(30, y, ctx->fpcsr);
+    QuarterRectangleBlack(22, 40, 276, 184);
+    faultprint_PosPrintf(30, y, "AT:%08xH   V0:%08xH   V1:%08xH", (u32)ctx->at, (u32)ctx->v0, (u32)ctx->v1);
+    y += 9;
+    faultprint_PosPrintf(30, y, "A0:%08xH   A1:%08xH   A2:%08xH", (u32)ctx->a0, (u32)ctx->a1, (u32)ctx->a2);
+    y += 9;
+    faultprint_PosPrintf(30, y, "A3:%08xH   T0:%08xH   T1:%08xH", (u32)ctx->a3, (u32)ctx->t0, (u32)ctx->t1);
+    y += 9;
+    faultprint_PosPrintf(30, y, "T2:%08xH   T3:%08xH   T4:%08xH", (u32)ctx->t2, (u32)ctx->t3, (u32)ctx->t4);
+    y += 9;
+    faultprint_PosPrintf(30, y, "T5:%08xH   T6:%08xH   T7:%08xH", (u32)ctx->t5, (u32)ctx->t6, (u32)ctx->t7);
+    y += 9;
+    faultprint_PosPrintf(30, y, "S0:%08xH   S1:%08xH   S2:%08xH", (u32)ctx->s0, (u32)ctx->s1, (u32)ctx->s2);
+    y += 9;
+    faultprint_PosPrintf(30, y, "S3:%08xH   S4:%08xH   S5:%08xH", (u32)ctx->s3, (u32)ctx->s4, (u32)ctx->s5);
+    y += 9;
+    faultprint_PosPrintf(30, y, "S6:%08xH   S7:%08xH   T8:%08xH", (u32)ctx->s6, (u32)ctx->s7, (u32)ctx->t8);
+    y += 9;
+    faultprint_PosPrintf(30, y, "T9:%08xH   GP:%08xH   SP:%08xH", (u32)ctx->t9, (u32)ctx->gp, (u32)ctx->sp);
+    y += 9;
+    faultprint_PosPrintf(30, y, "S8:%08xH   RA:%08xH   LO:%08xH", (u32)ctx->s8, (u32)ctx->ra, (u32)ctx->lo);
 
     y += 13;
-    Fault_PrintFReg(30, y, 0, &ctx->fp0.f.f_even);
-    Fault_PrintFReg(160, y, 2, &ctx->fp2.f.f_even);
+    PrintFPUFlags(30, y, ctx->fpcsr);
+
+    y += 13;
+    PrintFPURegs(30, y, 0, &ctx->fp0.f.f_even);
+    PrintFPURegs(160, y, 2, &ctx->fp2.f.f_even);
     y += 9;
-    Fault_PrintFReg(30, y, 4, &ctx->fp4.f.f_even);
-    Fault_PrintFReg(160, y, 6, &ctx->fp6.f.f_even);
+    PrintFPURegs(30, y, 4, &ctx->fp4.f.f_even);
+    PrintFPURegs(160, y, 6, &ctx->fp6.f.f_even);
     y += 9;
-    Fault_PrintFReg(30, y, 8, &ctx->fp8.f.f_even);
-    Fault_PrintFReg(160, y, 10, &ctx->fp10.f.f_even);
+    PrintFPURegs(30, y, 8, &ctx->fp8.f.f_even);
+    PrintFPURegs(160, y, 10, &ctx->fp10.f.f_even);
     y += 9;
-    Fault_PrintFReg(30, y, 12, &ctx->fp12.f.f_even);
-    Fault_PrintFReg(160, y, 14, &ctx->fp14.f.f_even);
+    PrintFPURegs(30, y, 12, &ctx->fp12.f.f_even);
+    PrintFPURegs(160, y, 14, &ctx->fp14.f.f_even);
     y += 9;
-    Fault_PrintFReg(30, y, 16, &ctx->fp16.f.f_even);
-    Fault_PrintFReg(160, y, 18, &ctx->fp18.f.f_even);
+    PrintFPURegs(30, y, 16, &ctx->fp16.f.f_even);
+    PrintFPURegs(160, y, 18, &ctx->fp18.f.f_even);
     y += 9;
-    Fault_PrintFReg(30, y, 20, &ctx->fp20.f.f_even);
-    Fault_PrintFReg(160, y, 22, &ctx->fp22.f.f_even);
+    PrintFPURegs(30, y, 20, &ctx->fp20.f.f_even);
+    PrintFPURegs(160, y, 22, &ctx->fp22.f.f_even);
     y += 9;
-    Fault_PrintFReg(30, y, 24, &ctx->fp24.f.f_even);
-    Fault_PrintFReg(160, y, 26, &ctx->fp26.f.f_even);
+    PrintFPURegs(30, y, 24, &ctx->fp24.f.f_even);
+    PrintFPURegs(160, y, 26, &ctx->fp26.f.f_even);
     y += 9;
-    Fault_PrintFReg(30, y, 28, &ctx->fp28.f.f_even);
-    Fault_PrintFReg(160, y, 30, &ctx->fp30.f.f_even);
+    PrintFPURegs(30, y, 28, &ctx->fp28.f.f_even);
+    PrintFPURegs(160, y, 30, &ctx->fp30.f.f_even);
 
     osWritebackDCacheAll();
 }
 
-void Fault_LogThreadContext(OSThread* thread) {
+void PrintDebugInfoOnIndy(OSThread* thread) {
     __OSThreadContext* ctx = &thread->context;
     s16 causeStrIdx = _SHIFTR((u32)thread->context.cause, 2, 5);
 
@@ -383,7 +383,7 @@ void Fault_LogThreadContext(OSThread* thread) {
     }
 
     osSyncPrintf("\n");
-    osSyncPrintf("THREAD ID:%d (%d:%s)\n", thread->id, causeStrIdx, sExceptionNames[causeStrIdx]);
+    osSyncPrintf("THREAD ID:%d (%d:%s)\n", thread->id, causeStrIdx, cpuExceptions[causeStrIdx]);
     osSyncPrintf("PC:%08xH   SR:%08xH   VA:%08xH\n", ctx->pc, ctx->sr, ctx->badvaddr);
     osSyncPrintf("AT:%08xH   V0:%08xH   V1:%08xH\n", (u32)ctx->at, (u32)ctx->v0, (u32)ctx->v1);
     osSyncPrintf("A0:%08xH   A1:%08xH   A2:%08xH\n", (u32)ctx->a0, (u32)ctx->a1, (u32)ctx->a2);
@@ -397,35 +397,35 @@ void Fault_LogThreadContext(OSThread* thread) {
     osSyncPrintf("S8:%08xH   RA:%08xH   LO:%08xH\n", (u32)ctx->s8, (u32)ctx->ra, (u32)ctx->lo);
     osSyncPrintf("\n");
 
-    Fault_LogFPCSR((s32)ctx->fpcsr);
+    PrintFPUFlagsOnIndy((s32)ctx->fpcsr);
     osSyncPrintf("\n");
-    Fault_LogFReg(0, &ctx->fp0.f.f_even);
-    Fault_LogFReg(2, &ctx->fp2.f.f_even);
+    PrintFPURegsOnIndy(0, &ctx->fp0.f.f_even);
+    PrintFPURegsOnIndy(2, &ctx->fp2.f.f_even);
     osSyncPrintf("\n");
-    Fault_LogFReg(4, &ctx->fp4.f.f_even);
-    Fault_LogFReg(6, &ctx->fp6.f.f_even);
+    PrintFPURegsOnIndy(4, &ctx->fp4.f.f_even);
+    PrintFPURegsOnIndy(6, &ctx->fp6.f.f_even);
     osSyncPrintf("\n");
-    Fault_LogFReg(8, &ctx->fp8.f.f_even);
-    Fault_LogFReg(10, &ctx->fp10.f.f_even);
+    PrintFPURegsOnIndy(8, &ctx->fp8.f.f_even);
+    PrintFPURegsOnIndy(10, &ctx->fp10.f.f_even);
     osSyncPrintf("\n");
-    Fault_LogFReg(12, &ctx->fp12.f.f_even);
-    Fault_LogFReg(14, &ctx->fp14.f.f_even);
+    PrintFPURegsOnIndy(12, &ctx->fp12.f.f_even);
+    PrintFPURegsOnIndy(14, &ctx->fp14.f.f_even);
     osSyncPrintf("\n");
-    Fault_LogFReg(16, &ctx->fp16.f.f_even);
-    Fault_LogFReg(18, &ctx->fp18.f.f_even);
+    PrintFPURegsOnIndy(16, &ctx->fp16.f.f_even);
+    PrintFPURegsOnIndy(18, &ctx->fp18.f.f_even);
     osSyncPrintf("\n");
-    Fault_LogFReg(20, &ctx->fp20.f.f_even);
-    Fault_LogFReg(22, &ctx->fp22.f.f_even);
+    PrintFPURegsOnIndy(20, &ctx->fp20.f.f_even);
+    PrintFPURegsOnIndy(22, &ctx->fp22.f.f_even);
     osSyncPrintf("\n");
-    Fault_LogFReg(24, &ctx->fp24.f.f_even);
-    Fault_LogFReg(26, &ctx->fp26.f.f_even);
+    PrintFPURegsOnIndy(24, &ctx->fp24.f.f_even);
+    PrintFPURegsOnIndy(26, &ctx->fp26.f.f_even);
     osSyncPrintf("\n");
-    Fault_LogFReg(28, &ctx->fp28.f.f_even);
-    Fault_LogFReg(30, &ctx->fp30.f.f_even);
+    PrintFPURegsOnIndy(28, &ctx->fp28.f.f_even);
+    PrintFPURegsOnIndy(30, &ctx->fp30.f.f_even);
     osSyncPrintf("\n");
 }
 
-OSThread* Fault_FindFaultedThread(void) {
+OSThread* FindFaultedThread(void) {
     OSThread* thread = __osGetActiveQueue();
 
     // OS_PRIORITY_THREADTAIL indicates the end of the thread queue
@@ -439,7 +439,7 @@ OSThread* Fault_FindFaultedThread(void) {
     return NULL;
 }
 
-void Fault_WaitForButtonCombo(void) {
+void KeyWait(void) {
     Input* inputs = sFaultInputs;
     s32 btnPress;
     s32 btnCur;
@@ -467,8 +467,8 @@ void Fault_WaitForButtonCombo(void) {
         }
         count++;
 
-        Fault_SleepImpl(1000 / 60);
-        PadMgr_RequestPadData(&gPadMgr, inputs, 0);
+        my_msleep(1000 / 60);
+        padmgr_RequestPadData(&padmgr, inputs, 0);
         btnCur = inputs[0].cur.button;
         btnPress = inputs[0].press.button;
         if ((btnCur == 0) && (y == 1)) {
@@ -609,46 +609,46 @@ void Fault_WaitForButtonCombo(void) {
 void func_800AF0E0(void) {
     s32 i;
 
-    Fault_DrawRecBlack(22, 16, 276, 208);
-    Fault_DrawText(40, 30, "SegmentBaseAddress");
+    QuarterRectangleBlack(22, 16, 276, 208);
+    faultprint_PosPrintf(40, 30, "SegmentBaseAddress");
 
-    for (i = 0; i < ARRAY_COUNT(gSegments); i++) {
-        Fault_DrawText(40, 40 + 8 * i, "%2d:%08x", i, gSegments[i]);
+    for (i = 0; i < ARRAY_COUNT(SegmentBaseAddress); i++) {
+        faultprint_PosPrintf(40, 40 + 8 * i, "%2d:%08x", i, SegmentBaseAddress[i]);
     }
-    Fault_DrawText(40, 180, "Arena_failcnt = %d", gTotalAllocFailures);
+    faultprint_PosPrintf(40, 180, "Arena_failcnt = %d", __Arena_failcnt);
 }
 
-void Fault_DrawMemDumpContents(const char* title, void* memory, u32 arg2) {
+void PrintDump(const char* title, void* memory, u32 arg2) {
     s32 x;
     s32 y;
     u32* ptr = (u32*)((uintptr_t)memory & ~3);
 
-    Fault_DrawRecBlack(22, 16, 276, 208);
-    Fault_DrawText(36, 18, "%s %08x", title != NULL ? title : "PrintDump", ptr);
+    QuarterRectangleBlack(22, 16, 276, 208);
+    faultprint_PosPrintf(36, 18, "%s %08x", title != NULL ? title : "PrintDump", ptr);
 
     if (((uintptr_t)ptr >= PHYS_TO_K0(0x000000)) && ((uintptr_t)ptr <= PHYS_TO_K0(0x400000))) {
         for (y = 28; y < 226; y += 9) {
-            Fault_DrawText(28, y, "%06x", ptr);
+            faultprint_PosPrintf(28, y, "%06x", ptr);
             for (x = 82; x < 290; x += 52) {
-                Fault_DrawText(x, y, "%08x", *(ptr++));
+                faultprint_PosPrintf(x, y, "%08x", *(ptr++));
             }
         }
     }
 }
 
-void Fault_DrawMemDumpPC(OSThread* thread) {
+void InteractiveDumpPC(OSThread* thread) {
     u32* pc = (u32*)thread->context.pc;
 
     if (((uintptr_t)pc >= 0x80000020) && ((uintptr_t)pc <= 0x80400000)) {
-        Fault_DrawMemDumpContents("PC Trace", pc - 0x20, 0);
+        PrintDump("PC Trace", pc - 0x20, 0);
     }
 }
 
-void Fault_DrawMemDumpSP(OSThread* thread) {
+void InteractiveDumpSP(OSThread* thread) {
     u32* sp = (u32*)(u32)thread->context.sp;
 
     if (((uintptr_t)sp >= 0x80000020) && ((uintptr_t)sp <= 0x80400000)) {
-        Fault_DrawMemDumpContents("Stack Trace", sp, 0);
+        PrintDump("Stack Trace", sp, 0);
     }
 }
 
@@ -657,15 +657,15 @@ void func_800AF3DC(void) {
     static s32 B_801225B0[8]; // Unused
     s32 i;
 
-    Fault_DrawRecBlack(22, 16, 276, 208);
-    Fault_DrawText(36, 18, "ROM DEBUG");
+    QuarterRectangleBlack(22, 16, 276, 208);
+    faultprint_PosPrintf(36, 18, "ROM DEBUG");
 
     for (i = 0; i < ARRAY_COUNT(B_80122570); i++) {
-        Fault_DrawText(((i % 4) * 52) + 82, ((i / 4) * 9) + 28, "%08x", B_80122570[i]);
+        faultprint_PosPrintf(((i % 4) * 52) + 82, ((i / 4) * 9) + 28, "%08x", B_80122570[i]);
     }
 }
 
-void Fault_ResumeThread(OSThread* thread) {
+void DebugBreak(OSThread* thread) {
     thread->context.cause = 0;
     thread->context.fpcsr = 0;
     thread->context.pc += sizeof(u32);
@@ -678,15 +678,15 @@ void Fault_ResumeThread(OSThread* thread) {
 void func_800AF558(void) {
     osViBlack(false);
     if ((uintptr_t)osViGetCurrentFramebuffer() >= 0x80100000) {
-        gFaultMgr.fb = osViGetCurrentFramebuffer();
+        debugger.fb = osViGetCurrentFramebuffer();
     } else {
-        gFaultMgr.fb = (u16*)(PHYS_TO_K0(osMemSize) - sizeof(u16[SCREEN_HEIGHT][SCREEN_WIDTH]));
-        osViSwapBuffer(gFaultMgr.fb);
+        debugger.fb = (u16*)(PHYS_TO_K0(osMemSize) - sizeof(u16[SCREEN_HEIGHT][SCREEN_WIDTH]));
+        osViSwapBuffer(debugger.fb);
     }
 }
 
-void Fault_AddClient(FaultClient* client, void* callback, void* arg0, void* arg1) {
-    FaultMgr* faultMgr = &gFaultMgr;
+void fault_AddClient(FaultClient* client, void* callback, void* arg0, void* arg1) {
+    FaultMgr* faultMgr = &debugger;
     OSIntMask mask;
 
     mask = osSetIntMask(OS_IM_NONE);
@@ -700,9 +700,9 @@ void Fault_AddClient(FaultClient* client, void* callback, void* arg0, void* arg1
     osSetIntMask(mask);
 }
 
-void Fault_RemoveClient(FaultClient* client) {
+void fault_RemoveClient(FaultClient* client) {
     u32 mask;
-    FaultClient* iterClient = gFaultMgr.clients;
+    FaultClient* iterClient = debugger.clients;
     FaultClient* lastClient = NULL;
 
     mask = osSetIntMask(OS_IM_NONE);
@@ -711,7 +711,7 @@ void Fault_RemoveClient(FaultClient* client) {
             if (lastClient != NULL) {
                 lastClient->next = client->next;
             } else {
-                gFaultMgr.clients = client->next;
+                debugger.clients = client->next;
             }
             break;
         } else {
@@ -722,18 +722,18 @@ void Fault_RemoveClient(FaultClient* client) {
     osSetIntMask(mask);
 }
 
-void Fault_ProcessClients(void) {
+void fault_CallBackFunc(void) {
     s32 i;
     FaultClient* client;
 
-    client = gFaultMgr.clients;
+    client = debugger.clients;
     i = 0;
     while (client != NULL) {
         if (client->callback != NULL) {
-            Fault_DrawRecBlack(22, 16, 276, 208);
-            Fault_DrawText(30, 20, "CallBack (%d) %08x %08x %08x", i++, client, client->arg0, client->arg1);
+            QuarterRectangleBlack(22, 16, 276, 208);
+            faultprint_PosPrintf(30, 20, "CallBack (%d) %08x %08x %08x", i++, client, client->arg0, client->arg1);
             ((void (*)(void*, void*))client->callback)(client->arg0, client->arg1);
-            Fault_WaitForInput();
+            fault_KeyWait();
         }
         client = client->next;
     }
@@ -743,15 +743,15 @@ void Fault_ProcessClients(void) {
 #define FAULT_MSG_FAULT ((OSMesg)2)
 #define FAULT_MSG_UNK ((OSMesg)3)
 
-void Fault_ThreadEntry(void* arg0) {
+void DebugProcess(void* arg0) {
     OSMesg msg;
     OSThread* faultedThread;
 
-    osSetEventMesg(OS_EVENT_CPU_BREAK, &gFaultMgr.queue, FAULT_MSG_CPU_BREAK);
-    osSetEventMesg(OS_EVENT_FAULT, &gFaultMgr.queue, FAULT_MSG_FAULT);
+    osSetEventMesg(OS_EVENT_CPU_BREAK, &debugger.queue, FAULT_MSG_CPU_BREAK);
+    osSetEventMesg(OS_EVENT_FAULT, &debugger.queue, FAULT_MSG_FAULT);
     while (true) {
         do {
-            osRecvMesg(&gFaultMgr.queue, &msg, OS_MESG_BLOCK);
+            osRecvMesg(&debugger.queue, &msg, OS_MESG_BLOCK);
             if (msg == FAULT_MSG_CPU_BREAK) {
                 gFaultMsgId = (s32)FAULT_MSG_CPU_BREAK;
                 osSyncPrintf(T("フォルトマネージャ:OS_EVENT_CPU_BREAKを受信しました\n",
@@ -768,82 +768,82 @@ void Fault_ThreadEntry(void* arg0) {
             faultedThread = __osGetCurrFaultedThread();
             osSyncPrintf("__osGetCurrFaultedThread()=%08x\n", faultedThread);
             if (faultedThread == NULL) {
-                faultedThread = Fault_FindFaultedThread();
+                faultedThread = FindFaultedThread();
                 osSyncPrintf("FindFaultedThread()=%08x\n", faultedThread);
             }
         } while (faultedThread == NULL);
         gFaultFaultedThread = faultedThread;
-        Fault_LogThreadContext(faultedThread);
+        PrintDebugInfoOnIndy(faultedThread);
         osSyncPrintf("%d %s %d:%s = %d\n", osGetThreadId(NULL), "fault.c", 1454, "fault_display_enable",
                      gFaultDisplayEnable);
         while (!gFaultDisplayEnable) {
-            Fault_SleepImpl(1000);
+            my_msleep(1000);
         }
-        Fault_SleepImpl(500);
+        my_msleep(500);
         Fault_DrawCornerRecRed();
-        Fault_WaitForButtonCombo();
+        KeyWait();
         do {
             func_800AF558();
-            Fault_PrintThreadContext(faultedThread);
-            Fault_WaitForInput();
+            PrintDebugInfo(faultedThread);
+            fault_KeyWait();
             func_800AF0E0();
-            Fault_WaitForInput();
+            fault_KeyWait();
             func_800AF3DC();
-            Fault_WaitForInput();
-            Fault_DrawMemDumpSP(faultedThread);
-            Fault_WaitForInput();
-            Fault_DrawMemDumpPC(faultedThread);
-            Fault_WaitForInput();
-            Fault_ProcessClients();
+            fault_KeyWait();
+            InteractiveDumpSP(faultedThread);
+            fault_KeyWait();
+            InteractiveDumpPC(faultedThread);
+            fault_KeyWait();
+            fault_CallBackFunc();
         } while (!gFaultExit);
         while (!gFaultExit) {}
-        Fault_ResumeThread(faultedThread);
+        DebugBreak(faultedThread);
     }
 }
 
-void Fault_SetFrameBuffer(void* fb, u16 w, u16 h) {
-    gFaultMgr.fb = fb;
-    gFaultMgr.fbWidth = w;
-    gFaultMgr.fbDepth = h;
+void DbSetFrameBuffer(void* fb, u16 w, u16 h) {
+    debugger.fb = fb;
+    debugger.fbWidth = w;
+    debugger.fbDepth = h;
 }
 
-void Fault_Init(void) {
+void DbStartDebugger(void) {
     gFaultDisplayEnable = 1;
-    gFaultMgr.fb = (u16*)(PHYS_TO_K0(osMemSize) - sizeof(u16[SCREEN_HEIGHT][SCREEN_WIDTH]));
-    gFaultMgr.fbWidth = SCREEN_WIDTH;
-    gFaultMgr.fbDepth = 16;
-    gFaultMgr.clients = 0;
-    osCreateMesgQueue(&gFaultMgr.queue, &gFaultMgr.msg, 1);
-    StackCheck_Init(&sFaultStackInfo, sFaultStack, STACK_TOP(sFaultStack), 0, 0x100, "fault");
-    osCreateThread(&gFaultMgr.thread, THREAD_ID_FAULT, Fault_ThreadEntry, NULL, STACK_TOP(sFaultStack),
+    debugger.fb = (u16*)(PHYS_TO_K0(osMemSize) - sizeof(u16[SCREEN_HEIGHT][SCREEN_WIDTH]));
+    debugger.fbWidth = SCREEN_WIDTH;
+    debugger.fbDepth = 16;
+    debugger.clients = 0;
+    osCreateMesgQueue(&debugger.queue, &debugger.msg, 1);
+    stackcheck_init(&sFaultStackInfo, faultStack, STACK_TOP(faultStack), 0, 0x100, "fault");
+    osCreateThread(&debugger.thread, THREAD_ID_FAULT, DebugProcess, NULL, STACK_TOP(faultStack),
                    THREAD_PRI_FAULT);
-    osStartThread(&gFaultMgr.thread);
+    osStartThread(&debugger.thread);
 }
 
-NORETURN void Fault_AddHungupAndCrashImpl(const char* exp1, const char* exp2) {
+NORETURN void fault_HungUpMsg(const char* exp1, const char* exp2) {
     gFaultMsgId = 4;
     osSyncPrintf("HungUp on Thread %d", osGetThreadId(NULL));
     osSyncPrintf("%s\n", exp1 != NULL ? exp1 : "(NULL)");
     osSyncPrintf("%s\n", exp2 != NULL ? exp2 : "(NULL)");
     while (gFaultDisplayEnable == 0) {
-        Fault_SleepImpl(1000);
+        my_msleep(1000);
     }
-    Fault_SleepImpl(500);
-    Fault_WaitForButtonCombo();
+    my_msleep(500);
+    KeyWait();
     do {
         func_800AF558();
-        Fault_DrawRecBlack(22, 16, 276, 34);
-        Fault_DrawText(24, 18, "HungUp on Thread %d", osGetThreadId(NULL));
-        Fault_DrawText(24, 28, "%s", exp1 != NULL ? exp1 : "(NULL)");
-        Fault_DrawText(24, 38, "%s", exp2 != NULL ? exp2 : "(NULL)");
-        Fault_WaitForInput();
-        Fault_ProcessClients();
+        QuarterRectangleBlack(22, 16, 276, 34);
+        faultprint_PosPrintf(24, 18, "HungUp on Thread %d", osGetThreadId(NULL));
+        faultprint_PosPrintf(24, 28, "%s", exp1 != NULL ? exp1 : "(NULL)");
+        faultprint_PosPrintf(24, 38, "%s", exp2 != NULL ? exp2 : "(NULL)");
+        fault_KeyWait();
+        fault_CallBackFunc();
     } while (true);
 }
 
-NORETURN void Fault_AddHungupAndCrash(const char* file, int line) {
+NORETURN void fault_HungUp(const char* file, int line) {
     char msg[256];
 
     sprintf(msg, "HungUp %s:%d", file, line);
-    Fault_AddHungupAndCrashImpl(msg, NULL);
+    fault_HungUpMsg(msg, NULL);
 }

@@ -29,7 +29,7 @@
         ROM_FILE_UNSET, NULL, NULL, NULL, NULL, 0, \
     },
 
-EffectSsOverlay gEffectSsOverlayTable[] = {
+EffectSsOverlay effect_ss2_dlftbls[] = {
 #include "tables/effect_ss_table.h"
 };
 

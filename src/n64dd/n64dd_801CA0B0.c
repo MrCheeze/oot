@@ -228,7 +228,7 @@ void func_801CA6D8(struct_801CA704* arg0) {
 }
 
 s32 func_801CA6E4(struct_801CA704* arg0, const char* fmt, va_list args) {
-    return PrintUtils_VPrintf(&arg0->callback, fmt, args);
+    return vaprintf(&arg0->callback, fmt, args);
 }
 
 s32 func_801CA704(struct_801CA704* arg0, const char* fmt, ...) {

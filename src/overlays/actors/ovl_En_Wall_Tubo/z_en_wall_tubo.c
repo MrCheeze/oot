@@ -22,13 +22,13 @@
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void EnWallTubo_Init(Actor* thisx, PlayState* play);
-void EnWallTubo_Destroy(Actor* thisx, PlayState* play);
-void EnWallTubo_Update(Actor* thisx, PlayState* play);
+void En_Wall_Tubo_actor_ct(Actor* thisx, PlayState* play);
+void En_Wall_Tubo_actor_dt(Actor* thisx, PlayState* play);
+void En_Wall_Tubo_actor_move(Actor* thisx, PlayState* play);
 
-void EnWallTubo_FindGirl(EnWallTubo* this, PlayState* play);
-void EnWallTubo_DetectChu(EnWallTubo* this, PlayState* play);
-void EnWallTubo_SetWallFall(EnWallTubo* this, PlayState* play);
+static void mode_wait_init(EnWallTubo* this, PlayState* play);
+static void mode_wait(EnWallTubo* this, PlayState* play);
+static void mode_break(EnWallTubo* this, PlayState* play);
 
 ActorProfile En_Wall_Tubo_Profile = {
     /**/ ACTOR_EN_WALL_TUBO,
@@ -36,26 +36,26 @@ ActorProfile En_Wall_Tubo_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(EnWallTubo),
-    /**/ EnWallTubo_Init,
-    /**/ EnWallTubo_Destroy,
-    /**/ EnWallTubo_Update,
+    /**/ En_Wall_Tubo_actor_ct,
+    /**/ En_Wall_Tubo_actor_dt,
+    /**/ En_Wall_Tubo_actor_move,
     /**/ NULL,
 };
 
-void EnWallTubo_Init(Actor* thisx, PlayState* play) {
+void En_Wall_Tubo_actor_ct(Actor* thisx, PlayState* play) {
     EnWallTubo* this = (EnWallTubo*)thisx;
 
     PRINTF("\n\n");
     // "Wall Target"
     PRINTF(VT_FGCOL(YELLOW) "☆☆☆☆☆ 壁のツボ ☆☆☆☆☆ \n" VT_RST);
     this->unk_164 = this->actor.world.pos;
-    this->actionFunc = EnWallTubo_FindGirl;
+    this->actionFunc = mode_wait_init;
 }
 
-void EnWallTubo_Destroy(Actor* thisx, PlayState* play) {
+void En_Wall_Tubo_actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void EnWallTubo_FindGirl(EnWallTubo* this, PlayState* play) {
+static void mode_wait_init(EnWallTubo* this, PlayState* play) {
     Actor* lookForGirl;
 
     lookForGirl = play->actorCtx.actorLists[ACTORCAT_NPC].head;
@@ -69,10 +69,10 @@ void EnWallTubo_FindGirl(EnWallTubo* this, PlayState* play) {
         }
     }
 
-    this->actionFunc = EnWallTubo_DetectChu;
+    this->actionFunc = mode_wait;
 }
 
-void EnWallTubo_DetectChu(EnWallTubo* this, PlayState* play) {
+static void mode_wait(EnWallTubo* this, PlayState* play) {
     EnBomChu* chu;
     s32 pad;
     Vec3f effAccel = { 0.0f, 0.1f, 0.0f };
@@ -98,14 +98,14 @@ void EnWallTubo_DetectChu(EnWallTubo* this, PlayState* play) {
                     (fabsf(chuPosDiff.z) < 40.0f || (BREG(2)))) {
                     this->chuGirl->wallStatus[this->actor.params] = 1;
                     chu->timer = 2;
-                    Sfx_PlaySfxCentered(NA_SE_SY_TRE_BOX_APPEAR);
+                    Na_StartSystemSe_F(NA_SE_SY_TRE_BOX_APPEAR);
                     this->timer = 60;
-                    EffectSsBomb2_SpawnLayered(play, &this->explosionCenter, &effVelocity, &effAccel, 200, 40);
-                    quakeIndex = Quake_Request(GET_ACTIVE_CAM(play), QUAKE_TYPE_1);
-                    Quake_SetSpeed(quakeIndex, 0x7FFF);
-                    Quake_SetPerturbations(quakeIndex, 100, 0, 0, 0);
-                    Quake_SetDuration(quakeIndex, 100);
-                    this->actionFunc = EnWallTubo_SetWallFall;
+                    Effect_SS_Bomb2_2_ct(play, &this->explosionCenter, &effVelocity, &effAccel, 200, 40);
+                    quakeIndex = startQuake(GET_ACTIVE_CAM(play), QUAKE_TYPE_1);
+                    setSpeedQuake(quakeIndex, 0x7FFF);
+                    setScaleQuake(quakeIndex, 100, 0, 0, 0);
+                    setTimerQuake(quakeIndex, 100);
+                    this->actionFunc = mode_break;
                     break;
                 }
 
@@ -115,19 +115,19 @@ void EnWallTubo_DetectChu(EnWallTubo* this, PlayState* play) {
     }
 }
 
-void EnWallTubo_SetWallFall(EnWallTubo* this, PlayState* play) {
+static void mode_break(EnWallTubo* this, PlayState* play) {
     BgBowlWall* wall;
     Vec3f effAccel = { 0.0f, 0.1f, 0.0f };
     Vec3f effVelocity = { 0.0f, 0.0f, 0.0f };
     Vec3f effPos;
 
     if ((play->gameplayFrames & 1) == 0) {
-        effPos.x = this->explosionCenter.x + Rand_CenteredFloat(300.0f);
-        effPos.y = this->explosionCenter.y + Rand_CenteredFloat(300.0f);
+        effPos.x = this->explosionCenter.x + rnd_fx(300.0f);
+        effPos.y = this->explosionCenter.y + rnd_fx(300.0f);
         effPos.z = this->explosionCenter.z;
-        EffectSsBomb2_SpawnLayered(play, &effPos, &effVelocity, &effAccel, 100, 30);
-        EffectSsHahen_SpawnBurst(play, &effPos, 10.0f, 0, 50, 15, 3, HAHEN_OBJECT_DEFAULT, 10, NULL);
-        Actor_PlaySfx(&this->actor, NA_SE_IT_BOMB_EXPLOSION);
+        Effect_SS_Bomb2_2_ct(play, &effPos, &effVelocity, &effAccel, 100, 30);
+        Effect_Hahen_Kakusan_ct3(play, &effPos, 10.0f, 0, 50, 15, 3, HAHEN_OBJECT_DEFAULT, 10, NULL);
+        Actor_SE_set(&this->actor, NA_SE_IT_BOMB_EXPLOSION);
     }
 
     if (this->timer == 0) {
@@ -143,11 +143,11 @@ void EnWallTubo_SetWallFall(EnWallTubo* this, PlayState* play) {
             PRINTF(VT_FGCOL(CYAN) "☆☆☆☆ やった原！ ☆☆☆☆☆ \n" VT_RST);
         }
 
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     }
 }
 
-void EnWallTubo_Update(Actor* thisx, PlayState* play) {
+void En_Wall_Tubo_actor_move(Actor* thisx, PlayState* play) {
     EnWallTubo* this = (EnWallTubo*)thisx;
 
     if (this->timer != 0) {
@@ -157,7 +157,7 @@ void EnWallTubo_Update(Actor* thisx, PlayState* play) {
     this->actionFunc(this, play);
 
     if (DEBUG_FEATURES && BREG(0) != 0) {
-        DebugDisplay_AddObject(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
+        Debug_Display_new(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
                                this->actor.world.rot.x, this->actor.world.rot.y, this->actor.world.rot.z, 1.0f, 1.0f,
                                1.0f, 0, 0, 255, 255, 4, play->state.gfxCtx);
     }

@@ -21,19 +21,19 @@ typedef enum KaleidoOverlayType {
     /* 2 */ KALEIDO_OVL_MAX
 } KaleidoOverlayType;
 
-void KaleidoManager_LoadOvl(KaleidoMgrOverlay* ovl);
-void KaleidoManager_ClearOvl(KaleidoMgrOverlay* ovl);
-void KaleidoManager_Init(struct PlayState* play);
-void KaleidoManager_Destroy(void);
-void* KaleidoManager_GetRamAddr(void* vram);
+void KaleidoArea_DoLink(KaleidoMgrOverlay* ovl);
+void KaleidoArea_DoUnlink(KaleidoMgrOverlay* ovl);
+void KaleidoArea_init(struct PlayState* play);
+void KaleidoArea_cleanup(void);
+void* KaleidoArea_dllcnv(void* vram);
 
-extern KaleidoMgrOverlay gKaleidoMgrOverlayTable[KALEIDO_OVL_MAX];
-extern KaleidoMgrOverlay* gKaleidoMgrCurOvl;
+extern KaleidoMgrOverlay KaleidoArea_dlftbl[KALEIDO_OVL_MAX];
+extern KaleidoMgrOverlay* KaleidoArea_visit;
 
-void KaleidoScopeCall_LoadPlayer(void);
-void KaleidoScopeCall_Init(struct PlayState* play);
-void KaleidoScopeCall_Destroy(struct PlayState* play);
-void KaleidoScopeCall_Update(struct PlayState* play);
-void KaleidoScopeCall_Draw(struct PlayState* play);
+void load_player(void);
+void kaleido_scope_ct_ovl(struct PlayState* play);
+void kaleido_scope_dt_ovl(struct PlayState* play);
+void kaleido_scope_move_ovl(struct PlayState* play);
+void kaleido_scope_draw_ovl(struct PlayState* play);
 
 #endif

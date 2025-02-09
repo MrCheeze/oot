@@ -1,6 +1,6 @@
 #include "z64map_mark.h"
 
-static MapMarkData sMapMarkDekuTree[] = {
+static MapMarkData Dekunoki_MarkPos[] = {
     // Deku Tree minimap 0
     {
         { MAP_MARK_CHEST,
@@ -82,7 +82,7 @@ static MapMarkData sMapMarkDekuTree[] = {
     },
 };
 
-static MapMarkData sMapMarkDodongosCavern[] = {
+static MapMarkData Dodongo_MarkPos[] = {
     // Dodongo's Cavern minimap 0
     {
         { MAP_MARK_CHEST,
@@ -187,7 +187,7 @@ static MapMarkData sMapMarkDodongosCavern[] = {
     },
 };
 
-static MapMarkData sMapMarkJabuJabuBelly[] = {
+static MapMarkData Fish_MarkPos[] = {
     // Jabu-Jabu's Belly minimap 0
     {
         { MAP_MARK_NONE, 0, { 0 } },
@@ -278,7 +278,7 @@ static MapMarkData sMapMarkJabuJabuBelly[] = {
     },
 };
 
-static MapMarkData sMapMarkForestTemple[] = {
+static MapMarkData Mori_MarkPos[] = {
     // Forest Temple minimap 0
     {
         { MAP_MARK_NONE, 0, { 0 } },
@@ -464,7 +464,7 @@ static MapMarkData sMapMarkForestTemple[] = {
     },
 };
 
-static MapMarkData sMapMarkFireTemple[] = {
+static MapMarkData Hidan_MarkPos[] = {
     // Fire Temple minimap 0
     {
         { MAP_MARK_NONE, 0, { 0 } },
@@ -690,7 +690,7 @@ static MapMarkData sMapMarkFireTemple[] = {
     },
 };
 
-static MapMarkData sMapMarkWaterTemple[] = {
+static MapMarkData Mizu_MarkPos[] = {
     // Water Temple minimap 0
     {
         { MAP_MARK_NONE, 0, { 0 } },
@@ -924,7 +924,7 @@ static MapMarkData sMapMarkWaterTemple[] = {
     },
 };
 
-static MapMarkData sMapMarkSpiritTemple[] = {
+static MapMarkData Jyasin_MarkPos[] = {
     // Spirit Temple minimap 0
     {
         { MAP_MARK_NONE, 0, { 0 } },
@@ -1133,7 +1133,7 @@ static MapMarkData sMapMarkSpiritTemple[] = {
     },
 };
 
-static MapMarkData sMapMarkShadowTemple[] = {
+static MapMarkData Hakadan_MarkPos[] = {
     // Shadow Temple minimap 0
     {
         { MAP_MARK_NONE, 0, { 0 } },
@@ -1309,7 +1309,7 @@ static MapMarkData sMapMarkShadowTemple[] = {
     },
 };
 
-static MapMarkData sMapMarkBottomWell[] = {
+static MapMarkData Hakachi_MarkPos[] = {
     // Bottom of the Well minimap 0
     {
         { MAP_MARK_CHEST,
@@ -1385,7 +1385,7 @@ static MapMarkData sMapMarkBottomWell[] = {
     },
 };
 
-static MapMarkData sMapMarkIceCavern[] = {
+static MapMarkData Icedan_MarkPos[] = {
     // Ice Cavern minimap 0
     {
         { MAP_MARK_NONE, 0, { 0 } },
@@ -1451,7 +1451,7 @@ static MapMarkData sMapMarkIceCavern[] = {
     },
 };
 
-MapMarkData* gMapMarkDataTable[] = {
-    sMapMarkDekuTree,    sMapMarkDodongosCavern, sMapMarkJabuJabuBelly, sMapMarkForestTemple, sMapMarkFireTemple,
-    sMapMarkWaterTemple, sMapMarkSpiritTemple,   sMapMarkShadowTemple,  sMapMarkBottomWell,   sMapMarkIceCavern,
+MapMarkData* MarkPos[] = {
+    Dekunoki_MarkPos,    Dodongo_MarkPos, Fish_MarkPos, Mori_MarkPos, Hidan_MarkPos,
+    Mizu_MarkPos, Jyasin_MarkPos,   Hakadan_MarkPos,  Hakachi_MarkPos,   Icedan_MarkPos,
 };

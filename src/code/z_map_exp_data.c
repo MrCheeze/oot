@@ -1,6 +1,6 @@
 #include "global.h"
 
-static s16 sFloorTexIndexOffset[10][8] = {
+static s16 map_no_data[10][8] = {
     { 0, 0, 0, 0, 2, 4, 6, 8 }, { 0, 0, 0, 0, 0, 0, 0, 2 },
     { 0, 0, 0, 0, 0, 0, 0, 2 }, { 0, 0, 0, 0, 0, 2, 4, 6 },
     { 0, 0, 0, 0, 2, 4, 6, 8 }, { 0, 0, 0, 0, 0, 2, 4, 6 },
@@ -8,11 +8,11 @@ static s16 sFloorTexIndexOffset[10][8] = {
     { 0, 0, 0, 0, 0, 0, 2, 4 }, { 0 },
 };
 
-static s16 sBossFloor[8] = {
+static s16 boss_floor_data[8] = {
     7, 7, 6, 7, 7, 4, 5, 7,
 };
 
-static s16 sRoomPalette[10][32] = {
+static s16 map_palate_bit_dt[10][32] = {
     { 10, 1, 2, 10, 4, 5, 6, 7, 8, 10, 11 },
     { 1, 3, 5, 6, 10, 3, 9, 2, 4, 2, 4, 7, 7, 8, 13, 11 },
     { 3, 1, 2, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 3 },
@@ -25,11 +25,11 @@ static s16 sRoomPalette[10][32] = {
     { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 },
 };
 
-static s16 sMaxPaletteCount[10] = {
+static s16 dungeon_pt[10] = {
     6, 11, 12, 14, 11, 13, 13, 13, 7, 12,
 };
 
-static s16 sPaletteRoom[10][8][14] = {
+static s16 dungeon_room_dt[10][8][14] = {
     {
         { 255, 255, 255, 255, 255, 255 },
         { 255, 255, 255, 255, 255, 255 },
@@ -132,7 +132,7 @@ static s16 sPaletteRoom[10][8][14] = {
     },
 };
 
-static s16 sRoomCompassOffsetX[10][44] = {
+static s16 dungeon_map_inf_dataX[10][44] = {
     { 1090, 1390, 1560, 1220, 1200, 1390, 1770, 1610, 2000, 1290, 1420,
       1110, 1040, 470,  790,  1570, 720,  1000, 1580, 70,   0 },
     { 940, 320, 1500, 240, 580, 1510, 720, 1030, 800, 660, 180, 520, 310, 550, 790, 1650, 1000, 1570, 80, 70 },
@@ -152,7 +152,7 @@ static s16 sRoomCompassOffsetX[10][44] = {
     { 1070, 1180, 1270, 990, 1280, 1450, 1680, 1530, 760, 860, 1500, 800 },
 };
 
-static s16 sRoomCompassOffsetY[10][44] = {
+static s16 dungeon_map_inf_dataY[10][44] = {
     { -660, -570, -410, -690,  -500,  -380, -470,  -630, -990,  -870,
       -720, -630, -660, -1280, -1910, -670, -1220, -870, -1070, -1080 },
     { -780, -800, -1090, -1230, -1140, -820, -1210, -1430, -1580, -920,
@@ -176,35 +176,35 @@ static s16 sRoomCompassOffsetY[10][44] = {
     { 100, -280, -690, -840, -1010, -950, -730, -470, -1130, -1440, -420, -700 },
 };
 
-static u8 sDgnMinimapCount[12] = {
+static u8 map_size[12] = {
     13, 19, 17, 27, 38, 44, 32, 27, 10, 12, 0, 0,
 };
 
-static u16 sDgnMinimapTexIndexOffset[10] = {
+static u16 map_index[10] = {
     0, 13, 32, 49, 76, 114, 158, 190, 217, 227,
 };
 
-static u16 sOwMinimapTexSize[24] = {
+static u16 ground_map_size[24] = {
     2920, 2560, 1560, 2784, 2976, 2040, 3240, 2336, 2080, 2600, 1792, 1888,
     3400, 1792, 1888, 2040, 3120, 2304, 2176, 1888, 1560, 3240, 2600, 3400,
 };
 
-static u16 sOwMinimapTexOffset[24] = {
+static u16 ground_map_pt[24] = {
     0x0000, 0x0B68, 0x1568, 0x1B80, 0x2660, 0x3200, 0x39F8, 0x46A0, 0x4FC0, 0x57E0, 0x6208, 0x6908,
     0x7068, 0x7DB0, 0x84B0, 0x8C10, 0x9408, 0xA038, 0xA938, 0xB1B8, 0xB918, 0xBF30, 0xCBD8, 0xD600,
 };
 
-static s16 sOwMinimapPosX[24] = {
+static s16 ground_map_xps[24] = {
     216, 216, 218, 202, 202, 250, 216, 234, 234, 216, 234, 234,
     216, 234, 234, 250, 216, 234, 234, 234, 218, 80,  80,  216,
 };
 
-static s16 sOwMinimapPosY[24] = {
+static s16 ground_map_yps[24] = {
     150, 158, 184, 164, 160, 138, 140, 150, 156, 158, 168, 162,
     138, 168, 162, 138, 146, 150, 154, 162, 218, 81,  65,  216,
 };
 
-static s16 sOwCompassInfo[24][4] = {
+static s16 grand_map_inf_data[24][4] = {
     { 25, 25, 1080, -360 }, { 7, 6, 1000, -650 },   { 6, 6, 890, -800 },    { 7, 7, 720, -730 },
     { 8, 8, 660, -730 },    { 5, 7, 1220, -660 },   { 13, 13, 1080, -260 }, { 5, 5, 1120, -880 },
     { 8, 8, 1150, -630 },   { 11, 11, 1060, -680 }, { 12, 12, 1100, -720 }, { 11, 11, 930, -710 },
@@ -213,32 +213,32 @@ static s16 sOwCompassInfo[24][4] = {
     { 6, 6, 890, -800 },    { 13, 13, 1080, -260 }, { 11, 11, 1060, -680 }, { 9, 9, 850, -830 },
 };
 
-static s16 sDgnTexIndexBase[10] = {
+static s16 dungeon_map_data_pt[10] = {
     0, 10, 14, 18, 26, 36, 44, 52, 60, 66,
 };
 
-static s16 sDgnCompassInfo[10][4] = {
+static s16 dungeon_map_inf_data[10][4] = {
     { 3, 3, 1070, -690 }, { 4, 4, 1070, -690 }, { 3, 3, 1070, -690 },  { 4, 4, 1070, -690 }, { 4, 4, 1070, -690 },
     { 4, 4, 900, -640 },  { 3, 3, 900, -640 },  { 10, 10, 900, -640 }, { 5, 5, 900, -640 },  { 3, 3, 900, -640 },
 };
 
-static s16 sOwMinimapWidth[24] = {
+static s16 ground_map_xsz[24] = {
     80, 80, 80, 96, 96, 48, 80, 64, 64, 80, 64, 64, 80, 64, 64, 48, 80, 64, 64, 64, 80, 80, 80, 80,
 };
 
-static s16 sOwMinimapHeight[24] = {
+static s16 ground_map_ysz[24] = {
     73, 64, 39, 58, 62, 85, 81, 73, 65, 65, 56, 59, 85, 56, 59, 85, 78, 72, 68, 59, 39, 81, 65, 85,
 };
 
-static s16 sOwEntranceIconPosX[24] = {
+static s16 enter_xps[24] = {
     1, 269, 1, 1, 273, 279, 259, 1, 260, 1, 1, 235, 1, 1, 1, 267, 261, 1, 1, 260, 294, 259, 1, 243,
 };
 
-static s16 sOwEntranceIconPosY[24] = {
+static s16 enter_yps[24] = {
     0, -833, 0, 0, -850, -889, -829, 0, -844, 0, 0, -836, 0, 0, 0, -852, -873, 0, 0, -848, -825, -829, 0, -833,
 };
 
-static u16 sOwEntranceFlag[20] = {
+static u16 check_dungeon_no[20] = {
     0xFFFF,
     INFTABLE_1A8_SHIFT,
     INFTABLE_1A7_SHIFT,
@@ -261,7 +261,7 @@ static u16 sOwEntranceFlag[20] = {
     INFTABLE_1AD_SHIFT,
 };
 
-static f32 sFloorCoordY[10][8] = {
+static f32 floor_check_data[10][8] = {
     { 9999.0f, 9999.0f, 9999.0f, 760.0f, 360.0f, -40.0f, -1000.0f, -2000.0f },
     { 9999.0f, 9999.0f, 9999.0f, 9999.0f, 9999.0f, 9999.0f, 280.0f, -440.0f },
     { 9999.0f, 9999.0f, 9999.0f, 9999.0f, 9999.0f, 9999.0f, -640.0f, -3000.0f },
@@ -274,9 +274,9 @@ static f32 sFloorCoordY[10][8] = {
     { 9999.0f, 9999.0f, 9999.0f, 9999.0f, 9999.0f, 9999.0f, 9999.0f, -3000.0f },
 };
 
-static u16 sSwitchEntryCount[10] = { 5, 6, 4, 10, 25, 50, 8, 10, 6, 1 };
+static u16 sizedt[10] = { 5, 6, 4, 10, 25, 50, 8, 10, 6, 1 };
 
-static u8 sSwitchFromRoom[10][51] = {
+static u8 dungeon_check_0[10][51] = {
     { 11, 0, 0, 12, 11 },
     { 0, 2, 3, 16, 17, 18 },
     { 1, 6, 15, 16 },
@@ -290,7 +290,7 @@ static u8 sSwitchFromRoom[10][51] = {
     { 255 },
 };
 
-static u8 sSwitchFromFloor[10][51] = {
+static u8 dungeon_check_1[10][51] = {
     { 3, 4, 3, 4, 5 },
     { 6, 6, 6, 7, 7, 7 },
     { 7, 7, 6, 6 },
@@ -304,7 +304,7 @@ static u8 sSwitchFromFloor[10][51] = {
     { 255 },
 };
 
-static u8 sSwitchToRoom[10][51] = {
+static u8 dungeon_check_2[10][51] = {
     { 12, 11, 12, 11 },
     { 16, 17, 18, 0, 2, 3 },
     { 15, 16, 1, 6 },
@@ -318,7 +318,7 @@ static u8 sSwitchToRoom[10][51] = {
     { 255 },
 };
 
-static u8 sFloorID[10][8] = {
+static u8 dungeon_floor_data[10][8] = {
     /* clang-format off */
     {    0,    0,    0, F_3F, F_2F, F_1F, F_B1, F_B2 },
     {    0,    0,    0,    0,    0,    0, F_2F, F_1F },
@@ -334,17 +334,17 @@ static u8 sFloorID[10][8] = {
 
 /* Y coord of big skull icon on map screen, relative to center of screen.
    -99 if no dungeon map, otherwise (51 - 14 * FloorNumber) */
-static s16 sSkullFloorIconY[10] = { -47, -47, -33, -47, -47, -5, -19, -47, -99, -99 };
+static s16 boss_position[10] = { -47, -47, -33, -47, -47, -5, -19, -47, -99, -99 };
 
-MapData gMapDataTable = {
-    sFloorTexIndexOffset, sBossFloor,          sRoomPalette,
-    sMaxPaletteCount,     sPaletteRoom,        sRoomCompassOffsetX,
-    sRoomCompassOffsetY,  sDgnMinimapCount,    sDgnMinimapTexIndexOffset,
-    sOwMinimapTexSize,    sOwMinimapTexOffset, sOwMinimapPosX,
-    sOwMinimapPosY,       sOwCompassInfo,      sDgnTexIndexBase,
-    sDgnCompassInfo,      sOwMinimapWidth,     sOwMinimapHeight,
-    sOwEntranceIconPosX,  sOwEntranceIconPosY, sOwEntranceFlag,
-    sFloorCoordY,         sSwitchEntryCount,   sSwitchFromRoom,
-    sSwitchFromFloor,     sSwitchToRoom,       sFloorID,
-    sSkullFloorIconY,
+MapData rom_map_exp_data_tbl = {
+    map_no_data, boss_floor_data,          map_palate_bit_dt,
+    dungeon_pt,     dungeon_room_dt,        dungeon_map_inf_dataX,
+    dungeon_map_inf_dataY,  map_size,    map_index,
+    ground_map_size,    ground_map_pt, ground_map_xps,
+    ground_map_yps,       grand_map_inf_data,      dungeon_map_data_pt,
+    dungeon_map_inf_data,      ground_map_xsz,     ground_map_ysz,
+    enter_xps,  enter_yps, check_dungeon_no,
+    floor_check_data,         sizedt,   dungeon_check_0,
+    dungeon_check_1,     dungeon_check_2,       dungeon_floor_data,
+    boss_position,
 };

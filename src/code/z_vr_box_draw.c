@@ -1,20 +1,20 @@
 #include "global.h"
 
-Mtx* sSkyboxDrawMatrix;
+Mtx* vr_mtx;
 
-Mtx* Skybox_UpdateMatrix(SkyboxContext* skyboxCtx, f32 x, f32 y, f32 z) {
-    Matrix_Translate(x, y, z, MTXMODE_NEW);
-    Matrix_Scale(1.0f, 1.0f, 1.0f, MTXMODE_APPLY);
-    Matrix_RotateX(skyboxCtx->rot.x, MTXMODE_APPLY);
-    Matrix_RotateY(skyboxCtx->rot.y, MTXMODE_APPLY);
-    Matrix_RotateZ(skyboxCtx->rot.z, MTXMODE_APPLY);
-    return MATRIX_TO_MTX(sSkyboxDrawMatrix, "../z_vr_box_draw.c", 42);
+Mtx* vr_mtx_set(SkyboxContext* skyboxCtx, f32 x, f32 y, f32 z) {
+    Matrix_translate(x, y, z, MTXMODE_NEW);
+    Matrix_scale(1.0f, 1.0f, 1.0f, MTXMODE_APPLY);
+    Matrix_rotateX(skyboxCtx->rot.x, MTXMODE_APPLY);
+    Matrix_rotateY(skyboxCtx->rot.y, MTXMODE_APPLY);
+    Matrix_rotateZ(skyboxCtx->rot.z, MTXMODE_APPLY);
+    return MATRIX_TO_MTX(vr_mtx, "../z_vr_box_draw.c", 42);
 }
 
-void Skybox_Draw(SkyboxContext* skyboxCtx, GraphicsContext* gfxCtx, s16 skyboxId, s16 blend, f32 x, f32 y, f32 z) {
+void vr_box_draw(SkyboxContext* skyboxCtx, GraphicsContext* gfxCtx, s16 skyboxId, s16 blend, f32 x, f32 y, f32 z) {
     OPEN_DISPS(gfxCtx, "../z_vr_box_draw.c", 52);
 
-    Gfx_SetupDL_40Opa(gfxCtx);
+    vr_box_polygon(gfxCtx);
 
     gSPSegment(POLY_OPA_DISP++, 0x7, skyboxCtx->staticSegments[0]);
     gSPSegment(POLY_OPA_DISP++, 0x8, skyboxCtx->staticSegments[1]);
@@ -24,14 +24,14 @@ void Skybox_Draw(SkyboxContext* skyboxCtx, GraphicsContext* gfxCtx, s16 skyboxId
     gSPTexture(POLY_OPA_DISP++, 0x8000, 0x8000, 0, G_TX_RENDERTILE, G_ON);
 
     // Prepare matrix
-    sSkyboxDrawMatrix = GRAPH_ALLOC(gfxCtx, sizeof(Mtx));
-    Matrix_Translate(x, y, z, MTXMODE_NEW);
-    Matrix_Scale(1.0f, 1.0f, 1.0f, MTXMODE_APPLY);
-    Matrix_RotateX(skyboxCtx->rot.x, MTXMODE_APPLY);
-    Matrix_RotateY(skyboxCtx->rot.y, MTXMODE_APPLY);
-    Matrix_RotateZ(skyboxCtx->rot.z, MTXMODE_APPLY);
-    MATRIX_TO_MTX(sSkyboxDrawMatrix, "../z_vr_box_draw.c", 76);
-    gSPMatrix(POLY_OPA_DISP++, sSkyboxDrawMatrix, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+    vr_mtx = GRAPH_ALLOC(gfxCtx, sizeof(Mtx));
+    Matrix_translate(x, y, z, MTXMODE_NEW);
+    Matrix_scale(1.0f, 1.0f, 1.0f, MTXMODE_APPLY);
+    Matrix_rotateX(skyboxCtx->rot.x, MTXMODE_APPLY);
+    Matrix_rotateY(skyboxCtx->rot.y, MTXMODE_APPLY);
+    Matrix_rotateZ(skyboxCtx->rot.z, MTXMODE_APPLY);
+    MATRIX_TO_MTX(vr_mtx, "../z_vr_box_draw.c", 76);
+    gSPMatrix(POLY_OPA_DISP++, vr_mtx, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
 
     // Enable magic square RGB dithering and bilinear filtering
     gDPSetColorDither(POLY_OPA_DISP++, G_CD_MAGICSQ);
@@ -96,5 +96,5 @@ void Skybox_Draw(SkyboxContext* skyboxCtx, GraphicsContext* gfxCtx, s16 skyboxId
     CLOSE_DISPS(gfxCtx, "../z_vr_box_draw.c", 125);
 }
 
-void Skybox_Update(SkyboxContext* skyboxCtx) {
+void vr_box_move(SkyboxContext* skyboxCtx) {
 }

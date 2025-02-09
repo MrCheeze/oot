@@ -4,18 +4,18 @@
 #include "z64.h"
 #include "macros.h"
 
-void bootproc(void);
-void Main_ThreadEntry(void* arg);
-void Idle_ThreadEntry(void* arg);
-void ViConfig_UpdateVi(u32 black);
-void ViConfig_UpdateBlack(void);
+void boot(void);
+void mainx(void* arg);
+void idleproc(void* arg);
+void viBlack(u32 black);
+void viRetrace(void);
 #if !PLATFORM_IQUE
-void Yaz0_Decompress(uintptr_t romStart, u8* dst, size_t size);
+void slidma(uintptr_t romStart, u8* dst, size_t size);
 #else
 void gzip_decompress(uintptr_t romStart, u8* dst, size_t size);
 #endif
-void Locale_Init(void);
-void Locale_ResetRegion(void);
+void z_locale_init(void);
+void z_locale_cleanup(void);
 #if DEBUG_FEATURES
 void isPrintfInit(void);
 #endif
@@ -27,219 +27,219 @@ NORETURN void func_80002384(const char* exp, const char* file, int line);
 OSPiHandle* osDriveRomInit(void);
 void Mio0_Decompress(u8* src, u8* dst);
 
-void FlagSet_Update(PlayState* play);
-void Overlay_LoadGameState(GameStateOverlay* overlayEntry);
-void Overlay_FreeGameState(GameStateOverlay* overlayEntry);
+void flg_set(PlayState* play);
+void DLFTBL_link(GameStateOverlay* overlayEntry);
+void DLFTBL_unlink(GameStateOverlay* overlayEntry);
 
-void ActorOverlayTable_LogPrint(void);
-void ActorOverlayTable_Init(void);
-void ActorOverlayTable_Cleanup(void);
+void actor_dlftbls_show_info(void);
+void actor_dlftbls_init(void);
+void actor_dlftbls_cleanup(void);
 
-void SaveContext_Init(void);
+void z_common_data_init(void);
 s32 func_800635D0(s32);
-void Regs_Init(void);
-void DebugCamera_ScreenText(u8 x, u8 y, const char* text);
-void DebugCamera_ScreenTextColored(u8 x, u8 y, u8 colorIndex, const char* text);
+void new_Debug_mode(void);
+void Debug_Print_write(u8 x, u8 y, const char* text);
+void Debug_Print2_write(u8 x, u8 y, u8 colorIndex, const char* text);
 #if DEBUG_FEATURES
 void Regs_UpdateEditor(Input* input);
 #endif
-void Debug_DrawText(GraphicsContext* gfxCtx);
+void Debug_mode_output(GraphicsContext* gfxCtx);
 
-void* MemCpy(void* dest, const void* src, s32 len);
+void* Memcpy(void* dest, const void* src, s32 len);
 
-u16 QuestHint_GetSariaTextId(PlayState* play);
-u16 QuestHint_GetNaviTextId(PlayState* play);
-u16 MaskReaction_GetTextId(PlayState* play, u32 maskReactionSet);
-void CutsceneFlags_UnsetAll(PlayState* play);
-void CutsceneFlags_Set(PlayState* play, s16 flag);
-void CutsceneFlags_Unset(PlayState* play, s16 flag);
-s32 CutsceneFlags_Get(PlayState* play, s16 flag);
+u16 get_sa_message(PlayState* play);
+u16 get_elf_message(PlayState* play);
+u16 get_mask_message(PlayState* play, u32 maskReactionSet);
+void event_ct(PlayState* play);
+void eventbit_set(PlayState* play, s16 flag);
+void eventbit_reset(PlayState* play, s16 flag);
+s32 eventbit_check(PlayState* play, s16 flag);
 
-s32 Kanji_OffsetFromShiftJIS(s32 character);
+s32 getkadr(s32 character);
 #if PLATFORM_IQUE
-void Font_LoadCharCHN(Font* font, u16 character, u16 codePointIndex);
+void kanfont_get_NESCHN(Font* font, u16 character, u16 codePointIndex);
 #endif
-void Font_LoadCharWide(Font* font, u16 character, u16 codePointIndex);
-void Font_LoadChar(Font* font, u8 character, u16 codePointIndex);
-void Font_LoadMessageBoxIcon(Font* font, u16 icon);
-void Font_LoadOrderedFont(Font* font);
+void kanfont_get(Font* font, u16 character, u16 codePointIndex);
+void kanfont_get_NES(Font* font, u8 character, u16 codePointIndex);
+void kanfont_get2(Font* font, u16 icon);
+void kscope_kanfont_get(Font* font);
 
-void Health_InitMeter(PlayState* play);
-void Health_UpdateMeter(PlayState* play);
-void Health_DrawMeter(PlayState* play);
-void Health_UpdateBeatingHeart(PlayState* play);
-u32 Health_IsCritical(void);
+void initial_LifeMeterColorAnimation(PlayState* play);
+void LifeMeterColorAnimation(PlayState* play);
+void DrawLifeMeter(PlayState* play);
+void LifeMeterZoom(PlayState* play);
+u32 Life_Caution_Check(void);
 
-void MapMark_Init(PlayState* play);
-void MapMark_ClearPointers(PlayState* play);
-void MapMark_Draw(PlayState* play);
-void PreNmiBuff_Init(PreNmiBuff* this);
-void PreNmiBuff_SetReset(PreNmiBuff* this);
-u32 PreNmiBuff_IsResetting(PreNmiBuff* this);
-void Sched_FlushTaskQueue(void);
+void MapMarkInit(PlayState* play);
+void MapMarkCleanup(PlayState* play);
+void MapMarkDisplay(PlayState* play);
+void z_nmibuf_init(PreNmiBuff* this);
+void z_nmibuf_prenmi(PreNmiBuff* this);
+u32 z_nmibuf_isprenmi(PreNmiBuff* this);
+void nulltask(void);
 
-Path* Path_GetByIndex(PlayState* play, s16 index, s16 max);
-f32 Path_OrientAndGetDistSq(Actor* actor, Path* path, s16 waypoint, s16* yaw);
-void Path_CopyLastPoint(Path* path, Vec3f* dest);
+Path* get_path_data(PlayState* play, s16 index, s16 max);
+f32 path_move(Actor* actor, Path* path, s16 waypoint, s16* yaw);
+void get_path_goal_position(Path* path, Vec3f* dest);
 
-void PreNMI_Init(GameState* thisx);
+void prenmi_init(GameState* thisx);
 
-void func_80095AA0(PlayState* play, Room* room, Input* input, s32 arg3);
-void Room_DrawBackground2D(Gfx** gfxP, void* tex, void* tlut, u16 width, u16 height, u8 fmt, u8 siz, u16 tlutMode,
+void Room_Move(PlayState* play, Room* room, Input* input, s32 arg3);
+void prerender_draw2(Gfx** gfxP, void* tex, void* tlut, u16 width, u16 height, u8 fmt, u8 siz, u16 tlutMode,
                            u16 tlutCount, f32 offsetX, f32 offsetY);
-void Room_Init(PlayState* play, Room* room);
-u32 Room_SetupFirstRoom(PlayState* play, RoomContext* roomCtx);
-s32 Room_RequestNewRoom(PlayState* play, RoomContext* roomCtx, s32 roomNum);
-s32 Room_ProcessRoomRequest(PlayState* play, RoomContext* roomCtx);
+void Room_Info_ct(PlayState* play, Room* room);
+u32 Room_Info_init(PlayState* play, RoomContext* roomCtx);
+s32 Room_Info_exchange_start(PlayState* play, RoomContext* roomCtx, s32 roomNum);
+s32 Room_Info_exchange_check(PlayState* play, RoomContext* roomCtx);
 void Room_Draw(PlayState* play, Room* room, u32 flags);
-void Room_FinishRoomChange(PlayState* play, RoomContext* roomCtx);
-void Sample_Destroy(GameState* thisx);
-void Sample_Init(GameState* thisx);
+void Room_Info_old_room_clear(PlayState* play, RoomContext* roomCtx);
+void sample_cleanup(GameState* thisx);
+void sample_init(GameState* thisx);
 
-void Skin_UpdateVertices(MtxF* mtx, SkinVertex* skinVertices, SkinLimbModif* modifEntry, Vtx* vtxBuf, Vec3f* pos);
-void Skin_DrawAnimatedLimb(GraphicsContext* gfxCtx, Skin* skin, s32 limbIndex, s32 arg3, s32 drawFlags);
-void Skin_DrawLimb(GraphicsContext* gfxCtx, Skin* skin, s32 limbIndex, Gfx* dlistOverride, s32 drawFlags);
-void func_800A6330(Actor* actor, PlayState* play, Skin* skin, SkinPostDraw postDraw, s32 setTranslation);
-void func_800A6360(Actor* actor, PlayState* play, Skin* skin, SkinPostDraw postDraw,
+void Skin_Mesh2_setPosCalcNormal(MtxF* mtx, SkinVertex* skinVertices, SkinLimbModif* modifEntry, Vtx* vtxBuf, Vec3f* pos);
+void Skin_Mesh2_disp(GraphicsContext* gfxCtx, Skin* skin, s32 limbIndex, s32 arg3, s32 drawFlags);
+void Skin_gfx_mesh2_disp(GraphicsContext* gfxCtx, Skin* skin, s32 limbIndex, Gfx* dlistOverride, s32 drawFlags);
+void Skin_disp2(Actor* actor, PlayState* play, Skin* skin, SkinPostDraw postDraw, s32 setTranslation);
+void Skin_disp3(Actor* actor, PlayState* play, Skin* skin, SkinPostDraw postDraw,
                    SkinOverrideLimbDraw overrideLimbDraw, s32 setTranslation);
-void func_800A6394(Actor* actor, PlayState* play, Skin* skin, SkinPostDraw postDraw,
+void Skin_disp4(Actor* actor, PlayState* play, Skin* skin, SkinPostDraw postDraw,
                    SkinOverrideLimbDraw overrideLimbDraw, s32 setTranslation, s32 arg6);
-void func_800A63CC(Actor* actor, PlayState* play, Skin* skin, SkinPostDraw postDraw,
+void Skin_disp5(Actor* actor, PlayState* play, Skin* skin, SkinPostDraw postDraw,
                    SkinOverrideLimbDraw overrideLimbDraw, s32 setTranslation, s32 arg6, s32 drawFlags);
-void Skin_GetLimbPos(Skin* skin, s32 limbIndex, Vec3f* offset, Vec3f* dst);
-void Skin_Init(PlayState* play, Skin* skin, SkeletonHeader* skeletonHeader, AnimationHeader* animationHeader);
-void Skin_Free(PlayState* play, Skin* skin);
-s32 Skin_ApplyAnimTransformations(Skin* skin, MtxF* limbMatrices, Actor* actor, s32 setTranslation);
+void Skin_MatrixPosition2_gfx(Skin* skin, s32 limbIndex, Vec3f* offset, Vec3f* dst);
+void Skin_AnimationWorkBuffer2_ct(PlayState* play, Skin* skin, SkeletonHeader* skeletonHeader, AnimationHeader* animationHeader);
+void Skin_AnimationWorkBuffer2_dt(PlayState* play, Skin* skin);
+s32 Skin_AnimationWorkBuffer2_setupData(Skin* skin, MtxF* limbMatrices, Actor* actor, s32 setTranslation);
 
-void Sram_InitNewSave(void);
-void Sram_InitDebugSave(void);
-void Sram_OpenSave(SramContext* sramCtx);
-void Sram_WriteSave(SramContext* sramCtx);
-void Sram_VerifyAndLoadAllSaves(FileSelectState* fileSelect, SramContext* sramCtx);
-void Sram_InitSave(FileSelectState* fileSelect, SramContext* sramCtx);
-void Sram_EraseSave(FileSelectState* fileSelect, SramContext* sramCtx);
-void Sram_CopySave(FileSelectState* fileSelect, SramContext* sramCtx);
-void Sram_WriteSramHeader(SramContext* sramCtx);
-void Sram_InitSram(GameState* gameState, SramContext* sramCtx);
-void Sram_Alloc(GameState* gameState, SramContext* sramCtx);
-void Sram_Init(PlayState* play, SramContext* sramCtx);
-void SsSram_Init(s32 addr, u8 handleType, u8 handleDomain, u8 handleLatency, u8 handlePageSize, u8 handleRelDuration,
+void save_initialize(void);
+void save_initialize999(void);
+void sram_load_check(SramContext* sramCtx);
+void sram_save(SramContext* sramCtx);
+void sram_start_load(FileSelectState* fileSelect, SramContext* sramCtx);
+void sram_start_save(FileSelectState* fileSelect, SramContext* sramCtx);
+void sram_start_clear(FileSelectState* fileSelect, SramContext* sramCtx);
+void sram_start_copy(FileSelectState* fileSelect, SramContext* sramCtx);
+void sram_sound_save(SramContext* sramCtx);
+void sram_initialize(GameState* gameState, SramContext* sramCtx);
+void sram_title_ct(GameState* gameState, SramContext* sramCtx);
+void sram_ct(PlayState* play, SramContext* sramCtx);
+void ssDMNInitial(s32 addr, u8 handleType, u8 handleDomain, u8 handleLatency, u8 handlePageSize, u8 handleRelDuration,
                  u8 handlePulse, u32 handleSpeed);
-void SsSram_Dma(void* dramAddr, size_t size, s32 direction);
-void SsSram_ReadWrite(s32 addr, void* dramAddr, size_t size, s32 direction);
+void ssDMNReadWrite(void* dramAddr, size_t size, s32 direction);
+void ssSRAMReadWrite(s32 addr, void* dramAddr, size_t size, s32 direction);
 
-void ViMode_LogPrint(OSViMode* osViMode);
-void ViMode_Configure(ViMode* viMode, s32 type, s32 tvType, s32 loRes, s32 antialiasOff, s32 modeN, s32 fb16Bit,
+void disp_vimode(OSViMode* osViMode);
+void make_osvimode2(ViMode* viMode, s32 type, s32 tvType, s32 loRes, s32 antialiasOff, s32 modeN, s32 fb16Bit,
                       s32 width, s32 height, s32 leftAdjust, s32 rightAdjust, s32 upperAdjust, s32 lowerAdjust);
-void ViMode_Save(ViMode* viMode);
-void ViMode_Load(ViMode* viMode);
-void ViMode_Init(ViMode* viMode);
-void ViMode_Destroy(ViMode* viMode);
-void ViMode_ConfigureFeatures(ViMode* viMode, s32 viFeatures);
-void ViMode_Update(ViMode* viMode, Input* input);
-void PlayerCall_InitFuncPtrs(void);
-void TransitionTile_Destroy(TransitionTile* this);
-TransitionTile* TransitionTile_Init(TransitionTile* this, s32 cols, s32 rows);
-void TransitionTile_Draw(TransitionTile* this, Gfx** gfxP);
-void TransitionTile_Update(TransitionTile* this);
-void TransitionTriforce_Start(void* thisx);
-void* TransitionTriforce_Init(void* thisx);
-void TransitionTriforce_Destroy(void* thisx);
-void TransitionTriforce_Update(void* thisx, s32 updateRate);
-void TransitionTriforce_SetColor(void* thisx, u32 color);
-void TransitionTriforce_SetType(void* thisx, s32 type);
-void TransitionTriforce_Draw(void* thisx, Gfx** gfxP);
-s32 TransitionTriforce_IsDone(void* thisx);
-void TransitionWipe_Start(void* thisx);
-void* TransitionWipe_Init(void* thisx);
-void TransitionWipe_Destroy(void* thisx);
-void TransitionWipe_Update(void* thisx, s32 updateRate);
-void TransitionWipe_Draw(void* thisx, Gfx** gfxP);
-s32 TransitionWipe_IsDone(void* thisx);
-void TransitionWipe_SetType(void* thisx, s32 type);
-void TransitionWipe_SetColor(void* thisx, u32 color);
-void TransitionCircle_Start(void* thisx);
-void* TransitionCircle_Init(void* thisx);
-void TransitionCircle_Destroy(void* thisx);
-void TransitionCircle_Update(void* thisx, s32 updateRate);
-void TransitionCircle_Draw(void* thisx, Gfx** gfxP);
-s32 TransitionCircle_IsDone(void* thisx);
-void TransitionCircle_SetType(void* thisx, s32 type);
-void TransitionCircle_SetColor(void* thisx, u32 color);
-void TransitionCircle_SetUnkColor(void* thisx, u32 color);
-void TransitionFade_Start(void* thisx);
-void* TransitionFade_Init(void* thisx);
-void TransitionFade_Destroy(void* thisx);
-void TransitionFade_Update(void* thisx, s32 updateRate);
-void TransitionFade_Draw(void* thisx, Gfx** gfxP);
-s32 TransitionFade_IsDone(void* thisx);
-void TransitionFade_SetColor(void* thisx, u32 color);
-void TransitionFade_SetType(void* thisx, s32 type);
+void z_vimode_setreg(ViMode* viMode);
+void z_vimode_getreg(ViMode* viMode);
+void z_vimode_init(ViMode* viMode);
+void z_vimode_cleanup(ViMode* viMode);
+void z_vimode_SetSpecialFeatures(ViMode* viMode, s32 viFeatures);
+void z_vimode_move(ViMode* viMode, Input* input);
+void initfunc(void);
+void fbdemo_cleanup(TransitionTile* this);
+TransitionTile* fbdemo_init(TransitionTile* this, s32 cols, s32 rows);
+void fbdemo_draw(TransitionTile* this, Gfx** gfxP);
+void fbdemo_move(TransitionTile* this);
+void fbdemo_triforce_startup(void* thisx);
+void* fbdemo_triforce_init(void* thisx);
+void fbdemo_triforce_cleanup(void* thisx);
+void fbdemo_triforce_move(void* thisx, s32 updateRate);
+void fbdemo_triforce_setcolor_rgba8888(void* thisx, u32 color);
+void fbdemo_triforce_settype(void* thisx, s32 type);
+void fbdemo_triforce_draw(void* thisx, Gfx** gfxP);
+s32 fbdemo_triforce_is_finish(void* thisx);
+void fbdemo_wipe1_startup(void* thisx);
+void* fbdemo_wipe1_init(void* thisx);
+void fbdemo_wipe1_cleanup(void* thisx);
+void fbdemo_wipe1_move(void* thisx, s32 updateRate);
+void fbdemo_wipe1_draw(void* thisx, Gfx** gfxP);
+s32 fbdemo_wipe1_is_finish(void* thisx);
+void fbdemo_wipe1_settype(void* thisx, s32 type);
+void fbdemo_wipe1_setcolor_rgba8888(void* thisx, u32 color);
+void fbdemo_wipe3_startup(void* thisx);
+void* fbdemo_wipe3_init(void* thisx);
+void fbdemo_wipe3_cleanup(void* thisx);
+void fbdemo_wipe3_move(void* thisx, s32 updateRate);
+void fbdemo_wipe3_draw(void* thisx, Gfx** gfxP);
+s32 fbdemo_wipe3_is_finish(void* thisx);
+void fbdemo_wipe3_settype(void* thisx, s32 type);
+void fbdemo_wipe3_setcolor_rgba8888(void* thisx, u32 color);
+void fbdemo_wipe3_setaltcolor_rgba8888(void* thisx, u32 color);
+void fbdemo_fade_startup(void* thisx);
+void* fbdemo_fade_init(void* thisx);
+void fbdemo_fade_cleanup(void* thisx);
+void fbdemo_fade_move(void* thisx, s32 updateRate);
+void fbdemo_fade_draw(void* thisx, Gfx** gfxP);
+s32 fbdemo_fade_is_finish(void* thisx);
+void fbdemo_fade_setcolor_rgba8888(void* thisx, u32 color);
+void fbdemo_fade_settype(void* thisx, s32 type);
 
 void DebugCamera_Init(DebugCam* debugCam, Camera* cameraPtr);
 void DebugCamera_Enable(DebugCam* debugCam, Camera* cam);
-void DebugCamera_Update(DebugCam* debugCam, Camera* cam);
+void DebugactionCameraWork(DebugCam* debugCam, Camera* cam);
 void DebugCamera_Reset(Camera* cam, DebugCam* debugCam);
-void func_800BB0A0(f32 u, Vec3f* pos, f32* roll, f32* viewAngle, f32* point0, f32* point1, f32* point2, f32* point3);
-s32 func_800BB2B4(Vec3f* pos, f32* roll, f32* fov, CutsceneCameraPoint* point, s16* keyFrame, f32* curFrame);
+void Grou_Bspline(f32 u, Vec3f* pos, f32* roll, f32* viewAngle, f32* point0, f32* point1, f32* point2, f32* point3);
+s32 Grou_Dospline(Vec3f* pos, f32* roll, f32* fov, CutsceneCameraPoint* point, s16* keyFrame, f32* curFrame);
 
-s32 func_800C0D34(PlayState* this, Actor* actor, s16* yaw);
-s32 func_800C0DB4(PlayState* this, Vec3f* pos);
-void PreRender_SetValuesSave(PreRender* this, u32 width, u32 height, void* fbuf, void* zbuf, void* cvg);
-void PreRender_Init(PreRender* this);
-void PreRender_SetValues(PreRender* this, u32 width, u32 height, void* fbuf, void* zbuf);
-void PreRender_Destroy(PreRender* this);
-void func_800C170C(PreRender* this, Gfx** gfxP, void* buf, void* bufSave, u32 r, u32 g, u32 b, u32 a);
-void func_800C1AE8(PreRender* this, Gfx** gfxP, void* fbuf, void* fbufSave);
-void PreRender_SaveZBuffer(PreRender* this, Gfx** gfxP);
-void PreRender_SaveFramebuffer(PreRender* this, Gfx** gfxP);
-void PreRender_DrawCoverage(PreRender* this, Gfx** gfxP);
-void PreRender_RestoreZBuffer(PreRender* this, Gfx** gfxP);
-void func_800C213C(PreRender* this, Gfx** gfxP);
-void PreRender_RestoreFramebuffer(PreRender* this, Gfx** gfxP);
-void PreRender_CopyImageRegion(PreRender* this, Gfx** gfxP);
-void PreRender_ApplyFilters(PreRender* this);
-void GameState_SetFBFilter(Gfx** gfxP);
-void GameState_Draw(GameState* gameState, GraphicsContext* gfxCtx);
-void GameState_SetFrameBuffer(GraphicsContext* gfxCtx);
-void GameState_ReqPadData(GameState* gameState);
-void GameState_Update(GameState* gameState);
-void GameState_InitArena(GameState* gameState, size_t size);
-void GameState_Realloc(GameState* gameState, size_t size);
-void GameState_Init(GameState* gameState, GameStateFunc init, GraphicsContext* gfxCtx);
-void GameState_Destroy(GameState* gameState);
-GameStateFunc GameState_GetInit(GameState* gameState);
-u32 GameState_IsRunning(GameState* gameState);
+s32 Game_play_getDoorAngle(PlayState* this, Actor* actor, s16* yaw);
+s32 Gama_play_position_in_water(PlayState* this, Vec3f* pos);
+void PreRender_setup_savebuf(PreRender* this, u32 width, u32 height, void* fbuf, void* zbuf, void* cvg);
+void PreRender_init(PreRender* this);
+void PreRender_setup_renderbuf(PreRender* this, u32 width, u32 height, void* fbuf, void* zbuf);
+void PreRender_cleanup(PreRender* this);
+void PreRender_TransBuffer1_env(PreRender* this, Gfx** gfxP, void* buf, void* bufSave, u32 r, u32 g, u32 b, u32 a);
+void PreRender_TransBuffer1(PreRender* this, Gfx** gfxP, void* fbuf, void* fbufSave);
+void PreRender_saveZBuffer(PreRender* this, Gfx** gfxP);
+void PreRender_saveFrameBuffer(PreRender* this, Gfx** gfxP);
+void PreRender_saveCVG(PreRender* this, Gfx** gfxP);
+void PreRender_loadZBuffer(PreRender* this, Gfx** gfxP);
+void PreRender_loadFrameBuffer(PreRender* this, Gfx** gfxP);
+void PreRender_loadFrameBufferCopy(PreRender* this, Gfx** gfxP);
+void PreRender_loadFrameBufferCopyX(PreRender* this, Gfx** gfxP);
+void PreRender_ConvertFrameBuffer2(PreRender* this);
+void debug_filter(Gfx** gfxP);
+void game_debug_draw_last(GameState* gameState, GraphicsContext* gfxCtx);
+void game_draw_first(GraphicsContext* gfxCtx);
+void game_get_controller(GameState* gameState);
+void game_main(GameState* gameState);
+void game_init_hyral(GameState* gameState, size_t size);
+void game_resize_hyral(GameState* gameState, size_t size);
+void game_ct(GameState* gameState, GameStateFunc init, GraphicsContext* gfxCtx);
+void game_dt(GameState* gameState);
+GameStateFunc game_get_next_game_init(GameState* gameState);
+u32 game_is_doing(GameState* gameState);
 #if DEBUG_FEATURES
 void* GameState_Alloc(GameState* gameState, size_t size, const char* file, int line);
-void* GameAlloc_MallocDebug(GameAlloc* this, u32 size, const char* file, int line);
+void* gamealloc_mallocDebug(GameAlloc* this, u32 size, const char* file, int line);
 #endif
-void* GameAlloc_Malloc(GameAlloc* this, u32 size);
-void GameAlloc_Free(GameAlloc* this, void* data);
-void GameAlloc_Cleanup(GameAlloc* this);
-void GameAlloc_Init(GameAlloc* this);
-void Graph_InitTHGA(GraphicsContext* gfxCtx);
-GameStateOverlay* Graph_GetNextGameState(GameState* gameState);
-void Graph_Init(GraphicsContext* gfxCtx);
-void Graph_Destroy(GraphicsContext* gfxCtx);
-void Graph_TaskSet00(GraphicsContext* gfxCtx);
-void Graph_Update(GraphicsContext* gfxCtx, GameState* gameState);
-void Graph_ThreadEntry(void*);
+void* gamealloc_malloc(GameAlloc* this, u32 size);
+void gamealloc_free(GameAlloc* this, void* data);
+void gamealloc_cleanup(GameAlloc* this);
+void gamealloc_init(GameAlloc* this);
+void graph_setup_double_buffer(GraphicsContext* gfxCtx);
+GameStateOverlay* game_get_next_game_dlftbl(GameState* gameState);
+void graph_ct(GraphicsContext* gfxCtx);
+void graph_dt(GraphicsContext* gfxCtx);
+void graph_task_set00(GraphicsContext* gfxCtx);
+void graph_main(GraphicsContext* gfxCtx, GameState* gameState);
+void graph_proc(void*);
 
-ListAlloc* ListAlloc_Init(ListAlloc* this);
-void* ListAlloc_Alloc(ListAlloc* this, u32 size);
-void ListAlloc_Free(ListAlloc* this, void* data);
-void ListAlloc_FreeAll(ListAlloc* this);
-void Main(void* arg);
-void SysCfb_Init(s32 n64dd);
-void* SysCfb_GetFbPtr(s32 idx);
-void* SysCfb_GetFbEnd(void);
+ListAlloc* listalloc_init(ListAlloc* this);
+void* listalloc_malloc(ListAlloc* this, u32 size);
+void listalloc_free(ListAlloc* this, void* data);
+void listalloc_cleanup(ListAlloc* this);
+void mainproc(void* arg);
+void sys_cfb_init(s32 n64dd);
+void* sys_cfb_getptr(s32 idx);
+void* sys_cfb_get_bottom(void);
 
-u64* SysUcode_GetUCodeBoot(void);
-size_t SysUcode_GetUCodeBootSize(void);
-u64* SysUcode_GetUCode(void);
-u64* SysUcode_GetUCodeData(void);
-NORETURN void func_800D31A0(void);
+u64* ucode_GetRspBootTextStart(void);
+size_t ucode_GetRspBootTextSize(void);
+u64* ucode_GetPolyTextStart(void);
+u64* ucode_GetPolyDataStart(void);
+NORETURN void Freeze(void);
 void func_800D31F0(void);
 void func_800D3210(void);
 void* DebugArena_Malloc(u32 size);
@@ -261,31 +261,31 @@ void DebugArena_FreeDebug(void* ptr, const char* file, int line);
 void DebugArena_Display(void);
 #endif
 
-void RcpUtils_PrintRegisterStatus(void);
-void RcpUtils_Reset(void);
-void* Overlay_AllocateAndLoad(uintptr_t vromStart, uintptr_t vromEnd, void* vramStart, void* vramEnd);
+void showRspRdp(void);
+void KillRspRdp(void);
+void* LoadFragment2(uintptr_t vromStart, uintptr_t vromEnd, void* vramStart, void* vramEnd);
 void MtxConv_F2L(Mtx* m1, MtxF* m2);
 void MtxConv_L2F(MtxF* m1, Mtx* m2);
-void Overlay_Relocate(void* allocatedRamAddr, OverlayRelocationSection* ovlRelocs, void* vramStart);
-size_t Overlay_Load(uintptr_t vromStart, uintptr_t vromEnd, void* vramStart, void* vramEnd, void* allocatedRamAddr);
-// ? func_800FC800(?);
-// ? func_800FC83C(?);
+void DoRelocation(void* allocatedRamAddr, OverlayRelocationSection* ovlRelocs, void* vramStart);
+size_t LoadFragmentFix2(uintptr_t vromStart, uintptr_t vromEnd, void* vramStart, void* vramEnd, void* allocatedRamAddr);
+// ? __nw__FUi(?);
+// ? __dl__FPv(?);
 // ? func_800FCAB4(?);
-void SystemHeap_Init(void* start, u32 size);
+void osInitializeCPP(void* start, u32 size);
 
 f32 absf(f32);
 
-void Regs_InitData(PlayState* play);
+void save_area_ct(PlayState* play);
 
-void Setup_Init(GameState* thisx);
-void Setup_Destroy(GameState* thisx);
-void ConsoleLogo_Init(GameState* thisx);
-void ConsoleLogo_Destroy(GameState* thisx);
-void MapSelect_Init(GameState* thisx);
-void MapSelect_Destroy(GameState* thisx);
-void TitleSetup_Init(GameState* thisx);
-void TitleSetup_Destroy(GameState* thisx);
-void FileSelect_Init(GameState* thisx);
-void FileSelect_Destroy(GameState* thisx);
+void first_game_init(GameState* thisx);
+void first_game_cleanup(GameState* thisx);
+void title_init(GameState* thisx);
+void title_cleanup(GameState* thisx);
+void select_init(GameState* thisx);
+void select_cleanup(GameState* thisx);
+void opening_init(GameState* thisx);
+void opening_cleanup(GameState* thisx);
+void file_choose_init(GameState* thisx);
+void file_choose_cleanup(GameState* thisx);
 
 #endif

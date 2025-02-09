@@ -11,9 +11,9 @@ typedef struct FrameAdvanceContext {
     /* 0x4 */ s32 timer;
 } FrameAdvanceContext; // size = 0x8
 
-void FrameAdvance_Init(FrameAdvanceContext* frameAdvCtx);
-s32 FrameAdvance_Update(FrameAdvanceContext* frameAdvCtx, struct Input* input);
+void Pause_ct(FrameAdvanceContext* frameAdvCtx);
+s32 Pause_proc(FrameAdvanceContext* frameAdvCtx, struct Input* input);
 
-int FrameAdvance_IsEnabled(struct PlayState* this);
+int _Game_play_isPause(struct PlayState* this);
 
 #endif

@@ -1,7 +1,7 @@
 #include "ultra64.h"
 #include "global.h"
 
-void Audio_SequenceChannelProcessSound(SequenceChannel* channel, s32 recalculateVolume, s32 applyBend) {
+void __Nas_CallWaveProcess_Sub(SequenceChannel* channel, s32 recalculateVolume, s32 applyBend) {
     f32 channelVolume;
     f32 chanFreqScale;
     s32 i;
@@ -49,7 +49,7 @@ void Audio_SequenceChannelProcessSound(SequenceChannel* channel, s32 recalculate
     channel->changes.asByte = 0;
 }
 
-void Audio_SequencePlayerProcessSound(SequencePlayer* seqPlayer) {
+void Nas_MainCtrl(SequencePlayer* seqPlayer) {
     s32 i;
 
     if (seqPlayer->fadeTimer != 0) {
@@ -65,7 +65,7 @@ void Audio_SequencePlayerProcessSound(SequencePlayer* seqPlayer) {
 
         seqPlayer->fadeTimer--;
         if (seqPlayer->fadeTimer == 0 && seqPlayer->state == 2) {
-            AudioSeq_SequencePlayerDisable(seqPlayer);
+            Nas_ReleaseGroup(seqPlayer);
             return;
         }
     }
@@ -76,7 +76,7 @@ void Audio_SequencePlayerProcessSound(SequencePlayer* seqPlayer) {
 
     for (i = 0; i < 16; i++) {
         if (seqPlayer->channels[i]->enabled == 1) {
-            Audio_SequenceChannelProcessSound(seqPlayer->channels[i], seqPlayer->recalculateVolume,
+            __Nas_CallWaveProcess_Sub(seqPlayer->channels[i], seqPlayer->recalculateVolume,
                                               seqPlayer->applyBend);
         }
     }
@@ -84,7 +84,7 @@ void Audio_SequencePlayerProcessSound(SequencePlayer* seqPlayer) {
     seqPlayer->recalculateVolume = false;
 }
 
-f32 Audio_GetPortamentoFreqScale(Portamento* portamento) {
+f32 Nas_SweepCalculator(Portamento* portamento) {
     u32 loResCur;
     f32 portamentoFreq;
 
@@ -96,12 +96,12 @@ f32 Audio_GetPortamentoFreqScale(Portamento* portamento) {
         portamento->mode = 0;
     }
 
-    portamentoFreq = 1.0f + portamento->extent * (gBendPitchOneOctaveFrequencies[loResCur + 128] - 1.0f);
+    portamentoFreq = 1.0f + portamento->extent * (PCENTTABLE[loResCur + 128] - 1.0f);
 
     return portamentoFreq;
 }
 
-s16 Audio_GetVibratoPitchChange(VibratoState* vib) {
+s16 Nas_ModTableRead(VibratoState* vib) {
     s32 index;
 
     vib->time += (s32)vib->rate;
@@ -109,9 +109,9 @@ s16 Audio_GetVibratoPitchChange(VibratoState* vib) {
     return vib->curve[index];
 }
 
-f32 Audio_GetVibratoFreqScale(VibratoState* vib) {
-    static f32 D_80130510 = 0.0f;
-    static s32 D_80130514 = 0;
+f32 Nas_Modulator(VibratoState* vib) {
+    static f32 addcoef = 0.0f;
+    static s32 counts = 0;
     f32 pitchChange;
     f32 depth;
     f32 invDepth;
@@ -124,7 +124,7 @@ f32 Audio_GetVibratoFreqScale(VibratoState* vib) {
         return 1.0f;
     }
 
-    //! @bug this probably meant to compare with gAudioCtx.sequenceChannelNone.
+    //! @bug this probably meant to compare with AG.sequenceChannelNone.
     //! -1 isn't used as a channel pointer anywhere else.
     if (channel != ((SequenceChannel*)(-1))) {
         if (vib->depthChangeTimer) {
@@ -160,29 +160,29 @@ f32 Audio_GetVibratoFreqScale(VibratoState* vib) {
         return 1.0f;
     }
 
-    pitchChange = Audio_GetVibratoPitchChange(vib) + 32768.0f;
+    pitchChange = Nas_ModTableRead(vib) + 32768.0f;
     temp = vib->depth / 4096.0f;
     depth = temp + 1.0f;
     invDepth = 1.0f / depth;
 
     result = 1.0f / ((depth - invDepth) * pitchChange / 65536.0f + invDepth);
 
-    D_80130510 += result;
-    D_80130514++;
+    addcoef += result;
+    counts++;
 
     return result;
 }
 
-void Audio_NoteVibratoUpdate(Note* note) {
+void Nas_ChannelModulation(Note* note) {
     if (note->playbackState.portamento.mode != 0) {
-        note->playbackState.portamentoFreqScale = Audio_GetPortamentoFreqScale(&note->playbackState.portamento);
+        note->playbackState.portamentoFreqScale = Nas_SweepCalculator(&note->playbackState.portamento);
     }
     if (note->playbackState.vibratoState.active) {
-        note->playbackState.vibratoFreqScale = Audio_GetVibratoFreqScale(&note->playbackState.vibratoState);
+        note->playbackState.vibratoFreqScale = Nas_Modulator(&note->playbackState.vibratoState);
     }
 }
 
-void Audio_NoteVibratoInit(Note* note) {
+void Nas_ChannelModInit(Note* note) {
     VibratoState* vib;
     SequenceChannel* channel;
 
@@ -192,7 +192,7 @@ void Audio_NoteVibratoInit(Note* note) {
 
     vib->active = true;
     vib->time = 0;
-    vib->curve = gWaveSamples[2]; // gSineWaveSample[0..63]
+    vib->curve = WAVEMEM_TABLE[2]; // wm_sin[0..63]
 
     vib->channel = note->playbackState.parentLayer->channel;
     channel = vib->channel;
@@ -210,12 +210,12 @@ void Audio_NoteVibratoInit(Note* note) {
     vib->delay = channel->vibratoDelay;
 }
 
-void Audio_NotePortamentoInit(Note* note) {
+void Nas_SweepInit(Note* note) {
     note->playbackState.portamentoFreqScale = 1.0f;
     note->playbackState.portamento = note->playbackState.parentLayer->portamento;
 }
 
-void Audio_AdsrInit(AdsrState* adsr, EnvelopePoint* envelope, s16* volOut) {
+void Nas_EnvInit(AdsrState* adsr, EnvelopePoint* envelope, s16* volOut) {
     adsr->action.asByte = 0;
     adsr->delay = 0;
     adsr->envelope = envelope;
@@ -226,7 +226,7 @@ void Audio_AdsrInit(AdsrState* adsr, EnvelopePoint* envelope, s16* volOut) {
     // removed, but the function parameter was forgotten and remains.)
 }
 
-f32 Audio_AdsrUpdate(AdsrState* adsr) {
+f32 Nas_EnvProcess(AdsrState* adsr) {
     u8 state = adsr->action.s.state;
 
     switch (state) {
@@ -264,7 +264,7 @@ f32 Audio_AdsrUpdate(AdsrState* adsr) {
                     break;
 
                 default:
-                    adsr->delay *= gAudioCtx.audioBufferParameters.ticksPerUpdateScaled;
+                    adsr->delay *= AG.audioBufferParameters.ticksPerUpdateScaled;
                     if (adsr->delay == 0) {
                         adsr->delay = 1;
                     }

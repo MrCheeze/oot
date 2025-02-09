@@ -29,23 +29,23 @@ typedef struct RumbleMgr {
 
 // internal
 
-void RumbleMgr_Init(RumbleMgr* rumbleMgr);
-void RumbleMgr_Destroy(RumbleMgr* rumbleMgr);
-void RumbleMgr_Update(RumbleMgr* rumbleMgr);
+void vibctl2_init(RumbleMgr* rumbleMgr);
+void vibctl2_cleanup(RumbleMgr* rumbleMgr);
+void vibctl2_move(RumbleMgr* rumbleMgr);
 
 // external
 
-void Rumble_Override(f32 distSq, u8 sourceStrength, u8 duration, u8 decreaseRate);
-void Rumble_Request(f32 distSq, u8 sourceStrength, u8 duration, u8 decreaseRate);
+void z_vibctl2_vib_force_set(f32 distSq, u8 sourceStrength, u8 duration, u8 decreaseRate);
+void z_vibctl2_vib_setQ(f32 distSq, u8 sourceStrength, u8 duration, u8 decreaseRate);
 
-void Rumble_Init(void);
-void Rumble_Destroy(void);
+void z_vibctl2_init(void);
+void z_vibctl2_cleanup(void);
 
-s32 Rumble_Controller1HasRumblePak(void);
+s32 z_vibctl2_RumblePackIsConnected(void);
 
-void Rumble_Reset(void);
-void Rumble_ClearRequests(void);
+void z_vibctl2_StageInit(void);
+void z_vibctl2_StageCancel(void);
 
-void Rumble_SetUpdateEnabled(u32 enable);
+void z_vibctl2_pause(u32 enable);
 
 #endif

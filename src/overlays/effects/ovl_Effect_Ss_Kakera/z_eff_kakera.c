@@ -31,18 +31,18 @@
 #define rObjectSlot regs[11]
 #define rColorIdx regs[12]
 
-u32 EffectSsKakera_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
-void EffectSsKakera_Draw(PlayState* play, u32 index, EffectSs* this);
-void EffectSsKakera_Update(PlayState* play, u32 index, EffectSs* this);
+u32 Effect_Ss_Kakera_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
+void Effect_Kakera_disp(PlayState* play, u32 index, EffectSs* this);
+void Effect_Kakera_move(PlayState* play, u32 index, EffectSs* this);
 
-void func_809A9BA8(EffectSs* this, PlayState* play);
+static void check_shape_bank(EffectSs* this, PlayState* play);
 
 EffectSsProfile Effect_Ss_Kakera_Profile = {
     EFFECT_SS_KAKERA,
-    EffectSsKakera_Init,
+    Effect_Ss_Kakera_ct,
 };
 
-u32 EffectSsKakera_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
+u32 Effect_Ss_Kakera_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
     EffectSsKakeraInitParams* initParams = (EffectSsKakeraInitParams*)initParamsx;
     s32 objId;
 
@@ -60,21 +60,21 @@ u32 EffectSsKakera_Init(PlayState* play, u32 index, EffectSs* this, void* initPa
             this->rObjId = KAKERA_OBJECT_DEFAULT;
         } else {
             this->rObjId = initParams->objId;
-            func_809A9BA8(this, play);
+            check_shape_bank(this, play);
         }
 
     } else {
         PRINTF("shape_modelがNULL\n");
-        LogUtils_HungupThread("../z_eff_kakera.c", LN1(175, 178));
+        _dbg_hungup("../z_eff_kakera.c", LN1(175, 178));
     }
 
-    this->draw = EffectSsKakera_Draw;
-    this->update = EffectSsKakera_Update;
+    this->draw = Effect_Kakera_disp;
+    this->update = Effect_Kakera_move;
     this->vec = initParams->unk_18;
     this->rReg0 = initParams->unk_2C;
     this->rGravity = initParams->gravity;
-    this->rPitch = Rand_ZeroOne() * 32767.0f;
-    this->rYaw = Rand_ZeroOne() * 32767.0f;
+    this->rPitch = fqrand() * 32767.0f;
+    this->rYaw = fqrand() * 32767.0f;
     this->rReg4 = initParams->unk_26;
     this->rReg5 = initParams->unk_28;
     this->rReg6 = initParams->unk_2A;
@@ -86,7 +86,7 @@ u32 EffectSsKakera_Init(PlayState* play, u32 index, EffectSs* this, void* initPa
     return 1;
 }
 
-f32 func_809A9818(f32 arg0, f32 arg1) {
+f32 randomD_sectionUniformity(f32 arg0, f32 arg1) {
     f32 temp_f2;
 
 #if DEBUG_FEATURES
@@ -95,12 +95,12 @@ f32 func_809A9818(f32 arg0, f32 arg1) {
     }
 #endif
 
-    temp_f2 = Rand_ZeroOne() * arg1;
+    temp_f2 = fqrand() * arg1;
     return ((temp_f2 * 2.0f) - arg1) + arg0;
 }
 
-void EffectSsKakera_Draw(PlayState* play, u32 index, EffectSs* this) {
-    static Color_RGB8 colors[] = { { 255, 255, 255 }, { 235, 170, 130 } };
+void Effect_Kakera_disp(PlayState* play, u32 index, EffectSs* this) {
+    static Color_RGB8 Kakera_PrimColor[] = { { 255, 255, 255 }, { 235, 170, 130 } };
     GraphicsContext* gfxCtx = play->state.gfxCtx;
     s32 pad;
     f32 scale;
@@ -119,26 +119,26 @@ void EffectSsKakera_Draw(PlayState* play, u32 index, EffectSs* this) {
         }
     }
 
-    Matrix_Translate(this->pos.x, this->pos.y, this->pos.z, MTXMODE_NEW);
-    Matrix_RotateY(this->rYaw * 0.01f, MTXMODE_APPLY);
-    Matrix_RotateX(this->rPitch * 0.01f, MTXMODE_APPLY);
-    Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
+    Matrix_translate(this->pos.x, this->pos.y, this->pos.z, MTXMODE_NEW);
+    Matrix_rotateY(this->rYaw * 0.01f, MTXMODE_APPLY);
+    Matrix_rotateX(this->rPitch * 0.01f, MTXMODE_APPLY);
+    Matrix_scale(scale, scale, scale, MTXMODE_APPLY);
 
     if ((((this->rReg4 >> 7) & 1) << 7) == 0x80) {
         MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, gfxCtx, "../z_eff_kakera.c", 268);
-        Gfx_SetupDL_25Xlu(play->state.gfxCtx);
+        _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
 
         if (colorIdx >= 0) {
-            gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, colors[colorIdx].r, colors[colorIdx].g, colors[colorIdx].b, 255);
+            gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, Kakera_PrimColor[colorIdx].r, Kakera_PrimColor[colorIdx].g, Kakera_PrimColor[colorIdx].b, 255);
         }
 
         gSPDisplayList(POLY_XLU_DISP++, this->gfx);
     } else {
         MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, gfxCtx, "../z_eff_kakera.c", 286);
-        Gfx_SetupDL_25Opa(play->state.gfxCtx);
+        _texture_z_light_fog_prim(play->state.gfxCtx);
 
         if (colorIdx >= 0) {
-            gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, colors[colorIdx].r, colors[colorIdx].g, colors[colorIdx].b, 255);
+            gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, Kakera_PrimColor[colorIdx].r, Kakera_PrimColor[colorIdx].g, Kakera_PrimColor[colorIdx].b, 255);
         }
 
         gSPDisplayList(POLY_OPA_DISP++, this->gfx);
@@ -147,16 +147,16 @@ void EffectSsKakera_Draw(PlayState* play, u32 index, EffectSs* this) {
     CLOSE_DISPS(gfxCtx, "../z_eff_kakera.c", 302);
 }
 
-void func_809A9BA8(EffectSs* this, PlayState* play) {
-    this->rObjectSlot = Object_GetSlot(&play->objectCtx, this->rObjId);
+static void check_shape_bank(EffectSs* this, PlayState* play) {
+    this->rObjectSlot = Object_Exchange_bank_check(&play->objectCtx, this->rObjId);
 
-    if ((this->rObjectSlot < 0) || !Object_IsLoaded(&play->objectCtx, this->rObjectSlot)) {
+    if ((this->rObjectSlot < 0) || !Object_Exchange_bank_dma_check(&play->objectCtx, this->rObjectSlot)) {
         this->life = 0;
         this->draw = NULL;
     }
 }
 
-void func_809A9C10(EffectSs* this) {
+void setSpd_air(EffectSs* this) {
     f32 temp_f14;
     f32 temp_f12;
     f32 temp_f16;
@@ -169,9 +169,9 @@ void func_809A9C10(EffectSs* this) {
     temp_f20 = this->rReg6 / 1024.0f;
     temp_f14 = (this->rReg9 / 1024.0f) * 4.0f;
 
-    temp_f2 = this->velocity.x - func_809A9818(0.0f, temp_f14);
-    temp_f16 = this->velocity.y - func_809A9818(0.0f, temp_f14);
-    temp_f12 = this->velocity.z - func_809A9818(0.0f, temp_f14);
+    temp_f2 = this->velocity.x - randomD_sectionUniformity(0.0f, temp_f14);
+    temp_f16 = this->velocity.y - randomD_sectionUniformity(0.0f, temp_f14);
+    temp_f12 = this->velocity.z - randomD_sectionUniformity(0.0f, temp_f14);
 
     if (temp_f2 > 0.0f) {
         this->velocity.x -= ((temp_f2 * temp_f18) + (SQ(temp_f2) * temp_f20));
@@ -196,42 +196,42 @@ void func_809A9C10(EffectSs* this) {
     }
 }
 
-void func_809A9DC0(EffectSs* this) {
+void clearAcc(EffectSs* this) {
     this->accel.x = this->accel.y = this->accel.z = 0.0f;
 }
 
-f32 func_809A9DD8(f32 arg0, s32 arg1) {
+f32 hakyuProc_uni(f32 arg0, s32 arg1) {
     return 1.0f;
 }
 
-static f32 D_809AA530[] = {
+static f32 HakyuK[] = {
     1.0f, 100.0f, 40.0f, 5.0f, 100.0f, 40.0f, 5.0f, 100.0f, 40.0f, 5.0f,
 };
 
-f32 func_809A9DEC(f32 arg0, s32 arg1) {
-    if (D_809AA530[arg1] < arg0) {
-        return D_809AA530[arg1] / arg0;
+f32 hakyuProc_r(f32 arg0, s32 arg1) {
+    if (HakyuK[arg1] < arg0) {
+        return HakyuK[arg1] / arg0;
     } else {
         return 1.0f;
     }
 }
 
-f32 func_809A9E28(f32 arg0, s32 arg1) {
+f32 hakyuProc_r2(f32 arg0, s32 arg1) {
     f32 temp = SQ(arg0);
 
-    if (D_809AA530[arg1] < temp) {
-        return D_809AA530[arg1] / temp;
+    if (HakyuK[arg1] < temp) {
+        return HakyuK[arg1] / temp;
     } else {
         return 1.0f;
     }
 }
 
-f32 func_809A9E68(f32 arg0, s32 arg1) {
-    return func_809A9E28(arg0, arg1);
+f32 hakyuProc_gaus(f32 arg0, s32 arg1) {
+    return hakyuProc_r2(arg0, arg1);
 }
 
-s32 func_809A9E88(EffectSs* this, Vec3f* diff, f32 dist) {
-    static f32 D_809AA558[] = { 0.05f, 1.0f };
+s32 fncAcc_rot(EffectSs* this, Vec3f* diff, f32 dist) {
+    static f32 omg[] = { 0.05f, 1.0f };
     s32 temp_v0;
     f32 phi_f0;
 
@@ -245,14 +245,14 @@ s32 func_809A9E88(EffectSs* this, Vec3f* diff, f32 dist) {
             phi_f0 = 1.0f;
         }
 
-        this->accel.x += ((D_809AA558[temp_v0 - 1] * diff->z) * phi_f0);
-        this->accel.z -= ((D_809AA558[temp_v0 - 1] * diff->x) * phi_f0);
+        this->accel.x += ((omg[temp_v0 - 1] * diff->z) * phi_f0);
+        this->accel.z -= ((omg[temp_v0 - 1] * diff->x) * phi_f0);
     }
 
     return 1;
 }
 
-s32 func_809A9F10(EffectSs* this, Vec3f* diff, f32 dist) {
+s32 fncAcc_tate(EffectSs* this, Vec3f* diff, f32 dist) {
     static f32 D_809AA560[] = { 4.0f, 0.1f, 0.3f, 0.9f, -0.1f, -0.3f, -0.9f };
     s32 temp_v0;
 
@@ -265,8 +265,8 @@ s32 func_809A9F10(EffectSs* this, Vec3f* diff, f32 dist) {
     return 1;
 }
 
-s32 func_809A9F4C(EffectSs* this, Vec3f* diff, f32 dist) {
-    static f32 D_809AA57C[] = { 0.1f, 1.0f, 6.0f };
+s32 fncAcc_cent(EffectSs* this, Vec3f* diff, f32 dist) {
+    static f32 cent[] = { 0.1f, 1.0f, 6.0f };
     s32 temp_v0;
     f32 phi_f0;
 
@@ -280,24 +280,24 @@ s32 func_809A9F4C(EffectSs* this, Vec3f* diff, f32 dist) {
             phi_f0 = 1.0f;
         }
 
-        this->accel.x -= ((diff->x * D_809AA57C[temp_v0 - 1]) * phi_f0);
-        this->accel.z -= ((diff->z * D_809AA57C[temp_v0 - 1]) * phi_f0);
+        this->accel.x -= ((diff->x * cent[temp_v0 - 1]) * phi_f0);
+        this->accel.z -= ((diff->z * cent[temp_v0 - 1]) * phi_f0);
     }
 
     return 1;
 }
 
-s32 func_809A9FD8(EffectSs* this, Vec3f* diff, f32 dist) {
-    static f32 (*D_809AA588[])(f32 dist, s32 arg1) = {
-        func_809A9DD8, func_809A9DEC, func_809A9DEC, func_809A9DEC, func_809A9E28,
-        func_809A9E28, func_809A9E28, func_809A9E68, func_809A9E68, func_809A9E68,
+s32 fncAcc_hakyu(EffectSs* this, Vec3f* diff, f32 dist) {
+    static f32 (*hakyuProc[])(f32 dist, s32 arg1) = {
+        hakyuProc_uni, hakyuProc_r, hakyuProc_r, hakyuProc_r, hakyuProc_r2,
+        hakyuProc_r2, hakyuProc_r2, hakyuProc_gaus, hakyuProc_gaus, hakyuProc_gaus,
     };
     f32 temp_f0;
     s32 temp_a1;
 
     temp_a1 = (this->rReg0 >> 7) & 0xF;
-    temp_f0 = D_809AA588[temp_a1](dist, temp_a1);
-    temp_f0 = func_809A9818(temp_f0, (this->rReg9 * temp_f0) / 1024.0f);
+    temp_f0 = hakyuProc[temp_a1](dist, temp_a1);
+    temp_f0 = randomD_sectionUniformity(temp_f0, (this->rReg9 * temp_f0) / 1024.0f);
 
     this->accel.x *= temp_f0;
     this->accel.y *= temp_f0;
@@ -310,17 +310,17 @@ s32 func_809A9FD8(EffectSs* this, Vec3f* diff, f32 dist) {
     return 1;
 }
 
-s32 func_809AA0B8(EffectSs* this, Vec3f* diff, f32 dist) {
+s32 fncAcc_gravity(EffectSs* this, Vec3f* diff, f32 dist) {
     this->accel.y += this->rGravity / 256.0f;
 
     return 1;
 }
 
-s32 func_809AA0EC(EffectSs* this) {
+s32 setAcc_accType(EffectSs* this) {
     Vec3f diff;
     f32 dist;
 
-    func_809A9DC0(this);
+    clearAcc(this);
 
     diff.x = this->pos.x - this->vec.x;
     diff.y = this->pos.y - this->vec.y;
@@ -333,32 +333,32 @@ s32 func_809AA0EC(EffectSs* this) {
     }
 
     if (this->rReg0 != 0) {
-        if (!func_809A9E88(this, &diff, dist)) {
+        if (!fncAcc_rot(this, &diff, dist)) {
             return false;
         }
 
-        if (!func_809A9F10(this, &diff, dist)) {
+        if (!fncAcc_tate(this, &diff, dist)) {
             return false;
         }
 
-        if (!func_809A9F4C(this, &diff, dist)) {
+        if (!fncAcc_cent(this, &diff, dist)) {
             return false;
         }
 
-        if (!func_809A9FD8(this, &diff, dist)) {
+        if (!fncAcc_hakyu(this, &diff, dist)) {
             return false;
         }
     }
 
-    if (!func_809AA0B8(this, &diff, dist)) {
+    if (!fncAcc_gravity(this, &diff, dist)) {
         return false;
     }
 
     return true;
 }
 
-void func_809AA230(EffectSs* this, PlayState* play) {
-    static f32 D_809AA5B0[] = { 10.0f, 20.0f, 40.0f };
+void setBound(EffectSs* this, PlayState* play) {
+    static f32 r[] = { 10.0f, 20.0f, 40.0f };
     Player* player = GET_PLAYER(play);
 
     if (this->rReg8 == 0) {
@@ -384,10 +384,10 @@ void func_809AA230(EffectSs* this, PlayState* play) {
                 break;
             case 1:
                 if (this->velocity.y < 0.0f) {
-                    if (BgCheck_SphVsFirstPoly(&play->colCtx, &this->pos, D_809AA5B0[(this->rReg4 >> 2) & 3])) {
-                        this->velocity.x *= func_809A9818(0.9f, 0.2f);
+                    if (T_BGCheck_SimpleCheck(&play->colCtx, &this->pos, r[(this->rReg4 >> 2) & 3])) {
+                        this->velocity.x *= randomD_sectionUniformity(0.9f, 0.2f);
                         this->velocity.y *= -0.8f;
-                        this->velocity.z *= func_809A9818(0.9f, 0.2f);
+                        this->velocity.z *= randomD_sectionUniformity(0.9f, 0.2f);
 
                         if (this->rReg8 > 0) {
                             this->rReg8--;
@@ -396,13 +396,13 @@ void func_809AA230(EffectSs* this, PlayState* play) {
                 }
                 break;
             case 2:
-                if (BgCheck_SphVsFirstPoly(&play->colCtx, &this->pos, D_809AA5B0[(this->rReg4 >> 2) & 3])) {}
+                if (T_BGCheck_SimpleCheck(&play->colCtx, &this->pos, r[(this->rReg4 >> 2) & 3])) {}
                 break;
         }
     }
 }
 
-void EffectSsKakera_Update(PlayState* play, u32 index, EffectSs* this) {
+void Effect_Kakera_move(PlayState* play, u32 index, EffectSs* this) {
     switch (((this->rReg4 >> 5) & 3) << 5) {
         case 0x20:
             this->rPitch += 0xB;
@@ -418,15 +418,15 @@ void EffectSsKakera_Update(PlayState* play, u32 index, EffectSs* this) {
             break;
     }
 
-    func_809A9C10(this);
+    setSpd_air(this);
 
-    if (!func_809AA0EC(this)) {
+    if (!setAcc_accType(this)) {
         this->life = 0;
     }
 
-    func_809AA230(this, play);
+    setBound(this, play);
 
     if (this->rObjId != KAKERA_OBJECT_DEFAULT) {
-        func_809A9BA8(this, play);
+        check_shape_bank(this, play);
     }
 }

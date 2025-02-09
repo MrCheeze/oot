@@ -4,21 +4,21 @@
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void EnAObj_Init(Actor* thisx, PlayState* play);
-void EnAObj_Destroy(Actor* thisx, PlayState* play);
-void EnAObj_Update(Actor* thisx, PlayState* play);
-void EnAObj_Draw(Actor* thisx, PlayState* play);
+void En_a_obj_Actor_ct(Actor* thisx, PlayState* play);
+void En_a_keep_Actor_dt(Actor* thisx, PlayState* play);
+void En_a_keep_move(Actor* thisx, PlayState* play);
+void En_a_keep_display(Actor* thisx, PlayState* play);
 
-void EnAObj_WaitFinishedTalking(EnAObj* this, PlayState* play);
-void EnAObj_WaitTalk(EnAObj* this, PlayState* play);
-void EnAObj_BlockRot(EnAObj* this, PlayState* play);
-void EnAObj_BoulderFragment(EnAObj* this, PlayState* play);
-void EnAObj_Block(EnAObj* this, PlayState* play);
+static void mode_talk(EnAObj* this, PlayState* play);
+void En_a_keep_Actor_mode_non_move(EnAObj* this, PlayState* play);
+void En_a_keep_Actor_mode_drop_del(EnAObj* this, PlayState* play);
+void En_a_keep_Actor_mode_drop2_move(EnAObj* this, PlayState* play);
+void En_a_keep_Actor_mode_pu_box(EnAObj* this, PlayState* play);
 
-void EnAObj_SetupWaitTalk(EnAObj* this, s16 type);
-void EnAObj_SetupBlockRot(EnAObj* this, s16 type);
-void EnAObj_SetupBoulderFragment(EnAObj* this, s16 type);
-void EnAObj_SetupBlock(EnAObj* this, s16 type);
+void En_a_keep_Actor_mode_non_move_init(EnAObj* this, s16 type);
+void En_a_keep_Actor_mode_drop_del_init(EnAObj* this, s16 type);
+void En_a_keep_Actor_mode_drop2_move_init(EnAObj* this, s16 type);
+void En_a_keep_Actor_mode_pu_box_init(EnAObj* this, s16 type);
 
 ActorProfile En_A_Obj_Profile = {
     /**/ ACTOR_EN_A_OBJ,
@@ -26,13 +26,13 @@ ActorProfile En_A_Obj_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(EnAObj),
-    /**/ EnAObj_Init,
-    /**/ EnAObj_Destroy,
-    /**/ EnAObj_Update,
-    /**/ EnAObj_Draw,
+    /**/ En_a_obj_Actor_ct,
+    /**/ En_a_keep_Actor_dt,
+    /**/ En_a_keep_move,
+    /**/ En_a_keep_display,
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit OcInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -56,7 +56,7 @@ static ColliderCylinderInit sCylinderInit = {
 //! since object_d_hsblock isn't a dependency of this actor.
 //! This doesn't cause issues in the base game because A_OBJ_UNKNOWN_6 is never used.
 
-static CollisionHeader* sColHeaders[] = {
+static CollisionHeader* bgd_info[] = {
     &gLargerCubeCol,       // A_OBJ_GRASS_CLUMP, A_OBJ_TREE_STUMP
     &gLargerCubeCol,       // A_OBJ_BLOCK_LARGE, A_OBJ_BLOCK_HUGE
     &gSmallerFlatBlockCol, // unused
@@ -65,16 +65,16 @@ static CollisionHeader* sColHeaders[] = {
     &gHookshotPostCol,     // A_OBJ_UNKNOWN_6
 };
 
-static Gfx* sDLists[] = {
+static Gfx* a_obj_tbl[] = {
     gFlatBlockDL,    gFlatBlockDL,   gFlatBlockDL, gFlatRotBlockDL,    gFlatRotBlockDL,    gSmallCubeDL,
     gHookshotPostDL, gGrassBladesDL, gTreeStumpDL, gSignRectangularDL, gSignDirectionalDL, gBoulderFragmentsDL,
 };
 
-void EnAObj_SetupAction(EnAObj* this, EnAObjActionFunc actionFunc) {
+void En_A_Keep_actor_set_process(EnAObj* this, EnAObjActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
 
-void EnAObj_Init(Actor* thisx, PlayState* play) {
+void En_a_obj_Actor_ct(Actor* thisx, PlayState* play) {
     CollisionHeader* colHeader = NULL;
     s32 pad;
     EnAObj* this = (EnAObj*)thisx;
@@ -85,22 +85,22 @@ void EnAObj_Init(Actor* thisx, PlayState* play) {
 
     switch (thisx->params) {
         case A_OBJ_BLOCK_SMALL:
-            Actor_SetScale(thisx, 0.025f);
+            Actor_set_scale(thisx, 0.025f);
             break;
         case A_OBJ_BLOCK_LARGE:
-            Actor_SetScale(thisx, 0.05f);
+            Actor_set_scale(thisx, 0.05f);
             break;
         case A_OBJ_BLOCK_HUGE:
         case A_OBJ_CUBE_SMALL:
         case A_OBJ_UNKNOWN_6:
-            Actor_SetScale(thisx, 0.1f);
+            Actor_set_scale(thisx, 0.1f);
             break;
         case A_OBJ_BLOCK_SMALL_ROT:
-            Actor_SetScale(thisx, 0.005f);
+            Actor_set_scale(thisx, 0.005f);
             break;
         case A_OBJ_BLOCK_LARGE_ROT:
         default:
-            Actor_SetScale(thisx, 0.01f);
+            Actor_set_scale(thisx, 0.01f);
             break;
     }
 
@@ -108,7 +108,7 @@ void EnAObj_Init(Actor* thisx, PlayState* play) {
         shadowScale = 12.0f;
     }
 
-    ActorShape_Init(&thisx->shape, 0.0f, ActorShadow_DrawCircle, shadowScale);
+    Shape_Info_init(&thisx->shape, 0.0f, Actor_shadow_circle, shadowScale);
 
     thisx->focus.pos = thisx->world.pos;
     this->dyna.bgId = BGACTOR_NEG_ONE;
@@ -121,26 +121,26 @@ void EnAObj_Init(Actor* thisx, PlayState* play) {
         case A_OBJ_BLOCK_LARGE:
         case A_OBJ_BLOCK_HUGE:
             this->dyna.bgId = 1;
-            Actor_ChangeCategory(play, &play->actorCtx, thisx, ACTORCAT_BG);
-            EnAObj_SetupBlock(this, thisx->params);
+            Actor_info_part_chg(play, &play->actorCtx, thisx, ACTORCAT_BG);
+            En_a_keep_Actor_mode_pu_box_init(this, thisx->params);
             break;
         case A_OBJ_BLOCK_SMALL_ROT:
         case A_OBJ_BLOCK_LARGE_ROT:
             this->dyna.bgId = 3;
-            Actor_ChangeCategory(play, &play->actorCtx, thisx, ACTORCAT_BG);
-            EnAObj_SetupBlockRot(this, thisx->params);
+            Actor_info_part_chg(play, &play->actorCtx, thisx, ACTORCAT_BG);
+            En_a_keep_Actor_mode_drop_del_init(this, thisx->params);
             break;
         case A_OBJ_UNKNOWN_6:
             this->focusYoffset = 10.0f;
             thisx->flags |= ACTOR_FLAG_ATTENTION_ENABLED;
             this->dyna.bgId = 5;
             thisx->gravity = -2.0f;
-            EnAObj_SetupWaitTalk(this, thisx->params);
+            En_a_keep_Actor_mode_non_move_init(this, thisx->params);
             break;
         case A_OBJ_GRASS_CLUMP:
         case A_OBJ_TREE_STUMP:
             this->dyna.bgId = 0;
-            EnAObj_SetupWaitTalk(this, thisx->params);
+            En_a_keep_Actor_mode_non_move_init(this, thisx->params);
             break;
         case A_OBJ_SIGNPOST_OBLONG:
         case A_OBJ_SIGNPOST_ARROW:
@@ -148,19 +148,19 @@ void EnAObj_Init(Actor* thisx, PlayState* play) {
             thisx->lockOnArrowOffset = 500.0f;
             thisx->flags |= ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY;
             this->focusYoffset = 45.0f;
-            EnAObj_SetupWaitTalk(this, thisx->params);
-            Collider_InitCylinder(play, &this->collider);
-            Collider_SetCylinder(play, &this->collider, thisx, &sCylinderInit);
+            En_a_keep_Actor_mode_non_move_init(this, thisx->params);
+            ClObjPipe_ct(play, &this->collider);
+            ClObjPipe_set5(play, &this->collider, thisx, &OcInfoData);
             thisx->colChkInfo.mass = MASS_IMMOVABLE;
             thisx->attentionRangeType = ATTENTION_RANGE_0;
             break;
         case A_OBJ_BOULDER_FRAGMENT:
             thisx->gravity = -1.5f;
-            EnAObj_SetupBoulderFragment(this, thisx->params);
+            En_a_keep_Actor_mode_drop2_move_init(this, thisx->params);
             break;
         default:
             thisx->gravity = -2.0f;
-            EnAObj_SetupWaitTalk(this, thisx->params);
+            En_a_keep_Actor_mode_non_move_init(this, thisx->params);
             break;
     }
 
@@ -169,82 +169,82 @@ void EnAObj_Init(Actor* thisx, PlayState* play) {
     }
 
     if (this->dyna.bgId != BGACTOR_NEG_ONE) {
-        CollisionHeader_GetVirtual(sColHeaders[this->dyna.bgId], &colHeader);
-        this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, thisx, colHeader);
+        DynaPolyUty_bgdi_SG2KSG(bgd_info[this->dyna.bgId], &colHeader);
+        this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, thisx, colHeader);
     }
 }
 
-void EnAObj_Destroy(Actor* thisx, PlayState* play) {
+void En_a_keep_Actor_dt(Actor* thisx, PlayState* play) {
     EnAObj* this = (EnAObj*)thisx;
 
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
 
     switch (this->dyna.actor.params) {
         case A_OBJ_SIGNPOST_OBLONG:
         case A_OBJ_SIGNPOST_ARROW:
-            Collider_DestroyCylinder(play, &this->collider);
+            ClObjPipe_dt(play, &this->collider);
             break;
     }
 }
 
-void EnAObj_WaitFinishedTalking(EnAObj* this, PlayState* play) {
-    if (Actor_TextboxIsClosing(&this->dyna.actor, play)) {
-        EnAObj_SetupWaitTalk(this, this->dyna.actor.params);
+static void mode_talk(EnAObj* this, PlayState* play) {
+    if (Actor_talk_end_check(&this->dyna.actor, play)) {
+        En_a_keep_Actor_mode_non_move_init(this, this->dyna.actor.params);
     }
 }
 
-void EnAObj_SetupWaitTalk(EnAObj* this, s16 type) {
-    EnAObj_SetupAction(this, EnAObj_WaitTalk);
+void En_a_keep_Actor_mode_non_move_init(EnAObj* this, s16 type) {
+    En_A_Keep_actor_set_process(this, En_a_keep_Actor_mode_non_move);
 }
 
-void EnAObj_WaitTalk(EnAObj* this, PlayState* play) {
+void En_a_keep_Actor_mode_non_move(EnAObj* this, PlayState* play) {
     s16 relYawTowardsPlayer;
 
     if (this->dyna.actor.textId != 0) {
         relYawTowardsPlayer = this->dyna.actor.yawTowardsPlayer - this->dyna.actor.shape.rot.y;
         if (ABS(relYawTowardsPlayer) < 0x2800 ||
             (this->dyna.actor.params == A_OBJ_SIGNPOST_ARROW && ABS(relYawTowardsPlayer) > 0x5800)) {
-            if (Actor_TalkOfferAccepted(&this->dyna.actor, play)) {
-                EnAObj_SetupAction(this, EnAObj_WaitFinishedTalking);
+            if (Actor_talk_check(&this->dyna.actor, play)) {
+                En_A_Keep_actor_set_process(this, mode_talk);
             } else {
-                Actor_OfferTalkNearColChkInfoCylinder(&this->dyna.actor, play);
+                Actor_talk_request(&this->dyna.actor, play);
             }
         }
     }
 }
 
-void EnAObj_SetupBlockRot(EnAObj* this, s16 type) {
+void En_a_keep_Actor_mode_drop_del_init(EnAObj* this, s16 type) {
     this->rotateState = 0;
     this->rotateWaitTimer = 10;
     this->dyna.actor.world.rot.y = 0;
     this->dyna.actor.shape.rot = this->dyna.actor.world.rot;
-    EnAObj_SetupAction(this, EnAObj_BlockRot);
+    En_A_Keep_actor_set_process(this, En_a_keep_Actor_mode_drop_del);
 }
 
-void EnAObj_BlockRot(EnAObj* this, PlayState* play) {
+void En_a_keep_Actor_mode_drop_del(EnAObj* this, PlayState* play) {
     if (this->rotateState == 0) {
         if (this->dyna.interactFlags != 0) {
             this->rotateState++;
             this->rotateForTimer = 20;
 
             if ((s16)(this->dyna.actor.yawTowardsPlayer + 0x4000) < 0) {
-                this->rotSpeedX = -0x3E8;
+                this->Kusa_AngSpdX = -0x3E8;
             } else {
-                this->rotSpeedX = 0x3E8;
+                this->Kusa_AngSpdX = 0x3E8;
             }
 
             if (this->dyna.actor.yawTowardsPlayer < 0) {
-                this->rotSpeedY = -this->rotSpeedX;
+                this->Kusa_AngSpdY = -this->Kusa_AngSpdX;
             } else {
-                this->rotSpeedY = this->rotSpeedX;
+                this->Kusa_AngSpdY = this->Kusa_AngSpdX;
             }
         }
     } else {
         if (this->rotateWaitTimer != 0) {
             this->rotateWaitTimer--;
         } else {
-            this->dyna.actor.shape.rot.y += this->rotSpeedY;
-            this->dyna.actor.shape.rot.x += this->rotSpeedX;
+            this->dyna.actor.shape.rot.y += this->Kusa_AngSpdY;
+            this->dyna.actor.shape.rot.x += this->Kusa_AngSpdX;
             this->rotateForTimer--;
             this->dyna.actor.gravity = -1.0f;
 
@@ -260,12 +260,12 @@ void EnAObj_BlockRot(EnAObj* this, PlayState* play) {
     }
 }
 
-void EnAObj_SetupBoulderFragment(EnAObj* this, s16 type) {
-    EnAObj_SetupAction(this, EnAObj_BoulderFragment);
+void En_a_keep_Actor_mode_drop2_move_init(EnAObj* this, s16 type) {
+    En_A_Keep_actor_set_process(this, En_a_keep_Actor_mode_drop2_move);
 }
 
-void EnAObj_BoulderFragment(EnAObj* this, PlayState* play) {
-    Math_SmoothStepToF(&this->dyna.actor.speed, 1.0f, 1.0f, 0.5f, 0.0f);
+void En_a_keep_Actor_mode_drop2_move(EnAObj* this, PlayState* play) {
+    add_calc(&this->dyna.actor.speed, 1.0f, 1.0f, 0.5f, 0.0f);
     this->dyna.actor.shape.rot.x += this->dyna.actor.world.rot.x >> 1;
     this->dyna.actor.shape.rot.z += this->dyna.actor.world.rot.z >> 1;
 
@@ -282,45 +282,45 @@ void EnAObj_BoulderFragment(EnAObj* this, PlayState* play) {
             this->dyna.actor.speed *= 0.6f;
             this->dyna.actor.bgCheckFlags &= ~(BGCHECKFLAG_GROUND | BGCHECKFLAG_GROUND_TOUCH);
         } else {
-            Actor_Kill(&this->dyna.actor);
+            Actor_delete(&this->dyna.actor);
         }
     }
 }
 
-void EnAObj_SetupBlock(EnAObj* this, s16 type) {
+void En_a_keep_Actor_mode_pu_box_init(EnAObj* this, s16 type) {
     this->dyna.actor.cullingVolumeDownward = 1200.0f;
     this->dyna.actor.cullingVolumeScale = 720.0f;
-    EnAObj_SetupAction(this, EnAObj_Block);
+    En_A_Keep_actor_set_process(this, En_a_keep_Actor_mode_pu_box);
 }
 
-void EnAObj_Block(EnAObj* this, PlayState* play) {
+void En_a_keep_Actor_mode_pu_box(EnAObj* this, PlayState* play) {
     this->dyna.actor.speed += this->dyna.unk_150;
     this->dyna.actor.world.rot.y = this->dyna.unk_158;
     this->dyna.actor.speed = CLAMP(this->dyna.actor.speed, -2.5f, 2.5f);
 
-    Math_SmoothStepToF(&this->dyna.actor.speed, 0.0f, 1.0f, 1.0f, 0.0f);
+    add_calc(&this->dyna.actor.speed, 0.0f, 1.0f, 1.0f, 0.0f);
 
     if (this->dyna.actor.speed != 0.0f) {
-        Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_ROCK_SLIDE - SFX_FLAG);
+        Actor_SE_set(&this->dyna.actor, NA_SE_EV_ROCK_SLIDE - SFX_FLAG);
     }
 
     this->dyna.unk_154 = 0.0f;
     this->dyna.unk_150 = 0.0f;
 }
 
-void EnAObj_Update(Actor* thisx, PlayState* play) {
+void En_a_keep_move(Actor* thisx, PlayState* play) {
     EnAObj* this = (EnAObj*)thisx;
 
     this->actionFunc(this, play);
-    Actor_MoveXZGravity(&this->dyna.actor);
+    Actor_position_moveF(&this->dyna.actor);
 
     if (this->dyna.actor.gravity != 0.0f) {
         if (this->dyna.actor.params != A_OBJ_BOULDER_FRAGMENT) {
-            Actor_UpdateBgCheckInfo(play, &this->dyna.actor, 5.0f, 40.0f, 0.0f,
+            Actor_BGcheck2(play, &this->dyna.actor, 5.0f, 40.0f, 0.0f,
                                     UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2 | UPDBGCHECKINFO_FLAG_3 |
                                         UPDBGCHECKINFO_FLAG_4);
         } else {
-            Actor_UpdateBgCheckInfo(play, &this->dyna.actor, 5.0f, 20.0f, 0.0f,
+            Actor_BGcheck2(play, &this->dyna.actor, 5.0f, 20.0f, 0.0f,
                                     UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2 | UPDBGCHECKINFO_FLAG_3 |
                                         UPDBGCHECKINFO_FLAG_4);
         }
@@ -332,18 +332,18 @@ void EnAObj_Update(Actor* thisx, PlayState* play) {
     switch (this->dyna.actor.params) {
         case A_OBJ_SIGNPOST_OBLONG:
         case A_OBJ_SIGNPOST_ARROW:
-            Collider_UpdateCylinder(&this->dyna.actor, &this->collider);
-            CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
+            CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->dyna.actor, &this->collider);
+            CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
             break;
     }
 }
 
-void EnAObj_Draw(Actor* thisx, PlayState* play) {
+void En_a_keep_display(Actor* thisx, PlayState* play) {
     s32 type = thisx->params;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_a_keep.c", 701);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
 
     if (type >= A_OBJ_MAX) {
         type = A_OBJ_BOULDER_FRAGMENT;
@@ -354,7 +354,7 @@ void EnAObj_Draw(Actor* thisx, PlayState* play) {
     }
 
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_en_a_keep.c", 712);
-    gSPDisplayList(POLY_OPA_DISP++, sDLists[type]);
+    gSPDisplayList(POLY_OPA_DISP++, a_obj_tbl[type]);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_a_keep.c", 715);
 }

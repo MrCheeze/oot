@@ -9,12 +9,12 @@
 
 #define FLAGS 0
 
-void EnYabusameMark_Init(Actor* thisx, PlayState* play);
-void EnYabusameMark_Destroy(Actor* thisx, PlayState* play);
-void EnYabusameMark_Update(Actor* thisx, PlayState* play);
-void func_80B42F74(EnYabusameMark* this, PlayState* play);
+void En_Yabusame_Mark_actor_ct(Actor* thisx, PlayState* play);
+void En_Yabusame_Mark_actor_dt(Actor* thisx, PlayState* play);
+void En_Yabusame_Mark_actor_move(Actor* thisx, PlayState* play);
+static void mode_yabusame_move(EnYabusameMark* this, PlayState* play);
 
-static ColliderQuadInit sQuadInit = {
+static ColliderQuadInit OcInfoData_Swrd = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -40,19 +40,19 @@ ActorProfile En_Yabusame_Mark_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(EnYabusameMark),
-    /**/ EnYabusameMark_Init,
-    /**/ EnYabusameMark_Destroy,
-    /**/ EnYabusameMark_Update,
+    /**/ En_Yabusame_Mark_actor_ct,
+    /**/ En_Yabusame_Mark_actor_dt,
+    /**/ En_Yabusame_Mark_actor_move,
     /**/ NULL,
 };
 
-static Vec3f sCollisionVertices[] = {
+static Vec3f hit_pos_data[] = {
     { 70.0f, 70.0f, 0.0f },      { 70.0f, -70.0f, 0.0f },      { -70.0f, 70.0f, 0.0f },    { -70.0f, -70.0f, 0.0f },
     { 90.0f, 130.0f, -120.0f },  { -25.0f, -80.0f, -130.0f },  { 90.0f, 130.0f, 120.0f },  { -25.0f, -80.0, 130.0f },
     { 115.0f, 160.0f, -150.0f }, { -50.0f, -140.0f, -160.0f }, { 115.0f, 160.0f, 150.0f }, { -50.0f, -140.0f, 160.0f },
 };
 
-static Vec3f sTargetPos[] = {
+static Vec3f hit_center_pos_data[] = {
     { 3382.0f, 1734.0f, -4946.0f }, // small, furthest from entrance
     { 3360.0f, 1734.0f, 495.0f },   // small, closest to entrance
     { 4517.0f, 1682.0f, -1779.0f }, // medium, on the right
@@ -63,19 +63,19 @@ static Vec3f sTargetPos[] = {
 // 0: first ring
 // 1: second ring
 // 2: outside edge
-static f32 sRingDistance[] = {
+static f32 hit_hani_data[] = {
     20.0f, 40.0f,  60.0f,  777.0f, // small
     40.0f, 80.0f,  120.0f, 777.0f, // medium
     40.0f, 120.0f, 160.0f, 777.0f, // large
 };
 
-void EnYabusameMark_Destroy(Actor* thisx, PlayState* play) {
+void En_Yabusame_Mark_actor_dt(Actor* thisx, PlayState* play) {
     EnYabusameMark* this = (EnYabusameMark*)thisx;
 
-    Collider_DestroyQuad(play, &this->collider);
+    ClObjSwrd_dt(play, &this->collider);
 }
 
-void EnYabusameMark_Init(Actor* thisx, PlayState* play) {
+void En_Yabusame_Mark_actor_ct(Actor* thisx, PlayState* play) {
     EnYabusameMark* this = (EnYabusameMark*)thisx;
 
     PRINTF("\n\n");
@@ -101,20 +101,20 @@ void EnYabusameMark_Init(Actor* thisx, PlayState* play) {
             this->subTypeIndex = 4;
             break;
     }
-    Collider_InitQuad(play, &this->collider);
-    Collider_SetQuad(play, &this->collider, &this->actor, &sQuadInit);
+    ClObjSwrd_ct(play, &this->collider);
+    ClObjSwrd_set5(play, &this->collider, &this->actor, &OcInfoData_Swrd);
     this->worldPos = this->actor.world.pos;
     this->actor.flags |= ACTOR_FLAG_UPDATE_CULLING_DISABLED;
-    if (gSaveContext.sceneLayer != 4) {
-        Actor_Kill(&this->actor);
+    if (z_common_data.sceneLayer != 4) {
+        Actor_delete(&this->actor);
         return;
     }
     PRINTF(VT_FGCOL(MAGENTA) "☆☆☆☆☆ 種類       ☆☆☆☆☆ %d\n" VT_RST, this->typeIndex);
     PRINTF(VT_FGCOL(CYAN) "☆☆☆☆☆ さらに分類 ☆☆☆☆☆ %d\n" VT_RST, this->subTypeIndex);
-    this->actionFunc = func_80B42F74;
+    this->actionFunc = mode_yabusame_move;
 }
 
-void func_80B42F74(EnYabusameMark* this, PlayState* play) {
+static void mode_yabusame_move(EnYabusameMark* this, PlayState* play) {
     Vec3f effectAccel = { 0.0f, 0.0f, 0.0f };
     Vec3f effectVelocity = { 0.0f, 0.0f, 0.0f };
     Vec3f arrowHitPos;
@@ -134,17 +134,17 @@ void func_80B42F74(EnYabusameMark* this, PlayState* play) {
 
         effectVelocity.y = 15.0f;
 
-        EffectSsHitMark_SpawnCustomScale(play, 0, 700, &arrowHitPos);
+        Effect_SS_HitMark_scl_ct(play, 0, 700, &arrowHitPos);
 
         scoreIndex = 2;
 
-        scoreDistance100 = sRingDistance[this->typeIndex * 4 + 0];
-        scoreDistance60 = sRingDistance[this->typeIndex * 4 + 1];
-        scoreDistance30 = sRingDistance[this->typeIndex * 4 + 2];
+        scoreDistance100 = hit_hani_data[this->typeIndex * 4 + 0];
+        scoreDistance60 = hit_hani_data[this->typeIndex * 4 + 1];
+        scoreDistance30 = hit_hani_data[this->typeIndex * 4 + 2];
 
-        distanceFromCenter.x = fabsf(sTargetPos[this->subTypeIndex].x - arrowHitPos.x);
-        distanceFromCenter.y = fabsf(sTargetPos[this->subTypeIndex].y - arrowHitPos.y);
-        distanceFromCenter.z = fabsf(sTargetPos[this->subTypeIndex].z - arrowHitPos.z);
+        distanceFromCenter.x = fabsf(hit_center_pos_data[this->subTypeIndex].x - arrowHitPos.x);
+        distanceFromCenter.y = fabsf(hit_center_pos_data[this->subTypeIndex].y - arrowHitPos.y);
+        distanceFromCenter.z = fabsf(hit_center_pos_data[this->subTypeIndex].z - arrowHitPos.z);
 
         if (distanceFromCenter.x > scoreDistance100 || distanceFromCenter.y > scoreDistance100 ||
             distanceFromCenter.z > scoreDistance100) {
@@ -163,36 +163,36 @@ void func_80B42F74(EnYabusameMark* this, PlayState* play) {
         PRINTF(VT_FGCOL(GREEN) "☆☆☆☆☆ posＸ ☆☆☆☆☆ %f\n" VT_RST, arrowHitPos.x);
         PRINTF(VT_FGCOL(GREEN) "☆☆☆☆☆ posＹ ☆☆☆☆☆ %f\n" VT_RST, arrowHitPos.y);
         PRINTF(VT_FGCOL(GREEN) "☆☆☆☆☆ posＺ ☆☆☆☆☆ %f\n" VT_RST, arrowHitPos.z);
-        PRINTF(VT_FGCOL(YELLOW) "☆☆☆☆☆ hitＸ ☆☆☆☆☆ %f\n" VT_RST, sTargetPos[this->subTypeIndex].x);
-        PRINTF(VT_FGCOL(YELLOW) "☆☆☆☆☆ hitＹ ☆☆☆☆☆ %f\n" VT_RST, sTargetPos[this->subTypeIndex].y);
-        PRINTF(VT_FGCOL(YELLOW) "☆☆☆☆☆ hitＺ ☆☆☆☆☆ %f\n" VT_RST, sTargetPos[this->subTypeIndex].z);
+        PRINTF(VT_FGCOL(YELLOW) "☆☆☆☆☆ hitＸ ☆☆☆☆☆ %f\n" VT_RST, hit_center_pos_data[this->subTypeIndex].x);
+        PRINTF(VT_FGCOL(YELLOW) "☆☆☆☆☆ hitＹ ☆☆☆☆☆ %f\n" VT_RST, hit_center_pos_data[this->subTypeIndex].y);
+        PRINTF(VT_FGCOL(YELLOW) "☆☆☆☆☆ hitＺ ☆☆☆☆☆ %f\n" VT_RST, hit_center_pos_data[this->subTypeIndex].z);
         PRINTF(VT_FGCOL(MAGENTA) "☆☆☆☆☆ 小    ☆☆☆☆☆ %f\n" VT_RST, scoreDistance100);
         PRINTF(VT_FGCOL(MAGENTA) "☆☆☆☆☆ 大    ☆☆☆☆☆ %f\n" VT_RST, scoreDistance60);
         PRINTF(VT_FGCOL(MAGENTA) "☆☆☆☆☆ point ☆☆☆☆☆ %d\n" VT_RST, scoreIndex);
         PRINTF("\n\n");
 
         if (scoreIndex == 2) {
-            Audio_PlayFanfare(NA_BGM_ITEM_GET | 0x900);
+            Na_StartFanfare(NA_BGM_ITEM_GET | 0x900);
         }
         if (scoreIndex == 1) {
-            Audio_StopSfxById(NA_SE_SY_TRE_BOX_APPEAR);
-            Sfx_PlaySfxCentered(NA_SE_SY_TRE_BOX_APPEAR);
+            Nai_StopFx(NA_SE_SY_TRE_BOX_APPEAR);
+            Na_StartSystemSe_F(NA_SE_SY_TRE_BOX_APPEAR);
         }
         if (scoreIndex == 0) {
-            Sfx_PlaySfxCentered(NA_SE_SY_DECIDE);
+            Na_StartSystemSe_F(NA_SE_SY_DECIDE);
         }
-        EffectSsExtra_Spawn(play, &arrowHitPos, &effectVelocity, &effectAccel, 5, scoreIndex);
+        Effect_SS_Extra_ct(play, &arrowHitPos, &effectVelocity, &effectAccel, 5, scoreIndex);
     }
 }
 
-void EnYabusameMark_Update(Actor* thisx, PlayState* play) {
+void En_Yabusame_Mark_actor_move(Actor* thisx, PlayState* play) {
     EnYabusameMark* this = (EnYabusameMark*)thisx;
     Vec3f* vertexArray;
     u32 arrayIndex;
 
     this->actionFunc(this, play);
     arrayIndex = this->typeIndex * 4;
-    vertexArray = &sCollisionVertices[arrayIndex];
+    vertexArray = &hit_pos_data[arrayIndex];
 
     if (1) {}
 
@@ -212,11 +212,11 @@ void EnYabusameMark_Update(Actor* thisx, PlayState* play) {
     this->vertexD.y = vertexArray[3].y + this->actor.world.pos.y;
     this->vertexD.z = vertexArray[3].z + this->actor.world.pos.z;
 
-    Collider_SetQuadVertices(&this->collider, &this->vertexA, &this->vertexB, &this->vertexC, &this->vertexD);
-    CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
+    CollisionCheck_Uty_setSword4Pos(&this->collider, &this->vertexA, &this->vertexB, &this->vertexC, &this->vertexD);
+    CollisionCheck_setAC(play, &play->colChkCtx, &this->collider.base);
 
     if (DEBUG_FEATURES && BREG(0) != 0) {
-        DebugDisplay_AddObject(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
+        Debug_Display_new(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
                                this->actor.world.rot.x, this->actor.world.rot.y, this->actor.world.rot.z, 1.0f, 1.0f,
                                1.0f, 0, 0xFF, 0, 0xFF, 4, play->state.gfxCtx);
     }

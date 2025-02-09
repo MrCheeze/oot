@@ -1,14 +1,14 @@
 <Root>
     <File Name="ovl_En_Clear_Tag" OutName="z_en_clear_tag">
-        <DList Name="gArwingDL" Offset="0x0"/>
-        <DList Name="gArwingLaserDL" Offset="0x3C98"/>
-        <DList Name="gArwingBackfireDL" Offset="0x3F98"/>
-        <DList Name="gArwingDebrisEffectMaterialDL" Offset="0x4348"/>
-        <DList Name="gArwingDebrisEffectDL" Offset="0x43C8"/>
-        <DList Name="gArwingFireEffectMaterialDL" Offset="0x4A10"/>
-        <DList Name="gArwingFireEffectDL" Offset="0x4AB8"/>
-        <DList Name="gArwingFlashEffectDL" Offset="0x5B18"/>
-        <DList Name="gArwingFlashEffectGroundDL" Offset="0x5DC8"/>
-        <DList Name="gArwingShadowDL" Offset="0x6280"/>
+        <DList Name="a_35" Offset="0x0"/>
+        <DList Name="a_35_beam" Offset="0x3C98"/>
+        <DList Name="back_fire_modelT" Offset="0x3F98"/>
+        <DList Name="a_hahen_DISP_MODE" Offset="0x4348"/>
+        <DList Name="a_hahen_model" Offset="0x43C8"/>
+        <DList Name="a_fireball_DISP_MODE" Offset="0x4A10"/>
+        <DList Name="a_fireball_model" Offset="0x4AB8"/>
+        <DList Name="a_flash_model" Offset="0x5B18"/>
+        <DList Name="a_g_flash_model" Offset="0x5DC8"/>
+        <DList Name="a_kage" Offset="0x6280"/>
     </File>
 </Root>

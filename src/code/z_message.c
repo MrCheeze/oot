@@ -103,38 +103,38 @@
 #define OCARINA_ICON_ENV_2_B 130
 #endif
 
-s32 sCharTexSize;
-s32 sCharTexScale;
+s32 size;
+s32 scale;
 
-s16 sTextFade = false; // original name: key_off_flag ?
+s16 key_off_flag = false; // original name: key_off_flag ?
 
-char D_8014B2F4 = 0;
+char start_flag = 0;
 
-s16 sOcarinaButtonIndexBufPos = 0;
+s16 onpu_pt = 0;
 
-s16 sOcarinaButtonIndexBufLen = 0;
+s16 onpu_ct = 0;
 
-char sTextboxSkipped = false;
+char last_flag = false;
 
-u16 sNextTextId = 0;
+u16 next_msg_no = 0;
 
-s16 sTextIsCredits = false;
+s16 staff_mode = false;
 
 #if PLATFORM_GC && OOT_PAL
 UNK_TYPE D_8014B30C = 0;
 #endif
 
-s16 sLastPlayedSong = 0xFF;
+s16 Chk_Ocarina_No = 0xFF;
 
-s16 sHasSunsSong = false;
+s16 SunMoon_Ocarina = false;
 
-s16 sMessageHasSetSfx = false;
+s16 se_flag = false;
 
-u16 sOcarinaSongBitFlags = 0; // ocarina bit flags
+u16 ocarina_bit = 0; // ocarina bit flags
 
 #if OOT_NTSC
 
-MessageTableEntry sJpnMessageEntryTable[] = {
+MessageTableEntry message_tbl[] = {
 #define DEFINE_MESSAGE_NES(textId, type, yPos, jpnMessage, nesMessage, gerMessage, fraMessage) /* Not Present */
 #define DEFINE_MESSAGE_JPN(textId, type, yPos, jpnMessage, nesMessage, gerMessage, fraMessage) \
     { textId, (_SHIFTL(type, 4, 4) | _SHIFTL(yPos, 0, 4)), _message_##textId##_jpn },
@@ -151,7 +151,7 @@ MessageTableEntry sJpnMessageEntryTable[] = {
     { 0xFFFF, 0, NULL },
 };
 
-MessageTableEntry sNesMessageEntryTable[] = {
+MessageTableEntry message_tbl_nes[] = {
 #define DEFINE_MESSAGE_NES(textId, type, yPos, jpnMessage, nesMessage, gerMessage, fraMessage) \
     { textId, (_SHIFTL(type, 4, 4) | _SHIFTL(yPos, 0, 4)), _message_##textId##_nes },
 #define DEFINE_MESSAGE_JPN(textId, type, yPos, jpnMessage, nesMessage, gerMessage, fraMessage) /* Not Present */
@@ -169,7 +169,7 @@ MessageTableEntry sNesMessageEntryTable[] = {
 
 #else
 
-MessageTableEntry sNesMessageEntryTable[] = {
+MessageTableEntry message_tbl_nes[] = {
 #define DEFINE_MESSAGE_NES(textId, type, yPos, jpnMessage, nesMessage, gerMessage, fraMessage) \
     { textId, (_SHIFTL(type, 4, 4) | _SHIFTL(yPos, 0, 4)), _message_##textId##_nes },
 #define DEFINE_MESSAGE_JPN(textId, type, yPos, jpnMessage, nesMessage, gerMessage, fraMessage) /* Not Present */
@@ -218,7 +218,7 @@ const char* sFraMessageEntryTable[] = {
 
 #endif
 
-MessageTableEntry sStaffMessageEntryTable[] = {
+MessageTableEntry message_tbl_staff[] = {
 #define DEFINE_MESSAGE(textId, type, yPos, staffMessage) \
     { textId, (_SHIFTL(type, 4, 8) | _SHIFTL(yPos, 0, 8)), _message_##textId##_staff },
 #include "assets/text/message_data_staff.h"
@@ -227,116 +227,116 @@ MessageTableEntry sStaffMessageEntryTable[] = {
 };
 
 #if OOT_NTSC
-MessageTableEntry* sJpnMessageEntryTablePtr = sJpnMessageEntryTable;
-MessageTableEntry* sNesMessageEntryTablePtr = sNesMessageEntryTable;
+MessageTableEntry* message_tbl_p = message_tbl;
+MessageTableEntry* message_tbl_nes_p = message_tbl_nes;
 #else
-MessageTableEntry* sNesMessageEntryTablePtr = sNesMessageEntryTable;
+MessageTableEntry* message_tbl_nes_p = message_tbl_nes;
 const char** sGerMessageEntryTablePtr = sGerMessageEntryTable;
 const char** sFraMessageEntryTablePtr = sFraMessageEntryTable;
 #endif
 
-MessageTableEntry* sStaffMessageEntryTablePtr = sStaffMessageEntryTable;
+MessageTableEntry* message_tbl_staff_p = message_tbl_staff;
 
-s16 sTextboxBackgroundForePrimColors[][3] = {
+s16 mes_board_prim_dt[][3] = {
     { 255, 255, 255 }, { 50, 20, 0 },     { 255, 60, 0 },    { 255, 255, 255 },
     { 255, 255, 255 }, { 255, 255, 255 }, { 255, 255, 255 }, { 255, 255, 255 },
 };
 
-s16 sTextboxBackgroundBackPrimColors[][3] = {
+s16 mes_board_shadow_dt[][3] = {
     { 0, 0, 0 },
     { 220, 150, 0 },
     { 0, 0, 0 },
     { 0, 0, 0 },
 };
 
-s16 sTextboxBackgroundYOffsets[] = {
+s16 mes_board_shift_dt[] = {
     1,
     2,
 };
 
 // original name: onpu_buff
-u8 sOcarinaButtonIndexBuf[12] = { 0 };
+u8 onpu_buff[12] = { 0 };
 
-s16 sOcarinaButtonAlphaValues[9] = { 0 };
+s16 onpu_alpha[9] = { 0 };
 
 // Maps the ocarina song order to the quest item order
-s16 gOcarinaSongItemMap[] = {
+s16 ocarina_number[] = {
     OCARINA_SONG_MINUET,   OCARINA_SONG_BOLERO,  OCARINA_SONG_SERENADE, OCARINA_SONG_REQUIEM,
     OCARINA_SONG_NOCTURNE, OCARINA_SONG_PRELUDE, OCARINA_SONG_LULLABY,  OCARINA_SONG_EPONAS,
     OCARINA_SONG_SARIAS,   OCARINA_SONG_SUNS,    OCARINA_SONG_TIME,     OCARINA_SONG_STORMS,
 };
 
-s16 sOcarinaButtonAPrimR;
-s16 sOcarinaButtonAPrimB;
-s16 sOcarinaButtonAPrimG;
-s16 sOcarinaButtonAEnvR;
-s16 sOcarinaButtonAEnvB;
-s16 sOcarinaButtonAEnvG;
-s16 sOcarinaButtonCPrimR;
-s16 sOcarinaButtonCPrimB;
-s16 sOcarinaButtonCPrimG;
-s16 sOcarinaButtonCEnvR;
-s16 sOcarinaButtonCEnvB;
-s16 sOcarinaButtonCEnvG;
+s16 onpu_par;
+s16 onpu_pab;
+s16 onpu_pag;
+s16 onpu_ear;
+s16 onpu_eab;
+s16 onpu_eag;
+s16 onpu_pcr;
+s16 onpu_pcb;
+s16 onpu_pcg;
+s16 onpu_ecr;
+s16 onpu_ecb;
+s16 onpu_ecg;
 
-void Message_ResetOcarinaNoteState(void) {
+void onpu_buff_reset(void) {
     R_OCARINA_BUTTONS_YPOS(0) = 189;
     R_OCARINA_BUTTONS_YPOS(1) = 184;
     R_OCARINA_BUTTONS_YPOS(2) = 179;
     R_OCARINA_BUTTONS_YPOS(3) = 174;
     R_OCARINA_BUTTONS_YPOS(4) = 169;
-    sOcarinaButtonIndexBuf[0] = OCARINA_BTN_INVALID;
-    sOcarinaButtonAlphaValues[0] = sOcarinaButtonAlphaValues[1] = sOcarinaButtonAlphaValues[2] =
-        sOcarinaButtonAlphaValues[3] = sOcarinaButtonAlphaValues[4] = sOcarinaButtonAlphaValues[5] =
-            sOcarinaButtonAlphaValues[6] = sOcarinaButtonAlphaValues[7] = sOcarinaButtonAlphaValues[8] = 0;
-    sOcarinaButtonAPrimR = OCARINA_BUTTON_A_PRIM_1_R;
-    sOcarinaButtonAPrimG = OCARINA_BUTTON_A_PRIM_1_G;
-    sOcarinaButtonAPrimB = OCARINA_BUTTON_A_PRIM_1_B;
-    sOcarinaButtonAEnvR = 10;
-    sOcarinaButtonAEnvG = 10;
-    sOcarinaButtonAEnvB = 10;
-    sOcarinaButtonCPrimR = 255;
-    sOcarinaButtonCPrimG = 255;
-    sOcarinaButtonCPrimB = 50;
-    sOcarinaButtonCEnvR = 10;
-    sOcarinaButtonCEnvG = 10;
-    sOcarinaButtonCEnvB = 10;
+    onpu_buff[0] = OCARINA_BTN_INVALID;
+    onpu_alpha[0] = onpu_alpha[1] = onpu_alpha[2] =
+        onpu_alpha[3] = onpu_alpha[4] = onpu_alpha[5] =
+            onpu_alpha[6] = onpu_alpha[7] = onpu_alpha[8] = 0;
+    onpu_par = OCARINA_BUTTON_A_PRIM_1_R;
+    onpu_pag = OCARINA_BUTTON_A_PRIM_1_G;
+    onpu_pab = OCARINA_BUTTON_A_PRIM_1_B;
+    onpu_ear = 10;
+    onpu_eag = 10;
+    onpu_eab = 10;
+    onpu_pcr = 255;
+    onpu_pcg = 255;
+    onpu_pcb = 50;
+    onpu_ecr = 10;
+    onpu_ecg = 10;
+    onpu_ecb = 10;
 }
 
-void Message_UpdateOcarinaMemoryGame(PlayState* play) {
+void ocarina_round_next(PlayState* play) {
     MessageContext* msgCtx = &play->msgCtx;
 
     msgCtx->msgMode++;
 
     if (msgCtx->msgMode == MSGMODE_MEMORY_GAME_PLAYER_PLAYING) {
-        AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_DEFAULT);
-        msgCtx->ocarinaStaff = AudioOcarina_GetPlayingStaff();
-        msgCtx->ocarinaStaff->pos = sOcarinaButtonIndexBufPos = 0;
-        AudioOcarina_Start((1 << OCARINA_SONG_MEMORY_GAME) + 0x8000);
+        Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_DEFAULT);
+        msgCtx->ocarinaStaff = Na_GetOcarinaInfoWork();
+        msgCtx->ocarinaStaff->pos = onpu_pt = 0;
+        Na_SetOcarinaPlayCheckFlag2((1 << OCARINA_SONG_MEMORY_GAME) + 0x8000);
         msgCtx->textDrawPos = msgCtx->decodedTextLen;
     } else if (msgCtx->msgMode == MSGMODE_MEMORY_GAME_RIGHT_SKULLKID_PLAYING) {
-        AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_FLUTE);
-        msgCtx->ocarinaStaff = AudioOcarina_GetPlaybackStaff();
-        msgCtx->ocarinaStaff->pos = sOcarinaButtonIndexBufPos = 0;
-        AudioOcarina_SetPlaybackSong(OCARINA_SONG_MEMORY_GAME + 1, 1);
+        Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_FLUTE);
+        msgCtx->ocarinaStaff = Na_GetOcarinaSeqInfoWork();
+        msgCtx->ocarinaStaff->pos = onpu_pt = 0;
+        Na_SetOcarinaSeq(OCARINA_SONG_MEMORY_GAME + 1, 1);
         msgCtx->stateTimer = 2;
     }
-    Message_ResetOcarinaNoteState();
+    onpu_buff_reset();
 }
 
-u8 Message_ShouldAdvance(PlayState* play) {
+u8 pad_on_check(PlayState* play) {
     Input* input = &play->state.input[0];
 
     if (CHECK_BTN_ALL(input->press.button, BTN_A) || CHECK_BTN_ALL(input->press.button, BTN_B) ||
         CHECK_BTN_ALL(input->press.button, BTN_CUP)) {
-        Audio_PlaySfxGeneral(NA_SE_SY_MESSAGE_PASS, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        Nai_FxFlagEntry(NA_SE_SY_MESSAGE_PASS, &_dummy_zero_f, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
     }
     return CHECK_BTN_ALL(input->press.button, BTN_A) || CHECK_BTN_ALL(input->press.button, BTN_B) ||
            CHECK_BTN_ALL(input->press.button, BTN_CUP);
 }
 
-u8 Message_ShouldAdvanceSilent(PlayState* play) {
+u8 pad_on_check_0(PlayState* play) {
     Input* input = &play->state.input[0];
 
     return CHECK_BTN_ALL(input->press.button, BTN_A) || CHECK_BTN_ALL(input->press.button, BTN_B) ||
@@ -347,19 +347,19 @@ u8 Message_ShouldAdvanceSilent(PlayState* play) {
  * Closes any currently displayed textbox immediately, without waiting for
  * input from the player.
  */
-void Message_CloseTextbox(PlayState* play) {
+void message_close(PlayState* play) {
     MessageContext* msgCtx = &play->msgCtx;
 
     if (msgCtx->msgLength != 0) {
         msgCtx->stateTimer = 2;
         msgCtx->msgMode = MSGMODE_TEXT_CLOSING;
         msgCtx->textboxEndType = TEXTBOX_ENDTYPE_DEFAULT;
-        Audio_PlaySfxGeneral(NA_SE_NONE, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultReverb);
+        Nai_FxFlagEntry(NA_SE_NONE, &_dummy_zero_f, 4, &_dummy_one, &_dummy_one,
+                             &_dummy_zero_s8);
     }
 }
 
-void Message_HandleChoiceSelection(PlayState* play, char numChoices) {
+void arrow_select(PlayState* play, char numChoices) {
     static s16 sAnalogStickHeld = false;
     MessageContext* msgCtx = &play->msgCtx;
     Input* input = &play->state.input[0];
@@ -371,8 +371,8 @@ void Message_HandleChoiceSelection(PlayState* play, char numChoices) {
         if (msgCtx->choiceIndex > 128)
             msgCtx->choiceIndex = 0;
         else
-            Audio_PlaySfxGeneral(NA_SE_SY_CURSOR, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+            Nai_FxFlagEntry(NA_SE_SY_CURSOR, &_dummy_zero_f, 4, &_dummy_one,
+                                 &_dummy_one, &_dummy_zero_s8);
         // NOLINTEND
     } else if (input->rel.stick_y <= -30 && !sAnalogStickHeld) {
         sAnalogStickHeld = true;
@@ -381,8 +381,8 @@ void Message_HandleChoiceSelection(PlayState* play, char numChoices) {
         if (msgCtx->choiceIndex > numChoices)
             msgCtx->choiceIndex = numChoices;
         else
-            Audio_PlaySfxGeneral(NA_SE_SY_CURSOR, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+            Nai_FxFlagEntry(NA_SE_SY_CURSOR, &_dummy_zero_f, 4, &_dummy_one,
+                                 &_dummy_one, &_dummy_zero_s8);
         // NOLINTEND
     } else if (ABS(input->rel.stick_y) < 30) {
         sAnalogStickHeld = false;
@@ -392,7 +392,7 @@ void Message_HandleChoiceSelection(PlayState* play, char numChoices) {
         (numChoices == 1) ? R_TEXT_CHOICE_YPOS(msgCtx->choiceIndex + 1) : R_TEXT_CHOICE_YPOS(msgCtx->choiceIndex);
 }
 
-void Message_DrawTextChar(PlayState* play, void* textureImage, Gfx** p) {
+void message_moji_display(PlayState* play, void* textureImage, Gfx** p) {
     MessageContext* msgCtx = &play->msgCtx;
     Gfx* gfx = *p;
     s16 x = msgCtx->textPosX;
@@ -401,8 +401,8 @@ void Message_DrawTextChar(PlayState* play, void* textureImage, Gfx** p) {
 
     gDPPipeSync(gfx++);
 
-    sCharTexSize = (R_TEXT_CHAR_SCALE / 100.0f) * 16.0f;
-    sCharTexScale = 1024.0f / (R_TEXT_CHAR_SCALE / 100.0f);
+    size = (R_TEXT_CHAR_SCALE / 100.0f) * 16.0f;
+    scale = 1024.0f / (R_TEXT_CHAR_SCALE / 100.0f);
 
     gDPLoadTextureBlock_4b(gfx++, textureImage, G_IM_FMT_I, FONT_CHAR_TEX_WIDTH, FONT_CHAR_TEX_HEIGHT, 0,
                            G_TX_NOMIRROR | G_TX_CLAMP, G_TX_NOMIRROR | G_TX_CLAMP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD,
@@ -412,20 +412,20 @@ void Message_DrawTextChar(PlayState* play, void* textureImage, Gfx** p) {
     if (msgCtx->textBoxType != TEXTBOX_TYPE_NONE_NO_SHADOW) {
         gDPSetPrimColor(gfx++, 0, 0, 0, 0, 0, msgCtx->textColorAlpha);
         gSPTextureRectangle(gfx++, (x + R_TEXT_DROP_SHADOW_OFFSET) << 2, (y + R_TEXT_DROP_SHADOW_OFFSET) << 2,
-                            (x + R_TEXT_DROP_SHADOW_OFFSET + sCharTexSize) << 2,
-                            (y + R_TEXT_DROP_SHADOW_OFFSET + sCharTexSize) << 2, G_TX_RENDERTILE, 0, 0, sCharTexScale,
-                            sCharTexScale);
+                            (x + R_TEXT_DROP_SHADOW_OFFSET + size) << 2,
+                            (y + R_TEXT_DROP_SHADOW_OFFSET + size) << 2, G_TX_RENDERTILE, 0, 0, scale,
+                            scale);
     }
 
     gDPPipeSync(gfx++);
     gDPSetPrimColor(gfx++, 0, 0, msgCtx->textColorR, msgCtx->textColorG, msgCtx->textColorB, msgCtx->textColorAlpha);
-    gSPTextureRectangle(gfx++, x << 2, y << 2, (x + sCharTexSize) << 2, (y + sCharTexSize) << 2, G_TX_RENDERTILE, 0, 0,
-                        sCharTexScale, sCharTexScale);
+    gSPTextureRectangle(gfx++, x << 2, y << 2, (x + size) << 2, (y + size) << 2, G_TX_RENDERTILE, 0, 0,
+                        scale, scale);
     *p = gfx;
 }
 
 // resizes textboxes when opening them
-void Message_GrowTextbox(MessageContext* msgCtx) {
+void window_open(MessageContext* msgCtx) {
     static f32 sWidthCoefficients[] = {
         1.2f, 1.5f, 1.8f, 2.0f, 2.1f, 2.2f, 2.1f, 2.0f,
     };
@@ -464,12 +464,12 @@ void Message_GrowTextbox(MessageContext* msgCtx) {
 
 #if OOT_NTSC
 
-void Message_FindMessageJPN(PlayState* play, u16 textId) {
+void get_msg_add_get(PlayState* play, u16 textId) {
     const char* foundSeg;
     const char* nextSeg;
     const char* seg;
     Font* font = &play->msgCtx.font;
-    MessageTableEntry* messageTableEntry = sJpnMessageEntryTablePtr;
+    MessageTableEntry* messageTableEntry = message_tbl_p;
 
     seg = messageTableEntry->segment;
 
@@ -490,7 +490,7 @@ void Message_FindMessageJPN(PlayState* play, u16 textId) {
     }
 
     PRINTF(T(" メッセージが,見つからなかった！！！ = %x\n", "Message not found!!! = %x\n"), textId);
-    messageTableEntry = sJpnMessageEntryTablePtr;
+    messageTableEntry = message_tbl_p;
 
     foundSeg = messageTableEntry->segment;
     font->charTexBuf[0] = messageTableEntry->typePos;
@@ -501,12 +501,12 @@ void Message_FindMessageJPN(PlayState* play, u16 textId) {
     font->msgLength = nextSeg - foundSeg;
 }
 
-void Message_FindMessageNES(PlayState* play, u16 textId) {
+void get_msg_add_get_NES(PlayState* play, u16 textId) {
     const char* foundSeg;
     const char* nextSeg;
     const char* seg;
     Font* font = &play->msgCtx.font;
-    MessageTableEntry* messageTableEntry = sNesMessageEntryTablePtr;
+    MessageTableEntry* messageTableEntry = message_tbl_nes_p;
 
     seg = messageTableEntry->segment;
     while (messageTableEntry->textId != 0xFFFF) {
@@ -526,7 +526,7 @@ void Message_FindMessageNES(PlayState* play, u16 textId) {
     }
 
     PRINTF(T(" メッセージが,見つからなかった！！！ = %x\n", "Message not found!!! = %x\n"), textId);
-    messageTableEntry = sNesMessageEntryTablePtr;
+    messageTableEntry = message_tbl_nes_p;
 
     foundSeg = messageTableEntry->segment;
     font->charTexBuf[0] = messageTableEntry->typePos;
@@ -542,11 +542,11 @@ void Message_FindMessagePAL(PlayState* play, u16 textId) {
     const char* foundSeg;
     const char* nextSeg;
     Font* font = &play->msgCtx.font;
-    MessageTableEntry* messageTableEntry = sNesMessageEntryTablePtr;
+    MessageTableEntry* messageTableEntry = message_tbl_nes_p;
     const char** languageSegmentTable;
     const char* seg;
 
-    if (gSaveContext.language == LANGUAGE_ENG) {
+    if (z_common_data.language == LANGUAGE_ENG) {
         seg = messageTableEntry->segment;
 
         while (messageTableEntry->textId != 0xFFFF) {
@@ -566,7 +566,7 @@ void Message_FindMessagePAL(PlayState* play, u16 textId) {
         }
     } else {
         languageSegmentTable =
-            (gSaveContext.language == LANGUAGE_GER) ? sGerMessageEntryTablePtr : sFraMessageEntryTablePtr;
+            (z_common_data.language == LANGUAGE_GER) ? sGerMessageEntryTablePtr : sFraMessageEntryTablePtr;
         seg = messageTableEntry->segment;
 
         while (messageTableEntry->textId != 0xFFFF) {
@@ -587,16 +587,16 @@ void Message_FindMessagePAL(PlayState* play, u16 textId) {
         }
     }
     PRINTF(T(" メッセージが,見つからなかった！！！ = %x\n", "Message not found!!! = %x\n"), textId);
-    messageTableEntry = sNesMessageEntryTablePtr;
+    messageTableEntry = message_tbl_nes_p;
 
-    if (gSaveContext.language == LANGUAGE_ENG) {
+    if (z_common_data.language == LANGUAGE_ENG) {
         foundSeg = messageTableEntry->segment;
         font->charTexBuf[0] = messageTableEntry->typePos;
         messageTableEntry++;
         nextSeg = messageTableEntry->segment;
     } else {
         languageSegmentTable =
-            (gSaveContext.language == LANGUAGE_GER) ? sGerMessageEntryTablePtr : sFraMessageEntryTablePtr;
+            (z_common_data.language == LANGUAGE_GER) ? sGerMessageEntryTablePtr : sFraMessageEntryTablePtr;
         foundSeg = *languageSegmentTable;
         font->charTexBuf[0] = messageTableEntry->typePos;
         languageSegmentTable++;
@@ -608,12 +608,12 @@ void Message_FindMessagePAL(PlayState* play, u16 textId) {
 
 #endif
 
-void Message_FindCreditsMessage(PlayState* play, u16 textId) {
+void get_msg_add_get_STAFF(PlayState* play, u16 textId) {
     const char* foundSeg;
     const char* nextSeg;
     const char* seg;
     Font* font = &play->msgCtx.font;
-    MessageTableEntry* messageTableEntry = sStaffMessageEntryTablePtr;
+    MessageTableEntry* messageTableEntry = message_tbl_staff_p;
 
     seg = messageTableEntry->segment;
     while (messageTableEntry->textId != 0xFFFF) {
@@ -633,7 +633,7 @@ void Message_FindCreditsMessage(PlayState* play, u16 textId) {
     }
 }
 
-void Message_SetTextColor(MessageContext* msgCtx, u16 colorParameter) {
+void moji_size_color(MessageContext* msgCtx, u16 colorParameter) {
     switch (colorParameter) {
         case TEXT_COLOR_RED:
             if (msgCtx->textBoxType == TEXTBOX_TYPE_WOODEN) {
@@ -719,7 +719,7 @@ void Message_SetTextColor(MessageContext* msgCtx, u16 colorParameter) {
     }
 }
 
-void Message_DrawTextboxIcon(PlayState* play, Gfx** p, s16 x, s16 y) {
+void last_mark_display(PlayState* play, Gfx** p, s16 x, s16 y) {
     static s16 sIconPrimColors[][3] = {
         { OCARINA_ICON_PRIM_1_R, OCARINA_ICON_PRIM_1_G, OCARINA_ICON_PRIM_1_B },
         { OCARINA_ICON_PRIM_2_R, OCARINA_ICON_PRIM_2_G, OCARINA_ICON_PRIM_2_B },
@@ -747,7 +747,7 @@ void Message_DrawTextboxIcon(PlayState* play, Gfx** p, s16 x, s16 y) {
     s16 envB;
     u8* iconTexture = font->iconBuf;
 
-    if (sTextIsCredits) {
+    if (staff_mode) {
         return;
     }
 
@@ -824,11 +824,11 @@ void Message_DrawTextboxIcon(PlayState* play, Gfx** p, s16 x, s16 y) {
     R_TEXT_CHAR_SCALE = 80;
 #endif
 
-    sCharTexSize = 16.0f * ((f32)R_TEXT_CHAR_SCALE / 100.0f);
-    sCharTexScale = 1024.0f / ((f32)R_TEXT_CHAR_SCALE / 100.0f);
+    size = 16.0f * ((f32)R_TEXT_CHAR_SCALE / 100.0f);
+    scale = 1024.0f / ((f32)R_TEXT_CHAR_SCALE / 100.0f);
 
-    gSPTextureRectangle(gfx++, x << 2, y << 2, (x + sCharTexSize) << 2, (y + sCharTexSize) << 2, G_TX_RENDERTILE, 0, 0,
-                        sCharTexScale, sCharTexScale);
+    gSPTextureRectangle(gfx++, x << 2, y << 2, (x + size) << 2, (y + size) << 2, G_TX_RENDERTILE, 0, 0,
+                        scale, scale);
 
     msgCtx->stateTimer++;
 
@@ -836,7 +836,7 @@ void Message_DrawTextboxIcon(PlayState* play, Gfx** p, s16 x, s16 y) {
 }
 
 #define MESSAGE_SPACE_WIDTH 6
-f32 sFontWidths[144] = {
+f32 shift_data[144] = {
     8.0f,  // ' '
     8.0f,  // '!'
     6.0f,  // '"'
@@ -987,15 +987,15 @@ f32 sFontWidths[144] = {
     14.0f, // ?
 };
 
-u16 Message_DrawItemIcon(PlayState* play, u16 itemId, Gfx** p, u16 i) {
+u16 dpitem_write(PlayState* play, u16 itemId, Gfx** p, u16 i) {
     s32 pad;
     Gfx* gfx = *p;
     MessageContext* msgCtx = &play->msgCtx;
 
     // clang-format off
     if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING) { \
-        Audio_PlaySfxGeneral(NA_SE_NONE, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultReverb);
+        Nai_FxFlagEntry(NA_SE_NONE, &_dummy_zero_f, 4, &_dummy_one, &_dummy_one,
+                             &_dummy_zero_s8);
     }
     // clang-format on
 
@@ -1026,7 +1026,7 @@ u16 Message_DrawItemIcon(PlayState* play, u16 itemId, Gfx** p, u16 i) {
     return i;
 }
 
-void Message_HandleOcarina(PlayState* play) {
+void ocarina_init_set(PlayState* play) {
     MessageContext* msgCtx = &play->msgCtx;
 
     if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING) {
@@ -1039,28 +1039,28 @@ void Message_HandleOcarina(PlayState* play) {
         } else if (msgCtx->ocarinaAction == OCARINA_ACTION_SCARECROW_LONG_PLAYBACK) {
             PRINTF(T("録音再生 録音再生 録音再生 録音再生  -> ",
                      "Recording Playback  Recording Playback  Recording Playback  Recording Playback -> "));
-            AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_DEFAULT);
-            AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_DEFAULT);
-            msgCtx->ocarinaStaff = AudioOcarina_GetPlaybackStaff();
-            msgCtx->ocarinaStaff->pos = sOcarinaButtonIndexBufPos = sOcarinaButtonIndexBufLen = 0;
-            Message_ResetOcarinaNoteState();
+            Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_DEFAULT);
+            Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_DEFAULT);
+            msgCtx->ocarinaStaff = Na_GetOcarinaSeqInfoWork();
+            msgCtx->ocarinaStaff->pos = onpu_pt = onpu_ct = 0;
+            onpu_buff_reset();
             msgCtx->stateTimer = 3;
             msgCtx->msgMode = MSGMODE_SCARECROW_LONG_PLAYBACK;
-            AudioOcarina_SetPlaybackSong(OCARINA_SONG_SCARECROW_LONG + 1, 1);
+            Na_SetOcarinaSeq(OCARINA_SONG_SCARECROW_LONG + 1, 1);
         } else if (msgCtx->ocarinaAction == OCARINA_ACTION_SCARECROW_SPAWN_RECORDING) {
             msgCtx->msgMode = MSGMODE_SCARECROW_SPAWN_RECORDING_START;
             PRINTF(T("８音録音開始 ８音録音開始 ８音録音開始  -> ",
                      "8 Note Recording Start  8 Note Recording Start  8 Note Recording Start -> "));
         } else if (msgCtx->ocarinaAction == OCARINA_ACTION_SCARECROW_SPAWN_PLAYBACK) {
             PRINTF(T("８音再生 ８音再生 ８音再生  -> ", "8 Note Playback  8 Note Playback  8 Note Playback -> "));
-            AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_DEFAULT);
-            AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_DEFAULT);
-            msgCtx->ocarinaStaff = AudioOcarina_GetPlaybackStaff();
-            msgCtx->ocarinaStaff->pos = sOcarinaButtonIndexBufPos = sOcarinaButtonIndexBufLen = 0;
-            Message_ResetOcarinaNoteState();
+            Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_DEFAULT);
+            Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_DEFAULT);
+            msgCtx->ocarinaStaff = Na_GetOcarinaSeqInfoWork();
+            msgCtx->ocarinaStaff->pos = onpu_pt = onpu_ct = 0;
+            onpu_buff_reset();
             msgCtx->stateTimer = 3;
             msgCtx->msgMode = MSGMODE_SCARECROW_SPAWN_PLAYBACK;
-            AudioOcarina_SetPlaybackSong(OCARINA_SONG_SCARECROW_SPAWN + 1, 1);
+            Na_SetOcarinaSeq(OCARINA_SONG_SCARECROW_SPAWN + 1, 1);
         } else if (msgCtx->ocarinaAction == OCARINA_ACTION_MEMORY_GAME) {
             msgCtx->msgMode = MSGMODE_MEMORY_GAME_START;
             PRINTF(T("輪唱開始 輪唱開始 輪唱開始 輪唱開始  -> ",
@@ -1092,7 +1092,7 @@ void Message_HandleOcarina(PlayState* play) {
  * Draws the text contents of a jpn textbox, up to the current point that has
  * been scrolled to so far.
  */
-void Message_DrawTextWide(PlayState* play, Gfx** gfxP) {
+void message_write(PlayState* play, Gfx** gfxP) {
     MessageContext* msgCtx = &play->msgCtx;
     Font* font = &play->msgCtx.font;
     u16 character;
@@ -1128,18 +1128,18 @@ void Message_DrawTextWide(PlayState* play, Gfx** gfxP) {
                 }
                 break;
             case MESSAGE_WIDE_COLOR:
-                Message_SetTextColor(msgCtx, MSG_BUF_DECODED_WIDE[++i]);
+                moji_size_color(msgCtx, MSG_BUF_DECODED_WIDE[++i]);
                 break;
             case MESSAGE_WIDE_CHAR_SPACE:
                 msgCtx->textPosX += MESSAGE_SPACE_WIDTH;
                 break;
             case MESSAGE_WIDE_BOX_BREAK:
                 if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING) {
-                    if (!sTextboxSkipped) {
-                        Audio_PlaySfxGeneral(NA_SE_NONE, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                    if (!last_flag) {
+                        Nai_FxFlagEntry(NA_SE_NONE, &_dummy_zero_f, 4, &_dummy_one,
+                                             &_dummy_one, &_dummy_zero_s8);
                         msgCtx->msgMode = MSGMODE_TEXT_AWAIT_NEXT;
-                        Font_LoadMessageBoxIcon(&play->msgCtx.font, TEXTBOX_ICON_TRIANGLE);
+                        kanfont_get2(&play->msgCtx.font, TEXTBOX_ICON_TRIANGLE);
                     } else {
                         msgCtx->msgMode = MSGMODE_TEXT_NEXT_MSG;
                         msgCtx->textUnskippable = false;
@@ -1154,10 +1154,10 @@ void Message_DrawTextWide(PlayState* play, Gfx** gfxP) {
             case MESSAGE_WIDE_TEXTID:
                 msgCtx->textboxEndType = TEXTBOX_ENDTYPE_HAS_NEXT;
                 if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING) {
-                    Audio_PlaySfxGeneral(NA_SE_NONE, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                         &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                    Nai_FxFlagEntry(NA_SE_NONE, &_dummy_zero_f, 4, &_dummy_one,
+                                         &_dummy_one, &_dummy_zero_s8);
                     msgCtx->msgMode = MSGMODE_TEXT_DONE;
-                    Font_LoadMessageBoxIcon(&play->msgCtx.font, TEXTBOX_ICON_TRIANGLE);
+                    kanfont_get2(&play->msgCtx.font, TEXTBOX_ICON_TRIANGLE);
                 }
                 *gfxP = gfx;
                 return;
@@ -1184,7 +1184,7 @@ void Message_DrawTextWide(PlayState* play, Gfx** gfxP) {
                 if (i + 1 == msgCtx->textDrawPos) {
                     if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING) {
                         msgCtx->msgMode = MSGMODE_TEXT_AWAIT_INPUT;
-                        Font_LoadMessageBoxIcon(&play->msgCtx.font, TEXTBOX_ICON_TRIANGLE);
+                        kanfont_get2(&play->msgCtx.font, TEXTBOX_ICON_TRIANGLE);
                     }
                     *gfxP = gfx;
                     return;
@@ -1200,28 +1200,28 @@ void Message_DrawTextWide(PlayState* play, Gfx** gfxP) {
             case MESSAGE_WIDE_FADE2:
                 break;
             case MESSAGE_WIDE_SFX:
-                if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING && !sMessageHasSetSfx) {
-                    sMessageHasSetSfx = true;
-                    Audio_PlaySfxGeneral(MSG_BUF_DECODED_WIDE[i + 1], &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                         &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING && !se_flag) {
+                    se_flag = true;
+                    Nai_FxFlagEntry(MSG_BUF_DECODED_WIDE[i + 1], &_dummy_zero_f, 4, &_dummy_one,
+                                         &_dummy_one, &_dummy_zero_s8);
                 }
                 i++;
                 break;
             case MESSAGE_WIDE_ITEM_ICON:
-                i = Message_DrawItemIcon(play, MSG_BUF_DECODED_WIDE[i + 1], &gfx, i);
+                i = dpitem_write(play, MSG_BUF_DECODED_WIDE[i + 1], &gfx, i);
                 break;
             case MESSAGE_WIDE_BACKGROUND:
                 // clang-format off
                 if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING) { \
-                    Audio_PlaySfxGeneral(NA_SE_NONE, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                         &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                    Nai_FxFlagEntry(NA_SE_NONE, &_dummy_zero_f, 4, &_dummy_one,
+                                         &_dummy_one, &_dummy_zero_s8);
                 }
                 // clang-format on
                 gDPPipeSync(gfx++);
                 gDPSetCombineMode(gfx++, G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM);
-                gDPSetPrimColor(gfx++, 0, 0, sTextboxBackgroundBackPrimColors[msgCtx->textboxBackgroundBackColorIdx][0],
-                                sTextboxBackgroundBackPrimColors[msgCtx->textboxBackgroundBackColorIdx][1],
-                                sTextboxBackgroundBackPrimColors[msgCtx->textboxBackgroundBackColorIdx][2],
+                gDPSetPrimColor(gfx++, 0, 0, mes_board_shadow_dt[msgCtx->textboxBackgroundBackColorIdx][0],
+                                mes_board_shadow_dt[msgCtx->textboxBackgroundBackColorIdx][1],
+                                mes_board_shadow_dt[msgCtx->textboxBackgroundBackColorIdx][2],
                                 msgCtx->textColorAlpha);
 
                 gDPLoadTextureBlock_4b(gfx++, msgCtx->textboxSegment + MESSAGE_STATIC_TEX_SIZE, G_IM_FMT_I, 96, 48, 0,
@@ -1229,9 +1229,9 @@ void Message_DrawTextWide(PlayState* play, Gfx** gfxP) {
                                        G_TX_NOLOD, G_TX_NOLOD);
                 gSPTextureRectangle(
                     gfx++, (msgCtx->textPosX + 1) << 2,
-                    (R_TEXTBOX_BG_YPOS + sTextboxBackgroundYOffsets[msgCtx->textboxBackgroundYOffsetIdx]) << 2,
+                    (R_TEXTBOX_BG_YPOS + mes_board_shift_dt[msgCtx->textboxBackgroundYOffsetIdx]) << 2,
                     (msgCtx->textPosX + 96 + 1) << 2,
-                    (R_TEXTBOX_BG_YPOS + 48 + sTextboxBackgroundYOffsets[msgCtx->textboxBackgroundYOffsetIdx]) << 2,
+                    (R_TEXTBOX_BG_YPOS + 48 + mes_board_shift_dt[msgCtx->textboxBackgroundYOffsetIdx]) << 2,
                     G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
 
                 gDPLoadTextureBlock_4b(gfx++, msgCtx->textboxSegment + MESSAGE_STATIC_TEX_SIZE + 0x900, G_IM_FMT_I, 96,
@@ -1239,15 +1239,15 @@ void Message_DrawTextWide(PlayState* play, Gfx** gfxP) {
                                        G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
                 gSPTextureRectangle(
                     gfx++, (msgCtx->textPosX + 96 + 1) << 2,
-                    (R_TEXTBOX_BG_YPOS + sTextboxBackgroundYOffsets[msgCtx->textboxBackgroundYOffsetIdx]) << 2,
+                    (R_TEXTBOX_BG_YPOS + mes_board_shift_dt[msgCtx->textboxBackgroundYOffsetIdx]) << 2,
                     (msgCtx->textPosX + 96 + 1 + 96 + 1) << 2,
-                    (R_TEXTBOX_BG_YPOS + 48 + sTextboxBackgroundYOffsets[msgCtx->textboxBackgroundYOffsetIdx]) << 2,
+                    (R_TEXTBOX_BG_YPOS + 48 + mes_board_shift_dt[msgCtx->textboxBackgroundYOffsetIdx]) << 2,
                     G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
 
                 gDPPipeSync(gfx++);
-                gDPSetPrimColor(gfx++, 0, 0, sTextboxBackgroundForePrimColors[msgCtx->textboxBackgroundForeColorIdx][0],
-                                sTextboxBackgroundForePrimColors[msgCtx->textboxBackgroundForeColorIdx][1],
-                                sTextboxBackgroundForePrimColors[msgCtx->textboxBackgroundForeColorIdx][2],
+                gDPSetPrimColor(gfx++, 0, 0, mes_board_prim_dt[msgCtx->textboxBackgroundForeColorIdx][0],
+                                mes_board_prim_dt[msgCtx->textboxBackgroundForeColorIdx][1],
+                                mes_board_prim_dt[msgCtx->textboxBackgroundForeColorIdx][2],
                                 msgCtx->textColorAlpha);
 
                 gDPLoadTextureBlock_4b(gfx++, (msgCtx->textboxSegment + MESSAGE_STATIC_TEX_SIZE), G_IM_FMT_I, 96, 48, 0,
@@ -1281,7 +1281,7 @@ void Message_DrawTextWide(PlayState* play, Gfx** gfxP) {
                     msgCtx->choiceTextId = msgCtx->textId;
                     msgCtx->stateTimer = 4;
                     msgCtx->choiceIndex = 0;
-                    Font_LoadMessageBoxIcon(font, TEXTBOX_ICON_ARROW);
+                    kanfont_get2(font, TEXTBOX_ICON_ARROW);
                 }
                 break;
             case MESSAGE_WIDE_THREE_CHOICE:
@@ -1290,18 +1290,18 @@ void Message_DrawTextWide(PlayState* play, Gfx** gfxP) {
                     msgCtx->choiceTextId = msgCtx->textId;
                     msgCtx->stateTimer = 4;
                     msgCtx->choiceIndex = 0;
-                    Font_LoadMessageBoxIcon(font, TEXTBOX_ICON_ARROW);
+                    kanfont_get2(font, TEXTBOX_ICON_ARROW);
                 }
                 break;
             case MESSAGE_WIDE_END:
                 if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING) {
                     msgCtx->msgMode = MSGMODE_TEXT_DONE;
                     if (msgCtx->textboxEndType == TEXTBOX_ENDTYPE_DEFAULT) {
-                        Audio_PlaySfxGeneral(NA_SE_SY_MESSAGE_END, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
-                        Font_LoadMessageBoxIcon(font, TEXTBOX_ICON_SQUARE);
+                        Nai_FxFlagEntry(NA_SE_SY_MESSAGE_END, &_dummy_zero_f, 4, &_dummy_one,
+                                             &_dummy_one, &_dummy_zero_s8);
+                        kanfont_get2(font, TEXTBOX_ICON_SQUARE);
                         if (play->csCtx.state == CS_STATE_IDLE) {
-                            Interface_SetDoAction(play, DO_ACTION_RETURN);
+                            do_action_point_set(play, DO_ACTION_RETURN);
                         }
                     }
                 }
@@ -1309,7 +1309,7 @@ void Message_DrawTextWide(PlayState* play, Gfx** gfxP) {
                 return;
             case MESSAGE_WIDE_OCARINA:
                 if (i + 1 == msgCtx->textDrawPos) {
-                    Message_HandleOcarina(play);
+                    ocarina_init_set(play);
                     *gfxP = gfx;
                     return;
                 }
@@ -1319,17 +1319,17 @@ void Message_DrawTextWide(PlayState* play, Gfx** gfxP) {
                     msgCtx->msgMode = MSGMODE_TEXT_DONE;
                     msgCtx->textboxEndType = TEXTBOX_ENDTYPE_FADING;
                     msgCtx->stateTimer = MSG_BUF_DECODED_WIDE[++i];
-                    Font_LoadMessageBoxIcon(font, TEXTBOX_ICON_SQUARE);
+                    kanfont_get2(font, TEXTBOX_ICON_SQUARE);
                     if (play->csCtx.state == CS_STATE_IDLE) {
-                        Interface_SetDoAction(play, DO_ACTION_RETURN);
+                        do_action_point_set(play, DO_ACTION_RETURN);
                     }
                 }
                 *gfxP = gfx;
                 return;
             case MESSAGE_WIDE_PERSISTENT:
                 if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING) {
-                    Audio_PlaySfxGeneral(NA_SE_NONE, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                         &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                    Nai_FxFlagEntry(NA_SE_NONE, &_dummy_zero_f, 4, &_dummy_one,
+                                         &_dummy_one, &_dummy_zero_s8);
                     msgCtx->msgMode = MSGMODE_TEXT_DONE;
                     msgCtx->textboxEndType = TEXTBOX_ENDTYPE_PERSISTENT;
                 }
@@ -1339,9 +1339,9 @@ void Message_DrawTextWide(PlayState* play, Gfx** gfxP) {
                 if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING) {
                     msgCtx->msgMode = MSGMODE_TEXT_DONE;
                     msgCtx->textboxEndType = TEXTBOX_ENDTYPE_EVENT;
-                    Font_LoadMessageBoxIcon(&play->msgCtx.font, TEXTBOX_ICON_TRIANGLE);
-                    Audio_PlaySfxGeneral(NA_SE_SY_MESSAGE_END, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                         &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                    kanfont_get2(&play->msgCtx.font, TEXTBOX_ICON_TRIANGLE);
+                    Nai_FxFlagEntry(NA_SE_SY_MESSAGE_END, &_dummy_zero_f, 4, &_dummy_one,
+                                         &_dummy_one, &_dummy_zero_s8);
                 }
                 *gfxP = gfx;
                 return;
@@ -1363,10 +1363,10 @@ void Message_DrawTextWide(PlayState* play, Gfx** gfxP) {
                 }
                 if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING && i == msgCtx->textDrawPos - 1 &&
                     msgCtx->textDelayTimer == msgCtx->textDelay) {
-                    Audio_PlaySfxGeneral(NA_SE_NONE, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                         &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                    Nai_FxFlagEntry(NA_SE_NONE, &_dummy_zero_f, 4, &_dummy_one,
+                                         &_dummy_one, &_dummy_zero_s8);
                 }
-                Message_DrawTextChar(play, &font->charTexBuf[charTexIdx], &gfx);
+                message_moji_display(play, &font->charTexBuf[charTexIdx], &gfx);
                 charTexIdx += FONT_CHAR_TEX_SIZE;
 
                 switch (character) {
@@ -1412,7 +1412,7 @@ void Message_DrawTextWide(PlayState* play, Gfx** gfxP) {
  * Draws the text contents of an eng/ger/fra textbox, up to the current point that has
  * been scrolled to so far.
  */
-void Message_DrawText(PlayState* play, Gfx** gfxP) {
+void message_write_NES(PlayState* play, Gfx** gfxP) {
     MessageContext* msgCtx = &play->msgCtx;
     s16 pad;
     u8 character;
@@ -1424,7 +1424,7 @@ void Message_DrawText(PlayState* play, Gfx** gfxP) {
     Gfx* gfx = *gfxP;
 
     msgCtx->textPosX = R_TEXT_INIT_XPOS;
-    if (!sTextIsCredits) {
+    if (!staff_mode) {
         msgCtx->textPosY = R_TEXT_INIT_YPOS;
     } else {
         msgCtx->textPosY = YREG(1);
@@ -1454,18 +1454,18 @@ void Message_DrawText(PlayState* play, Gfx** gfxP) {
                 msgCtx->textPosY += R_TEXT_LINE_SPACING;
                 break;
             case MESSAGE_COLOR:
-                Message_SetTextColor(msgCtx, MSG_BUF_DECODED[++i] & 0xF);
+                moji_size_color(msgCtx, MSG_BUF_DECODED[++i] & 0xF);
                 break;
             case MESSAGE_CHAR_SPACE:
                 msgCtx->textPosX += MESSAGE_SPACE_WIDTH;
                 break;
             case MESSAGE_BOX_BREAK:
                 if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING) {
-                    if (!sTextboxSkipped) {
-                        Audio_PlaySfxGeneral(NA_SE_NONE, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                    if (!last_flag) {
+                        Nai_FxFlagEntry(NA_SE_NONE, &_dummy_zero_f, 4, &_dummy_one,
+                                             &_dummy_one, &_dummy_zero_s8);
                         msgCtx->msgMode = MSGMODE_TEXT_AWAIT_NEXT;
-                        Font_LoadMessageBoxIcon(font, TEXTBOX_ICON_TRIANGLE);
+                        kanfont_get2(font, TEXTBOX_ICON_TRIANGLE);
                     } else {
                         msgCtx->msgMode = MSGMODE_TEXT_NEXT_MSG;
                         msgCtx->textUnskippable = false;
@@ -1480,10 +1480,10 @@ void Message_DrawText(PlayState* play, Gfx** gfxP) {
             case MESSAGE_TEXTID:
                 msgCtx->textboxEndType = TEXTBOX_ENDTYPE_HAS_NEXT;
                 if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING) {
-                    Audio_PlaySfxGeneral(NA_SE_NONE, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                         &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                    Nai_FxFlagEntry(NA_SE_NONE, &_dummy_zero_f, 4, &_dummy_one,
+                                         &_dummy_one, &_dummy_zero_s8);
                     msgCtx->msgMode = MSGMODE_TEXT_DONE;
-                    Font_LoadMessageBoxIcon(font, TEXTBOX_ICON_TRIANGLE);
+                    kanfont_get2(font, TEXTBOX_ICON_TRIANGLE);
                 }
                 *gfxP = gfx;
                 return;
@@ -1512,7 +1512,7 @@ void Message_DrawText(PlayState* play, Gfx** gfxP) {
                 if (i + 1 == msgCtx->textDrawPos) {
                     if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING) {
                         msgCtx->msgMode = MSGMODE_TEXT_AWAIT_INPUT;
-                        Font_LoadMessageBoxIcon(font, TEXTBOX_ICON_TRIANGLE);
+                        kanfont_get2(font, TEXTBOX_ICON_TRIANGLE);
                     }
                     *gfxP = gfx;
                     return;
@@ -1537,31 +1537,31 @@ void Message_DrawText(PlayState* play, Gfx** gfxP) {
                 *gfxP = gfx;
                 return;
             case MESSAGE_SFX:
-                if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING && !sMessageHasSetSfx) {
-                    sMessageHasSetSfx = true;
+                if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING && !se_flag) {
+                    se_flag = true;
                     PRINTF(T("サウンド（ＳＥ）\n", "Sound (SE)\n"));
                     sfxHi = MSG_BUF_DECODED[i + 1];
                     sfxHi <<= 8;
-                    Audio_PlaySfxGeneral(sfxHi | MSG_BUF_DECODED[i + 2], &gSfxDefaultPos, 4,
-                                         &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                    Nai_FxFlagEntry(sfxHi | MSG_BUF_DECODED[i + 2], &_dummy_zero_f, 4,
+                                         &_dummy_one, &_dummy_one, &_dummy_zero_s8);
                 }
                 i += 2;
                 break;
             case MESSAGE_ITEM_ICON:
-                i = Message_DrawItemIcon(play, MSG_BUF_DECODED[i + 1], &gfx, i);
+                i = dpitem_write(play, MSG_BUF_DECODED[i + 1], &gfx, i);
                 break;
             case MESSAGE_BACKGROUND:
                 // clang-format off
                 if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING) { \
-                    Audio_PlaySfxGeneral(NA_SE_NONE, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                         &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                    Nai_FxFlagEntry(NA_SE_NONE, &_dummy_zero_f, 4, &_dummy_one,
+                                         &_dummy_one, &_dummy_zero_s8);
                 }
                 // clang-format on
                 gDPPipeSync(gfx++);
                 gDPSetCombineMode(gfx++, G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM);
-                gDPSetPrimColor(gfx++, 0, 0, sTextboxBackgroundBackPrimColors[msgCtx->textboxBackgroundBackColorIdx][0],
-                                sTextboxBackgroundBackPrimColors[msgCtx->textboxBackgroundBackColorIdx][1],
-                                sTextboxBackgroundBackPrimColors[msgCtx->textboxBackgroundBackColorIdx][2],
+                gDPSetPrimColor(gfx++, 0, 0, mes_board_shadow_dt[msgCtx->textboxBackgroundBackColorIdx][0],
+                                mes_board_shadow_dt[msgCtx->textboxBackgroundBackColorIdx][1],
+                                mes_board_shadow_dt[msgCtx->textboxBackgroundBackColorIdx][2],
                                 msgCtx->textColorAlpha);
 
                 gDPLoadTextureBlock_4b(gfx++, msgCtx->textboxSegment + MESSAGE_STATIC_TEX_SIZE, G_IM_FMT_I, 96, 48, 0,
@@ -1569,9 +1569,9 @@ void Message_DrawText(PlayState* play, Gfx** gfxP) {
                                        G_TX_NOLOD, G_TX_NOLOD);
                 gSPTextureRectangle(
                     gfx++, (msgCtx->textPosX + 1) << 2,
-                    (R_TEXTBOX_BG_YPOS + sTextboxBackgroundYOffsets[msgCtx->textboxBackgroundYOffsetIdx]) << 2,
+                    (R_TEXTBOX_BG_YPOS + mes_board_shift_dt[msgCtx->textboxBackgroundYOffsetIdx]) << 2,
                     (msgCtx->textPosX + 96 + 1) << 2,
-                    (R_TEXTBOX_BG_YPOS + 48 + sTextboxBackgroundYOffsets[msgCtx->textboxBackgroundYOffsetIdx]) << 2,
+                    (R_TEXTBOX_BG_YPOS + 48 + mes_board_shift_dt[msgCtx->textboxBackgroundYOffsetIdx]) << 2,
                     G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
 
                 gDPLoadTextureBlock_4b(gfx++, msgCtx->textboxSegment + MESSAGE_STATIC_TEX_SIZE + 0x900, G_IM_FMT_I, 96,
@@ -1579,15 +1579,15 @@ void Message_DrawText(PlayState* play, Gfx** gfxP) {
                                        G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
                 gSPTextureRectangle(
                     gfx++, (msgCtx->textPosX + 96 + 1) << 2,
-                    (R_TEXTBOX_BG_YPOS + sTextboxBackgroundYOffsets[msgCtx->textboxBackgroundYOffsetIdx]) << 2,
+                    (R_TEXTBOX_BG_YPOS + mes_board_shift_dt[msgCtx->textboxBackgroundYOffsetIdx]) << 2,
                     (msgCtx->textPosX + 96 + 1 + 96 + 1) << 2,
-                    (R_TEXTBOX_BG_YPOS + 48 + sTextboxBackgroundYOffsets[msgCtx->textboxBackgroundYOffsetIdx]) << 2,
+                    (R_TEXTBOX_BG_YPOS + 48 + mes_board_shift_dt[msgCtx->textboxBackgroundYOffsetIdx]) << 2,
                     G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
 
                 gDPPipeSync(gfx++);
-                gDPSetPrimColor(gfx++, 0, 0, sTextboxBackgroundForePrimColors[msgCtx->textboxBackgroundForeColorIdx][0],
-                                sTextboxBackgroundForePrimColors[msgCtx->textboxBackgroundForeColorIdx][1],
-                                sTextboxBackgroundForePrimColors[msgCtx->textboxBackgroundForeColorIdx][2],
+                gDPSetPrimColor(gfx++, 0, 0, mes_board_prim_dt[msgCtx->textboxBackgroundForeColorIdx][0],
+                                mes_board_prim_dt[msgCtx->textboxBackgroundForeColorIdx][1],
+                                mes_board_prim_dt[msgCtx->textboxBackgroundForeColorIdx][2],
                                 msgCtx->textColorAlpha);
 
                 gDPLoadTextureBlock_4b(gfx++, (msgCtx->textboxSegment + MESSAGE_STATIC_TEX_SIZE), G_IM_FMT_I, 96, 48, 0,
@@ -1621,7 +1621,7 @@ void Message_DrawText(PlayState* play, Gfx** gfxP) {
                     msgCtx->choiceTextId = msgCtx->textId;
                     msgCtx->stateTimer = 4;
                     msgCtx->choiceIndex = 0;
-                    Font_LoadMessageBoxIcon(font, TEXTBOX_ICON_ARROW);
+                    kanfont_get2(font, TEXTBOX_ICON_ARROW);
                 }
                 break;
             case MESSAGE_THREE_CHOICE:
@@ -1630,18 +1630,18 @@ void Message_DrawText(PlayState* play, Gfx** gfxP) {
                     msgCtx->choiceTextId = msgCtx->textId;
                     msgCtx->stateTimer = 4;
                     msgCtx->choiceIndex = 0;
-                    Font_LoadMessageBoxIcon(font, TEXTBOX_ICON_ARROW);
+                    kanfont_get2(font, TEXTBOX_ICON_ARROW);
                 }
                 break;
             case MESSAGE_END:
                 if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING) {
                     msgCtx->msgMode = MSGMODE_TEXT_DONE;
                     if (msgCtx->textboxEndType == TEXTBOX_ENDTYPE_DEFAULT) {
-                        Audio_PlaySfxGeneral(NA_SE_SY_MESSAGE_END, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
-                        Font_LoadMessageBoxIcon(font, TEXTBOX_ICON_SQUARE);
+                        Nai_FxFlagEntry(NA_SE_SY_MESSAGE_END, &_dummy_zero_f, 4, &_dummy_one,
+                                             &_dummy_one, &_dummy_zero_s8);
+                        kanfont_get2(font, TEXTBOX_ICON_SQUARE);
                         if (play->csCtx.state == 0) {
-                            Interface_SetDoAction(play, DO_ACTION_RETURN);
+                            do_action_point_set(play, DO_ACTION_RETURN);
                         }
                     }
                 }
@@ -1649,7 +1649,7 @@ void Message_DrawText(PlayState* play, Gfx** gfxP) {
                 return;
             case MESSAGE_OCARINA:
                 if (i + 1 == msgCtx->textDrawPos) {
-                    Message_HandleOcarina(play);
+                    ocarina_init_set(play);
                     *gfxP = gfx;
                     return;
                 }
@@ -1659,17 +1659,17 @@ void Message_DrawText(PlayState* play, Gfx** gfxP) {
                     msgCtx->msgMode = MSGMODE_TEXT_DONE;
                     msgCtx->textboxEndType = TEXTBOX_ENDTYPE_FADING;
                     msgCtx->stateTimer = MSG_BUF_DECODED[++i];
-                    Font_LoadMessageBoxIcon(font, TEXTBOX_ICON_SQUARE);
+                    kanfont_get2(font, TEXTBOX_ICON_SQUARE);
                     if (play->csCtx.state == 0) {
-                        Interface_SetDoAction(play, DO_ACTION_RETURN);
+                        do_action_point_set(play, DO_ACTION_RETURN);
                     }
                 }
                 *gfxP = gfx;
                 return;
             case MESSAGE_PERSISTENT:
                 if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING) {
-                    Audio_PlaySfxGeneral(NA_SE_NONE, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                         &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                    Nai_FxFlagEntry(NA_SE_NONE, &_dummy_zero_f, 4, &_dummy_one,
+                                         &_dummy_one, &_dummy_zero_s8);
                     msgCtx->msgMode = MSGMODE_TEXT_DONE;
                     msgCtx->textboxEndType = TEXTBOX_ENDTYPE_PERSISTENT;
                 }
@@ -1679,29 +1679,29 @@ void Message_DrawText(PlayState* play, Gfx** gfxP) {
                 if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING) {
                     msgCtx->msgMode = MSGMODE_TEXT_DONE;
                     msgCtx->textboxEndType = TEXTBOX_ENDTYPE_EVENT;
-                    Font_LoadMessageBoxIcon(font, TEXTBOX_ICON_TRIANGLE);
-                    Audio_PlaySfxGeneral(NA_SE_SY_MESSAGE_END, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                         &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                    kanfont_get2(font, TEXTBOX_ICON_TRIANGLE);
+                    Nai_FxFlagEntry(NA_SE_SY_MESSAGE_END, &_dummy_zero_f, 4, &_dummy_one,
+                                         &_dummy_one, &_dummy_zero_s8);
                 }
                 *gfxP = gfx;
                 return;
             default:
                 if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING && i == msgCtx->textDrawPos - 1 &&
                     msgCtx->textDelayTimer == msgCtx->textDelay) {
-                    Audio_PlaySfxGeneral(NA_SE_NONE, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                         &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                    Nai_FxFlagEntry(NA_SE_NONE, &_dummy_zero_f, 4, &_dummy_one,
+                                         &_dummy_one, &_dummy_zero_s8);
                 }
 
 #if PLATFORM_IQUE
-                if (!sTextIsCredits) {
+                if (!staff_mode) {
                     R_TEXT_CHAR_SCALE = 100;
                 }
 #endif
 
-                Message_DrawTextChar(play, &font->charTexBuf[charTexIdx], &gfx);
+                message_moji_display(play, &font->charTexBuf[charTexIdx], &gfx);
                 charTexIdx += FONT_CHAR_TEX_SIZE;
 
-                msgCtx->textPosX += (s32)(sFontWidths[character - ' '] * (R_TEXT_CHAR_SCALE / 100.0f));
+                msgCtx->textPosX += (s32)(shift_data[character - ' '] * (R_TEXT_CHAR_SCALE / 100.0f));
                 break;
         }
     }
@@ -1714,7 +1714,7 @@ void Message_DrawText(PlayState* play, Gfx** gfxP) {
     *gfxP = gfx;
 }
 
-void Message_LoadItemIcon(PlayState* play, u16 itemId, s16 y) {
+void dpitem_read(PlayState* play, u16 itemId, s16 y) {
     static s16 sIconItem32XOffsets[] = LANGUAGE_ARRAY(54, 74, 74, 74);
     static s16 sIconItem24XOffsets[] = LANGUAGE_ARRAY(50, 72, 72, 72);
     MessageContext* msgCtx = &play->msgCtx;
@@ -1725,14 +1725,14 @@ void Message_LoadItemIcon(PlayState* play, u16 itemId, s16 y) {
         interfaceCtx->mapPalette[31] = -1;
     }
     if (itemId < ITEM_MEDALLION_FOREST) {
-        R_TEXTBOX_ICON_XPOS = R_TEXT_INIT_XPOS - sIconItem32XOffsets[gSaveContext.language];
+        R_TEXTBOX_ICON_XPOS = R_TEXT_INIT_XPOS - sIconItem32XOffsets[z_common_data.language];
         R_TEXTBOX_ICON_YPOS = y + ((44 - ITEM_ICON_HEIGHT) / 2);
         R_TEXTBOX_ICON_DIMENSION = ITEM_ICON_WIDTH; // assumes the image is square
         DMA_REQUEST_SYNC(msgCtx->textboxSegment + MESSAGE_STATIC_TEX_SIZE, GET_ITEM_ICON_VROM(itemId), ITEM_ICON_SIZE,
                          "../z_message_PAL.c", 1473);
         PRINTF(T("アイテム32-0\n", "Item 32-0\n"));
     } else {
-        R_TEXTBOX_ICON_XPOS = R_TEXT_INIT_XPOS - sIconItem24XOffsets[gSaveContext.language];
+        R_TEXTBOX_ICON_XPOS = R_TEXT_INIT_XPOS - sIconItem24XOffsets[z_common_data.language];
         R_TEXTBOX_ICON_YPOS = y + ((44 - QUEST_ICON_HEIGHT) / 2);
         R_TEXTBOX_ICON_DIMENSION = QUEST_ICON_WIDTH; // assumes the image is square
         DMA_REQUEST_SYNC(msgCtx->textboxSegment + MESSAGE_STATIC_TEX_SIZE, GET_QUEST_ICON_VROM(itemId), QUEST_ICON_SIZE,
@@ -1743,7 +1743,7 @@ void Message_LoadItemIcon(PlayState* play, u16 itemId, s16 y) {
     msgCtx->choiceNum = 1;
 }
 
-void Message_Decode(PlayState* play) {
+void message_read(PlayState* play) {
     MessageContext* msgCtx = &play->msgCtx;
     Font* font = &play->msgCtx.font;
     s32 charTexIdx = 0;
@@ -1766,10 +1766,10 @@ void Message_Decode(PlayState* play) {
 
     msgCtx->textDelayTimer = 0;
     msgCtx->textUnskippable = msgCtx->textDelay = msgCtx->textDelayTimer = 0;
-    sTextFade = false;
+    key_off_flag = false;
 
 #if OOT_NTSC
-    if (gSaveContext.language == LANGUAGE_JPN && !sTextIsCredits) {
+    if (z_common_data.language == LANGUAGE_JPN && !staff_mode) {
         // Japanese text (NTSC only)
         for (;;) {
             curCharWide = MSG_BUF_DECODED_WIDE[decodedBufPos] = MSG_BUF_WIDE[msgCtx->msgBufPos];
@@ -1789,28 +1789,28 @@ void Message_Decode(PlayState* play) {
                     }
                 }
                 if (curCharWide == MESSAGE_WIDE_TEXTID) {
-                    sNextTextId = MSG_BUF_DECODED_WIDE[++decodedBufPos] = MSG_BUF_WIDE[msgCtx->msgBufPos + 1];
+                    next_msg_no = MSG_BUF_DECODED_WIDE[++decodedBufPos] = MSG_BUF_WIDE[msgCtx->msgBufPos + 1];
                 }
                 if (curCharWide == MESSAGE_WIDE_BOX_BREAK_DELAYED) {
                     MSG_BUF_DECODED_WIDE[++decodedBufPos] = MSG_BUF_WIDE[msgCtx->msgBufPos + 1];
                     msgCtx->msgBufPos += 2;
                 }
                 msgCtx->decodedTextLen = decodedBufPos;
-                if (sTextboxSkipped) {
+                if (last_flag) {
                     msgCtx->textDrawPos = msgCtx->decodedTextLen;
                 }
                 break;
             } else if (curCharWide == MESSAGE_WIDE_NAME) {
                 // Substitute the player name control character for the file's player name.
-                for (playerNameLen = ARRAY_COUNT(gSaveContext.save.info.playerData.playerName); playerNameLen > 0;
+                for (playerNameLen = ARRAY_COUNT(z_common_data.save.info.playerData.playerName); playerNameLen > 0;
                      playerNameLen--) {
-                    if (gSaveContext.save.info.playerData.playerName[playerNameLen - 1] != FILENAME_SPACE) {
+                    if (z_common_data.save.info.playerData.playerName[playerNameLen - 1] != FILENAME_SPACE) {
                         break;
                     }
                 }
                 PRINTF(T("\n名前 ＝ ", "\nName = "));
                 for (i = 0; i < playerNameLen; i++) {
-                    curCharWide = gSaveContext.save.info.playerData.playerName[i];
+                    curCharWide = z_common_data.save.info.playerData.playerName[i];
                     PRINTF("(%x), ", curCharWide);
                     MSG_BUF_DECODED_WIDE[decodedBufPos + i] = MESSAGE_WIDE_NAME;
                     fontBuf = &font->fontBuf[(curCharWide * 32) << 2]; // fake
@@ -1830,9 +1830,9 @@ void Message_Decode(PlayState* play) {
                 PRINTF(T("\nＥＶＥＮＴタイマー ＝ \n", "\nEVENT timer = \n"));
                 digits[0] = digits[1] = digits[2] = 0;
                 if (curCharWide == MESSAGE_WIDE_RACE_TIME) {
-                    digits[3] = gSaveContext.timerSeconds;
+                    digits[3] = z_common_data.timerSeconds;
                 } else {
-                    digits[3] = gSaveContext.subTimerSeconds;
+                    digits[3] = z_common_data.subTimerSeconds;
                 }
                 while (digits[3] >= 60) {
                     digits[1]++;
@@ -1849,17 +1849,17 @@ void Message_Decode(PlayState* play) {
 
                 for (i = 0; i < 4; i++) {
                     PRINTF("rpc[%d] = %x\n", i, digits[i] + MESSAGE_WIDE_CHAR_ZERO);
-                    Font_LoadCharWide(font, digits[i] + MESSAGE_WIDE_CHAR_ZERO, charTexIdx);
+                    kanfont_get(font, digits[i] + MESSAGE_WIDE_CHAR_ZERO, charTexIdx);
                     charTexIdx += FONT_CHAR_TEX_SIZE;
                     MSG_BUF_DECODED_WIDE[decodedBufPos] = digits[i] + MESSAGE_WIDE_CHAR_ZERO;
                     decodedBufPos++;
                     if (i == 1) {
-                        Font_LoadCharWide(font, MESSAGE_WIDE_CHAR_MINUTES, charTexIdx);
+                        kanfont_get(font, MESSAGE_WIDE_CHAR_MINUTES, charTexIdx);
                         charTexIdx += FONT_CHAR_TEX_SIZE;
                         MSG_BUF_DECODED_WIDE[decodedBufPos] = MESSAGE_WIDE_CHAR_MINUTES;
                         decodedBufPos++;
                     } else if (i == 3) {
-                        Font_LoadCharWide(font, MESSAGE_WIDE_CHAR_SECONDS, charTexIdx);
+                        kanfont_get(font, MESSAGE_WIDE_CHAR_SECONDS, charTexIdx);
                         charTexIdx += FONT_CHAR_TEX_SIZE;
                         MSG_BUF_DECODED_WIDE[decodedBufPos] = MESSAGE_WIDE_CHAR_SECONDS;
                     }
@@ -1869,7 +1869,7 @@ void Message_Decode(PlayState* play) {
                 //  add the digits to the decoded buffer in place of the control character.
                 PRINTF(T("\n流鏑馬スコア ＝ ", "\nHorseback archery score = "));
                 digits[0] = digits[1] = digits[2] = 0;
-                digits[3] = gSaveContext.minigameScore;
+                digits[3] = z_common_data.minigameScore;
 
                 while (digits[3] >= 1000) {
                     digits[0]++;
@@ -1889,7 +1889,7 @@ void Message_Decode(PlayState* play) {
                         loadChar = true;
                     }
                     if (loadChar) {
-                        Font_LoadCharWide(font, digits[i] + MESSAGE_WIDE_CHAR_ZERO, charTexIdx);
+                        kanfont_get(font, digits[i] + MESSAGE_WIDE_CHAR_ZERO, charTexIdx);
                         charTexIdx += FONT_CHAR_TEX_SIZE;
                         MSG_BUF_DECODED_WIDE[decodedBufPos] = digits[i] + MESSAGE_WIDE_CHAR_ZERO;
                         decodedBufPos++;
@@ -1900,9 +1900,9 @@ void Message_Decode(PlayState* play) {
                 // Convert the current number of collected gold skulltula tokens to digits and
                 //  add the digits to the decoded buffer in place of the control character.
                 PRINTF(T("\n金スタ合計数 ＝ %d", "\nTotal number of gold skulls = %d"),
-                       gSaveContext.save.info.inventory.gsTokens);
+                       z_common_data.save.info.inventory.gsTokens);
                 digits[0] = digits[1] = 0;
-                digits[2] = gSaveContext.save.info.inventory.gsTokens;
+                digits[2] = z_common_data.save.info.inventory.gsTokens;
 
                 while (digits[2] >= 100) {
                     digits[0]++;
@@ -1919,7 +1919,7 @@ void Message_Decode(PlayState* play) {
                         loadChar = true;
                     }
                     if (loadChar) {
-                        Font_LoadCharWide(font, digits[i] + MESSAGE_WIDE_CHAR_ZERO, charTexIdx);
+                        kanfont_get(font, digits[i] + MESSAGE_WIDE_CHAR_ZERO, charTexIdx);
                         charTexIdx += FONT_CHAR_TEX_SIZE;
                         MSG_BUF_DECODED_WIDE[decodedBufPos] = digits[i] + MESSAGE_WIDE_CHAR_ZERO;
                         decodedBufPos++;
@@ -1929,7 +1929,7 @@ void Message_Decode(PlayState* play) {
             } else if (curCharWide == MESSAGE_WIDE_FISH_INFO) {
                 PRINTF(T("\n釣り堀魚サイズ ＝ ", "\nFishing hole fish size = "));
                 digits[0] = 0;
-                digits[1] = gSaveContext.minigameScore;
+                digits[1] = z_common_data.minigameScore;
 
                 while (digits[1] >= 10) {
                     digits[0]++;
@@ -1938,7 +1938,7 @@ void Message_Decode(PlayState* play) {
 
                 for (i = 0; i < 2; i++) {
                     if (i == 1 || digits[i] != 0) {
-                        Font_LoadCharWide(font, digits[i] + MESSAGE_WIDE_CHAR_ZERO, charTexIdx);
+                        kanfont_get(font, digits[i] + MESSAGE_WIDE_CHAR_ZERO, charTexIdx);
                         charTexIdx += FONT_CHAR_TEX_SIZE;
                         MSG_BUF_DECODED_WIDE[decodedBufPos] = digits[i] + MESSAGE_WIDE_CHAR_ZERO;
                         decodedBufPos++;
@@ -1996,7 +1996,7 @@ void Message_Decode(PlayState* play) {
                                 loadChar = true;
                             }
                             if (loadChar) {
-                                Font_LoadCharWide(font, digits[i] + MESSAGE_WIDE_CHAR_ZERO, charTexIdx);
+                                kanfont_get(font, digits[i] + MESSAGE_WIDE_CHAR_ZERO, charTexIdx);
                                 charTexIdx += FONT_CHAR_TEX_SIZE;
                                 MSG_BUF_DECODED_WIDE[decodedBufPos] = digits[i] + MESSAGE_WIDE_CHAR_ZERO;
                                 decodedBufPos++;
@@ -2026,17 +2026,17 @@ void Message_Decode(PlayState* play) {
                         }
 
                         for (i = 0; i < 4; i++) {
-                            Font_LoadCharWide(font, digits[i] + MESSAGE_WIDE_CHAR_ZERO, charTexIdx);
+                            kanfont_get(font, digits[i] + MESSAGE_WIDE_CHAR_ZERO, charTexIdx);
                             charTexIdx += FONT_CHAR_TEX_SIZE;
                             MSG_BUF_DECODED_WIDE[decodedBufPos] = digits[i] + MESSAGE_WIDE_CHAR_ZERO;
                             decodedBufPos++;
                             if (i == 1) {
-                                Font_LoadCharWide(font, MESSAGE_WIDE_CHAR_MINUTES, charTexIdx);
+                                kanfont_get(font, MESSAGE_WIDE_CHAR_MINUTES, charTexIdx);
                                 charTexIdx += FONT_CHAR_TEX_SIZE;
                                 MSG_BUF_DECODED_WIDE[decodedBufPos] = MESSAGE_WIDE_CHAR_MINUTES;
                                 decodedBufPos++;
                             } else if (i == 3) {
-                                Font_LoadCharWide(font, MESSAGE_WIDE_CHAR_SECONDS, charTexIdx);
+                                kanfont_get(font, MESSAGE_WIDE_CHAR_SECONDS, charTexIdx);
                                 charTexIdx += FONT_CHAR_TEX_SIZE;
                                 MSG_BUF_DECODED_WIDE[decodedBufPos] = MESSAGE_WIDE_CHAR_SECONDS;
                             }
@@ -2046,13 +2046,13 @@ void Message_Decode(PlayState* play) {
             } else if (curCharWide == MESSAGE_WIDE_TIME) {
                 PRINTF(T("\nゼルダ時間 ＝ ", "\nZelda time = "));
                 digits[0] = 0;
-                digits[1] = (gSaveContext.save.dayTime * (24.0f * 60.0f / 0x10000)) / 60.0f;
+                digits[1] = (z_common_data.save.dayTime * (24.0f * 60.0f / 0x10000)) / 60.0f;
                 while (digits[1] >= 10) {
                     digits[0]++;
                     digits[1] -= 10;
                 }
                 digits[2] = 0;
-                digits[3] = (s16)(gSaveContext.save.dayTime * (24.0f * 60.0f / 0x10000)) % 60;
+                digits[3] = (s16)(z_common_data.save.dayTime * (24.0f * 60.0f / 0x10000)) % 60;
                 while (digits[3] >= 10) {
                     digits[2]++;
                     digits[3] -= 10;
@@ -2060,17 +2060,17 @@ void Message_Decode(PlayState* play) {
 
                 for (i = 0; i < 4; i++) {
                     PRINTF("rpc[%d] = %x\n", i, digits[i] + MESSAGE_WIDE_CHAR_ZERO);
-                    Font_LoadCharWide(font, digits[i] + MESSAGE_WIDE_CHAR_ZERO, charTexIdx);
+                    kanfont_get(font, digits[i] + MESSAGE_WIDE_CHAR_ZERO, charTexIdx);
                     charTexIdx += FONT_CHAR_TEX_SIZE;
                     MSG_BUF_DECODED_WIDE[decodedBufPos] = digits[i] + MESSAGE_WIDE_CHAR_ZERO;
                     decodedBufPos++;
                     if (i == 1) {
-                        Font_LoadCharWide(font, MESSAGE_WIDE_CHAR_HOURS, charTexIdx);
+                        kanfont_get(font, MESSAGE_WIDE_CHAR_HOURS, charTexIdx);
                         charTexIdx += FONT_CHAR_TEX_SIZE;
                         MSG_BUF_DECODED_WIDE[decodedBufPos] = MESSAGE_WIDE_CHAR_HOURS;
                         decodedBufPos++;
                     } else if (i == 3) {
-                        Font_LoadCharWide(font, MESSAGE_WIDE_CHAR_MINUTES, charTexIdx);
+                        kanfont_get(font, MESSAGE_WIDE_CHAR_MINUTES, charTexIdx);
                         charTexIdx += FONT_CHAR_TEX_SIZE;
                         MSG_BUF_DECODED_WIDE[decodedBufPos] = MESSAGE_WIDE_CHAR_MINUTES;
                     }
@@ -2078,7 +2078,7 @@ void Message_Decode(PlayState* play) {
             } else if (curCharWide == MESSAGE_WIDE_ITEM_ICON) {
                 MSG_BUF_DECODED_WIDE[++decodedBufPos] = MSG_BUF_WIDE[msgCtx->msgBufPos + 1];
                 PRINTF("ITEM_NO=(%d) (%d)\n", MSG_BUF_DECODED_WIDE[decodedBufPos], MSG_BUF_WIDE[msgCtx->msgBufPos + 1]);
-                Message_LoadItemIcon(play, MSG_BUF_WIDE[msgCtx->msgBufPos + 1], R_TEXTBOX_Y + 10);
+                dpitem_read(play, MSG_BUF_WIDE[msgCtx->msgBufPos + 1], R_TEXTBOX_Y + 10);
             } else if (curCharWide == MESSAGE_WIDE_BACKGROUND) {
                 msgCtx->textboxBackgroundIdx = MSG_BUF_WIDE[msgCtx->msgBufPos + 1] * 2;
                 PRINTF("mes_board=%d\n", msgCtx->textboxBackgroundIdx);
@@ -2105,8 +2105,8 @@ void Message_Decode(PlayState* play) {
                        curCharWide != MESSAGE_WIDE_AWAIT_BUTTON_PRESS && curCharWide != MESSAGE_WIDE_OCARINA &&
                        curCharWide != MESSAGE_WIDE_PERSISTENT && curCharWide != MESSAGE_WIDE_UNSKIPPABLE) {
                 if (curCharWide == MESSAGE_WIDE_FADE) {
-                    sTextFade = true;
-                    PRINTF("Z_TIMER_END (key_off_flag=%d)\n", sTextFade);
+                    key_off_flag = true;
+                    PRINTF("Z_TIMER_END (key_off_flag=%d)\n", key_off_flag);
                     MSG_BUF_DECODED_WIDE[++decodedBufPos] = MSG_BUF_WIDE[++msgCtx->msgBufPos] & 0xFF;
                 } else if (curCharWide == MESSAGE_WIDE_SHIFT || curCharWide == MESSAGE_WIDE_TEXT_SPEED) {
                     MSG_BUF_DECODED_WIDE[++decodedBufPos] = MSG_BUF_WIDE[++msgCtx->msgBufPos] & 0xFF;
@@ -2118,7 +2118,7 @@ void Message_Decode(PlayState* play) {
                     msgCtx->choiceNum = 3;
                     R_TEXT_INIT_XPOS += 32;
                 } else if (curCharWide != MESSAGE_WIDE_CHAR_SPACE) {
-                    Font_LoadCharWide(font, curCharWide, charTexIdx);
+                    kanfont_get(font, curCharWide, charTexIdx);
                     charTexIdx += FONT_CHAR_TEX_SIZE;
                 }
             }
@@ -2170,28 +2170,28 @@ void Message_Decode(PlayState* play) {
                     value = MSG_BUF_DECODED[++decodedBufPos] = MSG_BUF[msgCtx->msgBufPos + 1];
                     MSG_BUF_DECODED[++decodedBufPos] = MSG_BUF[msgCtx->msgBufPos + 2];
                     value <<= 8;
-                    sNextTextId = MSG_BUF_DECODED[decodedBufPos] | value;
+                    next_msg_no = MSG_BUF_DECODED[decodedBufPos] | value;
                 }
                 if (curChar == MESSAGE_BOX_BREAK_DELAYED) {
                     MSG_BUF_DECODED[++decodedBufPos] = MSG_BUF[msgCtx->msgBufPos + 1];
                     msgCtx->msgBufPos += 2;
                 }
                 msgCtx->decodedTextLen = decodedBufPos;
-                if (sTextboxSkipped) {
+                if (last_flag) {
                     msgCtx->textDrawPos = msgCtx->decodedTextLen;
                 }
                 break;
             } else if (curChar == MESSAGE_NAME) {
                 // Substitute the player name control character for the file's player name.
-                for (playerNameLen = ARRAY_COUNT(gSaveContext.save.info.playerData.playerName); playerNameLen > 0;
+                for (playerNameLen = ARRAY_COUNT(z_common_data.save.info.playerData.playerName); playerNameLen > 0;
                      playerNameLen--) {
-                    if (gSaveContext.save.info.playerData.playerName[playerNameLen - 1] != FILENAME_SPACE) {
+                    if (z_common_data.save.info.playerData.playerName[playerNameLen - 1] != FILENAME_SPACE) {
                         break;
                     }
                 }
                 PRINTF(T("\n名前 ＝ ", "\nName = "));
                 for (i = 0; i < playerNameLen; i++) {
-                    curChar = gSaveContext.save.info.playerData.playerName[i];
+                    curChar = z_common_data.save.info.playerData.playerName[i];
                     if (curChar == FILENAME_SPACE) {
                         curChar = ' ';
                     } else if (curChar == FILENAME_PERIOD) {
@@ -2209,7 +2209,7 @@ void Message_Decode(PlayState* play) {
                         curChar += 'a';
                     }
                     if (curChar != ' ') {
-                        Font_LoadChar(font, curChar - ' ', charTexIdx);
+                        kanfont_get_NES(font, curChar - ' ', charTexIdx);
                         charTexIdx += FONT_CHAR_TEX_SIZE;
                     }
                     PRINTF("%x ", curChar);
@@ -2223,9 +2223,9 @@ void Message_Decode(PlayState* play) {
                 PRINTF(T("\nＥＶＥＮＴタイマー ＝ ", "\nEVENT timer = "));
                 digits[0] = digits[1] = digits[2] = 0;
                 if (curChar == MESSAGE_RACE_TIME) {
-                    digits[3] = gSaveContext.timerSeconds;
+                    digits[3] = z_common_data.timerSeconds;
                 } else {
-                    digits[3] = gSaveContext.subTimerSeconds;
+                    digits[3] = z_common_data.subTimerSeconds;
                 }
 
                 while (digits[3] >= 60) {
@@ -2242,17 +2242,17 @@ void Message_Decode(PlayState* play) {
                 }
 
                 for (i = 0; i < 4; i++) {
-                    Font_LoadChar(font, digits[i] + '0' - ' ', charTexIdx);
+                    kanfont_get_NES(font, digits[i] + '0' - ' ', charTexIdx);
                     charTexIdx += FONT_CHAR_TEX_SIZE;
                     MSG_BUF_DECODED[decodedBufPos] = digits[i] + '0';
                     decodedBufPos++;
                     if (i == 1) {
-                        Font_LoadChar(font, '"' - ' ', charTexIdx);
+                        kanfont_get_NES(font, '"' - ' ', charTexIdx);
                         charTexIdx += FONT_CHAR_TEX_SIZE;
                         MSG_BUF_DECODED[decodedBufPos] = '"';
                         decodedBufPos++;
                     } else if (i == 3) {
-                        Font_LoadChar(font, '"' - ' ', charTexIdx);
+                        kanfont_get_NES(font, '"' - ' ', charTexIdx);
                         charTexIdx += FONT_CHAR_TEX_SIZE;
                         MSG_BUF_DECODED[decodedBufPos] = '"';
                     }
@@ -2260,9 +2260,9 @@ void Message_Decode(PlayState* play) {
             } else if (curChar == MESSAGE_POINTS) {
                 // Convert the values of the current minigame score to digits and
                 //  add the digits to the decoded buffer in place of the control character.
-                PRINTF(T("\n流鏑馬スコア ＝ %d\n", "\nHorseback archery score = %d\n"), gSaveContext.minigameScore);
+                PRINTF(T("\n流鏑馬スコア ＝ %d\n", "\nHorseback archery score = %d\n"), z_common_data.minigameScore);
                 digits[0] = digits[1] = digits[2] = 0;
-                digits[3] = gSaveContext.minigameScore;
+                digits[3] = z_common_data.minigameScore;
 
                 while (digits[3] >= 1000) {
                     digits[0]++;
@@ -2283,7 +2283,7 @@ void Message_Decode(PlayState* play) {
                         loadChar = true;
                     }
                     if (loadChar) {
-                        Font_LoadChar(font, digits[i] + '0' - ' ', charTexIdx);
+                        kanfont_get_NES(font, digits[i] + '0' - ' ', charTexIdx);
                         MSG_BUF_DECODED[decodedBufPos] = digits[i] + '0';
                         charTexIdx += FONT_CHAR_TEX_SIZE;
                         decodedBufPos++;
@@ -2294,9 +2294,9 @@ void Message_Decode(PlayState* play) {
                 // Convert the current number of collected gold skulltula tokens to digits and
                 //  add the digits to the decoded buffer in place of the control character.
                 PRINTF(T("\n金スタ合計数 ＝ %d", "\nTotal number of gold skulls = %d"),
-                       gSaveContext.save.info.inventory.gsTokens);
+                       z_common_data.save.info.inventory.gsTokens);
                 digits[0] = digits[1] = 0;
-                digits[2] = gSaveContext.save.info.inventory.gsTokens;
+                digits[2] = z_common_data.save.info.inventory.gsTokens;
 
                 while (digits[2] >= 100) {
                     digits[0]++;
@@ -2313,7 +2313,7 @@ void Message_Decode(PlayState* play) {
                         loadChar = true;
                     }
                     if (loadChar) {
-                        Font_LoadChar(font, digits[i] + '0' - ' ', charTexIdx);
+                        kanfont_get_NES(font, digits[i] + '0' - ' ', charTexIdx);
                         charTexIdx += FONT_CHAR_TEX_SIZE;
                         MSG_BUF_DECODED[decodedBufPos] = digits[i] + '0';
                         PRINTF("%x(%x) ", digits[i] + '0' - ' ', digits[i]);
@@ -2324,7 +2324,7 @@ void Message_Decode(PlayState* play) {
             } else if (curChar == MESSAGE_FISH_INFO) {
                 PRINTF(T("\n釣り堀魚サイズ ＝ ", "\nFishing hole fish size = "));
                 digits[0] = 0;
-                digits[1] = gSaveContext.minigameScore;
+                digits[1] = z_common_data.minigameScore;
 
                 while (digits[1] >= 10) {
                     digits[0]++;
@@ -2333,7 +2333,7 @@ void Message_Decode(PlayState* play) {
 
                 for (i = 0; i < 2; i++) {
                     if (i == 1 || digits[i] != 0) {
-                        Font_LoadChar(font, digits[i] + '0' - ' ', charTexIdx);
+                        kanfont_get_NES(font, digits[i] + '0' - ' ', charTexIdx);
                         charTexIdx += FONT_CHAR_TEX_SIZE;
                         MSG_BUF_DECODED[decodedBufPos] = digits[i] + '0';
                         PRINTF("%x(%x) ", digits[i] + '0' - ' ', digits[i]);
@@ -2391,7 +2391,7 @@ void Message_Decode(PlayState* play) {
                                 loadChar = true;
                             }
                             if (loadChar) {
-                                Font_LoadChar(font, digits[i] + '0' - ' ', charTexIdx);
+                                kanfont_get_NES(font, digits[i] + '0' - ' ', charTexIdx);
                                 MSG_BUF_DECODED[decodedBufPos] = digits[i] + '0';
                                 charTexIdx += FONT_CHAR_TEX_SIZE;
                                 decodedBufPos++;
@@ -2421,17 +2421,17 @@ void Message_Decode(PlayState* play) {
                         }
 
                         for (i = 0; i < 4; i++) {
-                            Font_LoadChar(font, digits[i] + '0' - ' ', charTexIdx);
+                            kanfont_get_NES(font, digits[i] + '0' - ' ', charTexIdx);
                             charTexIdx += FONT_CHAR_TEX_SIZE;
                             MSG_BUF_DECODED[decodedBufPos] = digits[i] + '0';
                             decodedBufPos++;
                             if (i == 1) {
-                                Font_LoadChar(font, '"' - ' ', charTexIdx);
+                                kanfont_get_NES(font, '"' - ' ', charTexIdx);
                                 charTexIdx += FONT_CHAR_TEX_SIZE;
                                 MSG_BUF_DECODED[decodedBufPos] = '"';
                                 decodedBufPos++;
                             } else if (i == 3) {
-                                Font_LoadChar(font, '"' - ' ', charTexIdx);
+                                kanfont_get_NES(font, '"' - ' ', charTexIdx);
                                 charTexIdx += FONT_CHAR_TEX_SIZE;
                                 MSG_BUF_DECODED[decodedBufPos] = '"';
                             }
@@ -2441,25 +2441,25 @@ void Message_Decode(PlayState* play) {
             } else if (curChar == MESSAGE_TIME) {
                 PRINTF(T("\nゼルダ時間 ＝ ", "\nZelda time = "));
                 digits[0] = 0;
-                digits[1] = (gSaveContext.save.dayTime * (24.0f * 60.0f / 0x10000)) / 60.0f;
+                digits[1] = (z_common_data.save.dayTime * (24.0f * 60.0f / 0x10000)) / 60.0f;
                 while (digits[1] >= 10) {
                     digits[0]++;
                     digits[1] -= 10;
                 }
                 digits[2] = 0;
-                digits[3] = (s16)(gSaveContext.save.dayTime * (24.0f * 60.0f / 0x10000)) % 60;
+                digits[3] = (s16)(z_common_data.save.dayTime * (24.0f * 60.0f / 0x10000)) % 60;
                 while (digits[3] >= 10) {
                     digits[2]++;
                     digits[3] -= 10;
                 }
 
                 for (i = 0; i < 4; i++) {
-                    Font_LoadChar(font, digits[i] + '0' - ' ', charTexIdx);
+                    kanfont_get_NES(font, digits[i] + '0' - ' ', charTexIdx);
                     charTexIdx += FONT_CHAR_TEX_SIZE;
                     MSG_BUF_DECODED[decodedBufPos] = digits[i] + '0';
                     decodedBufPos++;
                     if (i == 1) {
-                        Font_LoadChar(font, ':' - ' ', charTexIdx);
+                        kanfont_get_NES(font, ':' - ' ', charTexIdx);
                         charTexIdx += FONT_CHAR_TEX_SIZE;
                         MSG_BUF_DECODED[decodedBufPos] = ':';
                         decodedBufPos++;
@@ -2469,7 +2469,7 @@ void Message_Decode(PlayState* play) {
             } else if (curChar == MESSAGE_ITEM_ICON) {
                 MSG_BUF_DECODED[++decodedBufPos] = MSG_BUF[msgCtx->msgBufPos + 1];
                 PRINTF("ITEM_NO=(%d) (%d)\n", MSG_BUF_DECODED[decodedBufPos], MSG_BUF[msgCtx->msgBufPos + 1]);
-                Message_LoadItemIcon(play, MSG_BUF[msgCtx->msgBufPos + 1], R_TEXTBOX_Y + 10);
+                dpitem_read(play, MSG_BUF[msgCtx->msgBufPos + 1], R_TEXTBOX_Y + 10);
             } else if (curChar == MESSAGE_BACKGROUND) {
                 msgCtx->textboxBackgroundIdx = MSG_BUF[msgCtx->msgBufPos + 1] * 2;
 #if OOT_VERSION < PAL_1_0
@@ -2505,12 +2505,12 @@ void Message_Decode(PlayState* play) {
                        curChar != MESSAGE_AWAIT_BUTTON_PRESS && curChar != MESSAGE_OCARINA &&
                        curChar != MESSAGE_PERSISTENT && curChar != MESSAGE_UNSKIPPABLE) {
                 if (curChar == MESSAGE_FADE) {
-                    sTextFade = true;
-                    PRINTF("NZ_TIMER_END (key_off_flag=%d)\n", sTextFade);
+                    key_off_flag = true;
+                    PRINTF("NZ_TIMER_END (key_off_flag=%d)\n", key_off_flag);
                     MSG_BUF_DECODED[++decodedBufPos] = MSG_BUF[++msgCtx->msgBufPos];
                 } else if (curChar == MESSAGE_FADE2) {
-                    sTextFade = true;
-                    PRINTF("NZ_BGM (key_off_flag=%d)\n", sTextFade);
+                    key_off_flag = true;
+                    PRINTF("NZ_BGM (key_off_flag=%d)\n", key_off_flag);
                     MSG_BUF_DECODED[++decodedBufPos] = MSG_BUF[++msgCtx->msgBufPos];
                     MSG_BUF_DECODED[++decodedBufPos] = MSG_BUF[++msgCtx->msgBufPos];
                 } else if (curChar == MESSAGE_SHIFT || curChar == MESSAGE_TEXT_SPEED) {
@@ -2524,18 +2524,18 @@ void Message_Decode(PlayState* play) {
                     msgCtx->choiceNum = 3;
                 } else if (curChar != MESSAGE_CHAR_SPACE) {
 #if !PLATFORM_IQUE
-                    Font_LoadChar(font, curChar - ' ', charTexIdx);
+                    kanfont_get_NES(font, curChar - ' ', charTexIdx);
 #else
                     u8 nextChar;
 
                     if (curChar == 0xAA) {
                         nextChar = MSG_BUF[++msgCtx->msgBufPos];
-                        Font_LoadChar(font, nextChar - ' ', charTexIdx);
+                        kanfont_get_NES(font, nextChar - ' ', charTexIdx);
                     } else if (curChar >= 0xA0) {
                         nextChar = MSG_BUF[++msgCtx->msgBufPos];
-                        Font_LoadCharCHN(font, ((curChar << 8) | nextChar) - 0xA001, charTexIdx);
+                        kanfont_get_NESCHN(font, ((curChar << 8) | nextChar) - 0xA001, charTexIdx);
                     } else {
-                        Font_LoadChar(font, curChar - ' ', charTexIdx);
+                        kanfont_get_NES(font, curChar - ' ', charTexIdx);
                     }
 #endif
                     charTexIdx += FONT_CHAR_TEX_SIZE;
@@ -2547,30 +2547,30 @@ void Message_Decode(PlayState* play) {
     }
 }
 
-void Message_OpenText(PlayState* play, u16 textId) {
+void fukidashi_dma(PlayState* play, u16 textId) {
     static s16 messageStaticIndices[] = { 0, 1, 3, 2 };
     MessageContext* msgCtx = &play->msgCtx;
     Font* font = &msgCtx->font;
     s16 textBoxType;
 
     // clang-format off
-    if (msgCtx->msgMode == MSGMODE_NONE) { gSaveContext.prevHudVisibilityMode = gSaveContext.hudVisibilityMode; }
+    if (msgCtx->msgMode == MSGMODE_NONE) { z_common_data.prevHudVisibilityMode = z_common_data.hudVisibilityMode; }
     // clang-format on
 
     if (R_SCENE_CAM_TYPE == SCENE_CAM_TYPE_FIXED_SHOP_VIEWPOINT) {
-        Interface_ChangeHudVisibilityMode(HUD_VISIBILITY_A_HEARTS_MAGIC_FORCE);
+        alpha_change(HUD_VISIBILITY_A_HEARTS_MAGIC_FORCE);
     }
 
-    sMessageHasSetSfx = D_8014B2F4 = sTextboxSkipped = sTextIsCredits = 0;
+    se_flag = start_flag = last_flag = staff_mode = 0;
 
     if (textId >= 0x0500 && textId < 0x0600) { // text ids 0500 to 0600 are reserved for credits
-        sTextIsCredits = true;
+        staff_mode = true;
         R_TEXT_CHAR_SCALE = 85;
         R_TEXT_LINE_SPACING = 6;
         R_TEXT_INIT_XPOS = 20;
         YREG(1) = 48;
 #if OOT_NTSC
-    } else if (gSaveContext.language == LANGUAGE_JPN) {
+    } else if (z_common_data.language == LANGUAGE_JPN) {
         R_TEXT_CHAR_SCALE = 88;
         R_TEXT_LINE_SPACING = 18;
         R_TEXT_INIT_XPOS = 50;
@@ -2588,7 +2588,7 @@ void Message_OpenText(PlayState* play, u16 textId) {
     if (textId == 0xC2 || textId == 0xFA) {
         // Increments text id based on piece of heart count, assumes the piece of heart text is all
         // in order and that you don't have more than the intended amount of heart pieces.
-        textId += (gSaveContext.save.info.inventory.questItems & 0xF0000000 & 0xF0000000) >> QUEST_HEART_PIECE_COUNT;
+        textId += (z_common_data.save.info.inventory.questItems & 0xF0000000 & 0xF0000000) >> QUEST_HEART_PIECE_COUNT;
     } else if (msgCtx->textId == 0xC && CHECK_OWNED_EQUIP(EQUIP_TYPE_SWORD, EQUIP_INV_SWORD_BIGGORON)) {
         textId = 0xB; // Traded Giant's Knife for Biggoron Sword
     } else if (msgCtx->textId == 0xB4 && GET_EVENTCHKINF(EVENTCHKINF_96)) {
@@ -2600,7 +2600,7 @@ void Message_OpenText(PlayState* play, u16 textId) {
         textId == 0x2061 || // Learning Epona's Song
         textId == 0x5035 || // Guru-Guru in Windmill
         textId == 0x40AC) { // Ocarina Frog Minigame
-        Interface_ChangeHudVisibilityMode(HUD_VISIBILITY_NOTHING);
+        alpha_change(HUD_VISIBILITY_NOTHING);
     }
     msgCtx->textId = textId;
 
@@ -2608,11 +2608,11 @@ void Message_OpenText(PlayState* play, u16 textId) {
         PRINTF_COLOR_YELLOW();
         PRINTF("？？？？？？？？？？？？？？？？  z_message.c  ？？？？？？？？？？？？？？？？？？\n");
         PRINTF_RST();
-        gSaveContext.eventInf[0] = gSaveContext.eventInf[1] = gSaveContext.eventInf[2] = gSaveContext.eventInf[3] = 0;
+        z_common_data.eventInf[0] = z_common_data.eventInf[1] = z_common_data.eventInf[2] = z_common_data.eventInf[3] = 0;
     }
 
-    if (sTextIsCredits) {
-        Message_FindCreditsMessage(play, textId);
+    if (staff_mode) {
+        get_msg_add_get_STAFF(play, textId);
         msgCtx->msgLength = font->msgLength;
 #if PLATFORM_N64
         if ((B_80121220 != NULL) && (B_80121220->unk_60 != NULL) && B_80121220->unk_60(&play->msgCtx.font)) {
@@ -2627,8 +2627,8 @@ void Message_OpenText(PlayState* play, u16 textId) {
 #endif
     } else {
 #if OOT_NTSC
-        if (gSaveContext.language == LANGUAGE_JPN) {
-            Message_FindMessageJPN(play, textId);
+        if (z_common_data.language == LANGUAGE_JPN) {
+            get_msg_add_get(play, textId);
             msgCtx->msgLength = font->msgLength;
 #if PLATFORM_N64
             if ((B_80121220 != NULL) && (B_80121220->unk_64 != NULL) && B_80121220->unk_64(&play->msgCtx.font)) {
@@ -2642,7 +2642,7 @@ void Message_OpenText(PlayState* play, u16 textId) {
                              font->msgLength, "../z_message_PAL.c", UNK_LINE);
 #endif
         } else {
-            Message_FindMessageNES(play, textId);
+            get_msg_add_get_NES(play, textId);
             msgCtx->msgLength = font->msgLength;
 #if PLATFORM_N64
             if ((B_80121220 != NULL) && (B_80121220->unk_68 != NULL) && B_80121220->unk_68(&play->msgCtx.font)) {
@@ -2657,7 +2657,7 @@ void Message_OpenText(PlayState* play, u16 textId) {
 #endif
         }
 #else
-        if (gSaveContext.language == LANGUAGE_ENG) {
+        if (z_common_data.language == LANGUAGE_ENG) {
             Message_FindMessagePAL(play, textId);
             msgCtx->msgLength = font->msgLength;
 #if PLATFORM_N64
@@ -2671,7 +2671,7 @@ void Message_OpenText(PlayState* play, u16 textId) {
             DMA_REQUEST_SYNC(MSG_BUF, (uintptr_t)_nes_message_data_staticSegmentRomStart + font->msgOffset,
                              font->msgLength, "../z_message_PAL.c", 1966);
 #endif
-        } else if (gSaveContext.language == LANGUAGE_GER) {
+        } else if (z_common_data.language == LANGUAGE_GER) {
             Message_FindMessagePAL(play, textId);
             msgCtx->msgLength = font->msgLength;
 #if PLATFORM_N64
@@ -2744,7 +2744,7 @@ void Message_OpenText(PlayState* play, u16 textId) {
     msgCtx->msgBufPos = msgCtx->unk_E3D0 = msgCtx->textDrawPos = 0;
 }
 
-void Message_StartTextbox(PlayState* play, u16 textId, Actor* actor) {
+void message_set(PlayState* play, u16 textId, Actor* actor) {
     MessageContext* msgCtx = &play->msgCtx;
 
     PRINTF_COLOR_BLUE();
@@ -2752,7 +2752,7 @@ void Message_StartTextbox(PlayState* play, u16 textId, Actor* actor) {
     PRINTF_RST();
 
     msgCtx->ocarinaAction = 0xFFFF;
-    Message_OpenText(play, textId);
+    fukidashi_dma(play, textId);
     msgCtx->talkActor = actor;
     msgCtx->msgMode = MSGMODE_TEXT_START;
     msgCtx->stateTimer = 0;
@@ -2760,7 +2760,7 @@ void Message_StartTextbox(PlayState* play, u16 textId, Actor* actor) {
     play->msgCtx.ocarinaMode = OCARINA_MODE_00;
 }
 
-void Message_ContinueTextbox(PlayState* play, u16 textId) {
+void message_set2(PlayState* play, u16 textId) {
     MessageContext* msgCtx = &play->msgCtx;
     InterfaceContext* interfaceCtx = &play->interfaceCtx;
 #if PLATFORM_N64
@@ -2772,7 +2772,7 @@ void Message_ContinueTextbox(PlayState* play, u16 textId) {
     PRINTF_RST();
 
     msgCtx->msgLength = 0;
-    Message_OpenText(play, textId);
+    fukidashi_dma(play, textId);
     msgCtx->msgMode = MSGMODE_NONE;
     msgCtx->textboxColorAlphaCurrent = msgCtx->textboxColorAlphaTarget;
     msgCtx->msgMode = MSGMODE_TEXT_CONTINUING;
@@ -2781,12 +2781,12 @@ void Message_ContinueTextbox(PlayState* play, u16 textId) {
     msgCtx->textColorAlpha = 255;
 
     if (YREG(31) == 0 && interfaceCtx->unk_1FA == 0) {
-        Interface_SetDoAction(play, DO_ACTION_NEXT);
+        do_action_point_set(play, DO_ACTION_NEXT);
     }
     msgCtx->textboxColorAlphaCurrent = msgCtx->textboxColorAlphaTarget;
 }
 
-void Message_StartOcarinaImpl(PlayState* play, u16 ocarinaActionId) {
+void ocarina_set_sub(PlayState* play, u16 ocarinaActionId) {
     static u16 sOcarinaSongFlagsMap[] = {
         (1 << OCARINA_SONG_MINUET),
         (1 << OCARINA_SONG_BOLERO),
@@ -2811,54 +2811,54 @@ void Message_StartOcarinaImpl(PlayState* play, u16 ocarinaActionId) {
 
     PRINTF_COLOR_GREEN();
 
-    for (i = sOcarinaSongBitFlags = 0; i <= (QUEST_SONG_STORMS - QUEST_SONG_MINUET); i++) {
+    for (i = ocarina_bit = 0; i <= (QUEST_SONG_STORMS - QUEST_SONG_MINUET); i++) {
         if (CHECK_QUEST_ITEM(QUEST_SONG_MINUET + i)) {
             PRINTF("ocarina_check_bit[%d]=%x\n", i, sOcarinaSongFlagsMap[i]);
-            sOcarinaSongBitFlags |= sOcarinaSongFlagsMap[i];
+            ocarina_bit |= sOcarinaSongFlagsMap[i];
         }
     }
-    if (gSaveContext.save.info.scarecrowSpawnSongSet) {
-        sOcarinaSongBitFlags |= (1 << OCARINA_SONG_SCARECROW_SPAWN);
+    if (z_common_data.save.info.scarecrowSpawnSongSet) {
+        ocarina_bit |= (1 << OCARINA_SONG_SCARECROW_SPAWN);
     }
-    PRINTF("ocarina_bit = %x\n", sOcarinaSongBitFlags);
+    PRINTF("ocarina_bit = %x\n", ocarina_bit);
     PRINTF_RST();
 
-    sHasSunsSong = CHECK_QUEST_ITEM(QUEST_SONG_SUN);
-    msgCtx->ocarinaStaff = AudioOcarina_GetRecordingStaff();
-    msgCtx->ocarinaStaff->pos = sOcarinaButtonIndexBufPos = 0;
-    sOcarinaButtonIndexBufLen = 0;
-    Message_ResetOcarinaNoteState();
-    sLastPlayedSong = msgCtx->unk_E3F2 = msgCtx->lastOcarinaButtonIndex = 0xFF;
+    SunMoon_Ocarina = CHECK_QUEST_ITEM(QUEST_SONG_SUN);
+    msgCtx->ocarinaStaff = Na_GetOcarinaRecInfoWork();
+    msgCtx->ocarinaStaff->pos = onpu_pt = 0;
+    onpu_ct = 0;
+    onpu_buff_reset();
+    Chk_Ocarina_No = msgCtx->unk_E3F2 = msgCtx->lastOcarinaButtonIndex = 0xFF;
 
     PRINTF(VT_FGCOL(RED) T("☆☆☆☆☆ オカリナ番号＝%d(%d) ☆☆☆☆☆\n", "☆☆☆☆☆ Ocarina Number = %d(%d) ☆☆☆☆☆\n") VT_RST,
            ocarinaActionId, 2);
     noStopDoAction = false;
     if (ocarinaActionId >= 0x893) {
-        Message_OpenText(play, ocarinaActionId); // You played the [song name]
+        fukidashi_dma(play, ocarinaActionId); // You played the [song name]
     } else if (ocarinaActionId == OCARINA_ACTION_MEMORY_GAME) {
         msgCtx->ocarinaAction = ocarinaActionId;
-        Message_OpenText(play, 0x86D); // Play using [A] and [C].
+        fukidashi_dma(play, 0x86D); // Play using [A] and [C].
     } else if (ocarinaActionId == OCARINA_ACTION_FREE_PLAY || ocarinaActionId >= OCARINA_ACTION_CHECK_SARIA) {
         PRINTF("ocarina_set 000000000000000000  = %d\n", ocarinaActionId);
         msgCtx->ocarinaAction = ocarinaActionId;
         if (ocarinaActionId >= OCARINA_ACTION_CHECK_SARIA && ocarinaActionId <= OCARINA_ACTION_CHECK_STORMS) {
-            Audio_PlaySfxGeneral(NA_SE_SY_TRE_BOX_APPEAR, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+            Nai_FxFlagEntry(NA_SE_SY_TRE_BOX_APPEAR, &_dummy_zero_f, 4, &_dummy_one,
+                                 &_dummy_one, &_dummy_zero_s8);
         }
         if (ocarinaActionId == OCARINA_ACTION_SCARECROW_SPAWN_PLAYBACK) {
-            Message_OpenText(play, 0x86F); // Ocarina
+            fukidashi_dma(play, 0x86F); // Ocarina
         } else {
-            Message_OpenText(play, 0x86E); // Play using [A] and [C]; [B] to Stop.
+            fukidashi_dma(play, 0x86E); // Play using [A] and [C]; [B] to Stop.
         }
     } else {
         msgCtx->ocarinaAction = ocarinaActionId;
         noStopDoAction = true;
         if (ocarinaActionId >= OCARINA_ACTION_PLAYBACK_MINUET) {
             PRINTF("222222222\n");
-            Message_OpenText(play, 0x86D); // Play using [A] and [C].
+            fukidashi_dma(play, 0x86D); // Play using [A] and [C].
         } else {
             PRINTF("333333333\n");
-            Message_OpenText(play, ocarinaActionId + 0x86E); // Play using [A] and [C]; [B] to Stop.
+            fukidashi_dma(play, ocarinaActionId + 0x86E); // Play using [A] and [C]; [B] to Stop.
         }
     }
     msgCtx->talkActor = NULL;
@@ -2883,10 +2883,10 @@ void Message_StartOcarinaImpl(PlayState* play, u16 ocarinaActionId) {
     // NOLINTEND
     msgCtx->textboxColorAlphaCurrent = msgCtx->textboxColorAlphaTarget;
     if (!noStopDoAction) {
-        Interface_LoadActionLabelB(play, DO_ACTION_STOP);
-        noStopDoAction = gSaveContext.hudVisibilityMode;
-        Interface_ChangeHudVisibilityMode(HUD_VISIBILITY_B_ALT);
-        gSaveContext.hudVisibilityMode = noStopDoAction;
+        sp_action_set(play, DO_ACTION_STOP);
+        noStopDoAction = z_common_data.hudVisibilityMode;
+        alpha_change(HUD_VISIBILITY_B_ALT);
+        z_common_data.hudVisibilityMode = noStopDoAction;
     }
     PRINTF(T("演奏開始\n", "Music Performance Start\n"));
     if (ocarinaActionId == OCARINA_ACTION_FREE_PLAY || ocarinaActionId == OCARINA_ACTION_CHECK_NOWARP) {
@@ -2896,40 +2896,40 @@ void Message_StartOcarinaImpl(PlayState* play, u16 ocarinaActionId) {
         msgCtx->msgMode = MSGMODE_FROGS_START;
         msgCtx->textBoxType = TEXTBOX_TYPE_BLUE;
     } else if (ocarinaActionId == OCARINA_ACTION_MEMORY_GAME) {
-        Interface_ChangeHudVisibilityMode(HUD_VISIBILITY_NOTHING);
-        Message_Decode(play);
+        alpha_change(HUD_VISIBILITY_NOTHING);
+        message_read(play);
         msgCtx->msgMode = MSGMODE_MEMORY_GAME_START;
     } else if (ocarinaActionId == OCARINA_ACTION_SCARECROW_LONG_PLAYBACK) {
         PRINTF(T("?????録音再生 録音再生 録音再生 録音再生  -> ",
                  "????? Recording Playback  Recording Playback  Recording Playback  Recording Playback -> "));
-        AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_DEFAULT);
-        AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_DEFAULT);
-        msgCtx->ocarinaStaff = AudioOcarina_GetPlaybackStaff();
-        msgCtx->ocarinaStaff->pos = sOcarinaButtonIndexBufPos = sOcarinaButtonIndexBufLen = 0;
-        Message_ResetOcarinaNoteState();
+        Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_DEFAULT);
+        Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_DEFAULT);
+        msgCtx->ocarinaStaff = Na_GetOcarinaSeqInfoWork();
+        msgCtx->ocarinaStaff->pos = onpu_pt = onpu_ct = 0;
+        onpu_buff_reset();
         msgCtx->stateTimer = 3;
         msgCtx->msgMode = MSGMODE_SCARECROW_LONG_PLAYBACK;
-        AudioOcarina_SetPlaybackSong(OCARINA_SONG_SCARECROW_LONG + 1, 1);
-        gSaveContext.hudVisibilityMode = HUD_VISIBILITY_NO_CHANGE;
-        Interface_ChangeHudVisibilityMode(HUD_VISIBILITY_NOTHING);
+        Na_SetOcarinaSeq(OCARINA_SONG_SCARECROW_LONG + 1, 1);
+        z_common_data.hudVisibilityMode = HUD_VISIBILITY_NO_CHANGE;
+        alpha_change(HUD_VISIBILITY_NOTHING);
     }
     for (k = 0, j = 0; j < 48; j++) {
-        Font_LoadCharWide(font, MESSAGE_WIDE_CHAR_SPACE, k);
+        kanfont_get(font, MESSAGE_WIDE_CHAR_SPACE, k);
         k += FONT_CHAR_TEX_SIZE;
     }
 }
 
-void Message_StartOcarina(PlayState* play, u16 ocarinaActionId) {
+void ocarina_set(PlayState* play, u16 ocarinaActionId) {
     play->msgCtx.disableSunsSong = false;
-    Message_StartOcarinaImpl(play, ocarinaActionId);
+    ocarina_set_sub(play, ocarinaActionId);
 }
 
-void Message_StartOcarinaSunsSongDisabled(PlayState* play, u16 ocarinaActionId) {
+void ocarina_set_111(PlayState* play, u16 ocarinaActionId) {
     play->msgCtx.disableSunsSong = true;
-    Message_StartOcarinaImpl(play, ocarinaActionId);
+    ocarina_set_sub(play, ocarinaActionId);
 }
 
-u8 Message_GetState(MessageContext* msgCtx) {
+u8 message_check(MessageContext* msgCtx) {
     u8 state;
 
     if (msgCtx->msgLength == 0) {
@@ -2964,7 +2964,7 @@ u8 Message_GetState(MessageContext* msgCtx) {
     return state;
 }
 
-void Message_DrawTextBox(PlayState* play, Gfx** p) {
+void fukidashi_display(PlayState* play, Gfx** p) {
     MessageContext* msgCtx = &play->msgCtx;
     Gfx* gfx = *p;
 
@@ -3009,23 +3009,23 @@ void Message_DrawTextBox(PlayState* play, Gfx** p) {
     *p = gfx;
 }
 
-void Message_SetView(View* view) {
+void message_view(View* view) {
     SET_FULLSCREEN_VIEWPORT(view);
-    View_ApplyOrthoToOverlay(view);
+    showOverLayView(view);
 }
 
 #if OOT_NTSC
 #define DRAW_TEXT(play, gfx, isCredits)                                                         \
-    ((gSaveContext.language == LANGUAGE_JPN) && !(isCredits)) ? Message_DrawTextWide(play, gfx) \
-                                                              : Message_DrawText(play, gfx)
+    ((z_common_data.language == LANGUAGE_JPN) && !(isCredits)) ? message_write(play, gfx) \
+                                                              : message_write_NES(play, gfx)
 #else
-#define DRAW_TEXT(play, gfx, isCredits) Message_DrawText(play, gfx)
+#define DRAW_TEXT(play, gfx, isCredits) message_write_NES(play, gfx)
 #endif
 
 /**
  * Draws the textbox in full and updates ocarina state
  */
-void Message_DrawMain(PlayState* play, Gfx** p) {
+void message_draw_sub(PlayState* play, Gfx** p) {
     static s16 sOcarinaEffectActorIds[] = {
         ACTOR_OCEFF_WIPE3, ACTOR_OCEFF_WIPE2, ACTOR_OCEFF_WIPE,  ACTOR_OCEFF_SPOT,
         ACTOR_OCEFF_WIPE,  ACTOR_OCEFF_STORM, ACTOR_OCEFF_WIPE4,
@@ -3082,12 +3082,12 @@ void Message_DrawMain(PlayState* play, Gfx** p) {
         if (msgCtx->ocarinaAction != OCARINA_ACTION_FROGS && msgCtx->msgMode != MSGMODE_SONG_PLAYED_ACT &&
             msgCtx->msgMode >= MSGMODE_TEXT_BOX_GROWING && msgCtx->msgMode < MSGMODE_TEXT_CLOSING &&
             msgCtx->textBoxType < TEXTBOX_TYPE_NONE_BOTTOM) {
-            Message_SetView(&msgCtx->view);
-            Gfx_SetupDL_39Ptr(&gfx);
-            Message_DrawTextBox(play, &gfx);
+            message_view(&msgCtx->view);
+            gp_overlay_rectangle_a_prim(&gfx);
+            fukidashi_display(play, &gfx);
         }
 
-        Gfx_SetupDL_39Ptr(&gfx);
+        gp_overlay_rectangle_a_prim(&gfx);
 
         gDPSetAlphaCompare(gfx++, G_AC_NONE);
         gDPSetCombineLERP(gfx++, 0, 0, 0, PRIMITIVE, TEXEL0, 0, PRIMITIVE, 0, 0, 0, 0, PRIMITIVE, TEXEL0, 0, PRIMITIVE,
@@ -3102,29 +3102,29 @@ void Message_DrawMain(PlayState* play, Gfx** p) {
             case MSGMODE_TEXT_CONTINUING:
                 if (msgCtx->stateTimer == 1) {
                     for (j = 0, i = 0; i < 48; i++) {
-                        Font_LoadCharWide(font, MESSAGE_WIDE_CHAR_SPACE, j);
+                        kanfont_get(font, MESSAGE_WIDE_CHAR_SPACE, j);
                         j += FONT_CHAR_TEX_SIZE;
                     }
-                    DRAW_TEXT(play, &gfx, sTextIsCredits);
+                    DRAW_TEXT(play, &gfx, staff_mode);
                 }
                 break;
             case MSGMODE_TEXT_DISPLAYING:
             case MSGMODE_TEXT_DELAYED_BREAK:
-                DRAW_TEXT(play, &gfx, sTextIsCredits);
+                DRAW_TEXT(play, &gfx, staff_mode);
                 break;
             case MSGMODE_TEXT_AWAIT_INPUT:
             case MSGMODE_TEXT_AWAIT_NEXT:
-                DRAW_TEXT(play, &gfx, sTextIsCredits);
-                Message_DrawTextboxIcon(play, &gfx, R_TEXTBOX_END_XPOS, R_TEXTBOX_END_YPOS);
+                DRAW_TEXT(play, &gfx, staff_mode);
+                last_mark_display(play, &gfx, R_TEXTBOX_END_XPOS, R_TEXTBOX_END_YPOS);
                 break;
             case MSGMODE_OCARINA_STARTING:
             case MSGMODE_SONG_DEMONSTRATION_STARTING:
             case MSGMODE_SONG_PLAYBACK_STARTING:
-                AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_DEFAULT);
-                msgCtx->ocarinaStaff = AudioOcarina_GetPlayingStaff();
-                msgCtx->ocarinaStaff->pos = sOcarinaButtonIndexBufPos = 0;
+                Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_DEFAULT);
+                msgCtx->ocarinaStaff = Na_GetOcarinaInfoWork();
+                msgCtx->ocarinaStaff->pos = onpu_pt = 0;
                 play->msgCtx.ocarinaMode = OCARINA_MODE_01;
-                Message_ResetOcarinaNoteState();
+                onpu_buff_reset();
                 sOcarinaNoteFlashColorIndex = 1;
                 sOcarinaNoteFlashTimer = 3;
                 if (msgCtx->msgMode == MSGMODE_OCARINA_STARTING) {
@@ -3135,270 +3135,270 @@ void Message_DrawMain(PlayState* play, Gfx** p) {
                         msgCtx->ocarinaAction >= OCARINA_ACTION_CHECK_SARIA) {
                         if (msgCtx->ocarinaAction == OCARINA_ACTION_FREE_PLAY ||
                             msgCtx->ocarinaAction == OCARINA_ACTION_CHECK_NOWARP) {
-                            AudioOcarina_Start(sOcarinaSongBitFlags + 0xC000);
+                            Na_SetOcarinaPlayCheckFlag2(ocarina_bit + 0xC000);
                         } else {
                             PRINTF(T("台上演奏\n", "On Stage Performance\n"));
-                            AudioOcarina_Start(sOcarinaSongBitFlags);
+                            Na_SetOcarinaPlayCheckFlag2(ocarina_bit);
                         }
                     } else {
                         PRINTF("Na_StartOcarinaSinglePlayCheck2( message->ocarina_no );\n");
-                        AudioOcarina_Start((1 << msgCtx->ocarinaAction) + 0x8000);
+                        Na_SetOcarinaPlayCheckFlag2((1 << msgCtx->ocarinaAction) + 0x8000);
                     }
                     msgCtx->msgMode = MSGMODE_OCARINA_PLAYING;
                 } else if (msgCtx->msgMode == MSGMODE_SONG_DEMONSTRATION_STARTING) {
                     msgCtx->stateTimer = 20;
                     msgCtx->msgMode = MSGMODE_SONG_DEMONSTRATION_SELECT_INSTRUMENT;
                 } else {
-                    AudioOcarina_Start((1 << (msgCtx->ocarinaAction - OCARINA_ACTION_PLAYBACK_MINUET)) + 0x8000);
+                    Na_SetOcarinaPlayCheckFlag2((1 << (msgCtx->ocarinaAction - OCARINA_ACTION_PLAYBACK_MINUET)) + 0x8000);
                     PRINTF(T("演奏チェック=%d\n", "Performance Check = %d\n"),
                            msgCtx->ocarinaAction - OCARINA_ACTION_PLAYBACK_MINUET);
                     msgCtx->msgMode = MSGMODE_SONG_PLAYBACK;
                 }
                 if (msgCtx->ocarinaAction != OCARINA_ACTION_FREE_PLAY &&
                     msgCtx->ocarinaAction != OCARINA_ACTION_CHECK_NOWARP) {
-                    DRAW_TEXT(play, &gfx, sTextIsCredits);
+                    DRAW_TEXT(play, &gfx, staff_mode);
                 }
                 break;
             case MSGMODE_OCARINA_PLAYING:
-                msgCtx->ocarinaStaff = AudioOcarina_GetPlayingStaff();
+                msgCtx->ocarinaStaff = Na_GetOcarinaInfoWork();
                 if (msgCtx->ocarinaStaff->pos) {
 #if DEBUG_FEATURES
-                    PRINTF("locate=%d  onpu_pt=%d\n", msgCtx->ocarinaStaff->pos, sOcarinaButtonIndexBufPos);
+                    PRINTF("locate=%d  onpu_pt=%d\n", msgCtx->ocarinaStaff->pos, onpu_pt);
 #endif
 #if OOT_VERSION >= PAL_1_0
-                    if (msgCtx->ocarinaStaff->pos == 1 && sOcarinaButtonIndexBufPos == 8) {
-                        sOcarinaButtonIndexBufPos = 0;
+                    if (msgCtx->ocarinaStaff->pos == 1 && onpu_pt == 8) {
+                        onpu_pt = 0;
                     }
 #endif
-                    if (sOcarinaButtonIndexBufPos == msgCtx->ocarinaStaff->pos - 1) {
-                        msgCtx->lastOcarinaButtonIndex = sOcarinaButtonIndexBuf[msgCtx->ocarinaStaff->pos - 1] =
+                    if (onpu_pt == msgCtx->ocarinaStaff->pos - 1) {
+                        msgCtx->lastOcarinaButtonIndex = onpu_buff[msgCtx->ocarinaStaff->pos - 1] =
                             msgCtx->ocarinaStaff->buttonIndex;
-                        sOcarinaButtonIndexBuf[msgCtx->ocarinaStaff->pos] = OCARINA_BTN_INVALID;
-                        sOcarinaButtonIndexBufPos++;
+                        onpu_buff[msgCtx->ocarinaStaff->pos] = OCARINA_BTN_INVALID;
+                        onpu_pt++;
                     }
                 }
                 msgCtx->lastPlayedSong = msgCtx->ocarinaStaff->state;
                 if (msgCtx->ocarinaStaff->state < OCARINA_SONG_MEMORY_GAME) {
                     if (msgCtx->ocarinaStaff->state == OCARINA_SONG_SCARECROW_SPAWN ||
-                        CHECK_QUEST_ITEM(QUEST_SONG_MINUET + gOcarinaSongItemMap[msgCtx->ocarinaStaff->state])) {
-                        sLastPlayedSong = msgCtx->unk_E3F2 = msgCtx->lastPlayedSong = msgCtx->ocarinaStaff->state;
+                        CHECK_QUEST_ITEM(QUEST_SONG_MINUET + ocarina_number[msgCtx->ocarinaStaff->state])) {
+                        Chk_Ocarina_No = msgCtx->unk_E3F2 = msgCtx->lastPlayedSong = msgCtx->ocarinaStaff->state;
                         msgCtx->msgMode = MSGMODE_OCARINA_CORRECT_PLAYBACK;
                         msgCtx->stateTimer = 20;
                         if (msgCtx->ocarinaAction == OCARINA_ACTION_CHECK_NOWARP) {
                             if (msgCtx->ocarinaStaff->state < OCARINA_SONG_SARIAS ||
                                 msgCtx->ocarinaStaff->state == OCARINA_SONG_SCARECROW_SPAWN) {
-                                AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_OFF);
-                                Audio_PlaySfxGeneral(NA_SE_SY_OCARINA_ERROR, &gSfxDefaultPos, 4,
-                                                     &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
-                                                     &gSfxDefaultReverb);
+                                Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_OFF);
+                                Nai_FxFlagEntry(NA_SE_SY_OCARINA_ERROR, &_dummy_zero_f, 4,
+                                                     &_dummy_one, &_dummy_one,
+                                                     &_dummy_zero_s8);
                                 msgCtx->msgMode = MSGMODE_OCARINA_STARTING;
                             } else {
                                 PRINTF(T("Ocarina_Flog 正解模範演奏=%x\n",
                                          "Ocarina_Flog Correct Example Performance = %x\n"),
                                        msgCtx->lastPlayedSong);
-                                Message_ContinueTextbox(play, 0x86F); // Ocarina
+                                message_set2(play, 0x86F); // Ocarina
                                 msgCtx->msgMode = MSGMODE_SONG_PLAYED;
                                 msgCtx->textBoxType = TEXTBOX_TYPE_OCARINA;
                                 msgCtx->stateTimer = 10;
-                                Audio_PlaySfxGeneral(NA_SE_SY_TRE_BOX_APPEAR, &gSfxDefaultPos, 4,
-                                                     &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
-                                                     &gSfxDefaultReverb);
-                                Interface_ChangeHudVisibilityMode(HUD_VISIBILITY_NOTHING);
+                                Nai_FxFlagEntry(NA_SE_SY_TRE_BOX_APPEAR, &_dummy_zero_f, 4,
+                                                     &_dummy_one, &_dummy_one,
+                                                     &_dummy_zero_s8);
+                                alpha_change(HUD_VISIBILITY_NOTHING);
                             }
                         } else if (msgCtx->ocarinaAction == OCARINA_ACTION_CHECK_SCARECROW_SPAWN) {
                             if (msgCtx->ocarinaStaff->state < OCARINA_SONG_SCARECROW_SPAWN) {
-                                AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_OFF);
-                                Audio_PlaySfxGeneral(NA_SE_SY_OCARINA_ERROR, &gSfxDefaultPos, 4,
-                                                     &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
-                                                     &gSfxDefaultReverb);
+                                Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_OFF);
+                                Nai_FxFlagEntry(NA_SE_SY_OCARINA_ERROR, &_dummy_zero_f, 4,
+                                                     &_dummy_one, &_dummy_one,
+                                                     &_dummy_zero_s8);
                                 msgCtx->stateTimer = 10;
                                 msgCtx->msgMode = MSGMODE_OCARINA_FAIL;
                             } else {
                                 PRINTF(T("Ocarina_Flog 正解模範演奏=%x\n",
                                          "Ocarina_Flog Correct Example Performance = %x\n"),
                                        msgCtx->lastPlayedSong);
-                                Message_ContinueTextbox(play, 0x86F); // Ocarina
+                                message_set2(play, 0x86F); // Ocarina
                                 msgCtx->msgMode = MSGMODE_SONG_PLAYED;
                                 msgCtx->textBoxType = TEXTBOX_TYPE_OCARINA;
                                 msgCtx->stateTimer = 10;
-                                Audio_PlaySfxGeneral(NA_SE_SY_TRE_BOX_APPEAR, &gSfxDefaultPos, 4,
-                                                     &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
-                                                     &gSfxDefaultReverb);
-                                Interface_ChangeHudVisibilityMode(HUD_VISIBILITY_NOTHING);
+                                Nai_FxFlagEntry(NA_SE_SY_TRE_BOX_APPEAR, &_dummy_zero_f, 4,
+                                                     &_dummy_one, &_dummy_one,
+                                                     &_dummy_zero_s8);
+                                alpha_change(HUD_VISIBILITY_NOTHING);
                             }
                         } else if (msgCtx->ocarinaAction == OCARINA_ACTION_FREE_PLAY) {
                             PRINTF(
                                 T("Ocarina_Free 正解模範演奏=%x\n", "Ocarina_Free Correct Example Performance = %x\n"),
                                 msgCtx->lastPlayedSong);
-                            Message_ContinueTextbox(play, 0x86F); // Ocarina
+                            message_set2(play, 0x86F); // Ocarina
                             msgCtx->msgMode = MSGMODE_SONG_PLAYED;
                             msgCtx->textBoxType = TEXTBOX_TYPE_OCARINA;
                             msgCtx->stateTimer = 10;
-                            Audio_PlaySfxGeneral(NA_SE_SY_TRE_BOX_APPEAR, &gSfxDefaultPos, 4,
-                                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
-                                                 &gSfxDefaultReverb);
+                            Nai_FxFlagEntry(NA_SE_SY_TRE_BOX_APPEAR, &_dummy_zero_f, 4,
+                                                 &_dummy_one, &_dummy_one,
+                                                 &_dummy_zero_s8);
                         } else {
-                            Audio_PlaySfxGeneral(NA_SE_SY_TRE_BOX_APPEAR, &gSfxDefaultPos, 4,
-                                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
-                                                 &gSfxDefaultReverb);
+                            Nai_FxFlagEntry(NA_SE_SY_TRE_BOX_APPEAR, &_dummy_zero_f, 4,
+                                                 &_dummy_one, &_dummy_one,
+                                                 &_dummy_zero_s8);
                         }
-                        Interface_ChangeHudVisibilityMode(HUD_VISIBILITY_NOTHING);
+                        alpha_change(HUD_VISIBILITY_NOTHING);
                     } else {
-                        AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_OFF);
-                        Audio_PlaySfxGeneral(NA_SE_SY_OCARINA_ERROR, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                        Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_OFF);
+                        Nai_FxFlagEntry(NA_SE_SY_OCARINA_ERROR, &_dummy_zero_f, 4, &_dummy_one,
+                                             &_dummy_one, &_dummy_zero_s8);
                         msgCtx->msgMode = MSGMODE_OCARINA_STARTING;
                     }
                 } else if (msgCtx->ocarinaStaff->state == 0xFF) {
-                    AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_OFF);
-                    Audio_PlaySfxGeneral(NA_SE_SY_OCARINA_ERROR, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                         &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                    Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_OFF);
+                    Nai_FxFlagEntry(NA_SE_SY_OCARINA_ERROR, &_dummy_zero_f, 4, &_dummy_one,
+                                         &_dummy_one, &_dummy_zero_s8);
                     msgCtx->stateTimer = 10;
                     msgCtx->msgMode = MSGMODE_OCARINA_FAIL;
                 } else if (CHECK_BTN_ALL(input->press.button, BTN_B)) {
-                    AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_OFF);
+                    Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_OFF);
                     play->msgCtx.ocarinaMode = OCARINA_MODE_04;
-                    Message_CloseTextbox(play);
+                    message_close(play);
                 }
                 if (msgCtx->ocarinaAction != OCARINA_ACTION_FREE_PLAY &&
                     msgCtx->ocarinaAction != OCARINA_ACTION_CHECK_NOWARP) {
-                    DRAW_TEXT(play, &gfx, sTextIsCredits);
+                    DRAW_TEXT(play, &gfx, staff_mode);
                 }
                 break;
             case MSGMODE_OCARINA_CORRECT_PLAYBACK:
             case MSGMODE_SONG_PLAYBACK_SUCCESS:
             case MSGMODE_SCARECROW_SPAWN_RECORDING_DONE:
-                r = ABS(sOcarinaButtonAPrimR - sOcarinaButtonAPrimColors[sOcarinaNoteFlashColorIndex][0]) /
+                r = ABS(onpu_par - sOcarinaButtonAPrimColors[sOcarinaNoteFlashColorIndex][0]) /
                     sOcarinaNoteFlashTimer;
-                g = ABS(sOcarinaButtonAPrimG - sOcarinaButtonAPrimColors[sOcarinaNoteFlashColorIndex][1]) /
+                g = ABS(onpu_pag - sOcarinaButtonAPrimColors[sOcarinaNoteFlashColorIndex][1]) /
                     sOcarinaNoteFlashTimer;
-                b = ABS(sOcarinaButtonAPrimB - sOcarinaButtonAPrimColors[sOcarinaNoteFlashColorIndex][2]) /
-                    sOcarinaNoteFlashTimer;
-
-                if (sOcarinaButtonAPrimR >= sOcarinaButtonAPrimColors[sOcarinaNoteFlashColorIndex][0]) {
-                    sOcarinaButtonAPrimR -= r;
-                } else {
-                    sOcarinaButtonAPrimR += r;
-                }
-                if (sOcarinaButtonAPrimG >= sOcarinaButtonAPrimColors[sOcarinaNoteFlashColorIndex][1]) {
-                    sOcarinaButtonAPrimG -= g;
-                } else {
-                    sOcarinaButtonAPrimG += g;
-                }
-                if (sOcarinaButtonAPrimB >= sOcarinaButtonAPrimColors[sOcarinaNoteFlashColorIndex][2]) {
-                    sOcarinaButtonAPrimB -= b;
-                } else {
-                    sOcarinaButtonAPrimB += b;
-                }
-
-                r = ABS(sOcarinaButtonAEnvR - sOcarinaButtonAEnvColors[sOcarinaNoteFlashColorIndex][0]) /
-                    sOcarinaNoteFlashTimer;
-                g = ABS(sOcarinaButtonAEnvG - sOcarinaButtonAEnvColors[sOcarinaNoteFlashColorIndex][1]) /
-                    sOcarinaNoteFlashTimer;
-                b = ABS(sOcarinaButtonAEnvB - sOcarinaButtonAEnvColors[sOcarinaNoteFlashColorIndex][2]) /
+                b = ABS(onpu_pab - sOcarinaButtonAPrimColors[sOcarinaNoteFlashColorIndex][2]) /
                     sOcarinaNoteFlashTimer;
 
-                if (sOcarinaButtonCEnvR >= sOcarinaButtonAEnvColors[sOcarinaNoteFlashColorIndex][0]) {
-                    sOcarinaButtonAEnvR -= r;
+                if (onpu_par >= sOcarinaButtonAPrimColors[sOcarinaNoteFlashColorIndex][0]) {
+                    onpu_par -= r;
                 } else {
-                    sOcarinaButtonAEnvR += r;
+                    onpu_par += r;
                 }
-                if (sOcarinaButtonCEnvG >= sOcarinaButtonAEnvColors[sOcarinaNoteFlashColorIndex][1]) {
-                    sOcarinaButtonAEnvG -= g;
+                if (onpu_pag >= sOcarinaButtonAPrimColors[sOcarinaNoteFlashColorIndex][1]) {
+                    onpu_pag -= g;
                 } else {
-                    sOcarinaButtonAEnvG += g;
+                    onpu_pag += g;
                 }
-                if (sOcarinaButtonCEnvB >= sOcarinaButtonAEnvColors[sOcarinaNoteFlashColorIndex][2]) {
-                    sOcarinaButtonAEnvB -= b;
+                if (onpu_pab >= sOcarinaButtonAPrimColors[sOcarinaNoteFlashColorIndex][2]) {
+                    onpu_pab -= b;
                 } else {
-                    sOcarinaButtonAEnvB += b;
-                }
-
-                r = ABS(sOcarinaButtonCPrimR - sOcarinaButtonCPrimColors[sOcarinaNoteFlashColorIndex][0]) /
-                    sOcarinaNoteFlashTimer;
-                g = ABS(sOcarinaButtonCPrimG - sOcarinaButtonCPrimColors[sOcarinaNoteFlashColorIndex][1]) /
-                    sOcarinaNoteFlashTimer;
-                b = ABS(sOcarinaButtonCPrimB - sOcarinaButtonCPrimColors[sOcarinaNoteFlashColorIndex][2]) /
-                    sOcarinaNoteFlashTimer;
-
-                if (sOcarinaButtonCPrimR >= sOcarinaButtonCPrimColors[sOcarinaNoteFlashColorIndex][0]) {
-                    sOcarinaButtonCPrimR -= r;
-                } else {
-                    sOcarinaButtonCPrimR += r;
-                }
-                if (sOcarinaButtonCPrimG >= sOcarinaButtonCPrimColors[sOcarinaNoteFlashColorIndex][1]) {
-                    sOcarinaButtonCPrimG -= g;
-                } else {
-                    sOcarinaButtonCPrimG += g;
-                }
-                if (sOcarinaButtonCPrimB >= sOcarinaButtonCPrimColors[sOcarinaNoteFlashColorIndex][2]) {
-                    sOcarinaButtonCPrimB -= b;
-                } else {
-                    sOcarinaButtonCPrimB += b;
+                    onpu_pab += b;
                 }
 
-                r = ABS(sOcarinaButtonCEnvR - sOcarinaButtonCEnvColors[sOcarinaNoteFlashColorIndex][0]) /
+                r = ABS(onpu_ear - sOcarinaButtonAEnvColors[sOcarinaNoteFlashColorIndex][0]) /
                     sOcarinaNoteFlashTimer;
-                g = ABS(sOcarinaButtonCEnvG - sOcarinaButtonCEnvColors[sOcarinaNoteFlashColorIndex][1]) /
+                g = ABS(onpu_eag - sOcarinaButtonAEnvColors[sOcarinaNoteFlashColorIndex][1]) /
                     sOcarinaNoteFlashTimer;
-                b = ABS(sOcarinaButtonCEnvB - sOcarinaButtonCEnvColors[sOcarinaNoteFlashColorIndex][2]) /
+                b = ABS(onpu_eab - sOcarinaButtonAEnvColors[sOcarinaNoteFlashColorIndex][2]) /
                     sOcarinaNoteFlashTimer;
 
-                if (sOcarinaButtonCEnvR >= sOcarinaButtonCEnvColors[sOcarinaNoteFlashColorIndex][0]) {
-                    sOcarinaButtonCEnvR -= r;
+                if (onpu_ecr >= sOcarinaButtonAEnvColors[sOcarinaNoteFlashColorIndex][0]) {
+                    onpu_ear -= r;
                 } else {
-                    sOcarinaButtonCEnvR += r;
+                    onpu_ear += r;
                 }
-                if (sOcarinaButtonCEnvG >= sOcarinaButtonCEnvColors[sOcarinaNoteFlashColorIndex][1]) {
-                    sOcarinaButtonCEnvG -= g;
+                if (onpu_ecg >= sOcarinaButtonAEnvColors[sOcarinaNoteFlashColorIndex][1]) {
+                    onpu_eag -= g;
                 } else {
-                    sOcarinaButtonCEnvG += g;
+                    onpu_eag += g;
                 }
-                if (sOcarinaButtonCEnvB >= sOcarinaButtonCEnvColors[sOcarinaNoteFlashColorIndex][2]) {
-                    sOcarinaButtonCEnvB -= b;
+                if (onpu_ecb >= sOcarinaButtonAEnvColors[sOcarinaNoteFlashColorIndex][2]) {
+                    onpu_eab -= b;
                 } else {
-                    sOcarinaButtonCEnvB += b;
+                    onpu_eab += b;
+                }
+
+                r = ABS(onpu_pcr - sOcarinaButtonCPrimColors[sOcarinaNoteFlashColorIndex][0]) /
+                    sOcarinaNoteFlashTimer;
+                g = ABS(onpu_pcg - sOcarinaButtonCPrimColors[sOcarinaNoteFlashColorIndex][1]) /
+                    sOcarinaNoteFlashTimer;
+                b = ABS(onpu_pcb - sOcarinaButtonCPrimColors[sOcarinaNoteFlashColorIndex][2]) /
+                    sOcarinaNoteFlashTimer;
+
+                if (onpu_pcr >= sOcarinaButtonCPrimColors[sOcarinaNoteFlashColorIndex][0]) {
+                    onpu_pcr -= r;
+                } else {
+                    onpu_pcr += r;
+                }
+                if (onpu_pcg >= sOcarinaButtonCPrimColors[sOcarinaNoteFlashColorIndex][1]) {
+                    onpu_pcg -= g;
+                } else {
+                    onpu_pcg += g;
+                }
+                if (onpu_pcb >= sOcarinaButtonCPrimColors[sOcarinaNoteFlashColorIndex][2]) {
+                    onpu_pcb -= b;
+                } else {
+                    onpu_pcb += b;
+                }
+
+                r = ABS(onpu_ecr - sOcarinaButtonCEnvColors[sOcarinaNoteFlashColorIndex][0]) /
+                    sOcarinaNoteFlashTimer;
+                g = ABS(onpu_ecg - sOcarinaButtonCEnvColors[sOcarinaNoteFlashColorIndex][1]) /
+                    sOcarinaNoteFlashTimer;
+                b = ABS(onpu_ecb - sOcarinaButtonCEnvColors[sOcarinaNoteFlashColorIndex][2]) /
+                    sOcarinaNoteFlashTimer;
+
+                if (onpu_ecr >= sOcarinaButtonCEnvColors[sOcarinaNoteFlashColorIndex][0]) {
+                    onpu_ecr -= r;
+                } else {
+                    onpu_ecr += r;
+                }
+                if (onpu_ecg >= sOcarinaButtonCEnvColors[sOcarinaNoteFlashColorIndex][1]) {
+                    onpu_ecg -= g;
+                } else {
+                    onpu_ecg += g;
+                }
+                if (onpu_ecb >= sOcarinaButtonCEnvColors[sOcarinaNoteFlashColorIndex][2]) {
+                    onpu_ecb -= b;
+                } else {
+                    onpu_ecb += b;
                 }
 
                 sOcarinaNoteFlashTimer--;
                 if (sOcarinaNoteFlashTimer == 0) {
-                    sOcarinaButtonAPrimR = sOcarinaButtonAPrimColors[sOcarinaNoteFlashColorIndex][0];
-                    sOcarinaButtonAPrimG = sOcarinaButtonAPrimColors[sOcarinaNoteFlashColorIndex][1];
-                    sOcarinaButtonAPrimB = sOcarinaButtonAPrimColors[sOcarinaNoteFlashColorIndex][2];
-                    sOcarinaButtonAEnvR = sOcarinaButtonAEnvColors[sOcarinaNoteFlashColorIndex][0];
-                    sOcarinaButtonAEnvG = sOcarinaButtonAEnvColors[sOcarinaNoteFlashColorIndex][1];
-                    sOcarinaButtonAEnvB = sOcarinaButtonAEnvColors[sOcarinaNoteFlashColorIndex][2];
-                    sOcarinaButtonCPrimR = sOcarinaButtonCPrimColors[sOcarinaNoteFlashColorIndex][0];
-                    sOcarinaButtonCPrimG = sOcarinaButtonCPrimColors[sOcarinaNoteFlashColorIndex][1];
-                    sOcarinaButtonCPrimB = sOcarinaButtonCPrimColors[sOcarinaNoteFlashColorIndex][2];
-                    sOcarinaButtonCEnvR = sOcarinaButtonCEnvColors[sOcarinaNoteFlashColorIndex][0];
-                    sOcarinaButtonCEnvG = sOcarinaButtonCEnvColors[sOcarinaNoteFlashColorIndex][1];
-                    sOcarinaButtonCEnvB = sOcarinaButtonCEnvColors[sOcarinaNoteFlashColorIndex][2];
+                    onpu_par = sOcarinaButtonAPrimColors[sOcarinaNoteFlashColorIndex][0];
+                    onpu_pag = sOcarinaButtonAPrimColors[sOcarinaNoteFlashColorIndex][1];
+                    onpu_pab = sOcarinaButtonAPrimColors[sOcarinaNoteFlashColorIndex][2];
+                    onpu_ear = sOcarinaButtonAEnvColors[sOcarinaNoteFlashColorIndex][0];
+                    onpu_eag = sOcarinaButtonAEnvColors[sOcarinaNoteFlashColorIndex][1];
+                    onpu_eab = sOcarinaButtonAEnvColors[sOcarinaNoteFlashColorIndex][2];
+                    onpu_pcr = sOcarinaButtonCPrimColors[sOcarinaNoteFlashColorIndex][0];
+                    onpu_pcg = sOcarinaButtonCPrimColors[sOcarinaNoteFlashColorIndex][1];
+                    onpu_pcb = sOcarinaButtonCPrimColors[sOcarinaNoteFlashColorIndex][2];
+                    onpu_ecr = sOcarinaButtonCEnvColors[sOcarinaNoteFlashColorIndex][0];
+                    onpu_ecg = sOcarinaButtonCEnvColors[sOcarinaNoteFlashColorIndex][1];
+                    onpu_ecb = sOcarinaButtonCEnvColors[sOcarinaNoteFlashColorIndex][2];
                     sOcarinaNoteFlashTimer = 3;
                     sOcarinaNoteFlashColorIndex ^= 1;
                 }
 
                 msgCtx->stateTimer--;
                 if (msgCtx->stateTimer == 0) {
-                    AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_OFF);
+                    Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_OFF);
                     if (msgCtx->msgMode == MSGMODE_OCARINA_CORRECT_PLAYBACK) {
                         PRINTF(T("正解模範演奏=%x\n", "Correct Example Performance = %x\n"), msgCtx->lastPlayedSong);
-                        Message_ContinueTextbox(play, 0x86F); // Ocarina
+                        message_set2(play, 0x86F); // Ocarina
                         msgCtx->msgMode = MSGMODE_SONG_PLAYED;
                         msgCtx->textBoxType = TEXTBOX_TYPE_OCARINA;
                         msgCtx->stateTimer = 1;
                     } else if (msgCtx->msgMode == MSGMODE_SONG_PLAYBACK_SUCCESS) {
                         if (msgCtx->lastPlayedSong >= OCARINA_SONG_SARIAS) {
-                            Message_ContinueTextbox(play, 0x86F); // Ocarina
+                            message_set2(play, 0x86F); // Ocarina
                             msgCtx->msgMode = MSGMODE_SONG_PLAYED;
                             msgCtx->textBoxType = TEXTBOX_TYPE_OCARINA;
                             msgCtx->stateTimer = 1;
                         } else {
-                            Message_CloseTextbox(play);
+                            message_close(play);
                             play->msgCtx.ocarinaMode = OCARINA_MODE_04;
                         }
                     } else {
-                        Message_CloseTextbox(play);
+                        message_close(play);
                         play->msgCtx.ocarinaMode = OCARINA_MODE_03;
                     }
                 }
@@ -3414,8 +3414,8 @@ void Message_DrawMain(PlayState* play, Gfx** p) {
                     R_OCARINA_BUTTONS_YPOS_OFFSET = 1;
                     if (msgCtx->msgMode == MSGMODE_SONG_PLAYBACK_FAIL) {
                         PRINTF(T("ここここここ\n", "Here here here\n"));
-                        Message_ContinueTextbox(play, 0x88B); // red X background
-                        Message_Decode(play);
+                        message_set2(play, 0x88B); // red X background
+                        message_read(play);
                         msgCtx->msgMode = MSGMODE_SONG_PLAYBACK_NOTES_DROP;
                     } else {
                         msgCtx->msgMode = MSGMODE_OCARINA_NOTES_DROP;
@@ -3430,10 +3430,10 @@ void Message_DrawMain(PlayState* play, Gfx** p) {
                 }
                 R_OCARINA_BUTTONS_YPOS_OFFSET += R_OCARINA_BUTTONS_YPOS_OFFSET;
                 if (R_OCARINA_BUTTONS_YPOS_OFFSET >= 550) {
-                    sOcarinaButtonIndexBuf[0] = OCARINA_BTN_INVALID;
-                    sOcarinaButtonAlphaValues[0] = sOcarinaButtonAlphaValues[1] = sOcarinaButtonAlphaValues[2] =
-                        sOcarinaButtonAlphaValues[3] = sOcarinaButtonAlphaValues[4] = sOcarinaButtonAlphaValues[5] =
-                            sOcarinaButtonAlphaValues[6] = sOcarinaButtonAlphaValues[7] = sOcarinaButtonAlphaValues[8] =
+                    onpu_buff[0] = OCARINA_BTN_INVALID;
+                    onpu_alpha[0] = onpu_alpha[1] = onpu_alpha[2] =
+                        onpu_alpha[3] = onpu_alpha[4] = onpu_alpha[5] =
+                            onpu_alpha[6] = onpu_alpha[7] = onpu_alpha[8] =
                                 0;
                     if (msgCtx->msgMode == MSGMODE_SONG_PLAYBACK_NOTES_DROP) {
                         msgCtx->msgMode = MSGMODE_OCARINA_AWAIT_INPUT;
@@ -3445,20 +3445,20 @@ void Message_DrawMain(PlayState* play, Gfx** p) {
             case MSGMODE_SONG_PLAYED:
                 msgCtx->stateTimer--;
                 if (msgCtx->stateTimer == 0) {
-                    AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_OFF);
+                    Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_OFF);
                     PRINTF_COLOR_GREEN();
                     PRINTF("Na_StopOcarinaMode();\n");
                     PRINTF("Na_StopOcarinaMode();\n");
                     PRINTF("Na_StopOcarinaMode();\n");
                     PRINTF_RST();
-                    Message_Decode(play);
+                    message_read(play);
                     msgCtx->msgMode = MSGMODE_SETUP_DISPLAY_SONG_PLAYED;
-                    msgCtx->ocarinaStaff = AudioOcarina_GetPlayingStaff();
-                    msgCtx->ocarinaStaff->pos = sOcarinaButtonIndexBufPos = 0;
-                    Message_ResetOcarinaNoteState();
+                    msgCtx->ocarinaStaff = Na_GetOcarinaInfoWork();
+                    msgCtx->ocarinaStaff->pos = onpu_pt = 0;
+                    onpu_buff_reset();
                     if (msgCtx->lastPlayedSong >= OCARINA_SONG_SARIAS &&
                         msgCtx->lastPlayedSong < OCARINA_SONG_MEMORY_GAME) {
-                        Actor_Spawn(&play->actorCtx, play,
+                        Actor_info_make_actor(&play->actorCtx, play,
                                     sOcarinaEffectActorIds[msgCtx->lastPlayedSong - OCARINA_SONG_SARIAS],
                                     player->actor.world.pos.x, player->actor.world.pos.y, player->actor.world.pos.z, 0,
                                     0, 0, sOcarinaEffectActorParams[msgCtx->lastPlayedSong - OCARINA_SONG_SARIAS]);
@@ -3467,12 +3467,12 @@ void Message_DrawMain(PlayState* play, Gfx** p) {
                 break;
             case MSGMODE_SETUP_DISPLAY_SONG_PLAYED:
                 DRAW_TEXT(play, &gfx, false);
-                AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_DEFAULT);
-                AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_DEFAULT);
-                AudioOcarina_SetPlaybackSong(msgCtx->lastPlayedSong + 1, 1);
+                Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_DEFAULT);
+                Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_DEFAULT);
+                Na_SetOcarinaSeq(msgCtx->lastPlayedSong + 1, 1);
                 if (msgCtx->lastPlayedSong != OCARINA_SONG_SCARECROW_SPAWN) {
-                    Audio_PlayFanfare(sOcarinaSongFanfares[msgCtx->lastPlayedSong]);
-                    Audio_SetSfxBanksMute(0x20);
+                    Na_StartFanfare(sOcarinaSongFanfares[msgCtx->lastPlayedSong]);
+                    Nai_FxSetLockFlag(0x20);
                 }
                 play->msgCtx.ocarinaMode = OCARINA_MODE_01;
                 if (msgCtx->ocarinaAction == OCARINA_ACTION_FREE_PLAY) {
@@ -3481,7 +3481,7 @@ void Message_DrawMain(PlayState* play, Gfx** p) {
                 if (msgCtx->ocarinaAction == OCARINA_ACTION_CHECK_NOWARP) {
                     msgCtx->ocarinaAction = OCARINA_ACTION_CHECK_NOWARP_DONE;
                 }
-                sOcarinaButtonIndexBufPos = 0;
+                onpu_pt = 0;
                 msgCtx->msgMode = MSGMODE_DISPLAY_SONG_PLAYED;
                 break;
             case MSGMODE_SONG_DEMONSTRATION_SELECT_INSTRUMENT:
@@ -3490,27 +3490,27 @@ void Message_DrawMain(PlayState* play, Gfx** p) {
                     PRINTF(T("ocarina_no=%d  選曲=%d\n", "ocarina_no=%d  Song Chosen=%d\n"), msgCtx->ocarinaAction,
                            0x16);
                     if (msgCtx->ocarinaAction < OCARINA_ACTION_TEACH_SARIA) {
-                        AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_HARP);
+                        Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_HARP);
                     } else if (msgCtx->ocarinaAction == OCARINA_ACTION_TEACH_EPONA) {
-                        AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_MALON);
+                        Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_MALON);
                     } else if (msgCtx->ocarinaAction == OCARINA_ACTION_TEACH_LULLABY) {
-                        AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_WHISTLE);
+                        Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_WHISTLE);
                     } else if (msgCtx->ocarinaAction == OCARINA_ACTION_TEACH_STORMS) {
-                        AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_GRIND_ORGAN);
+                        Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_GRIND_ORGAN);
                     } else {
-                        AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_DEFAULT);
+                        Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_DEFAULT);
                     }
                     PRINTF(T("模範演奏=%x\n", "Example Performance = %x\n"),
                            msgCtx->ocarinaAction - OCARINA_ACTION_TEACH_MINUET);
-                    AudioOcarina_SetPlaybackSong(msgCtx->ocarinaAction - OCARINA_ACTION_TEACH_MINUET + 1, 2);
-                    sOcarinaButtonIndexBufPos = 0;
+                    Na_SetOcarinaSeq(msgCtx->ocarinaAction - OCARINA_ACTION_TEACH_MINUET + 1, 2);
+                    onpu_pt = 0;
                     msgCtx->msgMode = MSGMODE_SONG_DEMONSTRATION;
                 }
                 DRAW_TEXT(play, &gfx, false);
                 break;
             case MSGMODE_DISPLAY_SONG_PLAYED_TEXT_BEGIN:
-                Message_ContinueTextbox(play, msgCtx->lastPlayedSong + 0x893); // You played [song name]
-                Message_Decode(play);
+                message_set2(play, msgCtx->lastPlayedSong + 0x893); // You played [song name]
+                message_read(play);
                 msgCtx->msgMode = MSGMODE_DISPLAY_SONG_PLAYED_TEXT;
                 msgCtx->stateTimer = 20;
                 DRAW_TEXT(play, &gfx, false);
@@ -3523,8 +3523,8 @@ void Message_DrawMain(PlayState* play, Gfx** p) {
                 DRAW_TEXT(play, &gfx, false);
                 break;
             case MSGMODE_SONG_PLAYED_ACT_BEGIN:
-                AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_OFF);
-                Message_ResetOcarinaNoteState();
+                Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_OFF);
+                onpu_buff_reset();
                 msgCtx->msgMode = MSGMODE_SONG_PLAYED_ACT;
                 msgCtx->stateTimer = 2;
                 DRAW_TEXT(play, &gfx, false);
@@ -3536,17 +3536,17 @@ void Message_DrawMain(PlayState* play, Gfx** p) {
                         !(msgCtx->ocarinaAction >= OCARINA_ACTION_PLAYBACK_MINUET &&
                           msgCtx->ocarinaAction <= OCARINA_ACTION_PLAYBACK_PRELUDE)) {
                         if (msgCtx->disableWarpSongs || interfaceCtx->restrictions.warpSongs == 3) {
-                            Message_StartTextbox(play, 0x88C, NULL); // "You can't warp here!"
+                            message_set(play, 0x88C, NULL); // "You can't warp here!"
                             play->msgCtx.ocarinaMode = OCARINA_MODE_04;
                         } else if (GET_EVENTINF_INGO_RACE_STATE() != INGO_RACE_STATE_HORSE_RENTAL_PERIOD) {
-                            Message_StartTextbox(play, msgCtx->lastPlayedSong + 0x88D,
+                            message_set(play, msgCtx->lastPlayedSong + 0x88D,
                                                  NULL); // "Warp to [place name]?"
                             play->msgCtx.ocarinaMode = OCARINA_MODE_01;
                         } else {
-                            Message_CloseTextbox(play);
+                            message_close(play);
                         }
                     } else {
-                        Message_CloseTextbox(play);
+                        message_close(play);
                         if (msgCtx->lastPlayedSong == OCARINA_SONG_EPONAS) {
                             R_EPONAS_SONG_PLAYED = true;
                         }
@@ -3585,7 +3585,7 @@ void Message_DrawMain(PlayState* play, Gfx** p) {
                 break;
             case MSGMODE_DISPLAY_SONG_PLAYED:
             case MSGMODE_SONG_DEMONSTRATION:
-                msgCtx->ocarinaStaff = AudioOcarina_GetPlaybackStaff();
+                msgCtx->ocarinaStaff = Na_GetOcarinaSeqInfoWork();
                 if (msgCtx->ocarinaStaff->state == 0) {
                     // NOLINTBEGIN
                     if (msgCtx->msgMode == MSGMODE_DISPLAY_SONG_PLAYED)
@@ -3594,17 +3594,17 @@ void Message_DrawMain(PlayState* play, Gfx** p) {
                         msgCtx->msgMode = MSGMODE_SONG_DEMONSTRATION_DONE;
                     // NOLINTEND
                     PRINTF("onpu_buff[%d]=%x\n", msgCtx->ocarinaStaff->pos,
-                           sOcarinaButtonIndexBuf[msgCtx->ocarinaStaff->pos]);
+                           onpu_buff[msgCtx->ocarinaStaff->pos]);
                 } else {
-                    if (sOcarinaButtonIndexBufPos != 0 && msgCtx->ocarinaStaff->pos == 1) {
-                        sOcarinaButtonIndexBufPos = 0;
+                    if (onpu_pt != 0 && msgCtx->ocarinaStaff->pos == 1) {
+                        onpu_pt = 0;
                     }
                     if (((u32)msgCtx->ocarinaStaff->pos != 0) &&
-                        (sOcarinaButtonIndexBufPos == msgCtx->ocarinaStaff->pos - 1)) {
-                        msgCtx->lastOcarinaButtonIndex = sOcarinaButtonIndexBuf[msgCtx->ocarinaStaff->pos - 1] =
+                        (onpu_pt == msgCtx->ocarinaStaff->pos - 1)) {
+                        msgCtx->lastOcarinaButtonIndex = onpu_buff[msgCtx->ocarinaStaff->pos - 1] =
                             msgCtx->ocarinaStaff->buttonIndex;
-                        sOcarinaButtonIndexBuf[msgCtx->ocarinaStaff->pos] = OCARINA_BTN_INVALID;
-                        sOcarinaButtonIndexBufPos++;
+                        onpu_buff[msgCtx->ocarinaStaff->pos] = OCARINA_BTN_INVALID;
+                        onpu_pt++;
                     }
                 }
                 FALLTHROUGH;
@@ -3612,29 +3612,29 @@ void Message_DrawMain(PlayState* play, Gfx** p) {
                 DRAW_TEXT(play, &gfx, false);
                 break;
             case MSGMODE_SONG_PLAYBACK:
-                msgCtx->ocarinaStaff = AudioOcarina_GetPlayingStaff();
+                msgCtx->ocarinaStaff = Na_GetOcarinaInfoWork();
                 if (((u32)msgCtx->ocarinaStaff->pos != 0) &&
-                    (sOcarinaButtonIndexBufPos == msgCtx->ocarinaStaff->pos - 1)) {
-                    sOcarinaButtonIndexBuf[msgCtx->ocarinaStaff->pos - 1] = msgCtx->ocarinaStaff->buttonIndex;
-                    sOcarinaButtonIndexBuf[msgCtx->ocarinaStaff->pos] = OCARINA_BTN_INVALID;
-                    sOcarinaButtonIndexBufPos++;
+                    (onpu_pt == msgCtx->ocarinaStaff->pos - 1)) {
+                    onpu_buff[msgCtx->ocarinaStaff->pos - 1] = msgCtx->ocarinaStaff->buttonIndex;
+                    onpu_buff[msgCtx->ocarinaStaff->pos] = OCARINA_BTN_INVALID;
+                    onpu_pt++;
                 }
                 if (msgCtx->ocarinaStaff->state < OCARINA_SONG_MEMORY_GAME) {
                     PRINTF("M_OCARINA20 : ocarina_no=%x    status=%x\n", msgCtx->ocarinaAction,
                            msgCtx->ocarinaStaff->state);
                     msgCtx->lastPlayedSong = msgCtx->ocarinaStaff->state;
                     msgCtx->msgMode = MSGMODE_SONG_PLAYBACK_SUCCESS;
-                    Item_Give(play, ITEM_SONG_MINUET + gOcarinaSongItemMap[msgCtx->ocarinaStaff->state]);
+                    item_get_setting(play, ITEM_SONG_MINUET + ocarina_number[msgCtx->ocarinaStaff->state]);
                     PRINTF_COLOR_YELLOW();
                     PRINTF(T("z_message.c 取得メロディ＝%d\n", "z_message.c Song Acquired = %d\n"),
                            ITEM_SONG_MINUET + msgCtx->ocarinaStaff->state);
                     PRINTF_RST();
                     msgCtx->stateTimer = 20;
-                    Audio_PlaySfxGeneral(NA_SE_SY_TRE_BOX_APPEAR, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                         &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                    Nai_FxFlagEntry(NA_SE_SY_TRE_BOX_APPEAR, &_dummy_zero_f, 4, &_dummy_one,
+                                         &_dummy_one, &_dummy_zero_s8);
                 } else if (msgCtx->ocarinaStaff->state == 0xFF) {
-                    Audio_PlaySfxGeneral(NA_SE_SY_OCARINA_ERROR, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                         &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                    Nai_FxFlagEntry(NA_SE_SY_OCARINA_ERROR, &_dummy_zero_f, 4, &_dummy_one,
+                                         &_dummy_one, &_dummy_zero_s8);
                     msgCtx->stateTimer = 10;
                     msgCtx->msgMode = MSGMODE_SONG_PLAYBACK_FAIL;
                 }
@@ -3642,65 +3642,65 @@ void Message_DrawMain(PlayState* play, Gfx** p) {
                 break;
             case MSGMODE_OCARINA_AWAIT_INPUT:
                 DRAW_TEXT(play, &gfx, false);
-                if (Message_ShouldAdvance(play)) {
-                    Message_StartOcarina(play, msgCtx->ocarinaAction);
+                if (pad_on_check(play)) {
+                    ocarina_set(play, msgCtx->ocarinaAction);
                 }
                 break;
             case MSGMODE_SCARECROW_LONG_RECORDING_START:
                 PRINTF(T("案山子録音 初期化\n", "Scarecrow Recording Initialization\n"));
-                AudioOcarina_SetRecordingState(OCARINA_RECORD_SCARECROW_LONG);
-                AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_DEFAULT);
-                msgCtx->ocarinaStaff = AudioOcarina_GetRecordingStaff();
-                msgCtx->ocarinaStaff->pos = sOcarinaButtonIndexBufPos = 0;
-                sOcarinaButtonIndexBufLen = 0;
-                Message_ResetOcarinaNoteState();
+                Na_SetOcarinaRecModeFlag(OCARINA_RECORD_SCARECROW_LONG);
+                Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_DEFAULT);
+                msgCtx->ocarinaStaff = Na_GetOcarinaRecInfoWork();
+                msgCtx->ocarinaStaff->pos = onpu_pt = 0;
+                onpu_ct = 0;
+                onpu_buff_reset();
                 msgCtx->msgMode = MSGMODE_SCARECROW_LONG_RECORDING_ONGOING;
                 DRAW_TEXT(play, &gfx, false);
                 break;
             case MSGMODE_SCARECROW_LONG_RECORDING_ONGOING:
-                msgCtx->ocarinaStaff = AudioOcarina_GetRecordingStaff();
-                PRINTF("\nonpu_pt=%d, locate=%d", sOcarinaButtonIndexBufPos, msgCtx->ocarinaStaff->pos);
+                msgCtx->ocarinaStaff = Na_GetOcarinaRecInfoWork();
+                PRINTF("\nonpu_pt=%d, locate=%d", onpu_pt, msgCtx->ocarinaStaff->pos);
                 if (((u32)msgCtx->ocarinaStaff->pos != 0) &&
-                    (sOcarinaButtonIndexBufPos == msgCtx->ocarinaStaff->pos - 1)) {
-                    if (sOcarinaButtonIndexBufLen >= 8) {
-                        for (i = 0, buttonIndexPos = sOcarinaButtonIndexBufLen - 8; i < 8; i++, buttonIndexPos++) {
-                            sOcarinaButtonIndexBuf[buttonIndexPos] = sOcarinaButtonIndexBuf[buttonIndexPos + 1];
+                    (onpu_pt == msgCtx->ocarinaStaff->pos - 1)) {
+                    if (onpu_ct >= 8) {
+                        for (i = 0, buttonIndexPos = onpu_ct - 8; i < 8; i++, buttonIndexPos++) {
+                            onpu_buff[buttonIndexPos] = onpu_buff[buttonIndexPos + 1];
                         }
-                        sOcarinaButtonIndexBufLen--;
+                        onpu_ct--;
                     }
-                    PRINTF(T("    入力ボタン【%d】=%d", "    Button Entered[%d]=%d"), sOcarinaButtonIndexBufLen,
+                    PRINTF(T("    入力ボタン【%d】=%d", "    Button Entered[%d]=%d"), onpu_ct,
                            msgCtx->ocarinaStaff->buttonIndex);
-                    msgCtx->lastOcarinaButtonIndex = sOcarinaButtonIndexBuf[sOcarinaButtonIndexBufLen] =
+                    msgCtx->lastOcarinaButtonIndex = onpu_buff[onpu_ct] =
                         msgCtx->ocarinaStaff->buttonIndex;
-                    sOcarinaButtonIndexBufLen++;
-                    sOcarinaButtonIndexBuf[sOcarinaButtonIndexBufLen] = OCARINA_BTN_INVALID;
-                    sOcarinaButtonIndexBufPos++;
+                    onpu_ct++;
+                    onpu_buff[onpu_ct] = OCARINA_BTN_INVALID;
+                    onpu_pt++;
                     if (msgCtx->ocarinaStaff->pos == 8) {
-                        sOcarinaButtonIndexBufPos = 0;
+                        onpu_pt = 0;
                     }
                 }
                 if (msgCtx->ocarinaStaff->state == OCARINA_RECORD_OFF || CHECK_BTN_ALL(input->press.button, BTN_B)) {
-                    if (sOcarinaButtonIndexBufLen != 0) {
+                    if (onpu_ct != 0) {
                         PRINTF(T("録音終了！！！！！！！！！  message->info->status=%d \n",
                                  "Recording complete!!!!!!!!!  message->info->status=%d \n"),
                                msgCtx->ocarinaStaff->state);
-                        gSaveContext.save.info.scarecrowLongSongSet = true;
+                        z_common_data.save.info.scarecrowLongSongSet = true;
                     }
-                    Audio_PlaySfxGeneral(NA_SE_SY_OCARINA_ERROR, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                         &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                    Nai_FxFlagEntry(NA_SE_SY_OCARINA_ERROR, &_dummy_zero_f, 4, &_dummy_one,
+                                         &_dummy_one, &_dummy_zero_s8);
                     PRINTF("aaaaaaaaaaaaaa\n");
-                    AudioOcarina_SetRecordingState(OCARINA_RECORD_OFF);
+                    Na_SetOcarinaRecModeFlag(OCARINA_RECORD_OFF);
                     msgCtx->stateTimer = 10;
                     play->msgCtx.ocarinaMode = OCARINA_MODE_04;
-                    Message_CloseTextbox(play);
+                    message_close(play);
                     PRINTF(
                         T("録音終了！！！！！！！！！録音終了\n", "Recording complete!!!!!!!!! Recording Complete\n"));
                     PRINTF_COLOR_YELLOW();
                     PRINTF("\n====================================================================\n");
-                    MemCpy(gSaveContext.save.info.scarecrowLongSong, gScarecrowLongSongPtr,
-                           sizeof(gSaveContext.save.info.scarecrowLongSong));
-                    for (i = 0; i < ARRAY_COUNT(gSaveContext.save.info.scarecrowLongSong); i++) {
-                        PRINTF("%d, ", gSaveContext.save.info.scarecrowLongSong[i]);
+                    Memcpy(z_common_data.save.info.scarecrowLongSong, na_oca_rec_buf_ptr,
+                           sizeof(z_common_data.save.info.scarecrowLongSong));
+                    for (i = 0; i < ARRAY_COUNT(z_common_data.save.info.scarecrowLongSong); i++) {
+                        PRINTF("%d, ", z_common_data.save.info.scarecrowLongSong[i]);
                     }
                     PRINTF_RST();
                     PRINTF("\n====================================================================\n");
@@ -3709,113 +3709,113 @@ void Message_DrawMain(PlayState* play, Gfx** p) {
                 break;
             case MSGMODE_SCARECROW_LONG_PLAYBACK:
             case MSGMODE_SCARECROW_SPAWN_PLAYBACK:
-                msgCtx->ocarinaStaff = AudioOcarina_GetPlaybackStaff();
+                msgCtx->ocarinaStaff = Na_GetOcarinaSeqInfoWork();
                 if (((u32)msgCtx->ocarinaStaff->pos != 0) &&
-                    (sOcarinaButtonIndexBufPos == msgCtx->ocarinaStaff->pos - 1)) {
-                    if (sOcarinaButtonIndexBufLen >= 8) {
-                        for (i = 0, buttonIndexPos = sOcarinaButtonIndexBufLen - 8; i < 8; i++, buttonIndexPos++) {
-                            sOcarinaButtonIndexBuf[buttonIndexPos] = sOcarinaButtonIndexBuf[buttonIndexPos + 1];
+                    (onpu_pt == msgCtx->ocarinaStaff->pos - 1)) {
+                    if (onpu_ct >= 8) {
+                        for (i = 0, buttonIndexPos = onpu_ct - 8; i < 8; i++, buttonIndexPos++) {
+                            onpu_buff[buttonIndexPos] = onpu_buff[buttonIndexPos + 1];
                         }
-                        sOcarinaButtonIndexBufLen--;
+                        onpu_ct--;
                     }
-                    sOcarinaButtonIndexBuf[sOcarinaButtonIndexBufLen] = msgCtx->ocarinaStaff->buttonIndex;
-                    sOcarinaButtonIndexBufLen++;
-                    sOcarinaButtonIndexBuf[sOcarinaButtonIndexBufLen] = OCARINA_BTN_INVALID;
-                    sOcarinaButtonIndexBufPos++;
+                    onpu_buff[onpu_ct] = msgCtx->ocarinaStaff->buttonIndex;
+                    onpu_ct++;
+                    onpu_buff[onpu_ct] = OCARINA_BTN_INVALID;
+                    onpu_pt++;
                     if (msgCtx->ocarinaStaff->pos == 8) {
-                        sOcarinaButtonIndexBufLen = sOcarinaButtonIndexBufPos = 0;
+                        onpu_ct = onpu_pt = 0;
                     }
                 }
                 PRINTF("status=%d (%d)\n", msgCtx->ocarinaStaff->state, 0);
                 if (msgCtx->stateTimer == 0) {
                     if (msgCtx->ocarinaStaff->state == 0) {
                         PRINTF("bbbbbbbbbbb\n");
-                        AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_OFF);
+                        Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_OFF);
                         play->msgCtx.ocarinaMode = OCARINA_MODE_0F;
-                        Message_CloseTextbox(play);
+                        message_close(play);
                     }
                 } else {
                     msgCtx->stateTimer--;
                 }
                 break;
             case MSGMODE_SCARECROW_SPAWN_RECORDING_START:
-                AudioOcarina_SetRecordingState(OCARINA_RECORD_SCARECROW_SPAWN);
-                AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_DEFAULT);
+                Na_SetOcarinaRecModeFlag(OCARINA_RECORD_SCARECROW_SPAWN);
+                Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_DEFAULT);
                 msgCtx->msgMode = MSGMODE_SCARECROW_SPAWN_RECORDING_ONGOING;
                 DRAW_TEXT(play, &gfx, false);
                 break;
             case MSGMODE_SCARECROW_SPAWN_RECORDING_ONGOING:
-                msgCtx->ocarinaStaff = AudioOcarina_GetRecordingStaff();
+                msgCtx->ocarinaStaff = Na_GetOcarinaRecInfoWork();
                 if (((u32)msgCtx->ocarinaStaff->pos != 0) &&
-                    (sOcarinaButtonIndexBufPos == msgCtx->ocarinaStaff->pos - 1)) {
-                    msgCtx->lastOcarinaButtonIndex = sOcarinaButtonIndexBuf[sOcarinaButtonIndexBufPos] =
+                    (onpu_pt == msgCtx->ocarinaStaff->pos - 1)) {
+                    msgCtx->lastOcarinaButtonIndex = onpu_buff[onpu_pt] =
                         msgCtx->ocarinaStaff->buttonIndex;
-                    sOcarinaButtonIndexBufPos++;
-                    sOcarinaButtonIndexBuf[sOcarinaButtonIndexBufPos] = OCARINA_BTN_INVALID;
+                    onpu_pt++;
+                    onpu_buff[onpu_pt] = OCARINA_BTN_INVALID;
                 }
                 if (msgCtx->ocarinaStaff->state == OCARINA_RECORD_OFF) {
                     PRINTF(T("８音録音ＯＫ！\n", "8 Note Recording OK!\n"));
                     msgCtx->stateTimer = 20;
-                    gSaveContext.save.info.scarecrowSpawnSongSet = true;
+                    z_common_data.save.info.scarecrowSpawnSongSet = true;
                     msgCtx->msgMode = MSGMODE_SCARECROW_SPAWN_RECORDING_DONE;
-                    Audio_PlaySfxGeneral(NA_SE_SY_TRE_BOX_APPEAR, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                         &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                    Nai_FxFlagEntry(NA_SE_SY_TRE_BOX_APPEAR, &_dummy_zero_f, 4, &_dummy_one,
+                                         &_dummy_one, &_dummy_zero_s8);
                     PRINTF_COLOR_YELLOW();
                     PRINTF("\n====================================================================\n");
-                    MemCpy(gSaveContext.save.info.scarecrowSpawnSong, gScarecrowSpawnSongPtr,
-                           sizeof(gSaveContext.save.info.scarecrowSpawnSong));
-                    for (i = 0; i < ARRAY_COUNT(gSaveContext.save.info.scarecrowSpawnSong); i++) {
-                        PRINTF("%d, ", gSaveContext.save.info.scarecrowSpawnSong[i]);
+                    Memcpy(z_common_data.save.info.scarecrowSpawnSong, na_oca_rec_buf2_ptr,
+                           sizeof(z_common_data.save.info.scarecrowSpawnSong));
+                    for (i = 0; i < ARRAY_COUNT(z_common_data.save.info.scarecrowSpawnSong); i++) {
+                        PRINTF("%d, ", z_common_data.save.info.scarecrowSpawnSong[i]);
                     }
                     PRINTF_RST();
                     PRINTF("\n====================================================================\n");
                 } else if (msgCtx->ocarinaStaff->state == OCARINA_RECORD_REJECTED ||
                            CHECK_BTN_ALL(input->press.button, BTN_B)) {
                     PRINTF(T("すでに存在する曲吹いた！！！ \n", "Played an existing song!!! \n"));
-                    AudioOcarina_SetRecordingState(OCARINA_RECORD_OFF);
-                    Audio_PlaySfxGeneral(NA_SE_SY_OCARINA_ERROR, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                         &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
-                    Message_CloseTextbox(play);
+                    Na_SetOcarinaRecModeFlag(OCARINA_RECORD_OFF);
+                    Nai_FxFlagEntry(NA_SE_SY_OCARINA_ERROR, &_dummy_zero_f, 4, &_dummy_one,
+                                         &_dummy_one, &_dummy_zero_s8);
+                    message_close(play);
                     msgCtx->msgMode = MSGMODE_SCARECROW_SPAWN_RECORDING_FAILED;
                 }
                 DRAW_TEXT(play, &gfx, false);
                 break;
             case MSGMODE_SCARECROW_SPAWN_RECORDING_FAILED:
                 PRINTF("cccccccccccc\n");
-                AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_OFF);
-                Message_StartTextbox(play, 0x40AD, NULL); // Bonooru doesn't remember your song
+                Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_OFF);
+                message_set(play, 0x40AD, NULL); // Bonooru doesn't remember your song
                 play->msgCtx.ocarinaMode = OCARINA_MODE_04;
                 break;
             case MSGMODE_MEMORY_GAME_START:
-                AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_DEFAULT);
-                AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_FLUTE);
-                AudioOcarina_MemoryGameInit(gSaveContext.save.info.playerData.ocarinaGameRoundNum);
-                msgCtx->ocarinaStaff = AudioOcarina_GetPlaybackStaff();
-                msgCtx->ocarinaStaff->pos = sOcarinaButtonIndexBufPos = 0;
-                Message_ResetOcarinaNoteState();
-                AudioOcarina_SetPlaybackSong(OCARINA_SONG_MEMORY_GAME + 1, 1);
+                Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_DEFAULT);
+                Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_FLUTE);
+                Na_InitOcarinaGameWork(z_common_data.save.info.playerData.ocarinaGameRoundNum);
+                msgCtx->ocarinaStaff = Na_GetOcarinaSeqInfoWork();
+                msgCtx->ocarinaStaff->pos = onpu_pt = 0;
+                onpu_buff_reset();
+                Na_SetOcarinaSeq(OCARINA_SONG_MEMORY_GAME + 1, 1);
                 msgCtx->msgMode = MSGMODE_MEMORY_GAME_LEFT_SKULLKID_PLAYING;
                 msgCtx->stateTimer = 2;
                 break;
             case MSGMODE_MEMORY_GAME_LEFT_SKULLKID_PLAYING:
             case MSGMODE_MEMORY_GAME_RIGHT_SKULLKID_PLAYING:
-                Audio_PlaySfxGeneral(NA_SE_SY_METRONOME_LV - SFX_FLAG, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                     &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
-                msgCtx->ocarinaStaff = AudioOcarina_GetPlaybackStaff();
+                Nai_FxFlagEntry(NA_SE_SY_METRONOME_LV - SFX_FLAG, &_dummy_zero_f, 4, &_dummy_one,
+                                     &_dummy_one, &_dummy_zero_s8);
+                msgCtx->ocarinaStaff = Na_GetOcarinaSeqInfoWork();
                 if (((u32)msgCtx->ocarinaStaff->pos != 0) &&
-                    (sOcarinaButtonIndexBufPos == msgCtx->ocarinaStaff->pos - 1)) {
-                    sOcarinaButtonIndexBuf[msgCtx->ocarinaStaff->pos - 1] = msgCtx->ocarinaStaff->buttonIndex;
-                    sOcarinaButtonIndexBuf[msgCtx->ocarinaStaff->pos] = OCARINA_BTN_INVALID;
-                    sOcarinaButtonIndexBufPos++;
+                    (onpu_pt == msgCtx->ocarinaStaff->pos - 1)) {
+                    onpu_buff[msgCtx->ocarinaStaff->pos - 1] = msgCtx->ocarinaStaff->buttonIndex;
+                    onpu_buff[msgCtx->ocarinaStaff->pos] = OCARINA_BTN_INVALID;
+                    onpu_pt++;
                 }
                 if (msgCtx->stateTimer == 0) {
                     if (msgCtx->ocarinaStaff->state == 0) {
                         if (msgCtx->msgMode == MSGMODE_MEMORY_GAME_LEFT_SKULLKID_PLAYING) {
-                            Audio_PlaySfxGeneral(NA_SE_SY_METRONOME, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                            Nai_FxFlagEntry(NA_SE_SY_METRONOME, &_dummy_zero_f, 4, &_dummy_one,
+                                                 &_dummy_one, &_dummy_zero_s8);
                         } else {
-                            Audio_PlaySfxGeneral(NA_SE_SY_METRONOME_2, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                            Nai_FxFlagEntry(NA_SE_SY_METRONOME_2, &_dummy_zero_f, 4, &_dummy_one,
+                                                 &_dummy_one, &_dummy_zero_s8);
                         }
                         msgCtx->msgMode++;
                     }
@@ -3825,56 +3825,56 @@ void Message_DrawMain(PlayState* play, Gfx** p) {
                 break;
             case MSGMODE_MEMORY_GAME_LEFT_SKULLKID_WAIT:
             case MSGMODE_MEMORY_GAME_RIGHT_SKULLKID_WAIT:
-                msgCtx->ocarinaStaff = AudioOcarina_GetPlaybackStaff();
+                msgCtx->ocarinaStaff = Na_GetOcarinaSeqInfoWork();
                 if (((u32)msgCtx->ocarinaStaff->pos != 0) &&
-                    (sOcarinaButtonIndexBufPos == msgCtx->ocarinaStaff->pos - 1)) {
-                    sOcarinaButtonIndexBuf[msgCtx->ocarinaStaff->pos - 1] = msgCtx->ocarinaStaff->buttonIndex;
-                    sOcarinaButtonIndexBuf[msgCtx->ocarinaStaff->pos] = OCARINA_BTN_INVALID;
-                    sOcarinaButtonIndexBufPos++;
+                    (onpu_pt == msgCtx->ocarinaStaff->pos - 1)) {
+                    onpu_buff[msgCtx->ocarinaStaff->pos - 1] = msgCtx->ocarinaStaff->buttonIndex;
+                    onpu_buff[msgCtx->ocarinaStaff->pos] = OCARINA_BTN_INVALID;
+                    onpu_pt++;
                 }
                 break;
             case MSGMODE_MEMORY_GAME_PLAYER_PLAYING:
-                Audio_PlaySfxGeneral(NA_SE_SY_METRONOME_LV - SFX_FLAG, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                     &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
-                msgCtx->ocarinaStaff = AudioOcarina_GetPlayingStaff();
+                Nai_FxFlagEntry(NA_SE_SY_METRONOME_LV - SFX_FLAG, &_dummy_zero_f, 4, &_dummy_one,
+                                     &_dummy_one, &_dummy_zero_s8);
+                msgCtx->ocarinaStaff = Na_GetOcarinaInfoWork();
                 if (((u32)msgCtx->ocarinaStaff->pos != 0) &&
-                    (sOcarinaButtonIndexBufPos == msgCtx->ocarinaStaff->pos - 1)) {
-                    sOcarinaButtonIndexBuf[msgCtx->ocarinaStaff->pos - 1] = msgCtx->ocarinaStaff->buttonIndex;
-                    sOcarinaButtonIndexBuf[msgCtx->ocarinaStaff->pos] = OCARINA_BTN_INVALID;
-                    sOcarinaButtonIndexBufPos++;
+                    (onpu_pt == msgCtx->ocarinaStaff->pos - 1)) {
+                    onpu_buff[msgCtx->ocarinaStaff->pos - 1] = msgCtx->ocarinaStaff->buttonIndex;
+                    onpu_buff[msgCtx->ocarinaStaff->pos] = OCARINA_BTN_INVALID;
+                    onpu_pt++;
                 }
                 if (msgCtx->ocarinaStaff->state == 0xFF) {
                     PRINTF(T("輪唱失敗！！！！！！！！！\n", "Musical round failed!!!!!!!!!\n"));
-                    AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_OFF);
-                    Audio_PlaySfxGeneral(NA_SE_SY_OCARINA_ERROR, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                         &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                    Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_OFF);
+                    Nai_FxFlagEntry(NA_SE_SY_OCARINA_ERROR, &_dummy_zero_f, 4, &_dummy_one,
+                                         &_dummy_one, &_dummy_zero_s8);
                     msgCtx->stateTimer = 10;
                     play->msgCtx.ocarinaMode = OCARINA_MODE_03;
                 } else if (msgCtx->ocarinaStaff->state == OCARINA_SONG_MEMORY_GAME) {
                     PRINTF(T("輪唱成功！！！！！！！！！\n", "Musical round succeeded!!!!!!!!!\n"));
-                    Audio_PlaySfxGeneral(NA_SE_SY_GET_ITEM, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                         &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                    Nai_FxFlagEntry(NA_SE_SY_GET_ITEM, &_dummy_zero_f, 4, &_dummy_one,
+                                         &_dummy_one, &_dummy_zero_s8);
                     msgCtx->msgMode = MSGMODE_MEMORY_GAME_ROUND_SUCCESS;
                     msgCtx->stateTimer = 30;
                 }
                 DRAW_TEXT(play, &gfx, false);
                 break;
             case MSGMODE_MEMORY_GAME_ROUND_SUCCESS:
-                msgCtx->ocarinaStaff = AudioOcarina_GetPlayingStaff();
+                msgCtx->ocarinaStaff = Na_GetOcarinaInfoWork();
                 if (((u32)msgCtx->ocarinaStaff->pos != 0) &&
-                    (sOcarinaButtonIndexBufPos == msgCtx->ocarinaStaff->pos - 1)) {
-                    sOcarinaButtonIndexBuf[msgCtx->ocarinaStaff->pos - 1] = msgCtx->ocarinaStaff->buttonIndex;
-                    sOcarinaButtonIndexBuf[msgCtx->ocarinaStaff->pos] = OCARINA_BTN_INVALID;
-                    sOcarinaButtonIndexBufPos++;
+                    (onpu_pt == msgCtx->ocarinaStaff->pos - 1)) {
+                    onpu_buff[msgCtx->ocarinaStaff->pos - 1] = msgCtx->ocarinaStaff->buttonIndex;
+                    onpu_buff[msgCtx->ocarinaStaff->pos] = OCARINA_BTN_INVALID;
+                    onpu_pt++;
                 }
                 msgCtx->stateTimer--;
                 if (msgCtx->stateTimer == 0) {
-                    if (AudioOcarina_MemoryGameNextNote() != 1) {
-                        Audio_PlaySfxGeneral(NA_SE_SY_METRONOME, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
-                        msgCtx->ocarinaStaff = AudioOcarina_GetPlayingStaff();
-                        msgCtx->ocarinaStaff->pos = sOcarinaButtonIndexBufPos = 0;
-                        Message_ResetOcarinaNoteState();
+                    if (Na_MakeOcarinaGameData() != 1) {
+                        Nai_FxFlagEntry(NA_SE_SY_METRONOME, &_dummy_zero_f, 4, &_dummy_one,
+                                             &_dummy_one, &_dummy_zero_s8);
+                        msgCtx->ocarinaStaff = Na_GetOcarinaInfoWork();
+                        msgCtx->ocarinaStaff->pos = onpu_pt = 0;
+                        onpu_buff_reset();
                         msgCtx->msgMode = MSGMODE_MEMORY_GAME_START_NEXT_ROUND;
                     } else {
                         play->msgCtx.ocarinaMode = OCARINA_MODE_0F;
@@ -3883,45 +3883,45 @@ void Message_DrawMain(PlayState* play, Gfx** p) {
                 DRAW_TEXT(play, &gfx, false);
                 break;
             case MSGMODE_MEMORY_GAME_START_NEXT_ROUND:
-                if (!Audio_IsSfxPlaying(NA_SE_SY_METRONOME)) {
-                    msgCtx->ocarinaStaff = AudioOcarina_GetPlaybackStaff();
-                    msgCtx->ocarinaStaff->pos = sOcarinaButtonIndexBufPos = 0;
-                    Message_ResetOcarinaNoteState();
-                    AudioOcarina_SetPlaybackSong(OCARINA_SONG_MEMORY_GAME + 1, 1);
+                if (!Nai_FxFlagCheck(NA_SE_SY_METRONOME)) {
+                    msgCtx->ocarinaStaff = Na_GetOcarinaSeqInfoWork();
+                    msgCtx->ocarinaStaff->pos = onpu_pt = 0;
+                    onpu_buff_reset();
+                    Na_SetOcarinaSeq(OCARINA_SONG_MEMORY_GAME + 1, 1);
                 }
                 break;
             case MSGMODE_FROGS_START:
-                AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_DEFAULT);
-                msgCtx->ocarinaStaff = AudioOcarina_GetPlayingStaff();
-                msgCtx->ocarinaStaff->pos = sOcarinaButtonIndexBufPos = 0;
+                Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_DEFAULT);
+                msgCtx->ocarinaStaff = Na_GetOcarinaInfoWork();
+                msgCtx->ocarinaStaff->pos = onpu_pt = 0;
                 play->msgCtx.ocarinaMode = OCARINA_MODE_01;
-                Message_ResetOcarinaNoteState();
-                AudioOcarina_Start(sOcarinaSongBitFlags + 0xC000);
+                onpu_buff_reset();
+                Na_SetOcarinaPlayCheckFlag2(ocarina_bit + 0xC000);
                 msgCtx->msgMode = MSGMODE_FROGS_PLAYING;
                 break;
             case MSGMODE_FROGS_PLAYING:
-                msgCtx->ocarinaStaff = AudioOcarina_GetPlayingStaff();
+                msgCtx->ocarinaStaff = Na_GetOcarinaInfoWork();
                 if (((u32)msgCtx->ocarinaStaff->pos != 0) &&
-                    (sOcarinaButtonIndexBufPos == msgCtx->ocarinaStaff->pos - 1)) {
+                    (onpu_pt == msgCtx->ocarinaStaff->pos - 1)) {
                     msgCtx->lastOcarinaButtonIndex = msgCtx->ocarinaStaff->buttonIndex;
-                    msgCtx->ocarinaStaff->pos = sOcarinaButtonIndexBufPos = 0;
-                    Message_ResetOcarinaNoteState();
+                    msgCtx->ocarinaStaff->pos = onpu_pt = 0;
+                    onpu_buff_reset();
                     msgCtx->msgMode = MSGMODE_FROGS_WAITING;
                 }
                 FALLTHROUGH;
             case MSGMODE_FROGS_WAITING:
                 break;
             case MSGMODE_TEXT_DONE:
-                DRAW_TEXT(play, &gfx, sTextIsCredits);
+                DRAW_TEXT(play, &gfx, staff_mode);
 
                 switch (msgCtx->textboxEndType) {
                     case TEXTBOX_ENDTYPE_2_CHOICE:
-                        Message_HandleChoiceSelection(play, 1);
-                        Message_DrawTextboxIcon(play, &gfx, msgCtx->textPosX, msgCtx->textPosY);
+                        arrow_select(play, 1);
+                        last_mark_display(play, &gfx, msgCtx->textPosX, msgCtx->textPosY);
                         break;
                     case TEXTBOX_ENDTYPE_3_CHOICE:
-                        Message_HandleChoiceSelection(play, 2);
-                        Message_DrawTextboxIcon(play, &gfx, msgCtx->textPosX, msgCtx->textPosY);
+                        arrow_select(play, 2);
+                        last_mark_display(play, &gfx, msgCtx->textPosX, msgCtx->textPosY);
                         break;
                     case TEXTBOX_ENDTYPE_PERSISTENT:
                         if (msgCtx->textId >= 0x6D && msgCtx->textId < 0x73) {
@@ -3934,7 +3934,7 @@ void Message_DrawMain(PlayState* play, Gfx** p) {
                         break;
                     case TEXTBOX_ENDTYPE_EVENT:
                     default:
-                        Message_DrawTextboxIcon(play, &gfx, R_TEXTBOX_END_XPOS, R_TEXTBOX_END_YPOS);
+                        last_mark_display(play, &gfx, R_TEXTBOX_END_XPOS, R_TEXTBOX_END_YPOS);
                     case TEXTBOX_ENDTYPE_FADING:
                         break;
                 }
@@ -3950,27 +3950,27 @@ void Message_DrawMain(PlayState* play, Gfx** p) {
 
         if (msgCtx->msgMode >= MSGMODE_OCARINA_PLAYING && msgCtx->msgMode < MSGMODE_TEXT_AWAIT_NEXT &&
             msgCtx->ocarinaAction != OCARINA_ACTION_FREE_PLAY && msgCtx->ocarinaAction != OCARINA_ACTION_CHECK_NOWARP) {
-            Gfx_SetupDL_39Ptr(&gfx);
+            gp_overlay_rectangle_a_prim(&gfx);
 
             gDPSetCombineLERP(gfx++, PRIMITIVE, ENVIRONMENT, TEXEL0, ENVIRONMENT, TEXEL0, 0, PRIMITIVE, 0, PRIMITIVE,
                               ENVIRONMENT, TEXEL0, ENVIRONMENT, TEXEL0, 0, PRIMITIVE, 0);
 
             if (msgCtx->msgMode == MSGMODE_SONG_PLAYBACK) {
                 g = msgCtx->ocarinaAction - OCARINA_ACTION_PLAYBACK_MINUET;
-                r = gOcarinaSongButtons[g].numButtons;
+                r = na_oca_note[g].numButtons;
                 for (notePosX = R_OCARINA_BUTTONS_XPOS, i = 0; i < r; i++) {
                     gDPPipeSync(gfx++);
                     gDPSetPrimColor(gfx++, 0, 0, 150, 150, 150, 150);
                     gDPSetEnvColor(gfx++, 10, 10, 10, 0);
 
-                    gDPLoadTextureBlock(gfx++, sOcarinaNoteTextures[gOcarinaSongButtons[g].buttonsIndex[i]],
+                    gDPLoadTextureBlock(gfx++, sOcarinaNoteTextures[na_oca_note[g].buttonsIndex[i]],
                                         G_IM_FMT_IA, G_IM_SIZ_8b, 16, 16, 0, G_TX_NOMIRROR | G_TX_WRAP,
                                         G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
 
                     gSPTextureRectangle(gfx++, notePosX << 2,
-                                        R_OCARINA_BUTTONS_YPOS(gOcarinaSongButtons[g].buttonsIndex[i]) << 2,
+                                        R_OCARINA_BUTTONS_YPOS(na_oca_note[g].buttonsIndex[i]) << 2,
                                         (notePosX + 16) << 2,
-                                        (R_OCARINA_BUTTONS_YPOS(gOcarinaSongButtons[g].buttonsIndex[i]) + 16) << 2,
+                                        (R_OCARINA_BUTTONS_YPOS(na_oca_note[g].buttonsIndex[i]) + 16) << 2,
                                         G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
                     notePosX += R_OCARINA_BUTTONS_XPOS_OFFSET;
                 }
@@ -3979,36 +3979,36 @@ void Message_DrawMain(PlayState* play, Gfx** p) {
             if (msgCtx->msgMode != MSGMODE_SCARECROW_LONG_RECORDING_START &&
                 msgCtx->msgMode != MSGMODE_MEMORY_GAME_START) {
                 for (notePosX = R_OCARINA_BUTTONS_XPOS, i = 0; i < 8; i++) {
-                    if (sOcarinaButtonIndexBuf[i] == OCARINA_BTN_INVALID) {
+                    if (onpu_buff[i] == OCARINA_BTN_INVALID) {
                         break;
                     }
 
                     if (1) {}
-                    if (sOcarinaButtonAlphaValues[i] != 255) {
-                        sOcarinaButtonAlphaValues[i] += R_OCARINA_BUTTONS_APPEAR_ALPHA_STEP;
-                        if (sOcarinaButtonAlphaValues[i] >= 255) {
-                            sOcarinaButtonAlphaValues[i] = 255;
+                    if (onpu_alpha[i] != 255) {
+                        onpu_alpha[i] += R_OCARINA_BUTTONS_APPEAR_ALPHA_STEP;
+                        if (onpu_alpha[i] >= 255) {
+                            onpu_alpha[i] = 255;
                         }
                     }
 
                     gDPPipeSync(gfx++);
-                    if (sOcarinaButtonIndexBuf[i] == OCARINA_BTN_A) {
-                        gDPSetPrimColor(gfx++, 0, 0, sOcarinaButtonAPrimR, sOcarinaButtonAPrimG, sOcarinaButtonAPrimB,
-                                        sOcarinaButtonAlphaValues[i]);
-                        gDPSetEnvColor(gfx++, sOcarinaButtonAEnvR, sOcarinaButtonAEnvG, sOcarinaButtonAEnvB, 0);
+                    if (onpu_buff[i] == OCARINA_BTN_A) {
+                        gDPSetPrimColor(gfx++, 0, 0, onpu_par, onpu_pag, onpu_pab,
+                                        onpu_alpha[i]);
+                        gDPSetEnvColor(gfx++, onpu_ear, onpu_eag, onpu_eab, 0);
                     } else {
-                        gDPSetPrimColor(gfx++, 0, 0, sOcarinaButtonCPrimR, sOcarinaButtonCPrimG, sOcarinaButtonCPrimB,
-                                        sOcarinaButtonAlphaValues[i]);
-                        gDPSetEnvColor(gfx++, sOcarinaButtonCEnvR, sOcarinaButtonCEnvG, sOcarinaButtonCEnvB, 0);
+                        gDPSetPrimColor(gfx++, 0, 0, onpu_pcr, onpu_pcg, onpu_pcb,
+                                        onpu_alpha[i]);
+                        gDPSetEnvColor(gfx++, onpu_ecr, onpu_ecg, onpu_ecb, 0);
                     }
 
-                    gDPLoadTextureBlock(gfx++, sOcarinaNoteTextures[sOcarinaButtonIndexBuf[i]], G_IM_FMT_IA,
+                    gDPLoadTextureBlock(gfx++, sOcarinaNoteTextures[onpu_buff[i]], G_IM_FMT_IA,
                                         G_IM_SIZ_8b, 16, 16, 0, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP,
                                         G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
 
-                    gSPTextureRectangle(gfx++, notePosX << 2, R_OCARINA_BUTTONS_YPOS(sOcarinaButtonIndexBuf[i]) << 2,
+                    gSPTextureRectangle(gfx++, notePosX << 2, R_OCARINA_BUTTONS_YPOS(onpu_buff[i]) << 2,
                                         (notePosX + 16) << 2,
-                                        (R_OCARINA_BUTTONS_YPOS(sOcarinaButtonIndexBuf[i]) + 16) << 2, G_TX_RENDERTILE,
+                                        (R_OCARINA_BUTTONS_YPOS(onpu_buff[i]) + 16) << 2, G_TX_RENDERTILE,
                                         0, 0, 1 << 10, 1 << 10);
                     notePosX += R_OCARINA_BUTTONS_XPOS_OFFSET;
                 }
@@ -4024,7 +4024,7 @@ void Message_DrawMain(PlayState* play, Gfx** p) {
  * are briefly drawn onto the screen. It can only watch one variable per build due to
  * the last value being saved in a static variable.
  */
-void Message_DrawDebugVariableChanged(s16* var, GraphicsContext* gfxCtx) {
+void message_drawDebugVariableChanged(s16* var, GraphicsContext* gfxCtx) {
     static s16 sVarLastValue = 0;
     static s16 sFillTimer = 0;
     s32 pad;
@@ -4053,26 +4053,26 @@ void Message_DrawDebugVariableChanged(s16* var, GraphicsContext* gfxCtx) {
     CLOSE_DISPS(gfxCtx, "../z_message_PAL.c", 3513);
 }
 
-void Message_DrawDebugText(PlayState* play, Gfx** p) {
+void message_drawDebugText(PlayState* play, Gfx** p) {
     s32 pad;
     GfxPrint printer;
     s32 pad1;
 
-    GfxPrint_Init(&printer);
-    GfxPrint_Open(&printer, *p);
-    GfxPrint_SetPos(&printer, 6, 26);
-    GfxPrint_SetColor(&printer, 255, 60, 0, 255);
-    GfxPrint_Printf(&printer, "%s", "MESSAGE");
-    GfxPrint_SetPos(&printer, 14, 26);
-    GfxPrint_Printf(&printer, "%s", "=");
-    GfxPrint_SetPos(&printer, 16, 26);
-    GfxPrint_Printf(&printer, "%x", play->msgCtx.textId);
-    *p = GfxPrint_Close(&printer);
-    GfxPrint_Destroy(&printer);
+    gfxprint_init(&printer);
+    gfxprint_open(&printer, *p);
+    gfxprint_locate8x8(&printer, 6, 26);
+    gfxprint_color(&printer, 255, 60, 0, 255);
+    gfxprint_printf(&printer, "%s", "MESSAGE");
+    gfxprint_locate8x8(&printer, 14, 26);
+    gfxprint_printf(&printer, "%s", "=");
+    gfxprint_locate8x8(&printer, 16, 26);
+    gfxprint_printf(&printer, "%x", play->msgCtx.textId);
+    *p = gfxprint_close(&printer);
+    gfxprint_cleanup(&printer);
 }
 #endif
 
-void Message_Draw(PlayState* play) {
+void message_draw(PlayState* play) {
     Gfx* plusOne;
     Gfx* polyOpaP;
 #if OOT_VERSION < GC_US || OOT_VERSION == HIRATSU3
@@ -4085,28 +4085,28 @@ void Message_Draw(PlayState* play) {
     OPEN_DISPS(play->state.gfxCtx, "../z_message_PAL.c", 3554);
 
 #if DEBUG_FEATURES
-    watchVar = gSaveContext.save.info.scarecrowLongSongSet;
-    Message_DrawDebugVariableChanged(&watchVar, play->state.gfxCtx);
+    watchVar = z_common_data.save.info.scarecrowLongSongSet;
+    message_drawDebugVariableChanged(&watchVar, play->state.gfxCtx);
     if (BREG(0) != 0 && play->msgCtx.textId != 0) {
-        plusOne = Gfx_Open(polyOpaP = POLY_OPA_DISP);
+        plusOne = gfxopen(polyOpaP = POLY_OPA_DISP);
         gSPDisplayList(OVERLAY_DISP++, plusOne);
-        Message_DrawDebugText(play, &plusOne);
+        message_drawDebugText(play, &plusOne);
         gSPEndDisplayList(plusOne++);
-        Gfx_Close(polyOpaP, plusOne);
+        gfxclose(polyOpaP, plusOne);
         POLY_OPA_DISP = plusOne;
     }
 #endif
 
-    plusOne = Gfx_Open(polyOpaP = POLY_OPA_DISP);
+    plusOne = gfxopen(polyOpaP = POLY_OPA_DISP);
     gSPDisplayList(OVERLAY_DISP++, plusOne);
-    Message_DrawMain(play, &plusOne);
+    message_draw_sub(play, &plusOne);
     gSPEndDisplayList(plusOne++);
-    Gfx_Close(polyOpaP, plusOne);
+    gfxclose(polyOpaP, plusOne);
     POLY_OPA_DISP = plusOne;
     CLOSE_DISPS(play->state.gfxCtx, "../z_message_PAL.c", 3582);
 }
 
-void Message_Update(PlayState* play) {
+void message_move(PlayState* play) {
     static s16 sTextboxXPositions[] = {
         34, 34, 34, 34, 34, 34,
     };
@@ -4155,18 +4155,18 @@ void Message_Update(PlayState* play) {
 
         if (CHECK_BTN_ALL(input->press.button, BTN_DDOWN) && CHECK_BTN_ALL(input->cur.button, BTN_L)) {
             PRINTF("msgno=%d\n", sMessageDebuggerTextboxCount);
-            Message_StartTextbox(play, R_MESSAGE_DEBUGGER_TEXTID, NULL);
+            message_set(play, R_MESSAGE_DEBUGGER_TEXTID, NULL);
             sMessageDebuggerTextboxCount = (sMessageDebuggerTextboxCount + 1) % 10;
         }
         if (R_MESSAGE_DEBUGGER_SELECT != 0) {
             while (R_MESSAGE_DEBUGGER_TEXTID != 0x8000) {
-                MessageTableEntry* entry = &sNesMessageEntryTablePtr[0];
+                MessageTableEntry* entry = &message_tbl_nes_p[0];
 
                 while (entry->textId != 0xFFFD) {
                     if (entry->textId == R_MESSAGE_DEBUGGER_TEXTID) {
                         PRINTF(T(" メッセージが,見つかった！！！ = %x\n", "The message was found!!! = %x\n"),
                                R_MESSAGE_DEBUGGER_TEXTID);
-                        Message_StartTextbox(play, R_MESSAGE_DEBUGGER_TEXTID, NULL);
+                        message_set(play, R_MESSAGE_DEBUGGER_TEXTID, NULL);
                         R_MESSAGE_DEBUGGER_TEXTID++;
                         R_MESSAGE_DEBUGGER_SELECT = 0;
                         return;
@@ -4183,24 +4183,24 @@ void Message_Update(PlayState* play) {
 
         switch (msgCtx->msgMode) {
             case MSGMODE_TEXT_START:
-                D_8014B2F4++;
+                start_flag++;
 
                 var = false;
                 if (R_SCENE_CAM_TYPE == SCENE_CAM_TYPE_FIXED_MARKET) {
-                    if (D_8014B2F4 >= 4) {
+                    if (start_flag >= 4) {
                         var = true;
                     }
                 } else if (R_SCENE_CAM_TYPE != SCENE_CAM_TYPE_DEFAULT ||
                            play->sceneId == SCENE_CASTLE_COURTYARD_GUARDS_DAY) {
                     var = true;
-                } else if (D_8014B2F4 >= 4 || msgCtx->talkActor == NULL) {
+                } else if (start_flag >= 4 || msgCtx->talkActor == NULL) {
                     var = true;
                 }
 
                 if (var) {
                     if (msgCtx->talkActor != NULL) {
-                        Actor_GetScreenPos(play, &GET_PLAYER(play)->actor, &focusScreenPosX, &playerFocusScreenPosY);
-                        Actor_GetScreenPos(play, msgCtx->talkActor, &focusScreenPosX, &actorFocusScreenPosY);
+                        Actor_display_position_set(play, &GET_PLAYER(play)->actor, &focusScreenPosX, &playerFocusScreenPosY);
+                        Actor_display_position_set(play, msgCtx->talkActor, &focusScreenPosX, &actorFocusScreenPosY);
 
                         if (playerFocusScreenPosY >= actorFocusScreenPosY) {
                             averageY = ((playerFocusScreenPosY - actorFocusScreenPosY) / 2) + actorFocusScreenPosY;
@@ -4249,7 +4249,7 @@ void Message_Update(PlayState* play) {
 #if OOT_NTSC && !PLATFORM_IQUE
                     R_TEXTBOX_X_TARGET = sTextboxXPositions[var];
                     R_TEXTBOX_END_YPOS = sTextboxEndIconYOffset[var] + R_TEXTBOX_Y_TARGET;
-                    if (gSaveContext.language == LANGUAGE_JPN && !sTextIsCredits) {
+                    if (z_common_data.language == LANGUAGE_JPN && !staff_mode) {
                         R_TEXT_CHOICE_YPOS(0) = R_TEXTBOX_Y_TARGET + 7;
                         R_TEXT_CHOICE_YPOS(1) = R_TEXTBOX_Y_TARGET + 25;
                         R_TEXT_CHOICE_YPOS(2) = R_TEXTBOX_Y_TARGET + 43;
@@ -4269,7 +4269,7 @@ void Message_Update(PlayState* play) {
                     R_TEXTBOX_END_YPOS = sTextboxEndIconYOffset[var] + R_TEXTBOX_Y_TARGET;
                     R_TEXTBOX_Y_TARGET -= 10;
                     R_TEXTBOX_X_TARGET = sTextboxXPositions[var];
-                    if (gSaveContext.language == LANGUAGE_JPN && !sTextIsCredits) {
+                    if (z_common_data.language == LANGUAGE_JPN && !staff_mode) {
                         R_TEXT_CHOICE_YPOS(0) = R_TEXTBOX_Y_TARGET + 7;
                         R_TEXT_CHOICE_YPOS(1) = R_TEXTBOX_Y_TARGET + 25;
                         R_TEXT_CHOICE_YPOS(2) = R_TEXTBOX_Y_TARGET + 43;
@@ -4292,26 +4292,26 @@ void Message_Update(PlayState* play) {
                         R_TEXTBOX_TEXWIDTH = 512;
                         R_TEXTBOX_TEXHEIGHT = 512;
                     } else {
-                        Message_GrowTextbox(msgCtx);
-                        Audio_PlaySfxIfNotInCutscene(NA_SE_NONE);
+                        window_open(msgCtx);
+                        Na_SwapSeFlagOnDemo(NA_SE_NONE);
                         msgCtx->stateTimer = 0;
                         msgCtx->msgMode = MSGMODE_TEXT_BOX_GROWING;
                     }
                 }
                 break;
             case MSGMODE_TEXT_BOX_GROWING:
-                Message_GrowTextbox(msgCtx);
+                window_open(msgCtx);
                 break;
             case MSGMODE_TEXT_STARTING:
                 msgCtx->msgMode = MSGMODE_TEXT_NEXT_MSG;
                 if (YREG(31) == 0) {
-                    Interface_SetDoAction(play, DO_ACTION_NEXT);
+                    do_action_point_set(play, DO_ACTION_NEXT);
                 }
                 break;
             case MSGMODE_TEXT_NEXT_MSG:
-                Message_Decode(play);
-                if (sTextFade) {
-                    Interface_ChangeHudVisibilityMode(HUD_VISIBILITY_NOTHING);
+                message_read(play);
+                if (key_off_flag) {
+                    alpha_change(HUD_VISIBILITY_NOTHING);
                 }
                 if (D_80153D74 != 0) {
                     msgCtx->textDrawPos = msgCtx->decodedTextLen;
@@ -4321,18 +4321,18 @@ void Message_Update(PlayState* play) {
             case MSGMODE_TEXT_CONTINUING:
                 msgCtx->stateTimer--;
                 if (msgCtx->stateTimer == 0) {
-                    Message_Decode(play);
+                    message_read(play);
                 }
                 break;
             case MSGMODE_TEXT_DISPLAYING:
                 if (msgCtx->textBoxType != TEXTBOX_TYPE_NONE_BOTTOM && YREG(31) == 0 &&
                     CHECK_BTN_ALL(input->press.button, BTN_B) && !msgCtx->textUnskippable) {
-                    sTextboxSkipped = true;
+                    last_flag = true;
                     msgCtx->textDrawPos = msgCtx->decodedTextLen;
                 }
                 break;
             case MSGMODE_TEXT_AWAIT_INPUT:
-                if (YREG(31) == 0 && Message_ShouldAdvance(play)) {
+                if (YREG(31) == 0 && pad_on_check(play)) {
                     msgCtx->msgMode = MSGMODE_TEXT_DISPLAYING;
                     msgCtx->textDrawPos++;
                 }
@@ -4344,7 +4344,7 @@ void Message_Update(PlayState* play) {
                 }
                 break;
             case MSGMODE_TEXT_AWAIT_NEXT:
-                if (Message_ShouldAdvance(play)) {
+                if (pad_on_check(play)) {
                     msgCtx->msgMode = MSGMODE_TEXT_NEXT_MSG;
                     msgCtx->textUnskippable = false;
                     msgCtx->msgBufPos++;
@@ -4354,38 +4354,38 @@ void Message_Update(PlayState* play) {
                 if (msgCtx->textboxEndType == TEXTBOX_ENDTYPE_FADING) {
                     msgCtx->stateTimer--;
                     if (msgCtx->stateTimer == 0) {
-                        Message_CloseTextbox(play);
+                        message_close(play);
                     }
                 } else if (msgCtx->textboxEndType != TEXTBOX_ENDTYPE_PERSISTENT &&
                            msgCtx->textboxEndType != TEXTBOX_ENDTYPE_EVENT && YREG(31) == 0) {
                     if (msgCtx->textboxEndType == TEXTBOX_ENDTYPE_2_CHOICE &&
                         play->msgCtx.ocarinaMode == OCARINA_MODE_01) {
-                        if (Message_ShouldAdvance(play)) {
+                        if (pad_on_check(play)) {
                             PRINTF("OCARINA_MODE=%d -> ", play->msgCtx.ocarinaMode);
                             play->msgCtx.ocarinaMode = (msgCtx->choiceIndex == 0) ? OCARINA_MODE_02 : OCARINA_MODE_04;
                             PRINTF("InRaceSeq=%d(%d) OCARINA_MODE=%d  -->  ", GET_EVENTINF_INGO_RACE_STATE(), 1,
                                    play->msgCtx.ocarinaMode);
-                            Message_CloseTextbox(play);
+                            message_close(play);
                             PRINTF("OCARINA_MODE=%d\n", play->msgCtx.ocarinaMode);
                         }
-                    } else if (Message_ShouldAdvanceSilent(play)) {
+                    } else if (pad_on_check_0(play)) {
                         PRINTF("select=%d\n", msgCtx->textboxEndType);
                         if (msgCtx->textboxEndType == TEXTBOX_ENDTYPE_HAS_NEXT) {
-                            Audio_PlaySfxGeneral(NA_SE_SY_MESSAGE_PASS, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                            Nai_FxFlagEntry(NA_SE_SY_MESSAGE_PASS, &_dummy_zero_f, 4, &_dummy_one,
+                                                 &_dummy_one, &_dummy_zero_s8);
 #if OOT_NTSC
-                            if (gSaveContext.language == LANGUAGE_JPN && !sTextIsCredits) {
-                                Message_ContinueTextbox(play, MSG_BUF_DECODED_WIDE[msgCtx->textDrawPos]);
+                            if (z_common_data.language == LANGUAGE_JPN && !staff_mode) {
+                                message_set2(play, MSG_BUF_DECODED_WIDE[msgCtx->textDrawPos]);
                             } else {
-                                Message_ContinueTextbox(play, sNextTextId);
+                                message_set2(play, next_msg_no);
                             }
 #else
-                            Message_ContinueTextbox(play, sNextTextId);
+                            message_set2(play, next_msg_no);
 #endif
                         } else {
-                            Audio_PlaySfxGeneral(NA_SE_SY_DECIDE, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
-                            Message_CloseTextbox(play);
+                            Nai_FxFlagEntry(NA_SE_SY_DECIDE, &_dummy_zero_f, 4, &_dummy_one,
+                                                 &_dummy_one, &_dummy_zero_s8);
+                            message_close(play);
                         }
                     }
                 }
@@ -4397,29 +4397,29 @@ void Message_Update(PlayState* play) {
                 }
                 if ((msgCtx->textId >= 0xC2 && msgCtx->textId < 0xC7) ||
                     (msgCtx->textId >= 0xFA && msgCtx->textId < 0xFE)) {
-                    gSaveContext.healthAccumulator = 0x140; // Refill 20 hearts
+                    z_common_data.healthAccumulator = 0x140; // Refill 20 hearts
                 }
                 if (msgCtx->textId == 0x301F || msgCtx->textId == 0xA || msgCtx->textId == 0xC ||
                     msgCtx->textId == 0xCF || msgCtx->textId == 0x21C || msgCtx->textId == 9 ||
                     msgCtx->textId == 0x4078 || msgCtx->textId == 0x2015 || msgCtx->textId == 0x3040) {
-                    gSaveContext.prevHudVisibilityMode = HUD_VISIBILITY_ALL;
+                    z_common_data.prevHudVisibilityMode = HUD_VISIBILITY_ALL;
                 }
                 if (play->csCtx.state == 0) {
                     PRINTF_COLOR_GREEN();
-                    PRINTF("day_time=%x  active_camera=%d  ", gSaveContext.save.cutsceneIndex, play->activeCamId);
+                    PRINTF("day_time=%x  active_camera=%d  ", z_common_data.save.cutsceneIndex, play->activeCamId);
 
                     if (msgCtx->textId != 0x2061 && msgCtx->textId != 0x2025 && msgCtx->textId != 0x208C &&
                         ((msgCtx->textId < 0x88D || msgCtx->textId >= 0x893) || msgCtx->choiceIndex != 0) &&
-                        (msgCtx->textId != 0x3055 && gSaveContext.save.cutsceneIndex < 0xFFF0)) {
-                        PRINTF("=== day_time=%x ", ((void)0, gSaveContext.save.cutsceneIndex));
+                        (msgCtx->textId != 0x3055 && z_common_data.save.cutsceneIndex < 0xFFF0)) {
+                        PRINTF("=== day_time=%x ", ((void)0, z_common_data.save.cutsceneIndex));
                         if (play->activeCamId == CAM_ID_MAIN) {
-                            if (gSaveContext.prevHudVisibilityMode == HUD_VISIBILITY_NO_CHANGE ||
-                                gSaveContext.prevHudVisibilityMode == HUD_VISIBILITY_NOTHING ||
-                                gSaveContext.prevHudVisibilityMode == HUD_VISIBILITY_NOTHING_ALT) {
-                                gSaveContext.prevHudVisibilityMode = HUD_VISIBILITY_ALL;
+                            if (z_common_data.prevHudVisibilityMode == HUD_VISIBILITY_NO_CHANGE ||
+                                z_common_data.prevHudVisibilityMode == HUD_VISIBILITY_NOTHING ||
+                                z_common_data.prevHudVisibilityMode == HUD_VISIBILITY_NOTHING_ALT) {
+                                z_common_data.prevHudVisibilityMode = HUD_VISIBILITY_ALL;
                             }
-                            gSaveContext.hudVisibilityMode = HUD_VISIBILITY_NO_CHANGE;
-                            Interface_ChangeHudVisibilityMode(gSaveContext.prevHudVisibilityMode);
+                            z_common_data.hudVisibilityMode = HUD_VISIBILITY_NO_CHANGE;
+                            alpha_change(z_common_data.prevHudVisibilityMode);
                         }
                     }
                 }
@@ -4435,13 +4435,13 @@ void Message_Update(PlayState* play) {
                 } else {
                     msgCtx->textboxEndType = TEXTBOX_ENDTYPE_DEFAULT;
                 }
-                if ((s32)(gSaveContext.save.info.inventory.questItems & 0xF0000000) == (4 << QUEST_HEART_PIECE_COUNT)) {
-                    gSaveContext.save.info.inventory.questItems ^= (4 << QUEST_HEART_PIECE_COUNT);
-                    gSaveContext.save.info.playerData.healthCapacity += 0x10;
-                    gSaveContext.save.info.playerData.health += 0x10;
+                if ((s32)(z_common_data.save.info.inventory.questItems & 0xF0000000) == (4 << QUEST_HEART_PIECE_COUNT)) {
+                    z_common_data.save.info.inventory.questItems ^= (4 << QUEST_HEART_PIECE_COUNT);
+                    z_common_data.save.info.playerData.healthCapacity += 0x10;
+                    z_common_data.save.info.playerData.health += 0x10;
                 }
                 if (msgCtx->ocarinaAction != OCARINA_ACTION_CHECK_NOWARP_DONE) {
-                    if (sLastPlayedSong == OCARINA_SONG_SARIAS) {
+                    if (Chk_Ocarina_No == OCARINA_SONG_SARIAS) {
                         //! @bug The last played song is not unset often, and if something interrupts the message system
                         //       before it reaches this point after playing Saria's song, the song will be "stored".
                         //       Later, if the ocarina has not been played and another textbox is closed, this handling
@@ -4457,7 +4457,7 @@ void Message_Update(PlayState* play) {
                         }
                     }
                 }
-                sLastPlayedSong = 0xFF;
+                Chk_Ocarina_No = 0xFF;
                 PRINTF("OCARINA_MODE=%d   chk_ocarina_no=%d\n", play->msgCtx.ocarinaMode, msgCtx->unk_E3F2);
                 break;
             case MSGMODE_PAUSED:
@@ -4469,26 +4469,26 @@ void Message_Update(PlayState* play) {
     }
 }
 
-void Message_SetTables(void) {
+void message_tbl_p_init(void) {
 #if OOT_NTSC
-    sJpnMessageEntryTablePtr = sJpnMessageEntryTable;
-    sNesMessageEntryTablePtr = sNesMessageEntryTable;
+    message_tbl_p = message_tbl;
+    message_tbl_nes_p = message_tbl_nes;
 #else
-    sNesMessageEntryTablePtr = sNesMessageEntryTable;
+    message_tbl_nes_p = message_tbl_nes;
     sGerMessageEntryTablePtr = sGerMessageEntryTable;
     sFraMessageEntryTablePtr = sFraMessageEntryTable;
 #endif
 
-    sStaffMessageEntryTablePtr = sStaffMessageEntryTable;
+    message_tbl_staff_p = message_tbl_staff;
 
 #if PLATFORM_N64 && OOT_NTSC
     if ((B_80121220 != NULL) && (B_80121220->unk_58 != NULL)) {
-        B_80121220->unk_58(&sJpnMessageEntryTablePtr, &sNesMessageEntryTablePtr, &sStaffMessageEntryTablePtr);
+        B_80121220->unk_58(&message_tbl_p, &message_tbl_nes_p, &message_tbl_staff_p);
     }
 #elif PLATFORM_N64 && OOT_PAL
     if ((B_80121220 != NULL) && (B_80121220->unk_58 != NULL)) {
-        B_80121220->unk_58(&sNesMessageEntryTablePtr, &sGerMessageEntryTablePtr, &sFraMessageEntryTablePtr,
-                           &sStaffMessageEntryTablePtr);
+        B_80121220->unk_58(&message_tbl_nes_p, &sGerMessageEntryTablePtr, &sFraMessageEntryTablePtr,
+                           &message_tbl_staff_p);
     }
 #endif
 }

@@ -1,20 +1,20 @@
-void DemoEc_InitBossCarpenter(DemoEc* this, PlayState* play) {
-    DemoEc_UseDrawObject(this, play);
-    DemoEc_InitSkelAnime(this, play, &object_toryo_Skel_007150);
-    DemoEc_UseAnimationObject(this, play);
-    DemoEc_ChangeAnimation(this, &gDemoEcCarpenterAnim, 0, 0.0f, false);
-    func_8096D5D4(this, play);
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 30.0f);
+void Demo_Ec_main_init_Dk1(DemoEc* this, PlayState* play) {
+    Demo_Ec_Change_ShapeBank(this, play);
+    Demo_Ec_Setup_Mdl(this, play, &object_toryo_Skel_007150);
+    Demo_Ec_Change_AnimeBank(this, play);
+    Demo_Ec_Change_Anime(this, &gDemoEcCarpenterAnim, 0, 0.0f, false);
+    Demo_Ec_Start_Movement_byAnimation(this, play);
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 30.0f);
     this->updateMode = EC_UPDATE_BOSS_CARPENTER;
     this->drawConfig = EC_DRAW_BOSS_CARPENTER;
 }
 
-void DemoEc_UpdateBossCarpenter(DemoEc* this, PlayState* play) {
-    DemoEc_UpdateSkelAnime(this);
-    func_8096D594(this, play);
-    DemoEc_UpdateBgFlags(this, play);
+void Demo_Ec_main_Dk1_Wait(DemoEc* this, PlayState* play) {
+    Demo_Ec_Animation_Base(this);
+    Demo_Ec_Movement_byAnimation_CorrectNone(this, play);
+    Demo_Ec_BGcheck(this, play);
 }
 
-void DemoEc_DrawBossCarpenter(DemoEc* this, PlayState* play) {
-    DemoEc_DrawSkeleton(this, play, NULL, NULL, NULL, NULL);
+void Demo_Ec_draw_normal_Dk1(DemoEc* this, PlayState* play) {
+    Demo_Ec_draw_normal_1(this, play, NULL, NULL, NULL, NULL);
 }

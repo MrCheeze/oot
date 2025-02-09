@@ -11,30 +11,30 @@
  */
 #include "global.h"
 
-void* THA_GetHead(TwoHeadArena* tha) {
+void* THA_getHeadPtr(TwoHeadArena* tha) {
     return tha->head;
 }
 
-void THA_SetHead(TwoHeadArena* tha, void* newHead) {
+void THA_setHeadPtr(TwoHeadArena* tha, void* newHead) {
     tha->head = newHead;
 }
 
-void* THA_GetTail(TwoHeadArena* tha) {
+void* THA_getTailPtr(TwoHeadArena* tha) {
     return tha->tail;
 }
 
 /**
  * Allocates to the head of the Two Head Arena. The allocation will not have any alignment guarantees.
  */
-void* THA_AllocHead(TwoHeadArena* tha, size_t size) {
+void* THA_nextPtrN(TwoHeadArena* tha, size_t size) {
     void* start = tha->head;
 
     tha->head = (u8*)tha->head + size;
     return start;
 }
 
-void* THA_AllocHeadByte(TwoHeadArena* tha) {
-    return THA_AllocHead(tha, 1);
+void* THA_nextPtr1(TwoHeadArena* tha) {
+    return THA_nextPtrN(tha, 1);
 }
 
 /**
@@ -43,7 +43,7 @@ void* THA_AllocHeadByte(TwoHeadArena* tha) {
  * of 2 for which the size is a multiple, in order to accommodate the alignment requirements of any data types that can
  * fit within the allocation.
  */
-void* THA_AllocTail(TwoHeadArena* tha, size_t size) {
+void* THA_alloc(TwoHeadArena* tha, size_t size) {
     uintptr_t mask;
 
     if (size == 8) {
@@ -71,7 +71,7 @@ void* THA_AllocTail(TwoHeadArena* tha, size_t size) {
 /**
  * Allocates to the tail end of the Two Head Arena with guaranteed 16-byte alignment.
  */
-void* THA_AllocTailAlign16(TwoHeadArena* tha, size_t size) {
+void* THA_alloc16(TwoHeadArena* tha, size_t size) {
     uintptr_t mask = ALIGN_MASK(0x10);
 
     tha->tail = (void*)((((uintptr_t)tha->tail & mask) - size) & (uintptr_t)(u64)mask);
@@ -88,7 +88,7 @@ void* THA_AllocTailAlign16(TwoHeadArena* tha, size_t size) {
  *
  * @return Pointer to the start of the allocated block
  */
-void* THA_AllocTailAlign(TwoHeadArena* tha, size_t size, uintptr_t mask) {
+void* THA_allocAlign(TwoHeadArena* tha, size_t size, uintptr_t mask) {
     tha->tail = (void*)((((uintptr_t)tha->tail & mask) - size) & mask);
     return tha->tail;
 }
@@ -98,22 +98,22 @@ void* THA_AllocTailAlign(TwoHeadArena* tha, size_t size, uintptr_t mask) {
  *
  * @return Remaining size. A negative number indicates an overflow.
  */
-s32 THA_GetRemaining(TwoHeadArena* tha) {
+s32 THA_getFreeBytes(TwoHeadArena* tha) {
     return (s32)((u8*)tha->tail - (u8*)tha->head);
 }
 
 /**
  * @return true if the Two Head Arena has overflowed, false otherwise
  */
-u32 THA_IsCrash(TwoHeadArena* tha) {
-    return THA_GetRemaining(tha) < 0;
+u32 THA_isCrash(TwoHeadArena* tha) {
+    return THA_getFreeBytes(tha) < 0;
 }
 
 /**
  * Resets the head and tail positions of the Two Head Arena, all prior allocations are effectively considered free
  * as any new allocations will begin to overwrite them.
  */
-void THA_Reset(TwoHeadArena* tha) {
+void THA_init(TwoHeadArena* tha) {
     tha->head = tha->start;
     tha->tail = (u8*)tha->start + tha->size;
 }
@@ -121,15 +121,15 @@ void THA_Reset(TwoHeadArena* tha) {
 /**
  * Creates a new Two Head Arena at `start` with available size `size`
  */
-void THA_Init(TwoHeadArena* tha, void* start, size_t size) {
+void THA_ct(TwoHeadArena* tha, void* start, size_t size) {
     tha->start = start;
     tha->size = size;
-    THA_Reset(tha);
+    THA_init(tha);
 }
 
 /**
  * Destroys the Two Head Arena, no further allocations are possible
  */
-void THA_Destroy(TwoHeadArena* tha) {
+void THA_dt(TwoHeadArena* tha) {
     bzero(tha, sizeof(TwoHeadArena));
 }

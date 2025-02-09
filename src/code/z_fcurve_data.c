@@ -21,7 +21,7 @@
  * @param m1 p'(b)
  * @return f32 p(t), value of the cubic interpolating polynomial
  */
-f32 Curve_CubicHermiteSpline(f32 t, f32 interval, f32 y0, f32 y1, f32 m0, f32 m1) {
+f32 Hermit(f32 t, f32 interval, f32 y0, f32 y1, f32 m0, f32 m1) {
     f32 t2 = t * t;
     f32 t3 = t2 * t;
     f32 t3x2 = t3 * 2.0f;
@@ -50,7 +50,7 @@ f32 Curve_CubicHermiteSpline(f32 t, f32 interval, f32 y0, f32 y1, f32 m0, f32 m1
  * @param knotCount number of knots to read from the array.
  * @return f32 interpolated value
  */
-f32 Curve_Interpolate(f32 x, CurveInterpKnot* knots, s32 knotCount) {
+f32 FcurveData_Calc(f32 x, CurveInterpKnot* knots, s32 knotCount) {
     // If outside the entire interpolation interval, return the value at the near endpoint.
     if (x <= knots[0].abscissa) {
         return knots[0].ordinate;
@@ -76,7 +76,7 @@ f32 Curve_Interpolate(f32 x, CurveInterpKnot* knots, s32 knotCount) {
                     f32 diff = (f32)knots[next].abscissa - (f32)knots[cur].abscissa;
                     f32 t = (x - (f32)knots[cur].abscissa) / ((f32)knots[next].abscissa - (f32)knots[cur].abscissa);
 
-                    return Curve_CubicHermiteSpline(t, diff * (1.0f / 30.0f), knots[cur].ordinate, knots[next].ordinate,
+                    return Hermit(t, diff * (1.0f / 30.0f), knots[cur].ordinate, knots[next].ordinate,
                                                     knots[cur].rightGradient, knots[next].leftGradient);
                 }
             }

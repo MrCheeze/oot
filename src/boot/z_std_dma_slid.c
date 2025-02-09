@@ -3,55 +3,55 @@
 #pragma increment_block_number "gc-eu:128 gc-eu-mq:128 gc-jp:128 gc-jp-ce:128 gc-jp-mq:128 gc-us:128 gc-us-mq:128" \
                                "ntsc-1.2:128 pal-1.1:128 hiratsu3:128"
 
-ALIGNED(16) u8 sYaz0DataBuffer[0x400];
-u8* sYaz0DataBufferEnd;
-uintptr_t sYaz0CurRomStart;
-size_t sYaz0CurSize;
-u8* sYaz0MaxPtr;
+ALIGNED(16) u8 szpbuf[0x400];
+u8* szpbufend;
+uintptr_t curr_dmasrc;
+size_t curr_dmasiz;
+u8* srclim;
 
-void* Yaz0_FirstDMA(void) {
+void* firstdata(void) {
     s32 pad[2];
     size_t dmaSize;
     size_t bufferSize;
 
-    sYaz0MaxPtr = sYaz0DataBufferEnd - 0x19;
+    srclim = szpbufend - 0x19;
 
-    bufferSize = sYaz0DataBufferEnd - sYaz0DataBuffer;
-    dmaSize = (bufferSize > sYaz0CurSize) ? sYaz0CurSize : bufferSize;
+    bufferSize = szpbufend - szpbuf;
+    dmaSize = (bufferSize > curr_dmasiz) ? curr_dmasiz : bufferSize;
 
-    DmaMgr_DmaRomToRam(sYaz0CurRomStart, sYaz0DataBuffer, dmaSize);
-    sYaz0CurRomStart += dmaSize;
-    sYaz0CurSize -= dmaSize;
-    return sYaz0DataBuffer;
+    percial_DMA(curr_dmasrc, szpbuf, dmaSize);
+    curr_dmasrc += dmaSize;
+    curr_dmasiz -= dmaSize;
+    return szpbuf;
 }
 
-void* Yaz0_NextDMA(u8* curSrcPos) {
+void* nextdata(u8* curSrcPos) {
     u8* dst;
     size_t restSize;
     size_t dmaSize;
 
-    restSize = sYaz0DataBufferEnd - curSrcPos;
-    dst = (restSize & 7) ? (sYaz0DataBuffer - (restSize & 7)) + 8 : sYaz0DataBuffer;
+    restSize = szpbufend - curSrcPos;
+    dst = (restSize & 7) ? (szpbuf - (restSize & 7)) + 8 : szpbuf;
 
     bcopy(curSrcPos, dst, restSize);
-    dmaSize = (sYaz0DataBufferEnd - dst) - restSize;
-    if (sYaz0CurSize < dmaSize) {
-        dmaSize = sYaz0CurSize;
+    dmaSize = (szpbufend - dst) - restSize;
+    if (curr_dmasiz < dmaSize) {
+        dmaSize = curr_dmasiz;
     }
 
     if (dmaSize != 0) {
-        DmaMgr_DmaRomToRam(sYaz0CurRomStart, dst + restSize, dmaSize);
-        sYaz0CurRomStart += dmaSize;
-        sYaz0CurSize -= dmaSize;
-        if (sYaz0CurSize == 0) {
-            sYaz0MaxPtr = dst + restSize + dmaSize;
+        percial_DMA(curr_dmasrc, dst + restSize, dmaSize);
+        curr_dmasrc += dmaSize;
+        curr_dmasiz -= dmaSize;
+        if (curr_dmasiz == 0) {
+            srclim = dst + restSize + dmaSize;
         }
     }
 
     return dst;
 }
 
-void Yaz0_DecompressImpl(u8* src, u8* dst) {
+void slidstart_szs(u8* src, u8* dst) {
     Yaz0Header* header = (Yaz0Header*)src;
     u32 bitIdx = 0;
     u8* dstEnd = dst + header->decSize;
@@ -65,8 +65,8 @@ void Yaz0_DecompressImpl(u8* src, u8* dst) {
 
     do {
         if (bitIdx == 0) {
-            if ((sYaz0MaxPtr < src) && (sYaz0CurSize != 0)) {
-                src = Yaz0_NextDMA(src);
+            if ((srclim < src) && (curr_dmasiz != 0)) {
+                src = nextdata(src);
             }
 
             chunkHeader = *src++;
@@ -97,9 +97,9 @@ void Yaz0_DecompressImpl(u8* src, u8* dst) {
     } while (dst != dstEnd);
 }
 
-void Yaz0_Decompress(uintptr_t romStart, u8* dst, size_t size) {
-    sYaz0CurRomStart = romStart;
-    sYaz0CurSize = size;
-    sYaz0DataBufferEnd = sYaz0DataBuffer + sizeof(sYaz0DataBuffer);
-    Yaz0_DecompressImpl(Yaz0_FirstDMA(), dst);
+void slidma(uintptr_t romStart, u8* dst, size_t size) {
+    curr_dmasrc = romStart;
+    curr_dmasiz = size;
+    szpbufend = szpbuf + sizeof(szpbuf);
+    slidstart_szs(firstdata(), dst);
 }

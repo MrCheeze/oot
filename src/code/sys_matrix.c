@@ -4,14 +4,14 @@
 #endif
 
 // clang-format off
-Mtx gMtxClear = gdSPDefMtx(
+Mtx Mtx_clear = gdSPDefMtx(
     1.0f, 0.0f, 0.0f, 0.0f,
     0.0f, 1.0f, 0.0f, 0.0f,
     0.0f, 0.0f, 1.0f, 0.0f,
     0.0f, 0.0f, 0.0f, 1.0f
 );
 
-MtxF gMtxFClear = {
+MtxF MtxF_clear = {
     1.0f, 0.0f, 0.0f, 0.0f,
     0.0f, 1.0f, 0.0f, 0.0f,
     0.0f, 0.0f, 1.0f, 0.0f,
@@ -22,48 +22,48 @@ MtxF gMtxFClear = {
 #pragma increment_block_number "gc-eu:128 gc-eu-mq:128 gc-jp:128 gc-jp-ce:128 gc-jp-mq:128 gc-us:128 gc-us-mq:128" \
                                "pal-1.1:128 hiratsu3:128"
 
-MtxF* sMatrixStack;   // "Matrix_stack"
-MtxF* sCurrentMatrix; // "Matrix_now"
+MtxF* Matrix_stack;   // "Matrix_stack"
+MtxF* Matrix_now; // "Matrix_now"
 
-void Matrix_Init(GameState* gameState) {
-    sCurrentMatrix = GAME_STATE_ALLOC(gameState, 20 * sizeof(MtxF), "../sys_matrix.c", 153);
-    sMatrixStack = sCurrentMatrix;
+void new_Matrix(GameState* gameState) {
+    Matrix_now = GAME_STATE_ALLOC(gameState, 20 * sizeof(MtxF), "../sys_matrix.c", 153);
+    Matrix_stack = Matrix_now;
 }
 
-void Matrix_Push(void) {
-    Matrix_MtxFCopy(sCurrentMatrix + 1, sCurrentMatrix);
-    sCurrentMatrix++;
+void Matrix_push(void) {
+    Matrix_copy_MtxF(Matrix_now + 1, Matrix_now);
+    Matrix_now++;
 }
 
-void Matrix_Pop(void) {
-    sCurrentMatrix--;
-    ASSERT(sCurrentMatrix >= sMatrixStack, "Matrix_now >= Matrix_stack", "../sys_matrix.c", 176);
+void Matrix_pull(void) {
+    Matrix_now--;
+    ASSERT(Matrix_now >= Matrix_stack, "Matrix_now >= Matrix_stack", "../sys_matrix.c", 176);
 }
 
-void Matrix_Get(MtxF* dest) {
-    Matrix_MtxFCopy(dest, sCurrentMatrix);
+void Matrix_get(MtxF* dest) {
+    Matrix_copy_MtxF(dest, Matrix_now);
 }
 
-void Matrix_Put(MtxF* src) {
-    Matrix_MtxFCopy(sCurrentMatrix, src);
+void Matrix_put(MtxF* src) {
+    Matrix_copy_MtxF(Matrix_now, src);
 }
 
-MtxF* Matrix_GetCurrent(void) {
-    return sCurrentMatrix;
+MtxF* get_Matrix_now(void) {
+    return Matrix_now;
 }
 
-void Matrix_Mult(MtxF* mf, u8 mode) {
-    MtxF* cmf = Matrix_GetCurrent();
+void Matrix_mult(MtxF* mf, u8 mode) {
+    MtxF* cmf = get_Matrix_now();
 
     if (mode == MTXMODE_APPLY) {
-        SkinMatrix_MtxFMtxFMult(cmf, mf, cmf);
+        Skin_Matrix_MulMatrix(cmf, mf, cmf);
     } else {
-        Matrix_MtxFCopy(sCurrentMatrix, mf);
+        Matrix_copy_MtxF(Matrix_now, mf);
     }
 }
 
-void Matrix_Translate(f32 x, f32 y, f32 z, u8 mode) {
-    MtxF* cmf = sCurrentMatrix;
+void Matrix_translate(f32 x, f32 y, f32 z, u8 mode) {
+    MtxF* cmf = Matrix_now;
     f32 tx;
     f32 ty;
 
@@ -81,12 +81,12 @@ void Matrix_Translate(f32 x, f32 y, f32 z, u8 mode) {
         ty = cmf->wy;
         cmf->ww += tx * x + ty * y + cmf->wz * z;
     } else {
-        SkinMatrix_SetTranslate(cmf, x, y, z);
+        Skin_Matrix_SetTranslate(cmf, x, y, z);
     }
 }
 
-void Matrix_Scale(f32 x, f32 y, f32 z, u8 mode) {
-    MtxF* cmf = sCurrentMatrix;
+void Matrix_scale(f32 x, f32 y, f32 z, u8 mode) {
+    MtxF* cmf = Matrix_now;
 
     if (mode == MTXMODE_APPLY) {
         cmf->xx *= x;
@@ -102,11 +102,11 @@ void Matrix_Scale(f32 x, f32 y, f32 z, u8 mode) {
         cmf->wy *= y;
         cmf->wz *= z;
     } else {
-        SkinMatrix_SetScale(cmf, x, y, z);
+        Skin_Matrix_SetScale(cmf, x, y, z);
     }
 }
 
-void Matrix_RotateX(f32 x, u8 mode) {
+void Matrix_rotateX(f32 x, u8 mode) {
     MtxF* cmf;
     f32 sin;
     f32 cos;
@@ -115,7 +115,7 @@ void Matrix_RotateX(f32 x, u8 mode) {
 
     if (mode == MTXMODE_APPLY) {
         if (x != 0) {
-            cmf = sCurrentMatrix;
+            cmf = Matrix_now;
 
             sin = sinf(x);
             cos = cosf(x);
@@ -141,7 +141,7 @@ void Matrix_RotateX(f32 x, u8 mode) {
             cmf->wz = temp2 * cos - temp1 * sin;
         }
     } else {
-        cmf = sCurrentMatrix;
+        cmf = Matrix_now;
 
         if (x != 0) {
             sin = sinf(x);
@@ -170,7 +170,7 @@ void Matrix_RotateX(f32 x, u8 mode) {
     }
 }
 
-void Matrix_RotateY(f32 y, u8 mode) {
+void Matrix_rotateY(f32 y, u8 mode) {
     MtxF* cmf;
     f32 sin;
     f32 cos;
@@ -179,7 +179,7 @@ void Matrix_RotateY(f32 y, u8 mode) {
 
     if (mode == MTXMODE_APPLY) {
         if (y != 0) {
-            cmf = sCurrentMatrix;
+            cmf = Matrix_now;
 
             sin = sinf(y);
             cos = cosf(y);
@@ -205,7 +205,7 @@ void Matrix_RotateY(f32 y, u8 mode) {
             cmf->wz = temp1 * sin + temp2 * cos;
         }
     } else {
-        cmf = sCurrentMatrix;
+        cmf = Matrix_now;
 
         if (y != 0) {
             sin = sinf(y);
@@ -234,7 +234,7 @@ void Matrix_RotateY(f32 y, u8 mode) {
     }
 }
 
-void Matrix_RotateZ(f32 z, u8 mode) {
+void Matrix_rotateZ(f32 z, u8 mode) {
     MtxF* cmf;
     f32 sin;
     f32 cos;
@@ -243,7 +243,7 @@ void Matrix_RotateZ(f32 z, u8 mode) {
 
     if (mode == MTXMODE_APPLY) {
         if (z != 0) {
-            cmf = sCurrentMatrix;
+            cmf = Matrix_now;
 
             sin = sinf(z);
             cos = cosf(z);
@@ -269,7 +269,7 @@ void Matrix_RotateZ(f32 z, u8 mode) {
             cmf->wy = temp2 * cos - temp1 * sin;
         }
     } else {
-        cmf = sCurrentMatrix;
+        cmf = Matrix_now;
 
         if (z != 0) {
             sin = sinf(z);
@@ -302,18 +302,18 @@ void Matrix_RotateZ(f32 z, u8 mode) {
  * Rotate using ZYX Tait-Bryan angles.
  * This means a (column) vector is first rotated around X, then around Y, then around Z, then (if `mode` is
  * `MTXMODE_APPLY`) gets transformed according to whatever the matrix was before adding the ZYX rotation.
- * Original Name: Matrix_RotateXYZ, changed to reflect rotation order.
+ * Original Name: Matrix_rotateXYZ, changed to reflect rotation order.
  */
-void Matrix_RotateZYX(s16 x, s16 y, s16 z, u8 mode) {
-    MtxF* cmf = sCurrentMatrix;
+void Matrix_rotateXYZ(s16 x, s16 y, s16 z, u8 mode) {
+    MtxF* cmf = Matrix_now;
     f32 temp1;
     f32 temp2;
     f32 sin;
     f32 cos;
 
     if (mode == MTXMODE_APPLY) {
-        sin = Math_SinS(z);
-        cos = Math_CosS(z);
+        sin = sin_s(z);
+        cos = cos_s(z);
 
         temp1 = cmf->xx;
         temp2 = cmf->xy;
@@ -336,8 +336,8 @@ void Matrix_RotateZYX(s16 x, s16 y, s16 z, u8 mode) {
         cmf->wy = temp2 * cos - temp1 * sin;
 
         if (y != 0) {
-            sin = Math_SinS(y);
-            cos = Math_CosS(y);
+            sin = sin_s(y);
+            cos = cos_s(y);
 
             temp1 = cmf->xx;
             temp2 = cmf->xz;
@@ -361,8 +361,8 @@ void Matrix_RotateZYX(s16 x, s16 y, s16 z, u8 mode) {
         }
 
         if (x != 0) {
-            sin = Math_SinS(x);
-            cos = Math_CosS(x);
+            sin = sin_s(x);
+            cos = cos_s(x);
 
             temp1 = cmf->xy;
             temp2 = cmf->xz;
@@ -385,7 +385,7 @@ void Matrix_RotateZYX(s16 x, s16 y, s16 z, u8 mode) {
             cmf->wz = temp2 * cos - temp1 * sin;
         }
     } else {
-        SkinMatrix_SetRotateZYX(cmf, x, y, z);
+        Skin_Matrix_SetRotateXyz_s(cmf, x, y, z);
     }
 }
 
@@ -394,10 +394,10 @@ void Matrix_RotateZYX(s16 x, s16 y, s16 z, u8 mode) {
  * This means a (column) vector is first rotated around X, then around Y, then around Z, then translated, then gets
  * transformed according to whatever the matrix was previously.
  */
-void Matrix_TranslateRotateZYX(Vec3f* translation, Vec3s* rotation) {
-    MtxF* cmf = sCurrentMatrix;
-    f32 sin = Math_SinS(rotation->z);
-    f32 cos = Math_CosS(rotation->z);
+void Matrix_softcv3_mult(Vec3f* translation, Vec3s* rotation) {
+    MtxF* cmf = Matrix_now;
+    f32 sin = sin_s(rotation->z);
+    f32 cos = cos_s(rotation->z);
     f32 temp1;
     f32 temp2;
 
@@ -426,8 +426,8 @@ void Matrix_TranslateRotateZYX(Vec3f* translation, Vec3s* rotation) {
     cmf->wy = temp2 * cos - temp1 * sin;
 
     if (rotation->y != 0) {
-        sin = Math_SinS(rotation->y);
-        cos = Math_CosS(rotation->y);
+        sin = sin_s(rotation->y);
+        cos = cos_s(rotation->y);
 
         temp1 = cmf->xx;
         temp2 = cmf->xz;
@@ -451,8 +451,8 @@ void Matrix_TranslateRotateZYX(Vec3f* translation, Vec3s* rotation) {
     }
 
     if (rotation->x != 0) {
-        sin = Math_SinS(rotation->x);
-        cos = Math_CosS(rotation->x);
+        sin = sin_s(rotation->x);
+        cos = cos_s(rotation->x);
 
         temp1 = cmf->xy;
         temp2 = cmf->xz;
@@ -480,10 +480,10 @@ void Matrix_TranslateRotateZYX(Vec3f* translation, Vec3s* rotation) {
  * Set the current matrix to translate and rotate using YXZ Tait-Bryan angles.
  * This means a (column) vector is first rotated around Z, then around X, then around Y, then translated.
  */
-void Matrix_SetTranslateRotateYXZ(f32 translateX, f32 translateY, f32 translateZ, Vec3s* rot) {
-    MtxF* cmf = sCurrentMatrix;
-    f32 temp1 = Math_SinS(rot->y);
-    f32 temp2 = Math_CosS(rot->y);
+void Matrix_softcv3_load(f32 translateX, f32 translateY, f32 translateZ, Vec3s* rot) {
+    MtxF* cmf = Matrix_now;
+    f32 temp1 = sin_s(rot->y);
+    f32 temp2 = cos_s(rot->y);
     f32 cos;
     f32 sin;
 
@@ -498,8 +498,8 @@ void Matrix_SetTranslateRotateYXZ(f32 translateX, f32 translateY, f32 translateZ
     cmf->ww = 1.0f;
 
     if (rot->x != 0) {
-        sin = Math_SinS(rot->x);
-        cos = Math_CosS(rot->x);
+        sin = sin_s(rot->x);
+        cos = cos_s(rot->x);
 
         cmf->zz = temp2 * cos;
         cmf->zy = temp2 * sin;
@@ -517,8 +517,8 @@ void Matrix_SetTranslateRotateYXZ(f32 translateX, f32 translateY, f32 translateZ
     }
 
     if (rot->z != 0) {
-        sin = Math_SinS(rot->z);
-        cos = Math_CosS(rot->z);
+        sin = sin_s(rot->z);
+        cos = cos_s(rot->z);
 
         temp1 = cmf->xx;
         temp2 = cmf->xy;
@@ -538,7 +538,7 @@ void Matrix_SetTranslateRotateYXZ(f32 translateX, f32 translateY, f32 translateZ
     }
 }
 
-Mtx* Matrix_MtxFToMtx(MtxF* src, Mtx* dest) {
+Mtx* _MtxF_to_Mtx(MtxF* src, Mtx* dest) {
     s32 temp;
     u16* m1 = (u16*)&dest->m[0][0];
     u16* m2 = (u16*)&dest->m[2][0];
@@ -611,39 +611,39 @@ Mtx* Matrix_MtxFToMtx(MtxF* src, Mtx* dest) {
 
 #if DEBUG_FEATURES
 
-Mtx* Matrix_ToMtx(Mtx* dest, const char* file, int line) {
-    return Matrix_MtxFToMtx(MATRIX_CHECK_FLOATS(sCurrentMatrix, file, line), dest);
+Mtx* _Matrix_to_Mtx(Mtx* dest, const char* file, int line) {
+    return _MtxF_to_Mtx(MATRIX_CHECK_FLOATS(Matrix_now, file, line), dest);
 }
 
-Mtx* Matrix_Finalize(GraphicsContext* gfxCtx, const char* file, int line) {
-    return Matrix_ToMtx(GRAPH_ALLOC(gfxCtx, sizeof(Mtx)), file, line);
+Mtx* _Matrix_to_Mtx_new(GraphicsContext* gfxCtx, const char* file, int line) {
+    return _Matrix_to_Mtx(GRAPH_ALLOC(gfxCtx, sizeof(Mtx)), file, line);
 }
 
 #else
 
-Mtx* Matrix_ToMtx(Mtx* dest) {
-    return Matrix_MtxFToMtx(sCurrentMatrix, dest);
+Mtx* _Matrix_to_Mtx(Mtx* dest) {
+    return _MtxF_to_Mtx(Matrix_now, dest);
 }
 
-Mtx* Matrix_Finalize(GraphicsContext* gfxCtx) {
-    return Matrix_ToMtx(GRAPH_ALLOC(gfxCtx, sizeof(Mtx)));
+Mtx* _Matrix_to_Mtx_new(GraphicsContext* gfxCtx) {
+    return _Matrix_to_Mtx(GRAPH_ALLOC(gfxCtx, sizeof(Mtx)));
 }
 
 #endif /* DEBUG_FEATURES */
 
-Mtx* Matrix_MtxFToNewMtx(MtxF* src, GraphicsContext* gfxCtx) {
-    return Matrix_MtxFToMtx(src, GRAPH_ALLOC(gfxCtx, sizeof(Mtx)));
+Mtx* _MtxF_to_Mtx_new(MtxF* src, GraphicsContext* gfxCtx) {
+    return _MtxF_to_Mtx(src, GRAPH_ALLOC(gfxCtx, sizeof(Mtx)));
 }
 
-void Matrix_MultVec3f(Vec3f* src, Vec3f* dest) {
-    MtxF* cmf = sCurrentMatrix;
+void Matrix_Position(Vec3f* src, Vec3f* dest) {
+    MtxF* cmf = Matrix_now;
 
     dest->x = cmf->xw + (cmf->xx * src->x + cmf->xy * src->y + cmf->xz * src->z);
     dest->y = cmf->yw + (cmf->yx * src->x + cmf->yy * src->y + cmf->yz * src->z);
     dest->z = cmf->zw + (cmf->zx * src->x + cmf->zy * src->y + cmf->zz * src->z);
 }
 
-void Matrix_MtxFCopy(MtxF* dest, MtxF* src) {
+void Matrix_copy_MtxF(MtxF* dest, MtxF* src) {
     dest->xx = src->xx;
     dest->yx = src->yx;
     dest->zx = src->zx;
@@ -678,7 +678,7 @@ void Matrix_MtxFCopy(MtxF* dest, MtxF* src) {
     dest->ww = src->ww;
 }
 
-void Matrix_MtxToMtxF(Mtx* src, MtxF* dest) {
+void Matrix_MtxtoMtxF(Mtx* src, MtxF* dest) {
     u16* m1 = (u16*)&src->m[0][0];
     u16* m2 = (u16*)&src->m[2][0];
 
@@ -700,13 +700,13 @@ void Matrix_MtxToMtxF(Mtx* src, MtxF* dest) {
     dest->ww = ((m1[15] << 0x10) | m2[15]) * (1 / 65536.0f);
 }
 
-void Matrix_MultVec3fExt(Vec3f* src, Vec3f* dest, MtxF* mf) {
+void Matrix_MtxF_Position2(Vec3f* src, Vec3f* dest, MtxF* mf) {
     dest->x = mf->xw + (mf->xx * src->x + mf->xy * src->y + mf->xz * src->z);
     dest->y = mf->yw + (mf->yx * src->x + mf->yy * src->y + mf->yz * src->z);
     dest->z = mf->zw + (mf->zx * src->x + mf->zy * src->y + mf->zz * src->z);
 }
 
-void Matrix_Transpose(MtxF* mf) {
+void Matrix_reverse(MtxF* mf) {
     f32 temp;
 
     temp = mf->yx;
@@ -730,8 +730,8 @@ void Matrix_Transpose(MtxF* mf) {
  * Since R is typically a rotation matrix, and the 3x3 part is changed from R * S to `mf` * S, this operation can be
  * seen as replacing the R rotation with `mf`, hence the function name.
  */
-void Matrix_ReplaceRotation(MtxF* mf) {
-    MtxF* cmf = sCurrentMatrix;
+void Matrix_rotate_scale_exchange(MtxF* mf) {
+    MtxF* cmf = Matrix_now;
     f32 acc;
     f32 temp;
     f32 curColNorm;
@@ -780,7 +780,7 @@ void Matrix_ReplaceRotation(MtxF* mf) {
  * Gets the rotation the specified matrix represents, using Tait-Bryan YXZ angles.
  * The flag value doesn't matter for a rotation matrix. Not 0 does extra calculation.
  */
-void Matrix_MtxFToYXZRotS(MtxF* mf, Vec3s* rotDest, s32 flag) {
+void Matrix_to_rotate_new(MtxF* mf, Vec3s* rotDest, s32 flag) {
     f32 temp;
     f32 temp2;
     f32 temp3;
@@ -789,17 +789,17 @@ void Matrix_MtxFToYXZRotS(MtxF* mf, Vec3s* rotDest, s32 flag) {
     temp = mf->xz;
     temp *= temp;
     temp += SQ(mf->zz);
-    rotDest->x = RAD_TO_BINANG(Math_FAtan2F(-mf->yz, sqrtf(temp)));
+    rotDest->x = RAD_TO_BINANG(fatan2(-mf->yz, sqrtf(temp)));
 
     if ((rotDest->x == 0x4000) || (rotDest->x == -0x4000)) {
         rotDest->z = 0;
 
-        rotDest->y = RAD_TO_BINANG(Math_FAtan2F(-mf->zx, mf->xx));
+        rotDest->y = RAD_TO_BINANG(fatan2(-mf->zx, mf->xx));
     } else {
-        rotDest->y = RAD_TO_BINANG(Math_FAtan2F(mf->xz, mf->zz));
+        rotDest->y = RAD_TO_BINANG(fatan2(mf->xz, mf->zz));
 
         if (!flag) {
-            rotDest->z = RAD_TO_BINANG(Math_FAtan2F(mf->yx, mf->yy));
+            rotDest->z = RAD_TO_BINANG(fatan2(mf->yx, mf->yy));
         } else {
             temp = mf->xx;
             temp2 = mf->zx;
@@ -824,7 +824,7 @@ void Matrix_MtxFToYXZRotS(MtxF* mf, Vec3s* rotDest, s32 flag) {
 
             /* for a rotation matrix, temp == yx and temp2 == yy
              * which is the same as in the !flag branch */
-            rotDest->z = RAD_TO_BINANG(Math_FAtan2F(temp, temp2));
+            rotDest->z = RAD_TO_BINANG(fatan2(temp, temp2));
         }
     }
 }
@@ -833,7 +833,7 @@ void Matrix_MtxFToYXZRotS(MtxF* mf, Vec3s* rotDest, s32 flag) {
  * Gets the rotation the specified matrix represents, using Tait-Bryan ZYX angles.
  * The flag value doesn't matter for a rotation matrix. Not 0 does extra calculation.
  */
-void Matrix_MtxFToZYXRotS(MtxF* mf, Vec3s* rotDest, s32 flag) {
+void Matrix_to_rotate2_new(MtxF* mf, Vec3s* rotDest, s32 flag) {
     f32 temp;
     f32 temp2;
     f32 temp3;
@@ -842,18 +842,18 @@ void Matrix_MtxFToZYXRotS(MtxF* mf, Vec3s* rotDest, s32 flag) {
     temp = mf->xx;
     temp *= temp;
     temp += SQ(mf->yx);
-    rotDest->y = RAD_TO_BINANG(Math_FAtan2F(-mf->zx, sqrtf(temp)));
+    rotDest->y = RAD_TO_BINANG(fatan2(-mf->zx, sqrtf(temp)));
 
     if ((rotDest->y == 0x4000) || (rotDest->y == -0x4000)) {
         rotDest->x = 0;
-        rotDest->z = RAD_TO_BINANG(Math_FAtan2F(-mf->xy, mf->yy));
+        rotDest->z = RAD_TO_BINANG(fatan2(-mf->xy, mf->yy));
     } else {
-        rotDest->z = RAD_TO_BINANG(Math_FAtan2F(mf->yx, mf->xx));
+        rotDest->z = RAD_TO_BINANG(fatan2(mf->yx, mf->xx));
 
         if (!flag) {
-            rotDest->x = RAD_TO_BINANG(Math_FAtan2F(mf->zy, mf->zz));
+            rotDest->x = RAD_TO_BINANG(fatan2(mf->zy, mf->zz));
         } else {
-            // see Matrix_MtxFToYXZRotS
+            // see Matrix_to_rotate_new
             temp = mf->xy;
             temp2 = mf->yy;
             temp3 = mf->yz;
@@ -873,7 +873,7 @@ void Matrix_MtxFToZYXRotS(MtxF* mf, Vec3s* rotDest, s32 flag) {
             temp2 = sqrtf(temp2);
             temp2 = temp3 / temp2;
 
-            rotDest->x = RAD_TO_BINANG(Math_FAtan2F(temp, temp2));
+            rotDest->x = RAD_TO_BINANG(fatan2(temp, temp2));
         }
     }
 }
@@ -882,7 +882,7 @@ void Matrix_MtxFToZYXRotS(MtxF* mf, Vec3s* rotDest, s32 flag) {
  * Rotate the matrix by `angle` radians around a unit vector `axis`.
  * NB: `axis` is assumed to be a unit vector.
  */
-void Matrix_RotateAxis(f32 angle, Vec3f* axis, u8 mode) {
+void Matrix_rotateVector(f32 angle, Vec3f* axis, u8 mode) {
     MtxF* cmf;
     f32 sin;
     f32 cos;
@@ -894,7 +894,7 @@ void Matrix_RotateAxis(f32 angle, Vec3f* axis, u8 mode) {
 
     if (mode == MTXMODE_APPLY) {
         if (angle != 0) {
-            cmf = sCurrentMatrix;
+            cmf = Matrix_now;
 
             sin = sinf(angle);
             cos = cosf(angle);
@@ -924,7 +924,7 @@ void Matrix_RotateAxis(f32 angle, Vec3f* axis, u8 mode) {
             cmf->zz = temp3 * cos + axis->z * temp4 + sin * (temp1 * axis->y - temp2 * axis->x);
         }
     } else {
-        cmf = sCurrentMatrix;
+        cmf = Matrix_now;
 
         if (angle != 0) {
             sin = sinf(angle);
@@ -989,7 +989,7 @@ MtxF* Matrix_CheckFloats(MtxF* mf, const char* file, int line) {
                        "\\ %12.6f %12.6f %12.6f %12.6f /\n",
                        file, line, "mf", mf->xx, mf->xy, mf->xz, mf->xw, mf->yx, mf->yy, mf->yz, mf->yw, mf->zx, mf->zy,
                        mf->zz, mf->zw, mf->wx, mf->wy, mf->wz, mf->ww);
-                Fault_AddHungupAndCrash(file, line);
+                fault_HungUp(file, line);
             }
         }
     }
@@ -998,7 +998,7 @@ MtxF* Matrix_CheckFloats(MtxF* mf, const char* file, int line) {
 }
 #endif
 
-void Matrix_SetTranslateUniformScaleMtxF(MtxF* mf, f32 scale, f32 translateX, f32 translateY, f32 translateZ) {
+void guPositionF2(MtxF* mf, f32 scale, f32 translateX, f32 translateY, f32 translateZ) {
     mf->xx = scale;
     mf->yx = 0.0f;
     mf->zx = 0.0f;
@@ -1017,14 +1017,14 @@ void Matrix_SetTranslateUniformScaleMtxF(MtxF* mf, f32 scale, f32 translateX, f3
     mf->ww = 1.0f;
 }
 
-void Matrix_SetTranslateUniformScaleMtx(Mtx* mtx, f32 scale, f32 translateX, f32 translateY, f32 translateZ) {
+void guPosition2(Mtx* mtx, f32 scale, f32 translateX, f32 translateY, f32 translateZ) {
     MtxF mf;
 
-    Matrix_SetTranslateUniformScaleMtxF(&mf, scale, translateX, translateY, translateZ);
+    guPositionF2(&mf, scale, translateX, translateY, translateZ);
     guMtxF2L(mf.mf, mtx);
 }
 
-void Matrix_SetTranslateUniformScaleMtx2(Mtx* mtx, f32 scale, f32 translateX, f32 translateY, f32 translateZ) {
+void guPosition3(Mtx* mtx, f32 scale, f32 translateX, f32 translateY, f32 translateZ) {
     u16* intPart = (u16*)&mtx->m[0][0];
     u16* fracPart = (u16*)&mtx->m[2][0];
     u32 fixedPoint;
@@ -1076,7 +1076,7 @@ void Matrix_SetTranslateUniformScaleMtx2(Mtx* mtx, f32 scale, f32 translateX, f3
     fracPart[15] = 0;
 }
 
-void Matrix_SetTranslateScaleMtx1(Mtx* mtx, f32 scaleX, f32 scaleY, f32 scaleZ, f32 translateX, f32 translateY,
+void guPosition4(Mtx* mtx, f32 scaleX, f32 scaleY, f32 scaleZ, f32 translateX, f32 translateY,
                                   f32 translateZ) {
     u16* intPart = (u16*)&mtx->m[0][0];
     u16* fracPart = (u16*)&mtx->m[2][0];
@@ -1129,7 +1129,7 @@ void Matrix_SetTranslateScaleMtx1(Mtx* mtx, f32 scaleX, f32 scaleY, f32 scaleZ, 
     fracPart[15] = 0;
 }
 
-void Matrix_SetTranslateScaleMtx2(Mtx* mtx, f32 scaleX, f32 scaleY, f32 scaleZ, f32 translateX, f32 translateY,
+void suMtxMakeTS(Mtx* mtx, f32 scaleX, f32 scaleY, f32 scaleZ, f32 translateX, f32 translateY,
                                   f32 translateZ) {
     Mtx_t* m = &mtx->m;
     u16* intPart = (u16*)&(*m)[0][0];

@@ -23,7 +23,7 @@ typedef struct EnHeishi1 {
     /* 0x026C */ s16 path;
     /* 0x026E */ s16 unused1;
     /* 0x0270 */ s16 waypointTimer;
-    /* 0x0272 */ s16 unused2;
+    /* 0x0272 */ s16 env;
     /* 0x0274 */ f32 moveSpeed;
     /* 0x0278 */ f32 bodyTurnSpeed;
     /* 0x027C */ f32 headAngle;

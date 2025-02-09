@@ -8,12 +8,12 @@
 
 #define FLAGS 0
 
-void EnSceneChange_Init(Actor* thisx, PlayState* play);
-void EnSceneChange_Destroy(Actor* thisx, PlayState* play);
-void EnSceneChange_Update(Actor* thisx, PlayState* play);
-void EnSceneChange_Draw(Actor* thisx, PlayState* play);
+void En_Scene_Change_actor_ct(Actor* thisx, PlayState* play);
+void En_Scene_Change_actor_dt(Actor* thisx, PlayState* play);
+void En_Scene_Change_actor_move(Actor* thisx, PlayState* play);
+void En_Scene_Change_actor_draw(Actor* thisx, PlayState* play);
 
-void EnSceneChange_DoNothing(EnSceneChange* this, PlayState* play);
+static void move_wait(EnSceneChange* this, PlayState* play);
 
 ActorProfile En_Scene_Change_Profile = {
     /**/ ACTOR_EN_SCENE_CHANGE,
@@ -21,35 +21,35 @@ ActorProfile En_Scene_Change_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_JJ,
     /**/ sizeof(EnSceneChange),
-    /**/ EnSceneChange_Init,
-    /**/ EnSceneChange_Destroy,
-    /**/ EnSceneChange_Update,
-    /**/ EnSceneChange_Draw,
+    /**/ En_Scene_Change_actor_ct,
+    /**/ En_Scene_Change_actor_dt,
+    /**/ En_Scene_Change_actor_move,
+    /**/ En_Scene_Change_actor_draw,
 };
 
-void EnSceneChange_SetupAction(EnSceneChange* this, EnSceneChangeActionFunc actionFunc) {
+void En_Scene_Change_actor_set_process(EnSceneChange* this, EnSceneChangeActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
 
-void EnSceneChange_Init(Actor* thisx, PlayState* play) {
+void En_Scene_Change_actor_ct(Actor* thisx, PlayState* play) {
     EnSceneChange* this = (EnSceneChange*)thisx;
 
-    EnSceneChange_SetupAction(this, EnSceneChange_DoNothing);
+    En_Scene_Change_actor_set_process(this, move_wait);
 }
 
-void EnSceneChange_Destroy(Actor* thisx, PlayState* play) {
+void En_Scene_Change_actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void EnSceneChange_DoNothing(EnSceneChange* this, PlayState* play) {
+static void move_wait(EnSceneChange* this, PlayState* play) {
 }
 
-void EnSceneChange_Update(Actor* thisx, PlayState* play) {
+void En_Scene_Change_actor_move(Actor* thisx, PlayState* play) {
     EnSceneChange* this = (EnSceneChange*)thisx;
 
     this->actionFunc(this, play);
 }
 
-void EnSceneChange_Draw(Actor* thisx, PlayState* play) {
+void En_Scene_Change_actor_draw(Actor* thisx, PlayState* play) {
     s32 pad[2];
     Gfx* displayList;
     s32 pad2[2];
@@ -62,7 +62,7 @@ void EnSceneChange_Draw(Actor* thisx, PlayState* play) {
     displayListHead = displayList;
     gSPSegment(POLY_OPA_DISP++, 0x0C, displayListHead);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_scene_change.c", 386);
 }

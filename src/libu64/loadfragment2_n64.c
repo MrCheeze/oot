@@ -2,13 +2,13 @@
  * @file loadfragment2_n64.c
  *
  * This file contains the routine responsible for runtime relocation of dynamically loadable code segments (overlays),
- * see the description of Overlay_Relocate for details.
+ * see the description of DoRelocation for details.
  *
- * @see Overlay_Relocate
+ * @see DoRelocation
  */
 #include "global.h"
 
-s32 gOverlayLogSeverity = 2;
+s32 loadfragment_verbose = 2;
 
 // Extract MIPS register rs from an instruction word
 #define MIPS_REG_RS(insn) (((insn) >> 0x15) & 0x1F)
@@ -39,7 +39,7 @@ s32 gOverlayLogSeverity = 2;
  * @param ovlRelocs Overlay relocation section containing overlay section layout and runtime relocations.
  * @param vramStart Virtual RAM address that the overlay was compiled at.
  */
-void Overlay_Relocate(void* allocatedRamAddr, OverlayRelocationSection* ovlRelocs, void* vramStart) {
+void DoRelocation(void* allocatedRamAddr, OverlayRelocationSection* ovlRelocs, void* vramStart) {
     u32 sections[RELOC_SECTION_MAX];
     u32* relocDataP;
     u32 reloc;
@@ -59,7 +59,7 @@ void Overlay_Relocate(void* allocatedRamAddr, OverlayRelocationSection* ovlReloc
     uintptr_t allocu32 = (uintptr_t)allocatedRamAddr;
     uintptr_t vramu32 = (uintptr_t)vramStart;
 
-    if (gOverlayLogSeverity >= 3) {
+    if (loadfragment_verbose >= 3) {
         osSyncPrintf("DoRelocation(%08x, %08x, %08x)\n", allocatedRamAddr, ovlRelocs, vramStart);
     }
 
@@ -84,7 +84,7 @@ void Overlay_Relocate(void* allocatedRamAddr, OverlayRelocationSection* ovlReloc
                 // Check address is valid for relocation
                 if ((*relocDataP & 0x0F000000) == 0) {
                     *relocDataP = *relocDataP - vramu32 + allocu32;
-                } else if (gOverlayLogSeverity >= 3) {
+                } else if (loadfragment_verbose >= 3) {
                     osSyncPrintf(T("セグメントポインタ32です %08x\n", "Segment pointer 32 %08x\n"),
                                  *relocDataP - vramu32);
                 }
@@ -99,7 +99,7 @@ void Overlay_Relocate(void* allocatedRamAddr, OverlayRelocationSection* ovlReloc
                     *relocDataP =
                         (*relocDataP & 0xFC000000) |
                         (((PHYS_TO_K0(MIPS_JUMP_TARGET(*relocDataP)) - vramu32 + allocu32) & 0x0FFFFFFF) >> 2);
-                } else if (gOverlayLogSeverity >= 3) {
+                } else if (loadfragment_verbose >= 3) {
                     osSyncPrintf(T("セグメントポインタ26です %08x\n", "Segment pointer 26 %08x\n"),
                                  PHYS_TO_K0(MIPS_JUMP_TARGET(*relocDataP)) - vramu32);
                 }
@@ -130,7 +130,7 @@ void Overlay_Relocate(void* allocatedRamAddr, OverlayRelocationSection* ovlReloc
                     isLoNeg = (relocatedAddress & 0x8000) ? 1 : 0;
                     *luiInstRef = (*luiInstRef & 0xFFFF0000) | (((relocatedAddress >> 0x10) & 0xFFFF) + isLoNeg);
                     *relocDataP = (*relocDataP & 0xFFFF0000) | (relocatedAddress & 0xFFFF);
-                } else if (gOverlayLogSeverity >= 3) {
+                } else if (loadfragment_verbose >= 3) {
                     osSyncPrintf(T("セグメントポインタ16です %08x %08x %08x\n", "Segment pointer 16 %08x %08x %08x\n"),
                                  ((*luiInstRef << 0x10) + (s16)*relocDataP) - vramu32, *luiInstRef, *relocDataP);
                 }
@@ -139,13 +139,13 @@ void Overlay_Relocate(void* allocatedRamAddr, OverlayRelocationSection* ovlReloc
     }
 }
 
-size_t Overlay_Load(uintptr_t vromStart, uintptr_t vromEnd, void* vramStart, void* vramEnd, void* allocatedRamAddr) {
+size_t LoadFragmentFix2(uintptr_t vromStart, uintptr_t vromEnd, void* vramStart, void* vramEnd, void* allocatedRamAddr) {
     s32 pad[2];
     s32 size = vromEnd - vromStart;
     uintptr_t end;
     OverlayRelocationSection* ovlRelocs;
 
-    if (gOverlayLogSeverity >= 3) {
+    if (loadfragment_verbose >= 3) {
         osSyncPrintf(
             T("\nダイナミックリンクファンクションのロードを開始します\n", "\nStart loading dynamic link function\n"));
     }
@@ -153,32 +153,32 @@ size_t Overlay_Load(uintptr_t vromStart, uintptr_t vromEnd, void* vramStart, voi
     size = vromEnd - vromStart;
     end = (uintptr_t)allocatedRamAddr + size;
 
-    if (gOverlayLogSeverity >= 3) {
+    if (loadfragment_verbose >= 3) {
         osSyncPrintf(T("TEXT,DATA,RODATA+relをＤＭＡ転送します(%08x-%08x)\n",
                        "DMA transfer TEXT, DATA, RODATA+rel (%08x-%08x)\n"),
                      allocatedRamAddr, end);
     }
 
-    DmaMgr_RequestSync(allocatedRamAddr, vromStart, size);
+    dmacopy_fg(allocatedRamAddr, vromStart, size);
 
     // The overlay file is expected to contain a 32-bit offset from the end of the file to the start of the
     // relocation section.
     ovlRelocs = (OverlayRelocationSection*)(end - ((s32*)end)[-1]);
 
-    if (gOverlayLogSeverity >= 3) {
+    if (loadfragment_verbose >= 3) {
         osSyncPrintf("TEXT(%08x), DATA(%08x), RODATA(%08x), BSS(%08x)\n", ovlRelocs->textSize, ovlRelocs->dataSize,
                      ovlRelocs->rodataSize, (s32)ovlRelocs->bssSize);
     }
 
-    if (gOverlayLogSeverity >= 3) {
+    if (loadfragment_verbose >= 3) {
         osSyncPrintf(T("リロケーションします\n", "I will relocate\n"));
     }
 
-    Overlay_Relocate(allocatedRamAddr, ovlRelocs, vramStart);
+    DoRelocation(allocatedRamAddr, ovlRelocs, vramStart);
 
     // Casts suggest bssSize struct variable was an s32, but needs to be a u32 for the GC versions
     if ((s32)ovlRelocs->bssSize != 0) {
-        if (gOverlayLogSeverity >= 3) {
+        if (loadfragment_verbose >= 3) {
             osSyncPrintf(T("BSS領域をクリアします(%08x-%08x)\n", "Clear BSS area (%08x-%08x)\n"), end,
                          end + (s32)ovlRelocs->bssSize);
         }
@@ -190,7 +190,7 @@ size_t Overlay_Load(uintptr_t vromStart, uintptr_t vromEnd, void* vramStart, voi
     osWritebackDCache(allocatedRamAddr, size);
     osInvalICache(allocatedRamAddr, size);
 
-    if (gOverlayLogSeverity >= 3) {
+    if (loadfragment_verbose >= 3) {
         osSyncPrintf(T("ダイナミックリンクファンクションのロードを終了します\n\n",
                        "Finish loading the dynamic link function\n\n"));
     }
@@ -198,11 +198,11 @@ size_t Overlay_Load(uintptr_t vromStart, uintptr_t vromEnd, void* vramStart, voi
     return size;
 }
 
-void* Overlay_AllocateAndLoad(uintptr_t vromStart, uintptr_t vromEnd, void* vramStart, void* vramEnd) {
+void* LoadFragment2(uintptr_t vromStart, uintptr_t vromEnd, void* vramStart, void* vramEnd) {
     void* allocatedRamAddr = SYSTEM_ARENA_MALLOC_R((intptr_t)vramEnd - (intptr_t)vramStart, "../loadfragment2.c", 31);
 
     if (allocatedRamAddr != NULL) {
-        Overlay_Load(vromStart, vromEnd, vramStart, vramEnd, allocatedRamAddr);
+        LoadFragmentFix2(vromStart, vromEnd, vramStart, vramEnd, allocatedRamAddr);
     }
 
     return allocatedRamAddr;

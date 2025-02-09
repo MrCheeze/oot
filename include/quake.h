@@ -28,17 +28,17 @@ typedef enum QuakeType {
 // continues indefinitely i.e. does not terminate when the timer reaches 0
 // must be manually removed
 
-s16 Quake_Request(Camera* camera, u32 type);
+s16 startQuake(Camera* camera, u32 type);
 
-u32 Quake_SetSpeed(s16 index, s16 speed);
-u32 Quake_SetPerturbations(s16 index, s16 y, s16 x, s16 fov, s16 roll);
-u32 Quake_SetDuration(s16 index, s16 duration);
-u32 Quake_SetOrientation(s16 index, s16 isRelativeToScreen, Vec3s orientation);
+u32 setSpeedQuake(s16 index, s16 speed);
+u32 setScaleQuake(s16 index, s16 y, s16 x, s16 fov, s16 roll);
+u32 setTimerQuake(s16 index, s16 duration);
+u32 setRotateQuake(s16 index, s16 isRelativeToScreen, Vec3s orientation);
 
-s16 Quake_GetTimeLeft(s16 index);
-u32 Quake_RemoveRequest(s16 index);
+s16 getTimerQuake(s16 index);
+u32 stopQuake(s16 index);
 
-void Quake_Init(void);
-s16 Quake_Update(Camera* camera, ShakeInfo* camShake);
+void initQuakeControl(void);
+s16 cameraQuakeControl(Camera* camera, ShakeInfo* camShake);
 
 #endif

@@ -1,22 +1,22 @@
-void DemoEc_InitGerudo(DemoEc* this, PlayState* play) {
-    DemoEc_UseDrawObject(this, play);
-    DemoEc_InitSkelAnime(this, play, &gGerudoWhiteSkel);
-    DemoEc_UseAnimationObject(this, play);
-    DemoEc_ChangeAnimation(this, &gDemoEcGerudoAnim, 0, 0.0f, false);
-    func_8096D5D4(this, play);
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 30.0f);
+void Demo_Ec_main_init_Ge1(DemoEc* this, PlayState* play) {
+    Demo_Ec_Change_ShapeBank(this, play);
+    Demo_Ec_Setup_Mdl(this, play, &gGerudoWhiteSkel);
+    Demo_Ec_Change_AnimeBank(this, play);
+    Demo_Ec_Change_Anime(this, &gDemoEcGerudoAnim, 0, 0.0f, false);
+    Demo_Ec_Start_Movement_byAnimation(this, play);
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 30.0f);
     this->updateMode = EC_UPDATE_GERUDO;
     this->drawConfig = EC_DRAW_GERUDO;
 }
 
-void DemoEc_UpdateGerudo(DemoEc* this, PlayState* play) {
-    DemoEc_UpdateSkelAnime(this);
-    func_8096D594(this, play);
-    DemoEc_UpdateEyes(this);
-    DemoEc_UpdateBgFlags(this, play);
+void Demo_Ec_main_Ge1_Wait(DemoEc* this, PlayState* play) {
+    Demo_Ec_Animation_Base(this);
+    Demo_Ec_Movement_byAnimation_CorrectNone(this, play);
+    Demo_Ec_set_eye_pattern(this);
+    Demo_Ec_BGcheck(this, play);
 }
 
-Gfx* DemoEc_GetGerudoPostLimbDList(DemoEc* this) {
+Gfx* Demo_Ec_Get_Zura_Ge1(DemoEc* this) {
     switch (this->actor.params) {
         case 16:
             return gGerudoWhiteHairstyleBobDL;
@@ -30,24 +30,24 @@ Gfx* DemoEc_GetGerudoPostLimbDList(DemoEc* this) {
     }
 }
 
-void DemoEc_GerudoPostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx, Gfx** gfx) {
+void Demo_Ec_AfterDraw_Ge1(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx, Gfx** gfx) {
     DemoEc* this = (DemoEc*)thisx;
     Gfx* postLimbDList;
 
     if (limbIndex == 15) {
-        postLimbDList = DemoEc_GetGerudoPostLimbDList(this);
+        postLimbDList = Demo_Ec_Get_Zura_Ge1(this);
         gSPDisplayList((*gfx)++, SEGMENTED_TO_VIRTUAL(postLimbDList));
     }
 }
 
-void DemoEc_DrawGerudo(DemoEc* this, PlayState* play) {
-    static void* eyeTextures[] = {
+void Demo_Ec_draw_normal_Ge1(DemoEc* this, PlayState* play) {
+    static void* Demo_Ec_inGe1_eye[] = {
         gGerudoWhiteEyeOpenTex,
         gGerudoWhiteEyeHalfTex,
         gGerudoWhiteEyeClosedTex,
     };
     s32 eyeTexIndex = this->eyeTexIndex;
-    void* eyeTexture = eyeTextures[eyeTexIndex];
+    void* eyeTexture = Demo_Ec_inGe1_eye[eyeTexIndex];
 
-    DemoEc_DrawSkeleton(this, play, eyeTexture, NULL, NULL, DemoEc_GerudoPostLimbDraw);
+    Demo_Ec_draw_normal_1(this, play, eyeTexture, NULL, NULL, Demo_Ec_AfterDraw_Ge1);
 }

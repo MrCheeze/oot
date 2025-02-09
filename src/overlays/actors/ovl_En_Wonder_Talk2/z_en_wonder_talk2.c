@@ -9,15 +9,15 @@
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY | ACTOR_FLAG_LOCK_ON_DISABLED)
 
-void EnWonderTalk2_Init(Actor* thisx, PlayState* play);
-void EnWonderTalk2_Destroy(Actor* thisx, PlayState* play);
-void EnWonderTalk2_Update(Actor* thisx, PlayState* play);
+void en_wonder_talk2_actor_ct(Actor* thisx, PlayState* play);
+void en_wonder_talk2_actor_dt(Actor* thisx, PlayState* play);
+void en_wonder_talk2_actor_move(Actor* thisx, PlayState* play);
 
-void func_80B3A10C(EnWonderTalk2* this, PlayState* play);
-void func_80B3A4F8(EnWonderTalk2* this, PlayState* play);
-void func_80B3A15C(EnWonderTalk2* this, PlayState* play);
-void func_80B3A3D4(EnWonderTalk2* this, PlayState* play);
-void EnWonderTalk2_DoNothing(EnWonderTalk2* this, PlayState* play);
+static void mode_message_set_init(EnWonderTalk2* this, PlayState* play);
+void mode_message_out_check(EnWonderTalk2* this, PlayState* play);
+static void mode_message_set(EnWonderTalk2* this, PlayState* play);
+static void mode_message_check(EnWonderTalk2* this, PlayState* play);
+void mode_non_move(EnWonderTalk2* this, PlayState* play);
 
 ActorProfile En_Wonder_Talk2_Profile = {
     /**/ ACTOR_EN_WONDER_TALK2,
@@ -25,18 +25,18 @@ ActorProfile En_Wonder_Talk2_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(EnWonderTalk2),
-    /**/ EnWonderTalk2_Init,
-    /**/ EnWonderTalk2_Destroy,
-    /**/ EnWonderTalk2_Update,
+    /**/ en_wonder_talk2_actor_ct,
+    /**/ en_wonder_talk2_actor_dt,
+    /**/ en_wonder_talk2_actor_move,
     /**/ NULL,
 };
 
-static s16 D_80B3A8E0[] = { 6, 0, 1, 2, 3, 4, 5 };
+static s16 range_data[] = { 6, 0, 1, 2, 3, 4, 5 };
 
-void EnWonderTalk2_Destroy(Actor* thisx, PlayState* play) {
+void en_wonder_talk2_actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void EnWonderTalk2_Init(Actor* thisx, PlayState* play) {
+void en_wonder_talk2_actor_ct(Actor* thisx, PlayState* play) {
     s32 pad;
     EnWonderTalk2* this = (EnWonderTalk2*)thisx;
 
@@ -58,7 +58,7 @@ void EnWonderTalk2_Init(Actor* thisx, PlayState* play) {
             rangeIndex = 0;
         }
 
-        this->actor.attentionRangeType = D_80B3A8E0[rangeIndex];
+        this->actor.attentionRangeType = range_data[rangeIndex];
 
         PRINTF("\n\n");
         // "originally?"
@@ -79,9 +79,9 @@ void EnWonderTalk2_Init(Actor* thisx, PlayState* play) {
     if (this->switchFlag == 0x3F) {
         this->switchFlag = -1;
     }
-    if (this->switchFlag >= 0 && Flags_GetSwitch(play, this->switchFlag)) {
+    if (this->switchFlag >= 0 && Actor_Environment_sw_Check(play, this->switchFlag)) {
         PRINTF(VT_FGCOL(GREEN) "☆☆☆☆☆ Ｙｏｕ ａｒｅ Ｓｈｏｃｋ！  ☆☆☆☆☆ %d\n" VT_RST, this->switchFlag);
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
         return;
     }
     if ((this->talkMode == 1) && (play->sceneId == SCENE_GERUDO_TRAINING_GROUND) && (this->switchFlag != 0x08) &&
@@ -92,39 +92,39 @@ void EnWonderTalk2_Init(Actor* thisx, PlayState* play) {
     }
     if (this->talkMode == 3) {
         this->actor.flags &= ~ACTOR_FLAG_LOCK_ON_DISABLED;
-        this->actionFunc = EnWonderTalk2_DoNothing;
+        this->actionFunc = mode_non_move;
     } else {
-        this->actionFunc = func_80B3A10C;
+        this->actionFunc = mode_message_set_init;
     }
 }
 
-void func_80B3A10C(EnWonderTalk2* this, PlayState* play) {
+static void mode_message_set_init(EnWonderTalk2* this, PlayState* play) {
     this->actor.textId = 0x200;
     this->actor.textId |= this->baseMsgId;
     if (this->talkMode == 1 || this->talkMode == 4) {
-        this->actionFunc = func_80B3A4F8;
+        this->actionFunc = mode_message_out_check;
     } else {
-        this->actionFunc = func_80B3A15C;
+        this->actionFunc = mode_message_set;
     }
 }
 
-void func_80B3A15C(EnWonderTalk2* this, PlayState* play) {
+static void mode_message_set(EnWonderTalk2* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     this->unk_158++;
-    if ((this->switchFlag >= 0) && Flags_GetSwitch(play, this->switchFlag)) {
+    if ((this->switchFlag >= 0) && Actor_Environment_sw_Check(play, this->switchFlag)) {
         if (!this->unk_15A) {
             this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
             this->unk_15A = true;
         }
-    } else if (Actor_TalkOfferAccepted(&this->actor, play)) {
+    } else if (Actor_talk_check(&this->actor, play)) {
         if ((this->switchFlag >= 0) && (this->talkMode != 2)) {
-            Flags_SetSwitch(play, this->switchFlag);
+            Actor_Environment_sw_On(play, this->switchFlag);
             // "I saved it! All of it!"
             PRINTF(VT_FGCOL(MAGENTA) "☆☆☆☆☆ セーブしたよ！おもいっきり！ %x\n" VT_RST, this->switchFlag);
         }
 
-        this->actionFunc = func_80B3A10C;
+        this->actionFunc = mode_message_set_init;
     } else {
         s16 yawDiff = ABS((s16)(this->actor.yawTowardsPlayer - this->actor.world.rot.y));
 
@@ -162,30 +162,30 @@ void func_80B3A15C(EnWonderTalk2* this, PlayState* play) {
             }
 
             this->unk_158 = 0;
-            Actor_OfferTalkExchange(&this->actor, play, this->triggerRange + 50.0f, 100.0f, EXCH_ITEM_NONE);
+            Actor_talk_request_get_item_set(&this->actor, play, this->triggerRange + 50.0f, 100.0f, EXCH_ITEM_NONE);
         }
     }
 }
 
-void func_80B3A3D4(EnWonderTalk2* this, PlayState* play) {
+static void mode_message_check(EnWonderTalk2* this, PlayState* play) {
     if (BREG(2) != 0) {
         // "Oh"
-        PRINTF(VT_FGCOL(MAGENTA) "☆☆☆☆☆ わー %d\n" VT_RST, Message_GetState(&play->msgCtx));
+        PRINTF(VT_FGCOL(MAGENTA) "☆☆☆☆☆ わー %d\n" VT_RST, message_check(&play->msgCtx));
     }
 
-    switch (Message_GetState(&play->msgCtx)) {
+    switch (message_check(&play->msgCtx)) {
         case TEXT_STATE_EVENT:
         case TEXT_STATE_DONE:
-            if (Message_ShouldAdvance(play)) {
-                if (Message_GetState(&play->msgCtx) == TEXT_STATE_EVENT) {
-                    Message_CloseTextbox(play);
+            if (pad_on_check(play)) {
+                if (message_check(&play->msgCtx) == TEXT_STATE_EVENT) {
+                    message_close(play);
                 }
             } else {
                 break;
             }
         case TEXT_STATE_NONE:
             if ((this->switchFlag >= 0) && (this->talkMode != 4)) {
-                Flags_SetSwitch(play, this->switchFlag);
+                Actor_Environment_sw_On(play, this->switchFlag);
                 // "(Forced) I saved it! All of it!"
                 PRINTF(VT_FGCOL(MAGENTA) "☆☆☆☆☆ (強制)セーブしたよ！おもいっきり！ %x\n" VT_RST, this->switchFlag);
             }
@@ -194,19 +194,19 @@ void func_80B3A3D4(EnWonderTalk2* this, PlayState* play) {
                 this->unk_15A = true;
             }
             this->actor.flags &= ~(ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_UPDATE_CULLING_DISABLED);
-            Player_SetCsActionWithHaltedActors(play, NULL, PLAYER_CSACTION_7);
+            player_demo_mode_set(play, NULL, PLAYER_CSACTION_7);
             this->unk_156 = true;
-            this->actionFunc = func_80B3A4F8;
+            this->actionFunc = mode_message_out_check;
             break;
     }
 }
 
-void func_80B3A4F8(EnWonderTalk2* this, PlayState* play) {
+void mode_message_out_check(EnWonderTalk2* this, PlayState* play) {
     Player* player;
 
     player = GET_PLAYER(play);
     this->unk_158++;
-    if (this->switchFlag >= 0 && Flags_GetSwitch(play, this->switchFlag)) {
+    if (this->switchFlag >= 0 && Actor_Environment_sw_Check(play, this->switchFlag)) {
         if (!this->unk_15A) {
             this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
             this->unk_15A = true;
@@ -218,7 +218,7 @@ void func_80B3A4F8(EnWonderTalk2* this, PlayState* play) {
         }
         if (((this->actor.xzDistToPlayer < (40.0f + this->triggerRange)) &&
              (fabsf(player->actor.world.pos.y - this->actor.world.pos.y) < 100.0f)) &&
-            !Play_InCsMode(play)) {
+            !Game_play_demo_mode_check(play)) {
 
             if (DEBUG_FEATURES && this->unk_158 >= 2) {
                 PRINTF("\n\n");
@@ -254,10 +254,10 @@ void func_80B3A4F8(EnWonderTalk2* this, PlayState* play) {
 
             this->unk_158 = 0;
             if (!this->unk_156) {
-                Message_StartTextbox(play, this->actor.textId, NULL);
-                Player_SetCsActionWithHaltedActors(play, NULL, PLAYER_CSACTION_8);
+                message_set(play, this->actor.textId, NULL);
+                player_demo_mode_set(play, NULL, PLAYER_CSACTION_8);
                 this->actor.flags |= ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_UPDATE_CULLING_DISABLED;
-                this->actionFunc = func_80B3A3D4;
+                this->actionFunc = mode_message_check;
             }
 
         } else {
@@ -266,27 +266,27 @@ void func_80B3A4F8(EnWonderTalk2* this, PlayState* play) {
     }
 }
 
-void EnWonderTalk2_DoNothing(EnWonderTalk2* this, PlayState* play) {
+void mode_non_move(EnWonderTalk2* this, PlayState* play) {
 }
 
-void EnWonderTalk2_Update(Actor* thisx, PlayState* play) {
+void en_wonder_talk2_actor_move(Actor* thisx, PlayState* play) {
     s32 pad;
     EnWonderTalk2* this = (EnWonderTalk2*)thisx;
 
     this->actionFunc(this, play);
     this->actor.world.pos.y = this->initPos.y;
 
-    Actor_SetFocus(&this->actor, this->height);
+    Actor_world_to_eye(&this->actor, this->height);
 
     if (DEBUG_FEATURES && BREG(0) != 0) {
         if (this->unk_158 != 0) {
             if ((this->unk_158 & 1) == 0) {
-                DebugDisplay_AddObject(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
+                Debug_Display_new(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
                                        this->actor.world.rot.x, this->actor.world.rot.y, this->actor.world.rot.z, 1.0f,
                                        1.0f, 1.0f, 70, 70, 70, 255, 4, play->state.gfxCtx);
             }
         } else {
-            DebugDisplay_AddObject(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
+            Debug_Display_new(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
                                    this->actor.world.rot.x, this->actor.world.rot.y, this->actor.world.rot.z, 1.0f,
                                    1.0f, 1.0f, 0, 0, 255, 255, 4, play->state.gfxCtx);
         }

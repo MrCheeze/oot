@@ -8,33 +8,33 @@
 
 #include "mae_flagtbl.inc.c"
 
-SfxParams sPlayerBankParams[] = {
+SfxParams PlayerInfo[] = {
 #include "tables/sfx/playerbank_table.h"
 };
 
-SfxParams sItemBankParams[] = {
+SfxParams ItemInfo[] = {
 #include "tables/sfx/itembank_table.h"
 };
 
-SfxParams sEnvBankParams[] = {
+SfxParams EnvInfo[] = {
 #include "tables/sfx/environmentbank_table.h"
 };
 
-SfxParams sSystemBankParams[] = {
+SfxParams SystemInfo[] = {
 #include "tables/sfx/systembank_table.h"
 };
 
-SfxParams sOcarinaBankParams[] = {
+SfxParams OcarinaInfo[] = {
 #include "tables/sfx/ocarinabank_table.h"
 };
 
-SfxParams sVoiceBankParams[] = {
+SfxParams VoiceInfo[] = {
 #include "tables/sfx/voicebank_table.h"
 };
 
 #undef DEFINE_SFX
 
-SfxParams* gSfxParams[7] = {
-    sPlayerBankParams, sItemBankParams,    sEnvBankParams,   sEnemyBankParams,
-    sSystemBankParams, sOcarinaBankParams, sVoiceBankParams,
+SfxParams* se_indi_info_adrs[7] = {
+    PlayerInfo, ItemInfo,    EnvInfo,   EnemyInfo,
+    SystemInfo, OcarinaInfo, VoiceInfo,
 };

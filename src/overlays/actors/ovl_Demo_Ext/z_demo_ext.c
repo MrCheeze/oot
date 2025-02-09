@@ -21,15 +21,15 @@ typedef enum DemoExtDrawMode {
     /* 0x01 */ EXT_DRAW_VORTEX
 } DemoExtDrawMode;
 
-void DemoExt_Init(Actor* thisx, PlayState* play);
-void DemoExt_Destroy(Actor* thisx, PlayState* play);
-void DemoExt_Update(Actor* thisx, PlayState* play);
-void DemoExt_Draw(Actor* thisx, PlayState* play);
+void Demo_Ext_Actor_ct(Actor* thisx, PlayState* play);
+void Demo_Ext_Actor_dt(Actor* thisx, PlayState* play);
+void Demo_Ext_main(Actor* thisx, PlayState* play);
+void Demo_Ext_draw(Actor* thisx, PlayState* play);
 
-void DemoExt_Destroy(Actor* thisx, PlayState* play) {
+void Demo_Ext_Actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void DemoExt_Init(Actor* thisx, PlayState* play) {
+void Demo_Ext_Actor_ct(Actor* thisx, PlayState* play) {
     DemoExt* this = (DemoExt*)thisx;
 
     this->scrollIncr[0] = 25;
@@ -43,14 +43,14 @@ void DemoExt_Init(Actor* thisx, PlayState* play) {
     this->scale.z = kREG(21) + 400.0f;
 }
 
-void DemoExt_PlayVortexSFX(DemoExt* this) {
+void Demo_Ext_Set_SoundGrown(DemoExt* this) {
     if (this->alphaTimer <= (kREG(35) + 40.0f) - 15.0f) {
-        Audio_PlaySfxGeneral(NA_SE_EV_FANTOM_WARP_L - SFX_FLAG, &this->actor.projectedPos, 4,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        Nai_FxFlagEntry(NA_SE_EV_FANTOM_WARP_L - SFX_FLAG, &this->actor.projectedPos, 4,
+                             &_dummy_one, &_dummy_one, &_dummy_zero_s8);
     }
 }
 
-CsCmdActorCue* DemoExt_GetCue(PlayState* play, s32 cueChannel) {
+CsCmdActorCue* Demo_Ext_Get_npcdemopnt(PlayState* play, s32 cueChannel) {
     if (play->csCtx.state != CS_STATE_IDLE) {
         CsCmdActorCue* cue = play->csCtx.actorCues[cueChannel];
 
@@ -60,13 +60,13 @@ CsCmdActorCue* DemoExt_GetCue(PlayState* play, s32 cueChannel) {
     return NULL;
 }
 
-void DemoExt_SetupWait(DemoExt* this) {
+void Demo_Ext_setup_Wait(DemoExt* this) {
     this->action = EXT_WAIT;
     this->drawMode = EXT_DRAW_NOTHING;
 }
 
-void DemoExt_SetupMaintainVortex(DemoExt* this, PlayState* play) {
-    CsCmdActorCue* cue = DemoExt_GetCue(play, 5);
+void Demo_Ext_setup_Display(DemoExt* this, PlayState* play) {
+    CsCmdActorCue* cue = Demo_Ext_Get_npcdemopnt(play, 5);
 
     if (cue != NULL) {
         this->actor.world.pos.x = cue->startPos.x;
@@ -78,20 +78,20 @@ void DemoExt_SetupMaintainVortex(DemoExt* this, PlayState* play) {
     this->drawMode = EXT_DRAW_VORTEX;
 }
 
-void DemoExt_SetupDispellVortex(DemoExt* this) {
+void Demo_Ext_setup_Fade(DemoExt* this) {
     this->action = EXT_DISPELL;
     this->drawMode = EXT_DRAW_VORTEX;
 }
 
-void DemoExt_FinishClosing(DemoExt* this) {
+void Demo_Ext_setup_FadeToDisappear(DemoExt* this) {
     this->alphaTimer += 1.0f;
     if ((kREG(35) + 40.0f) <= this->alphaTimer) {
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     }
 }
 
-void DemoExt_HandleCues(DemoExt* this, PlayState* play) {
-    CsCmdActorCue* cue = DemoExt_GetCue(play, 5);
+void Demo_Ext_Check_DemoMode(DemoExt* this, PlayState* play) {
+    CsCmdActorCue* cue = Demo_Ext_Get_npcdemopnt(play, 5);
     s32 nextCueId;
     s32 currentCueId;
 
@@ -102,13 +102,13 @@ void DemoExt_HandleCues(DemoExt* this, PlayState* play) {
         if (nextCueId != currentCueId) {
             switch (nextCueId) {
                 case 1:
-                    DemoExt_SetupWait(this);
+                    Demo_Ext_setup_Wait(this);
                     break;
                 case 2:
-                    DemoExt_SetupMaintainVortex(this, play);
+                    Demo_Ext_setup_Display(this, play);
                     break;
                 case 3:
-                    DemoExt_SetupDispellVortex(this);
+                    Demo_Ext_setup_Fade(this);
                     break;
                 default:
                     // "Demo_Ext_Check_DemoMode: there is no such action!"
@@ -120,7 +120,7 @@ void DemoExt_HandleCues(DemoExt* this, PlayState* play) {
     }
 }
 
-void DemoExt_SetScrollAndRotation(DemoExt* this) {
+void Demo_Ext_Scroll_Texture(DemoExt* this) {
     s16* scrollIncr = this->scrollIncr;
     s16* curScroll = this->curScroll;
     s32 i;
@@ -131,7 +131,7 @@ void DemoExt_SetScrollAndRotation(DemoExt* this) {
     this->rotationPitch += (s16)(kREG(34) + 1000);
 }
 
-void DemoExt_SetColorsAndScales(DemoExt* this) {
+void Demo_Ext_Calc_fade(DemoExt* this) {
     Vec3f* scale = &this->scale;
     f32 shrinkFactor;
 
@@ -147,44 +147,44 @@ void DemoExt_SetColorsAndScales(DemoExt* this) {
     scale->z = (kREG(21) + 400.0f) * shrinkFactor;
 }
 
-void DemoExt_Wait(DemoExt* this, PlayState* play) {
-    DemoExt_HandleCues(this, play);
+void Demo_Ext_main_wait(DemoExt* this, PlayState* play) {
+    Demo_Ext_Check_DemoMode(this, play);
 }
 
-void DemoExt_MaintainVortex(DemoExt* this, PlayState* play) {
-    DemoExt_PlayVortexSFX(this);
-    DemoExt_SetScrollAndRotation(this);
-    DemoExt_HandleCues(this, play);
+void Demo_Ext_main_display(DemoExt* this, PlayState* play) {
+    Demo_Ext_Set_SoundGrown(this);
+    Demo_Ext_Scroll_Texture(this);
+    Demo_Ext_Check_DemoMode(this, play);
 }
 
-void DemoExt_DispellVortex(DemoExt* this, PlayState* play) {
-    DemoExt_PlayVortexSFX(this);
-    DemoExt_SetScrollAndRotation(this);
-    DemoExt_SetColorsAndScales(this);
-    DemoExt_FinishClosing(this);
+void Demo_Ext_main_fade(DemoExt* this, PlayState* play) {
+    Demo_Ext_Set_SoundGrown(this);
+    Demo_Ext_Scroll_Texture(this);
+    Demo_Ext_Calc_fade(this);
+    Demo_Ext_setup_FadeToDisappear(this);
 }
 
-static DemoExtActionFunc sActionFuncs[] = {
-    DemoExt_Wait,
-    DemoExt_MaintainVortex,
-    DemoExt_DispellVortex,
-};
+void Demo_Ext_main(Actor* thisx, PlayState* play) {
+    static DemoExtActionFunc proc[] = {
+        Demo_Ext_main_wait,
+        Demo_Ext_main_display,
+        Demo_Ext_main_fade,
+    };
 
-void DemoExt_Update(Actor* thisx, PlayState* play) {
     DemoExt* this = (DemoExt*)thisx;
 
-    if ((this->action < EXT_WAIT) || (this->action > EXT_DISPELL) || sActionFuncs[this->action] == NULL) {
+    if ((this->action < EXT_WAIT) || (this->action > EXT_DISPELL) || proc[this->action] == NULL) {
         // "Main mode is abnormal!"
         PRINTF(VT_FGCOL(RED) "メインモードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
     } else {
-        sActionFuncs[this->action](this, play);
+        proc[this->action](this, play);
     }
 }
 
-void DemoExt_DrawNothing(Actor* thisx, PlayState* play) {
+void Demo_Ext_draw_none(Actor* thisx, PlayState* play) {
 }
 
-void DemoExt_DrawVortex(Actor* thisx, PlayState* play) {
+void Demo_Ext_draw_normal(Actor* thisx, PlayState* play) {
     DemoExt* this = (DemoExt*)thisx;
     Mtx* mtx;
     GraphicsContext* gfxCtx;
@@ -197,19 +197,19 @@ void DemoExt_DrawVortex(Actor* thisx, PlayState* play) {
     mtx = GRAPH_ALLOC(gfxCtx, sizeof(Mtx));
 
     OPEN_DISPS(gfxCtx, "../z_demo_ext.c", 460);
-    Matrix_Push();
-    Matrix_Scale(scale->x, scale->y, scale->z, MTXMODE_APPLY);
-    Matrix_RotateZYX((s16)(kREG(16) + 0x4000), this->rotationPitch, kREG(18), MTXMODE_APPLY);
-    Matrix_Translate(kREG(22), kREG(23), kREG(24), MTXMODE_APPLY);
+    Matrix_push();
+    Matrix_scale(scale->x, scale->y, scale->z, MTXMODE_APPLY);
+    Matrix_rotateXYZ((s16)(kREG(16) + 0x4000), this->rotationPitch, kREG(18), MTXMODE_APPLY);
+    Matrix_translate(kREG(22), kREG(23), kREG(24), MTXMODE_APPLY);
     MATRIX_TO_MTX(mtx, "../z_demo_ext.c", 476);
-    Matrix_Pop();
-    Gfx_SetupDL_25Xlu(gfxCtx);
+    Matrix_pull();
+    _texture_z_light_fog_prim_xlu(gfxCtx);
 
     gDPSetPrimColor(POLY_XLU_DISP++, 0, kREG(33) + 128, kREG(25) + 140, kREG(26) + 80, kREG(27) + 140, this->primAlpha);
     gDPSetEnvColor(POLY_XLU_DISP++, kREG(29) + 90, kREG(30) + 50, kREG(31) + 95, this->envAlpha);
     gSPSegment(
         POLY_XLU_DISP++, 0x08,
-        Gfx_TwoTexScroll(gfxCtx, 0, curScroll[0], curScroll[1], 0x40, 0x40, 1, curScroll[2], curScroll[3], 0x40, 0x40));
+        two_tex_scroll(gfxCtx, 0, curScroll[0], curScroll[1], 0x40, 0x40, 1, curScroll[2], curScroll[3], 0x40, 0x40));
 
     gSPMatrix(POLY_XLU_DISP++, mtx, G_MTX_PUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
     gSPDisplayList(POLY_XLU_DISP++, gPhantomWarpDL);
@@ -218,20 +218,20 @@ void DemoExt_DrawVortex(Actor* thisx, PlayState* play) {
     CLOSE_DISPS(gfxCtx, "../z_demo_ext.c", 512);
 }
 
-static DemoExtDrawFunc sDrawFuncs[] = {
-    DemoExt_DrawNothing,
-    DemoExt_DrawVortex,
-};
+void Demo_Ext_draw(Actor* thisx, PlayState* play) {
+    static DemoExtDrawFunc proc[] = {
+        Demo_Ext_draw_none,
+        Demo_Ext_draw_normal,
+    };
 
-void DemoExt_Draw(Actor* thisx, PlayState* play) {
     DemoExt* this = (DemoExt*)thisx;
 
     if ((this->drawMode < EXT_DRAW_NOTHING) || (this->drawMode > EXT_DRAW_VORTEX) ||
-        sDrawFuncs[this->drawMode] == NULL) {
+        proc[this->drawMode] == NULL) {
         // "Draw mode is abnormal!"
         PRINTF(VT_FGCOL(RED) "描画モードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
     } else {
-        sDrawFuncs[this->drawMode](thisx, play);
+        proc[this->drawMode](thisx, play);
     }
 }
 
@@ -241,8 +241,8 @@ ActorProfile Demo_Ext_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_FHG,
     /**/ sizeof(DemoExt),
-    /**/ DemoExt_Init,
-    /**/ DemoExt_Destroy,
-    /**/ DemoExt_Update,
-    /**/ DemoExt_Draw,
+    /**/ Demo_Ext_Actor_ct,
+    /**/ Demo_Ext_Actor_dt,
+    /**/ Demo_Ext_main,
+    /**/ Demo_Ext_draw,
 };

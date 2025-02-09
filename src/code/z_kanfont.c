@@ -6,10 +6,10 @@
  * Loads a texture from kanji for the requested `character` into the character texture buffer
  * at `codePointIndex`. The value of `character` is the SHIFT-JIS encoding of the character.
  */
-void Font_LoadCharWide(Font* font, u16 character, u16 codePointIndex) {
+void kanfont_get(Font* font, u16 character, u16 codePointIndex) {
 #if OOT_NTSC
     DMA_REQUEST_SYNC(&font->charTexBuf[codePointIndex],
-                     (uintptr_t)_kanjiSegmentRomStart + Kanji_OffsetFromShiftJIS(character), FONT_CHAR_TEX_SIZE,
+                     (uintptr_t)_kanjiSegmentRomStart + getkadr(character), FONT_CHAR_TEX_SIZE,
                      "../z_kanfont.c", UNK_LINE);
 #endif
 }
@@ -18,7 +18,7 @@ void Font_LoadCharWide(Font* font, u16 character, u16 codePointIndex) {
  * Loads a texture from nes_font_static for the requested `character` into the character texture buffer
  * at `codePointIndex`. The value of `character` is the ASCII codepoint subtract ' '/0x20.
  */
-void Font_LoadChar(Font* font, u8 character, u16 codePointIndex) {
+void kanfont_get_NES(Font* font, u8 character, u16 codePointIndex) {
     s32 offset = character * FONT_CHAR_TEX_SIZE;
 
     DMA_REQUEST_SYNC(&font->charTexBuf[codePointIndex], (uintptr_t)_nes_font_staticSegmentRomStart + offset,
@@ -26,7 +26,7 @@ void Font_LoadChar(Font* font, u8 character, u16 codePointIndex) {
 }
 
 #if PLATFORM_IQUE
-void Font_LoadCharCHN(Font* font, u16 character, u16 codePointIndex) {
+void kanfont_get_NESCHN(Font* font, u16 character, u16 codePointIndex) {
     s32 offset = character * FONT_CHAR_TEX_SIZE;
 
     DMA_REQUEST_SYNC(&font->charTexBuf[codePointIndex], (uintptr_t)_nes_font_staticSegmentRomStart + offset,
@@ -39,7 +39,7 @@ void Font_LoadCharCHN(Font* font, u16 character, u16 codePointIndex) {
  * icon buffer.
  * The different icons are given in the MessageBoxIcon enum.
  */
-void Font_LoadMessageBoxIcon(Font* font, u16 icon) {
+void kanfont_get2(Font* font, u16 icon) {
     DMA_REQUEST_SYNC(font->iconBuf,
                      (uintptr_t)_message_staticSegmentRomStart + 4 * MESSAGE_STATIC_TEX_SIZE +
                          icon * FONT_CHAR_TEX_SIZE,
@@ -50,7 +50,7 @@ void Font_LoadMessageBoxIcon(Font* font, u16 icon) {
  * Loads a full set of character textures based on their ordering in the message with text id 0xFFFC into
  * the font buffer.
  */
-void Font_LoadOrderedFont(Font* font) {
+void kscope_kanfont_get(Font* font) {
     s32 size;
     s32 len;
     s32 codePointIndex;
@@ -77,7 +77,7 @@ void Font_LoadOrderedFont(Font* font) {
         }
 
         if (font->msgBufWide[codePointIndex] != MESSAGE_WIDE_NEWLINE) {
-            offset = Kanji_OffsetFromShiftJIS(font->msgBufWide[codePointIndex]);
+            offset = getkadr(font->msgBufWide[codePointIndex]);
             DMA_REQUEST_SYNC(&font->fontBuf[fontBufIndex * 8], (uintptr_t)_kanjiSegmentRomStart + offset,
                              FONT_CHAR_TEX_SIZE, "../z_kanfont.c", UNK_LINE);
             fontBufIndex += FONT_CHAR_TEX_SIZE / 8;
@@ -129,7 +129,7 @@ void Font_LoadOrderedFont(Font* font) {
         }
 
         if (msgBufWide[codePointIndex] != MESSAGE_WIDE_NEWLINE) {
-            offset = Kanji_OffsetFromShiftJIS(msgBufWide[codePointIndex]);
+            offset = getkadr(msgBufWide[codePointIndex]);
             DMA_REQUEST_SYNC(&font->fontBuf[fontBufIndex * 8], (uintptr_t)_kanjiSegmentRomStart + offset,
                              FONT_CHAR_TEX_SIZE, "../z_kanfont.c", UNK_LINE);
             fontBufIndex += FONT_CHAR_TEX_SIZE / 8;

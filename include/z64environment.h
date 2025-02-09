@@ -234,56 +234,56 @@ typedef struct EnvironmentContext {
     /* 0xF3 */ char unk_F3[0x09];
 } EnvironmentContext; // size = 0xFC
 
-extern u8 gSkyboxIsChanging;
-extern TimeBasedSkyboxEntry gTimeBasedSkyboxConfigs[][9];
+extern u8 E_vr_box_ovl;
+extern TimeBasedSkyboxEntry vrbox_chg[][9];
 
-extern u8 gWeatherMode;
-extern u8 gLightConfigAfterUnderwater;
-extern u8 gInterruptSongOfStorms;
-extern u16 gTimeSpeed;
+extern u8 E_wether_flg;
+extern u8 E_water_colbak;
+extern u8 E_wether_apl;
+extern u16 E_day_time_plus;
 
-void Environment_UpdateSkybox(u8 skyboxId, EnvironmentContext* envCtx, struct SkyboxContext* skyboxCtx);
-void Environment_DrawSkyboxFilters(struct PlayState* play);
+void Kankyo_vrbox_change(u8 skyboxId, EnvironmentContext* envCtx, struct SkyboxContext* skyboxCtx);
+void vr_kakusi(struct PlayState* play);
 
-s32 Environment_ZBufValToFixedPoint(s32 zBufferVal);
-u16 Environment_GetPixelDepth(s32 x, s32 y);
-void Environment_GraphCallback(struct GraphicsContext* gfxCtx, void* param);
-void Environment_Init(struct PlayState* play2, EnvironmentContext* envCtx, s32 unused);
-u8 Environment_SmoothStepToU8(u8* pvalue, u8 target, u8 scale, u8 step, u8 minStep);
-u8 Environment_SmoothStepToS8(s8* pvalue, s8 target, u8 scale, u8 step, u8 minStep);
-f32 Environment_LerpWeight(u16 max, u16 min, u16 val);
-f32 Environment_LerpWeightAccelDecel(u16 endFrame, u16 startFrame, u16 curFrame, u16 accelDuration, u16 decelDuration);
-void Environment_EnableUnderwaterLights(struct PlayState* play, s32 waterLightsIndex);
-void Environment_DisableUnderwaterLights(struct PlayState* play);
-void Environment_Update(struct PlayState* play, EnvironmentContext* envCtx, LightContext* lightCtx,
+s32 zmem2z(s32 zBufferVal);
+u16 get_zmem(s32 x, s32 y);
+void lens_callback(struct GraphicsContext* gfxCtx, void* param);
+void Global_kankyo_ct(struct PlayState* play2, EnvironmentContext* envCtx, s32 unused);
+u8 add_calc_char(u8* pvalue, u8 target, u8 scale, u8 step, u8 minStep);
+u8 add_calc_schar(s8* pvalue, s8 target, u8 scale, u8 step, u8 minStep);
+f32 get_parcent(u16 max, u16 min, u16 val);
+f32 get_parcent_forAccelBrake(u16 endFrame, u16 startFrame, u16 curFrame, u16 accelDuration, u16 decelDuration);
+void water_in_kankyo(struct PlayState* play, s32 waterLightsIndex);
+void water_out_kankyo(struct PlayState* play);
+void Global_kankyo_set(struct PlayState* play, EnvironmentContext* envCtx, LightContext* lightCtx,
                         struct PauseContext* pauseCtx, struct MessageContext* msgCtx,
                         struct GameOverContext* gameOverCtx, struct GraphicsContext* gfxCtx);
-void Environment_DrawSunAndMoon(struct PlayState* play);
-void Environment_DrawSunLensFlare(struct PlayState* play, EnvironmentContext* envCtx, struct View* view,
+void sun_moon_disp(struct PlayState* play);
+void sun_lens_disp(struct PlayState* play, EnvironmentContext* envCtx, struct View* view,
                                   struct GraphicsContext* gfxCtx, Vec3f pos, s32 unused);
-void Environment_DrawLensFlare(struct PlayState* play, EnvironmentContext* envCtx, struct View* view,
+void dammy_sun_lens_disp(struct PlayState* play, EnvironmentContext* envCtx, struct View* view,
                                struct GraphicsContext* gfxCtx, Vec3f pos, s32 unused, s16 scale, f32 colorIntensity,
                                s16 glareStrength, u8 isSun);
-void Environment_DrawRain(struct PlayState* play, struct View* view, struct GraphicsContext* gfxCtx);
-void Environment_ChangeLightSetting(struct PlayState* play, u32 lightSetting);
-void Environment_UpdateLightningStrike(struct PlayState* play);
-void Environment_AddLightningBolts(struct PlayState* play, u8 num);
-void Environment_DrawLightning(struct PlayState* play, s32 unused);
-void Environment_PlaySceneSequence(struct PlayState* play);
-void Environment_DrawCustomLensFlare(struct PlayState* play);
-void Environment_InitGameOverLights(struct PlayState* play);
-void Environment_FadeInGameOverLights(struct PlayState* play);
-void Environment_FadeOutGameOverLights(struct PlayState* play);
-void Environment_FillScreen(struct GraphicsContext* gfxCtx, u8 red, u8 green, u8 blue, u8 alpha, u8 drawFlags);
-void Environment_DrawSandstorm(struct PlayState* play, u8 sandstormState);
-void Environment_AdjustLights(struct PlayState* play, f32 arg1, f32 arg2, f32 arg3, f32 arg4);
-s32 Environment_GetBgsDayCount(void);
-void Environment_ClearBgsDayCount(void);
-s32 Environment_GetTotalDays(void);
-void Environment_ForcePlaySequence(u16 seqId);
-s32 Environment_IsForcedSequenceDisabled(void);
-void Environment_PlayStormNatureAmbience(struct PlayState* play);
-void Environment_StopStormNatureAmbience(struct PlayState* play);
-void Environment_WarpSongLeave(struct PlayState* play);
+void rain_disp(struct PlayState* play, struct View* view, struct GraphicsContext* gfxCtx);
+void get_pol_color(struct PlayState* play, u32 lightSetting);
+void electricthander(struct PlayState* play);
+void thunder_start(struct PlayState* play, u8 num);
+void scene_proc_thunder(struct PlayState* play, s32 unused);
+void stagemusic_play(struct PlayState* play);
+void Tokusyu_lenseflare(struct PlayState* play);
+void Gameover_anten_init(struct PlayState* play);
+void Gameover_anten_proc(struct PlayState* play);
+void Gameover_anten_return(struct PlayState* play);
+void Display_Fillter(struct GraphicsContext* gfxCtx, u8 red, u8 green, u8 blue, u8 alpha, u8 drawFlags);
+void Display_Sstorm(struct PlayState* play, u8 sandstormState);
+void set_add_light_global(struct PlayState* play, f32 arg1, f32 arg2, f32 arg3, f32 arg4);
+s32 Get_Eventday(void);
+void Clr_Eventday(void);
+s32 Get_Totalday(void);
+void Nottori_Bgm(u16 seqId);
+s32 Nottori_Bgmoff_check(void);
+void Rain_sound_set_on(struct PlayState* play);
+void Rain_sound_set_off(struct PlayState* play);
+void OcaWarpJumpProc(struct PlayState* play);
 
 #endif

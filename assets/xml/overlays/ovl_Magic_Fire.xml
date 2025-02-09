@@ -1,10 +1,10 @@
 <Root>
     <File Name="ovl_Magic_Fire" OutName="z_magic_fire">
-        <Texture Name="sTex" OutName="dins_fire" Format="i8" Width="64" Height="64" Offset="0x0"/>
-        <Array Name="sSphereVtx" Count="76" Offset="0x1000">
+        <Texture Name="g_magic_fire_new_txt" OutName="dins_fire" Format="i8" Width="64" Height="64" Offset="0x0"/>
+        <Array Name="magic_fire_vtx" Count="76" Offset="0x1000">
             <Vtx/>
         </Array>
-        <DList Name="sMaterialDL" Offset="0x14C0"/>
-        <DList Name="sModelDL" Offset="0x14E8"/>
+        <DList Name="magic_fire_modelT0" Offset="0x14C0"/>
+        <DList Name="magic_fire_modelT1" Offset="0x14E8"/>
     </File>
 </Root>

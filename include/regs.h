@@ -8,7 +8,7 @@
 #define REGS_PER_PAGE 16
 #define REGS_PER_GROUP (REG_PAGES * REGS_PER_PAGE)
 
-#define BASE_REG(n, r) gRegEditor->data[(n) * REGS_PER_GROUP + (r)]
+#define BASE_REG(n, r) debug_mode->data[(n) * REGS_PER_GROUP + (r)]
 
 #define  REG(r) BASE_REG(0, (r))
 #define SREG(r) BASE_REG(1, (r))
@@ -409,6 +409,6 @@ typedef struct RegEditor {
     /* 0x14 */ s16  data[REG_GROUPS * REGS_PER_GROUP]; // Accessed through *REG macros, see regs.h
 } RegEditor; // size = 0x15D4
 
-extern RegEditor* gRegEditor;
+extern RegEditor* debug_mode;
 
 #endif

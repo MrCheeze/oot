@@ -4,8 +4,8 @@
 
 // Symbol definition
 
-extern AudioTable gSequenceTable;
-#pragma weak gSequenceTable = sSequenceTableHeader
+extern AudioTable AudioseqHeaderStart;
+#pragma weak AudioseqHeaderStart = sSequenceTableHeader
 
 // Externs for table
 

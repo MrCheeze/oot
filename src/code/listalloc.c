@@ -1,12 +1,12 @@
 #include "global.h"
 
-ListAlloc* ListAlloc_Init(ListAlloc* this) {
+ListAlloc* listalloc_init(ListAlloc* this) {
     this->prev = NULL;
     this->next = NULL;
     return this;
 }
 
-void* ListAlloc_Alloc(ListAlloc* this, u32 size) {
+void* listalloc_malloc(ListAlloc* this, u32 size) {
     ListAlloc* ptr = SYSTEM_ARENA_MALLOC(size + sizeof(ListAlloc), "../listalloc.c", 40);
     ListAlloc* next;
 
@@ -30,7 +30,7 @@ void* ListAlloc_Alloc(ListAlloc* this, u32 size) {
     return (u8*)ptr + sizeof(ListAlloc);
 }
 
-void ListAlloc_Free(ListAlloc* this, void* data) {
+void listalloc_free(ListAlloc* this, void* data) {
     ListAlloc* ptr = &((ListAlloc*)data)[-1];
 
     if (ptr->prev != NULL) {
@@ -52,11 +52,11 @@ void ListAlloc_Free(ListAlloc* this, void* data) {
     SYSTEM_ARENA_FREE(ptr, "../listalloc.c", 72);
 }
 
-void ListAlloc_FreeAll(ListAlloc* this) {
+void listalloc_cleanup(ListAlloc* this) {
     ListAlloc* iter = this->prev;
 
     while (iter != NULL) {
-        ListAlloc_Free(this, (u8*)iter + sizeof(ListAlloc));
+        listalloc_free(this, (u8*)iter + sizeof(ListAlloc));
         iter = this->prev;
     }
 }

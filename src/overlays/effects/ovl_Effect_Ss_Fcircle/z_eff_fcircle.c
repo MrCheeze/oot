@@ -13,16 +13,16 @@
 #define rYaw regs[10]
 #define rScale regs[11]
 
-u32 EffectSsFcircle_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
-void EffectSsFcircle_Draw(PlayState* play, u32 index, EffectSs* this);
-void EffectSsFcircle_Update(PlayState* play, u32 index, EffectSs* this);
+u32 Effect_SS_Fcircle_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
+void Effect_Fcircle_disp_mode(PlayState* play, u32 index, EffectSs* this);
+void Effect_Fcircle_func_proc(PlayState* play, u32 index, EffectSs* this);
 
 EffectSsProfile Effect_Ss_Fcircle_Profile = {
     EFFECT_SS_FCIRCLE,
-    EffectSsFcircle_Init,
+    Effect_SS_Fcircle_ct,
 };
 
-u32 EffectSsFcircle_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
+u32 Effect_SS_Fcircle_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
     EffectSsFcircleInitParams* initParams = (EffectSsFcircleInitParams*)initParamsx;
 
     this->pos = initParams->pos;
@@ -32,8 +32,8 @@ u32 EffectSsFcircle_Init(PlayState* play, u32 index, EffectSs* this, void* initP
     this->vec.z = initParams->pos.z - initParams->actor->world.pos.z;
     this->gfx = gEffFireCircleDL;
     this->life = 20;
-    this->draw = EffectSsFcircle_Draw;
-    this->update = EffectSsFcircle_Update;
+    this->draw = Effect_Fcircle_disp_mode;
+    this->update = Effect_Fcircle_func_proc;
     this->rUnused = 255;
     this->rRadius = initParams->radius;
     this->rHeight = initParams->height;
@@ -42,7 +42,7 @@ u32 EffectSsFcircle_Init(PlayState* play, u32 index, EffectSs* this, void* initP
     return 1;
 }
 
-void EffectSsFcircle_Draw(PlayState* play, u32 index, EffectSs* this) {
+void Effect_Fcircle_disp_mode(PlayState* play, u32 index, EffectSs* this) {
     GraphicsContext* gfxCtx = play->state.gfxCtx;
     s32 pad;
     f32 yScale;
@@ -55,13 +55,13 @@ void EffectSsFcircle_Draw(PlayState* play, u32 index, EffectSs* this) {
     yScale = (this->rHeight * 0.001f) * scale;
     xzScale = (this->rRadius * 0.001f) * scale;
 
-    Matrix_Translate(this->pos.x, this->pos.y, this->pos.z, MTXMODE_NEW);
-    Matrix_Scale(xzScale, yScale, xzScale, MTXMODE_APPLY);
-    Matrix_RotateY(BINANG_TO_RAD(this->rYaw), MTXMODE_APPLY);
+    Matrix_translate(this->pos.x, this->pos.y, this->pos.z, MTXMODE_NEW);
+    Matrix_scale(xzScale, yScale, xzScale, MTXMODE_APPLY);
+    Matrix_rotateY(BINANG_TO_RAD(this->rYaw), MTXMODE_APPLY);
     MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, gfxCtx, "../z_eff_fcircle.c", 163);
-    Gfx_SetupDL_25Xlu(play->state.gfxCtx);
+    _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
     gSPSegment(POLY_XLU_DISP++, 0x08,
-               Gfx_TwoTexScroll(play->state.gfxCtx, G_TX_RENDERTILE, play->gameplayFrames % 128, 0, 32, 64, 1, 0,
+               two_tex_scroll(play->state.gfxCtx, G_TX_RENDERTILE, play->gameplayFrames % 128, 0, 32, 64, 1, 0,
                                 ((play->gameplayFrames) * -0xF) % 256, 32, 64));
     gDPSetPrimColor(POLY_XLU_DISP++, 0x80, 0x80, 255, 220, 0, (this->life * 12.75f));
     gDPSetEnvColor(POLY_XLU_DISP++, 255, 0, 0, 0);
@@ -70,7 +70,7 @@ void EffectSsFcircle_Draw(PlayState* play, u32 index, EffectSs* this) {
     CLOSE_DISPS(gfxCtx, "../z_eff_fcircle.c", 186);
 }
 
-void EffectSsFcircle_Update(PlayState* play, u32 index, EffectSs* this) {
+void Effect_Fcircle_func_proc(PlayState* play, u32 index, EffectSs* this) {
     Actor* actor = this->actor;
 
     if (actor != NULL) {
@@ -86,7 +86,7 @@ void EffectSsFcircle_Update(PlayState* play, u32 index, EffectSs* this) {
                 this->life = actor->colorFilterTimer;
             }
 
-            Math_StepToS(&this->rScale, 100, 20);
+            chase_s(&this->rScale, 100, 20);
         } else {
             this->actor = NULL;
         }

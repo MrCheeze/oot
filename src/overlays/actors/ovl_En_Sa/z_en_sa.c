@@ -8,16 +8,16 @@
     (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY | ACTOR_FLAG_UPDATE_CULLING_DISABLED | \
      ACTOR_FLAG_UPDATE_DURING_OCARINA)
 
-void EnSa_Init(Actor* thisx, PlayState* play);
-void EnSa_Destroy(Actor* thisx, PlayState* play);
-void EnSa_Update(Actor* thisx, PlayState* play);
-void EnSa_Draw(Actor* thisx, PlayState* play);
+void En_Sa_Actor_ct(Actor* thisx, PlayState* play);
+void En_Sa_Actor_dt(Actor* thisx, PlayState* play);
+void En_Sa_Actor_move(Actor* thisx, PlayState* play);
+void En_Sa_Actor_draw(Actor* thisx, PlayState* play);
 
-void func_80AF6448(EnSa* this, PlayState* play);
-void func_80AF67D0(EnSa* this, PlayState* play);
-void func_80AF683C(EnSa* this, PlayState* play);
-void func_80AF68E4(EnSa* this, PlayState* play);
-void func_80AF6B20(EnSa* this, PlayState* play);
+void sa_wait(EnSa* this, PlayState* play);
+void sa_talking(EnSa* this, PlayState* play);
+void sa_oca_wait(EnSa* this, PlayState* play);
+void sa_demo(EnSa* this, PlayState* play);
+void sa_demo_end(EnSa* this, PlayState* play);
 
 typedef enum SariaEyeState {
     /* 0 */ SARIA_EYE_OPEN,
@@ -41,13 +41,13 @@ ActorProfile En_Sa_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_SA,
     /**/ sizeof(EnSa),
-    /**/ EnSa_Init,
-    /**/ EnSa_Destroy,
-    /**/ EnSa_Update,
-    /**/ EnSa_Draw,
+    /**/ En_Sa_Actor_ct,
+    /**/ En_Sa_Actor_dt,
+    /**/ En_Sa_Actor_move,
+    /**/ En_Sa_Actor_draw,
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit EnSaAtInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -67,7 +67,7 @@ static ColliderCylinderInit sCylinderInit = {
     { 20, 46, 0, { 0, 0, 0 } },
 };
 
-static CollisionCheckInfoInit2 sColChkInfoInit = { 0, 0, 0, 0, MASS_IMMOVABLE };
+static CollisionCheckInfoInit2 SaStatusData = { 0, 0, 0, 0, MASS_IMMOVABLE };
 
 typedef enum EnSaAnimation1 {
     /*  0 */ ENSA_ANIM1_0,
@@ -84,7 +84,7 @@ typedef enum EnSaAnimation1 {
     /* 11 */ ENSA_ANIM1_11
 } EnSaAnimation1;
 
-static AnimationFrameCountInfo sAnimationInfo1[] = {
+static AnimationFrameCountInfo anime_ct_data[] = {
     { &gSariaWaitArmsToSideAnim, 1.0f, ANIMMODE_LOOP, 0.0f },
     { &gSariaLookUpArmExtendedAnim, 1.0f, ANIMMODE_ONCE, -10.0f },
     { &gSariaWaveAnim, 1.0f, ANIMMODE_LOOP, -10.0f },
@@ -112,7 +112,7 @@ typedef enum EnSaAnimation2 {
     /* 9 */ ENSA_ANIM2_9
 } EnSaAnimation2;
 
-static AnimationInfo sAnimationInfo2[] = {
+static AnimationInfo animetbl[] = {
     { &gSariaTransitionHandsSideToChestToSideAnim, 1.0f, 0.0f, -1.0f, ANIMMODE_ONCE, -1.0f },
     { &gSariaTransitionHandsSideToBackAnim, 1.0f, 0.0f, -1.0f, ANIMMODE_LOOP, -4.0f },
     { &gSariaRightArmExtendedWaitAnim, 1.0f, 0.0f, -1.0f, ANIMMODE_LOOP, -1.0f },
@@ -125,8 +125,8 @@ static AnimationInfo sAnimationInfo2[] = {
     { &gSariaWaitArmsToSideAnim, 1.0f, 0.0f, -1.0f, ANIMMODE_LOOP, -8.0f },
 };
 
-s16 func_80AF5560(EnSa* this, PlayState* play) {
-    s16 textState = Message_GetState(&play->msgCtx);
+static s16 calc_pad_on_cnt(EnSa* this, PlayState* play) {
+    s16 textState = message_check(&play->msgCtx);
 
     if (this->unk_209 == TEXT_STATE_AWAITING_NEXT || this->unk_209 == TEXT_STATE_EVENT ||
         this->unk_209 == TEXT_STATE_CLOSING || this->unk_209 == TEXT_STATE_DONE_HAS_NEXT) {
@@ -138,9 +138,9 @@ s16 func_80AF5560(EnSa* this, PlayState* play) {
     return textState;
 }
 
-u16 EnSa_GetTextId(PlayState* play, Actor* thisx) {
+u16 sa_set_message(PlayState* play, Actor* thisx) {
     EnSa* this = (EnSa*)thisx;
-    u16 textId = MaskReaction_GetTextId(play, MASK_REACTION_SET_SARIA);
+    u16 textId = get_mask_message(play, MASK_REACTION_SET_SARIA);
 
     if (textId != 0) {
         return textId;
@@ -178,11 +178,11 @@ u16 EnSa_GetTextId(PlayState* play, Actor* thisx) {
     return 0x1001;
 }
 
-s16 EnSa_UpdateTalkState(PlayState* play, Actor* thisx) {
+s16 sa_end_message(PlayState* play, Actor* thisx) {
     s16 talkState = NPC_TALK_STATE_TALKING;
     EnSa* this = (EnSa*)thisx;
 
-    switch (func_80AF5560(this, play)) {
+    switch (calc_pad_on_cnt(this, play)) {
         case TEXT_STATE_CLOSING:
             switch (this->actor.textId) {
                 case 0x1002:
@@ -216,25 +216,25 @@ s16 EnSa_UpdateTalkState(PlayState* play, Actor* thisx) {
     return talkState;
 }
 
-void func_80AF57D8(EnSa* this, PlayState* play) {
+void sa_talk(EnSa* this, PlayState* play) {
     if (play->sceneId != SCENE_SACRED_FOREST_MEADOW ||
         ABS((s16)(this->actor.yawTowardsPlayer - this->actor.shape.rot.y)) < 0x1555 ||
         this->interactInfo.talkState != NPC_TALK_STATE_IDLE) {
-        Npc_UpdateTalking(play, &this->actor, &this->interactInfo.talkState, this->collider.dim.radius + 30.0f,
-                          EnSa_GetTextId, EnSa_UpdateTalkState);
+        npc_talk(play, &this->actor, &this->interactInfo.talkState, this->collider.dim.radius + 30.0f,
+                          sa_set_message, sa_end_message);
     }
 }
 
 #include "z_en_sa_anm.inc.c"
 
-void EnSa_ChangeAnim(EnSa* this, s32 index) {
-    Animation_Change(&this->skelAnime, sAnimationInfo1[index].animation, 1.0f, 0.0f,
-                     Animation_GetLastFrame(sAnimationInfo1[index].animation), sAnimationInfo1[index].mode,
-                     sAnimationInfo1[index].morphFrames);
+void sa_anime_ct(EnSa* this, s32 index) {
+    Skeleton_Info2_init(&this->skelAnime, anime_ct_data[index].animation, 1.0f, 0.0f,
+                     Si2_anime_end_frame(anime_ct_data[index].animation), anime_ct_data[index].mode,
+                     anime_ct_data[index].morphFrames);
 }
 
-s32 func_80AF5DFC(EnSa* this, PlayState* play) {
-    if (gSaveContext.save.cutsceneIndex >= 0xFFF0 && gSaveContext.save.cutsceneIndex != 0xFFFD) {
+s32 sa_appearance_check(EnSa* this, PlayState* play) {
+    if (z_common_data.save.cutsceneIndex >= 0xFFF0 && z_common_data.save.cutsceneIndex != 0xFFFD) {
         if (play->sceneId == SCENE_KOKIRI_FOREST) {
             return 4;
         }
@@ -258,30 +258,30 @@ s32 func_80AF5DFC(EnSa* this, PlayState* play) {
     return 0;
 }
 
-void func_80AF5F34(EnSa* this, PlayState* play) {
+void sa_eye_move(EnSa* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     s16 trackingMode = NPC_TRACKING_PLAYER_AUTO_TURN;
 
     if (play->sceneId == SCENE_KOKIRI_FOREST) {
-        trackingMode = (this->actionFunc == func_80AF68E4) ? NPC_TRACKING_NONE : NPC_TRACKING_FULL_BODY;
+        trackingMode = (this->actionFunc == sa_demo) ? NPC_TRACKING_NONE : NPC_TRACKING_FULL_BODY;
     }
     if (play->sceneId == SCENE_SACRED_FOREST_MEADOW) {
         trackingMode = (this->skelAnime.animation == &gSariaPlayingOcarinaAnim) ? NPC_TRACKING_NONE : NPC_TRACKING_HEAD;
     }
-    if (play->sceneId == SCENE_SACRED_FOREST_MEADOW && this->actionFunc == func_80AF6448 &&
+    if (play->sceneId == SCENE_SACRED_FOREST_MEADOW && this->actionFunc == sa_wait &&
         this->skelAnime.animation == &gSariaStopPlayingOcarinaAnim) {
         trackingMode = NPC_TRACKING_NONE;
     }
-    if (play->sceneId == SCENE_SACRED_FOREST_MEADOW && this->actionFunc == func_80AF68E4 &&
+    if (play->sceneId == SCENE_SACRED_FOREST_MEADOW && this->actionFunc == sa_demo &&
         this->skelAnime.animation == &gSariaOcarinaToMouthAnim) {
         trackingMode = NPC_TRACKING_NONE;
     }
     this->interactInfo.trackPos = player->actor.world.pos;
     this->interactInfo.yOffset = 4.0f;
-    Npc_TrackPoint(&this->actor, &this->interactInfo, 2, trackingMode);
+    eye_moveM(&this->actor, &this->interactInfo, 2, trackingMode);
 }
 
-s32 func_80AF603C(EnSa* this) {
+s32 sa_eye_control_oca_play(EnSa* this) {
     if (this->skelAnime.animation != &gSariaPlayingOcarinaAnim &&
         this->skelAnime.animation != &gSariaOcarinaToMouthAnim) {
         return 0;
@@ -296,10 +296,10 @@ s32 func_80AF603C(EnSa* this) {
     return 1;
 }
 
-void func_80AF609C(EnSa* this) {
+void sa_eye_control(EnSa* this) {
     s16 phi_v1;
 
-    if (func_80AF603C(this) == 0) {
+    if (sa_eye_control_oca_play(this) == 0) {
         if (this->unk_20E == 0) {
             phi_v1 = 0;
         } else {
@@ -311,7 +311,7 @@ void func_80AF609C(EnSa* this) {
             if (this->rightEyeIndex < SARIA_EYE_SUPRISED) {
                 this->leftEyeIndex = this->rightEyeIndex;
             } else {
-                this->unk_20E = Rand_S16Offset(30, 30);
+                this->unk_20E = get_random_timer(30, 30);
                 this->leftEyeIndex = SARIA_EYE_OPEN;
                 this->rightEyeIndex = this->leftEyeIndex;
             }
@@ -319,89 +319,89 @@ void func_80AF609C(EnSa* this) {
     }
 }
 
-void func_80AF6130(CsCmdActorCue* cue, Vec3f* dst) {
+static void demo_start_pos_set(CsCmdActorCue* cue, Vec3f* dst) {
     dst->x = cue->startPos.x;
     dst->y = cue->startPos.y;
     dst->z = cue->startPos.z;
 }
 
-void func_80AF6170(CsCmdActorCue* cue, Vec3f* dst) {
+static void demo_end_pos_set(CsCmdActorCue* cue, Vec3f* dst) {
     dst->x = cue->endPos.x;
     dst->y = cue->endPos.y;
     dst->z = cue->endPos.z;
 }
 
-void EnSa_Init(Actor* thisx, PlayState* play) {
+void En_Sa_Actor_ct(Actor* thisx, PlayState* play) {
     EnSa* this = (EnSa*)thisx;
     s32 pad;
 
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 12.0f);
-    SkelAnime_InitFlex(play, &this->skelAnime, &gSariaSkel, NULL, this->jointTable, this->morphTable, 17);
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
-    CollisionCheck_SetInfo2(&this->actor.colChkInfo, NULL, &sColChkInfoInit);
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 12.0f);
+    Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &gSariaSkel, NULL, this->jointTable, this->morphTable, 17);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set5(play, &this->collider, &this->actor, &EnSaAtInfoData);
+    CollisionCheck_Status_set3(&this->actor.colChkInfo, NULL, &SaStatusData);
 
-    switch (func_80AF5DFC(this, play)) {
+    switch (sa_appearance_check(this, play)) {
         case 2:
-            EnSa_ChangeAnim(this, ENSA_ANIM1_11);
-            this->actionFunc = func_80AF6448;
+            sa_anime_ct(this, ENSA_ANIM1_11);
+            this->actionFunc = sa_wait;
             break;
         case 5:
-            EnSa_ChangeAnim(this, ENSA_ANIM1_11);
-            this->actionFunc = func_80AF683C;
+            sa_anime_ct(this, ENSA_ANIM1_11);
+            this->actionFunc = sa_oca_wait;
             break;
         case 1:
             this->actor.gravity = -1.0f;
-            EnSa_ChangeAnim(this, ENSA_ANIM1_0);
-            this->actionFunc = func_80AF6448;
+            sa_anime_ct(this, ENSA_ANIM1_0);
+            this->actionFunc = sa_wait;
             break;
         case 4:
             this->unk_210 = 0;
             this->actor.gravity = -1.0f;
             play->csCtx.script = SEGMENTED_TO_VIRTUAL(gKokiriForestSariaGreetingCs);
-            gSaveContext.cutsceneTrigger = 1;
-            EnSa_ChangeAnim(this, ENSA_ANIM1_4);
-            this->actionFunc = func_80AF68E4;
+            z_common_data.cutsceneTrigger = 1;
+            sa_anime_ct(this, ENSA_ANIM1_4);
+            this->actionFunc = sa_demo;
             break;
         case 3:
             this->unk_210 = 0;
             this->actor.gravity = -1.0f;
-            EnSa_ChangeAnim(this, ENSA_ANIM1_0);
-            this->actionFunc = func_80AF68E4;
+            sa_anime_ct(this, ENSA_ANIM1_0);
+            this->actionFunc = sa_demo;
             break;
         case 0:
-            Actor_Kill(&this->actor);
+            Actor_delete(&this->actor);
             return;
     }
 
-    Actor_SetScale(&this->actor, 0.01f);
+    Actor_set_scale(&this->actor, 0.01f);
 
     this->actor.attentionRangeType = ATTENTION_RANGE_6;
     this->interactInfo.talkState = NPC_TALK_STATE_IDLE;
     this->alpha = 255;
     this->unk_21A = this->actor.shape.rot;
 
-    Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_EN_ELF, this->actor.world.pos.x,
+    Actor_info_make_child_actor(&play->actorCtx, &this->actor, play, ACTOR_EN_ELF, this->actor.world.pos.x,
                        this->actor.world.pos.y, this->actor.world.pos.z, 0, 0, 0, FAIRY_KOKIRI);
 }
 
-void EnSa_Destroy(Actor* thisx, PlayState* play) {
+void En_Sa_Actor_dt(Actor* thisx, PlayState* play) {
     EnSa* this = (EnSa*)thisx;
 
-    Collider_DestroyCylinder(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider);
 }
 
-void func_80AF6448(EnSa* this, PlayState* play) {
+void sa_wait(EnSa* this, PlayState* play) {
     if (play->sceneId == SCENE_KOKIRI_FOREST) {
         if (this->interactInfo.talkState != NPC_TALK_STATE_IDLE) {
             switch (this->actor.textId) {
                 case 0x1002:
                     if (this->unk_208 == 0 && this->unk_20B != 1) {
-                        func_80AF5CD4(this, 1);
+                        set_play_anime_mode(this, 1);
                         this->mouthIndex = 1;
                     }
                     if (this->unk_208 == 2 && this->unk_20B != 2) {
-                        func_80AF5CD4(this, 2);
+                        set_play_anime_mode(this, 2);
                         this->mouthIndex = 1;
                     }
                     if (this->unk_208 == 5) {
@@ -410,83 +410,83 @@ void func_80AF6448(EnSa* this, PlayState* play) {
                     break;
                 case 0x1003:
                     if (this->unk_208 == 0 && this->unk_20B != 4) {
-                        func_80AF5CD4(this, 4);
+                        set_play_anime_mode(this, 4);
                     }
                     break;
                 case 0x1031:
                     if (this->unk_208 == 0 && this->unk_20B != 4 &&
                         this->skelAnime.animation == &gSariaHandsBehindBackWaitAnim) {
-                        func_80AF5CD4(this, 4);
+                        set_play_anime_mode(this, 4);
                         this->mouthIndex = 3;
                     }
                     if (this->unk_208 == 2 && this->unk_20B != 5) {
-                        func_80AF5CD4(this, 5);
+                        set_play_anime_mode(this, 5);
                         this->mouthIndex = 2;
                     }
                     if (this->unk_208 == 4 && this->unk_20B != 6) {
-                        func_80AF5CD4(this, 6);
+                        set_play_anime_mode(this, 6);
                         this->mouthIndex = 0;
                     }
                     break;
                 case 0x1032:
                     if (this->unk_208 == 0 && this->unk_20B != 4 &&
                         this->skelAnime.animation == &gSariaHandsBehindBackWaitAnim) {
-                        func_80AF5CD4(this, 4);
+                        set_play_anime_mode(this, 4);
                     }
                     break;
                 case 0x1047:
                     if (this->unk_208 == 1 && this->unk_20B != 7) {
-                        func_80AF5CD4(this, 7);
+                        set_play_anime_mode(this, 7);
                     }
                     break;
                 case 0x1048:
                     if (this->unk_208 == 0 && this->unk_20B != 7) {
-                        func_80AF5CD4(this, 7);
+                        set_play_anime_mode(this, 7);
                     }
                     break;
             }
         } else if (!CHECK_QUEST_ITEM(QUEST_KOKIRI_EMERALD) &&
                    (GET_INFTABLE(INFTABLE_01) || GET_INFTABLE(INFTABLE_03))) {
             if (this->unk_20B != 3) {
-                func_80AF5CD4(this, 3);
+                set_play_anime_mode(this, 3);
             }
         } else {
-            func_80AF5CD4(this, 0);
+            set_play_anime_mode(this, 0);
         }
-        func_80AF5CE4(this);
+        sa_chg_anime(this);
     }
     if (this->skelAnime.animation == &gSariaStopPlayingOcarinaAnim) {
         this->skelAnime.playSpeed = -1.0f;
         if ((s32)this->skelAnime.curFrame == 0) {
-            EnSa_ChangeAnim(this, ENSA_ANIM1_6);
+            sa_anime_ct(this, ENSA_ANIM1_6);
         }
     }
     if (this->interactInfo.talkState != NPC_TALK_STATE_IDLE && play->sceneId == SCENE_SACRED_FOREST_MEADOW) {
-        Animation_Change(&this->skelAnime, &gSariaStopPlayingOcarinaAnim, 1.0f, 0.0f, 10.0f, ANIMMODE_ONCE, -10.0f);
-        this->actionFunc = func_80AF67D0;
+        Skeleton_Info2_init(&this->skelAnime, &gSariaStopPlayingOcarinaAnim, 1.0f, 0.0f, 10.0f, ANIMMODE_ONCE, -10.0f);
+        this->actionFunc = sa_talking;
     }
 }
 
-void func_80AF67D0(EnSa* this, PlayState* play) {
+void sa_talking(EnSa* this, PlayState* play) {
     if (this->interactInfo.talkState != NPC_TALK_STATE_IDLE) {
         return;
     }
 
-    Animation_Change(&this->skelAnime, &gSariaStopPlayingOcarinaAnim, 0.0f, 10.0f, 0.0f, ANIMMODE_ONCE, -10.0f);
-    this->actionFunc = func_80AF6448;
+    Skeleton_Info2_init(&this->skelAnime, &gSariaStopPlayingOcarinaAnim, 0.0f, 10.0f, 0.0f, ANIMMODE_ONCE, -10.0f);
+    this->actionFunc = sa_wait;
 }
 
-void func_80AF683C(EnSa* this, PlayState* play) {
+void sa_oca_wait(EnSa* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    if (!(player->actor.world.pos.z >= -2220.0f) && !Play_InCsMode(play)) {
+    if (!(player->actor.world.pos.z >= -2220.0f) && !Game_play_demo_mode_check(play)) {
         play->csCtx.script = SEGMENTED_TO_VIRTUAL(gMeadowSariasSongCs);
-        gSaveContext.cutsceneTrigger = 1;
-        this->actionFunc = func_80AF68E4;
+        z_common_data.cutsceneTrigger = 1;
+        this->actionFunc = sa_demo;
     }
 }
 
-void func_80AF68E4(EnSa* this, PlayState* play) {
+void sa_demo(EnSa* this, PlayState* play) {
     s16 phi_v0;
     Vec3f startPos;
     Vec3f endPos;
@@ -496,15 +496,15 @@ void func_80AF68E4(EnSa* this, PlayState* play) {
     f32 gravity;
 
     if (play->csCtx.state == CS_STATE_IDLE) {
-        this->actionFunc = func_80AF6B20;
+        this->actionFunc = sa_demo_end;
         return;
     }
 
     cue = play->csCtx.actorCues[1];
 
     if (cue != NULL) {
-        func_80AF6130(cue, &startPos);
-        func_80AF6170(cue, &endPos);
+        demo_start_pos_set(cue, &startPos);
+        demo_end_pos_set(cue, &endPos);
 
         if (this->unk_210 == 0) {
             this->actor.world.pos = startPos;
@@ -521,7 +521,7 @@ void func_80AF68E4(EnSa* this, PlayState* play) {
                     this->mouthIndex = 0;
                     break;
             }
-            EnSa_ChangeAnim(this, cue->id);
+            sa_anime_ct(this, cue->id);
             this->unk_210 = cue->id;
         }
 
@@ -535,8 +535,8 @@ void func_80AF68E4(EnSa* this, PlayState* play) {
                 phi_v0 = this->unk_20C;
             }
             if (phi_v0 == 0) {
-                Audio_PlaySfxGeneral(NA_SE_PL_WALK_GROUND + SURFACE_SFX_OFFSET_DIRT, &this->actor.projectedPos, 4,
-                                     &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                Nai_FxFlagEntry(NA_SE_PL_WALK_GROUND + SURFACE_SFX_OFFSET_DIRT, &this->actor.projectedPos, 4,
+                                     &_dummy_one, &_dummy_one, &_dummy_zero_s8);
                 this->unk_20C = 8;
             }
         }
@@ -562,79 +562,79 @@ void func_80AF68E4(EnSa* this, PlayState* play) {
     }
 }
 
-void func_80AF6B20(EnSa* this, PlayState* play) {
+void sa_demo_end(EnSa* this, PlayState* play) {
     if (play->sceneId == SCENE_SACRED_FOREST_MEADOW) {
-        Item_Give(play, ITEM_SONG_SARIA);
-        EnSa_ChangeAnim(this, ENSA_ANIM1_6);
+        item_get_setting(play, ITEM_SONG_SARIA);
+        sa_anime_ct(this, ENSA_ANIM1_6);
     }
 
     if (play->sceneId == SCENE_KOKIRI_FOREST) {
-        EnSa_ChangeAnim(this, ENSA_ANIM1_4);
+        sa_anime_ct(this, ENSA_ANIM1_4);
         this->actor.world.pos = this->actor.home.pos;
         this->actor.world.rot = this->unk_21A;
         this->mouthIndex = 0;
         SET_INFTABLE(INFTABLE_00);
     }
 
-    this->actionFunc = func_80AF6448;
+    this->actionFunc = sa_wait;
 }
 
-void EnSa_Update(Actor* thisx, PlayState* play) {
+void En_Sa_Actor_move(Actor* thisx, PlayState* play) {
     EnSa* this = (EnSa*)thisx;
     s32 pad;
 
-    Collider_UpdateCylinder(&this->actor, &this->collider);
-    CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
-    SkelAnime_Update(&this->skelAnime);
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
+    CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
+    Skeleton_Info2_anime_play(&this->skelAnime);
 
     if (this->skelAnime.animation == &gSariaOcarinaToMouthAnim &&
-        this->skelAnime.curFrame >= Animation_GetLastFrame(&gSariaOcarinaToMouthAnim)) {
-        EnSa_ChangeAnim(this, ENSA_ANIM1_6);
+        this->skelAnime.curFrame >= Si2_anime_end_frame(&gSariaOcarinaToMouthAnim)) {
+        sa_anime_ct(this, ENSA_ANIM1_6);
     }
 
-    if (this->actionFunc != func_80AF68E4) {
-        this->alpha = Actor_UpdateAlphaByDistance(&this->actor, play, this->alpha, 400.0f);
+    if (this->actionFunc != sa_demo) {
+        this->alpha = kokiri_alpha_set(&this->actor, play, this->alpha, 400.0f);
     } else {
         this->alpha = 255;
     }
 
     this->actor.shape.shadowAlpha = this->alpha;
 
-    if (this->actionFunc == func_80AF68E4) {
+    if (this->actionFunc == sa_demo) {
         this->actor.world.pos.x += this->actor.velocity.x;
         this->actor.world.pos.y += this->actor.velocity.y;
         this->actor.world.pos.z += this->actor.velocity.z;
     } else {
-        Actor_UpdatePos(&this->actor);
+        Actor_position_move(&this->actor);
     }
 
     if (play->sceneId != SCENE_SACRED_FOREST_MEADOW) {
-        Actor_UpdateBgCheckInfo(play, &this->actor, 0.0f, 0.0f, 0.0f, UPDBGCHECKINFO_FLAG_2);
+        Actor_BGcheck2(play, &this->actor, 0.0f, 0.0f, 0.0f, UPDBGCHECKINFO_FLAG_2);
     }
 
-    func_80AF609C(this);
+    sa_eye_control(this);
     this->actionFunc(this, play);
-    func_80AF57D8(this, play);
-    func_80AF5F34(this, play);
+    sa_talk(this, play);
+    sa_eye_move(this, play);
 }
 
-s32 EnSa_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx, Gfx** gfx) {
+static s32 before_display(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx, Gfx** gfx) {
     EnSa* this = (EnSa*)thisx;
     s32 pad;
     Vec3s limbRot;
 
     if (limbIndex == 16) {
-        Matrix_Translate(900.0f, 0.0f, 0.0f, MTXMODE_APPLY);
+        Matrix_translate(900.0f, 0.0f, 0.0f, MTXMODE_APPLY);
         limbRot = this->interactInfo.headRot;
-        Matrix_RotateX(BINANG_TO_RAD_ALT(limbRot.y), MTXMODE_APPLY);
-        Matrix_RotateZ(BINANG_TO_RAD_ALT(limbRot.x), MTXMODE_APPLY);
-        Matrix_Translate(-900.0f, 0.0f, 0.0f, MTXMODE_APPLY);
+        Matrix_rotateX(BINANG_TO_RAD_ALT(limbRot.y), MTXMODE_APPLY);
+        Matrix_rotateZ(BINANG_TO_RAD_ALT(limbRot.x), MTXMODE_APPLY);
+        Matrix_translate(-900.0f, 0.0f, 0.0f, MTXMODE_APPLY);
     }
 
     if (limbIndex == 9) {
         limbRot = this->interactInfo.torsoRot;
-        Matrix_RotateY(BINANG_TO_RAD_ALT(limbRot.y), MTXMODE_APPLY);
-        Matrix_RotateX(BINANG_TO_RAD_ALT(limbRot.x), MTXMODE_APPLY);
+        Matrix_rotateY(BINANG_TO_RAD_ALT(limbRot.y), MTXMODE_APPLY);
+        Matrix_rotateX(BINANG_TO_RAD_ALT(limbRot.x), MTXMODE_APPLY);
     }
 
     if (play->sceneId == SCENE_SACRED_FOREST_MEADOW && limbIndex == 15) {
@@ -644,21 +644,21 @@ s32 EnSa_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* po
     return 0;
 }
 
-void EnSa_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx, Gfx** gfx) {
+static void after_display(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx, Gfx** gfx) {
     EnSa* this = (EnSa*)thisx;
     Vec3f D_80AF7454 = { 400.0, 0.0f, 0.0f };
 
     if (limbIndex == 16) {
-        Matrix_MultVec3f(&D_80AF7454, &this->actor.focus.pos);
+        Matrix_Position(&D_80AF7454, &this->actor.focus.pos);
     }
 }
 
-void EnSa_Draw(Actor* thisx, PlayState* play) {
-    static void* mouthTextures[] = {
+void En_Sa_Actor_draw(Actor* thisx, PlayState* play) {
+    static void* mouth_txt[] = {
         gSariaMouthClosed2Tex,  gSariaMouthSmilingOpenTex, gSariaMouthFrowningTex,
         gSariaMouthSuprisedTex, gSariaMouthClosedTex,
     };
-    static void* eyeTextures[] = {
+    static void* eye_txt[] = {
         gSariaEyeOpenTex, gSariaEyeHalfTex, gSariaEyeClosedTex, gSariaEyeSuprisedTex, gSariaEyeSadTex,
     };
     EnSa* this = (EnSa*)thisx;
@@ -666,15 +666,15 @@ void EnSa_Draw(Actor* thisx, PlayState* play) {
     OPEN_DISPS(play->state.gfxCtx, "../z_en_sa.c", 1444);
 
     if (this->alpha == 255) {
-        gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(eyeTextures[this->rightEyeIndex]));
-        gSPSegment(POLY_OPA_DISP++, 0x09, SEGMENTED_TO_VIRTUAL(eyeTextures[this->leftEyeIndex]));
-        gSPSegment(POLY_OPA_DISP++, 0x0A, SEGMENTED_TO_VIRTUAL(mouthTextures[this->mouthIndex]));
-        func_80034BA0(play, &this->skelAnime, EnSa_OverrideLimbDraw, EnSa_PostLimbDraw, &this->actor, this->alpha);
+        gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(eye_txt[this->rightEyeIndex]));
+        gSPSegment(POLY_OPA_DISP++, 0x09, SEGMENTED_TO_VIRTUAL(eye_txt[this->leftEyeIndex]));
+        gSPSegment(POLY_OPA_DISP++, 0x0A, SEGMENTED_TO_VIRTUAL(mouth_txt[this->mouthIndex]));
+        no_clarity(play, &this->skelAnime, before_display, after_display, &this->actor, this->alpha);
     } else if (this->alpha != 0) {
-        gSPSegment(POLY_XLU_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(eyeTextures[this->rightEyeIndex]));
-        gSPSegment(POLY_XLU_DISP++, 0x09, SEGMENTED_TO_VIRTUAL(eyeTextures[this->leftEyeIndex]));
-        gSPSegment(POLY_XLU_DISP++, 0x0A, SEGMENTED_TO_VIRTUAL(mouthTextures[this->mouthIndex]));
-        func_80034CC4(play, &this->skelAnime, EnSa_OverrideLimbDraw, EnSa_PostLimbDraw, &this->actor, this->alpha);
+        gSPSegment(POLY_XLU_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(eye_txt[this->rightEyeIndex]));
+        gSPSegment(POLY_XLU_DISP++, 0x09, SEGMENTED_TO_VIRTUAL(eye_txt[this->leftEyeIndex]));
+        gSPSegment(POLY_XLU_DISP++, 0x0A, SEGMENTED_TO_VIRTUAL(mouth_txt[this->mouthIndex]));
+        clarity(play, &this->skelAnime, before_display, after_display, &this->actor, this->alpha);
     }
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_sa.c", 1497);

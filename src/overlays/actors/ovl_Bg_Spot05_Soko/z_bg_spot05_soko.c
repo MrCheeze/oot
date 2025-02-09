@@ -9,13 +9,13 @@
 
 #define FLAGS 0
 
-void BgSpot05Soko_Init(Actor* thisx, PlayState* play);
-void BgSpot05Soko_Destroy(Actor* thisx, PlayState* play);
-void BgSpot05Soko_Update(Actor* thisx, PlayState* play);
-void BgSpot05Soko_Draw(Actor* thisx, PlayState* play);
-void func_808AE5A8(BgSpot05Soko* this, PlayState* play);
-void func_808AE5B4(BgSpot05Soko* this, PlayState* play);
-void func_808AE630(BgSpot05Soko* this, PlayState* play);
+void Bg_Spot05_Soko_actor_ct(Actor* thisx, PlayState* play);
+void Bg_Spot05_Soko_actor_dt(Actor* thisx, PlayState* play);
+void Bg_Spot05_Soko_actor_move(Actor* thisx, PlayState* play);
+void Bg_Spot05_Soko_actor_draw(Actor* thisx, PlayState* play);
+static void mode_stop(BgSpot05Soko* this, PlayState* play);
+static void mode_wait(BgSpot05Soko* this, PlayState* play);
+void mode_open(BgSpot05Soko* this, PlayState* play);
 
 ActorProfile Bg_Spot05_Soko_Profile = {
     /**/ ACTOR_BG_SPOT05_SOKO,
@@ -23,83 +23,83 @@ ActorProfile Bg_Spot05_Soko_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_SPOT05_OBJECTS,
     /**/ sizeof(BgSpot05Soko),
-    /**/ BgSpot05Soko_Init,
-    /**/ BgSpot05Soko_Destroy,
-    /**/ BgSpot05Soko_Update,
-    /**/ BgSpot05Soko_Draw,
+    /**/ Bg_Spot05_Soko_actor_ct,
+    /**/ Bg_Spot05_Soko_actor_dt,
+    /**/ Bg_Spot05_Soko_actor_move,
+    /**/ Bg_Spot05_Soko_actor_draw,
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_STOP),
 };
 
-static Gfx* sDLists[] = {
+static Gfx* shape_model[] = {
     object_spot05_objects_DL_000840,
     object_spot05_objects_DL_001190,
 };
 
-void BgSpot05Soko_Init(Actor* thisx, PlayState* play) {
+void Bg_Spot05_Soko_actor_ct(Actor* thisx, PlayState* play) {
     s32 pad1;
     BgSpot05Soko* this = (BgSpot05Soko*)thisx;
     CollisionHeader* colHeader = NULL;
     s32 pad2;
 
-    Actor_ProcessInitChain(thisx, sInitChain);
+    ValueSet_process(thisx, value_init);
     this->switchFlag = PARAMS_GET_U(thisx->params, 8, 8);
     thisx->params &= 0xFF;
-    DynaPolyActor_Init(&this->dyna, 0);
+    MoveBG_ct(&this->dyna, 0);
     if (thisx->params == 0) {
-        CollisionHeader_GetVirtual(&object_spot05_objects_Col_000918, &colHeader);
+        DynaPolyUty_bgdi_SG2KSG(&object_spot05_objects_Col_000918, &colHeader);
         if (LINK_IS_ADULT) {
-            Actor_Kill(thisx);
+            Actor_delete(thisx);
         } else {
-            this->actionFunc = func_808AE5A8;
+            this->actionFunc = mode_stop;
         }
     } else {
-        CollisionHeader_GetVirtual(&object_spot05_objects_Col_0012C0, &colHeader);
-        if (Flags_GetSwitch(play, this->switchFlag) != 0) {
-            Actor_Kill(thisx);
+        DynaPolyUty_bgdi_SG2KSG(&object_spot05_objects_Col_0012C0, &colHeader);
+        if (Actor_Environment_sw_Check(play, this->switchFlag) != 0) {
+            Actor_delete(thisx);
         } else {
-            this->actionFunc = func_808AE5B4;
+            this->actionFunc = mode_wait;
             thisx->flags |= ACTOR_FLAG_UPDATE_CULLING_DISABLED;
         }
     }
-    this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, thisx, colHeader);
+    this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, thisx, colHeader);
 }
 
-void BgSpot05Soko_Destroy(Actor* thisx, PlayState* play) {
+void Bg_Spot05_Soko_actor_dt(Actor* thisx, PlayState* play) {
     BgSpot05Soko* this = (BgSpot05Soko*)thisx;
 
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
 }
 
-void func_808AE5A8(BgSpot05Soko* this, PlayState* play) {
+static void mode_stop(BgSpot05Soko* this, PlayState* play) {
 }
 
-void func_808AE5B4(BgSpot05Soko* this, PlayState* play) {
-    if (Flags_GetSwitch(play, this->switchFlag)) {
-        SfxSource_PlaySfxAtFixedWorldPos(play, &this->dyna.actor.world.pos, 30, NA_SE_EV_METALDOOR_CLOSE);
-        Actor_SetFocus(&this->dyna.actor, 50.0f);
-        OnePointCutscene_Attention(play, &this->dyna.actor);
-        this->actionFunc = func_808AE630;
+static void mode_wait(BgSpot05Soko* this, PlayState* play) {
+    if (Actor_Environment_sw_Check(play, this->switchFlag)) {
+        Effect_SE_Info_new(play, &this->dyna.actor.world.pos, 30, NA_SE_EV_METALDOOR_CLOSE);
+        Actor_world_to_eye(&this->dyna.actor, 50.0f);
+        makeActorAttentionDemo(play, &this->dyna.actor);
+        this->actionFunc = mode_open;
         this->dyna.actor.speed = 0.5f;
     }
 }
 
-void func_808AE630(BgSpot05Soko* this, PlayState* play) {
+void mode_open(BgSpot05Soko* this, PlayState* play) {
     this->dyna.actor.speed *= 1.5f;
-    if (Math_StepToF(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y - 120.0f, this->dyna.actor.speed) !=
+    if (chase_f(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y - 120.0f, this->dyna.actor.speed) !=
         0) {
-        Actor_Kill(&this->dyna.actor);
+        Actor_delete(&this->dyna.actor);
     }
 }
 
-void BgSpot05Soko_Update(Actor* thisx, PlayState* play) {
+void Bg_Spot05_Soko_actor_move(Actor* thisx, PlayState* play) {
     BgSpot05Soko* this = (BgSpot05Soko*)thisx;
 
     this->actionFunc(this, play);
 }
 
-void BgSpot05Soko_Draw(Actor* thisx, PlayState* play) {
-    Gfx_DrawDListOpa(play, sDLists[thisx->params]);
+void Bg_Spot05_Soko_actor_draw(Actor* thisx, PlayState* play) {
+    Cheap_gfx_display(play, shape_model[thisx->params]);
 }

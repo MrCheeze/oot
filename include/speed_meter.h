@@ -12,9 +12,9 @@ typedef struct SpeedMeter {
     /* 0x1C */ s32 y;
 } SpeedMeter; // size = 0x20
 
-void SpeedMeter_Init(SpeedMeter* this);
-void SpeedMeter_Destroy(SpeedMeter* this);
-void SpeedMeter_DrawTimeEntries(SpeedMeter* this, struct GraphicsContext* gfxCtx);
-void SpeedMeter_DrawAllocEntries(SpeedMeter* meter, struct GraphicsContext* gfxCtx, struct GameState* state);
+void speed_meter_init(SpeedMeter* this);
+void speed_meter_cleanup(SpeedMeter* this);
+void speed_meter_draw(SpeedMeter* this, struct GraphicsContext* gfxCtx);
+void speed_meter_draw_memory(SpeedMeter* meter, struct GraphicsContext* gfxCtx, struct GameState* state);
 
 #endif

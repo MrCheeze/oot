@@ -17,19 +17,19 @@
 #define ENKO_TYPE PARAMS_GET_S(this->actor.params, 0, 8)
 #define ENKO_PATH PARAMS_GET_S(this->actor.params, 8, 8)
 
-void EnKo_Init(Actor* thisx, PlayState* play);
-void EnKo_Destroy(Actor* thisx, PlayState* play);
-void EnKo_Update(Actor* thisx, PlayState* play);
-void EnKo_Draw(Actor* thisx, PlayState* play);
+void En_Ko_Actor_ct(Actor* thisx, PlayState* play);
+void En_Ko_Actor_dt(Actor* thisx, PlayState* play);
+void En_Ko_Actor_move(Actor* thisx, PlayState* play);
+void En_Ko_Actor_draw(Actor* thisx, PlayState* play);
 
-void func_80A99048(EnKo* this, PlayState* play);
-void func_80A995CC(EnKo* this, PlayState* play);
-void func_80A99384(EnKo* this, PlayState* play);
-void func_80A99438(EnKo* this, PlayState* play);
-void func_80A99504(EnKo* this, PlayState* play);
-void func_80A99560(EnKo* this, PlayState* play);
+static void init(EnKo* this, PlayState* play);
+void stopper(EnKo* this, PlayState* play);
+static void wait_nw(EnKo* this, PlayState* play);
+void ko_kusukusu(EnKo* this, PlayState* play);
+void ko_carry_request(EnKo* this, PlayState* play);
+void ko_carry_end(EnKo* this, PlayState* play);
 
-s32 func_80A98ECC(EnKo* this, PlayState* play);
+s32 ko_pose(EnKo* this, PlayState* play);
 
 ActorProfile En_Ko_Profile = {
     /**/ ACTOR_EN_KO,
@@ -37,13 +37,13 @@ ActorProfile En_Ko_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(EnKo),
-    /**/ EnKo_Init,
-    /**/ EnKo_Destroy,
-    /**/ EnKo_Update,
-    /**/ EnKo_Draw,
+    /**/ En_Ko_Actor_ct,
+    /**/ En_Ko_Actor_dt,
+    /**/ En_Ko_Actor_move,
+    /**/ En_Ko_Actor_draw,
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit KoCoInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -63,10 +63,10 @@ static ColliderCylinderInit sCylinderInit = {
     { 20, 46, 0, { 0, 0, 0 } },
 };
 
-static CollisionCheckInfoInit2 sColChkInfoInit = { 0, 0, 0, 0, MASS_IMMOVABLE };
+static CollisionCheckInfoInit2 KoStatusData = { 0, 0, 0, 0, MASS_IMMOVABLE };
 
-static void* sFaEyes[] = { gFaEyeOpenTex, gFaEyeHalfTex, gFaEyeClosedTex, NULL };
-static void* sKw1Eyes[] = { gKw1EyeOpenTex, gKw1EyeHalfTex, gKw1EyeClosedTex, NULL };
+static void* fa_eye[] = { gFaEyeOpenTex, gFaEyeHalfTex, gFaEyeClosedTex, NULL };
+static void* kw_eye[] = { gKw1EyeOpenTex, gKw1EyeHalfTex, gKw1EyeClosedTex, NULL };
 
 typedef struct EnKoHead {
     /* 0x0 */ s16 objectId;
@@ -74,10 +74,10 @@ typedef struct EnKoHead {
     /* 0x8 */ void** eyeTextures;
 } EnKoHead; // size = 0xC
 
-static EnKoHead sHead[] = {
+static EnKoHead head[] = {
     { OBJECT_KM1, gKm1DL, NULL },
-    { OBJECT_KW1, object_kw1_DL_002C10, sKw1Eyes },
-    { OBJECT_FA, gFaDL, sFaEyes },
+    { OBJECT_KW1, object_kw1_DL_002C10, kw_eye },
+    { OBJECT_FA, gFaDL, fa_eye },
 };
 
 typedef struct EnKoSkeleton {
@@ -85,7 +85,7 @@ typedef struct EnKoSkeleton {
     /* 0x4 */ FlexSkeletonHeader* flexSkeletonHeader;
 } EnKoSkeleton; // size = 0x8
 
-static EnKoSkeleton sSkeleton[2] = {
+static EnKoSkeleton body[2] = {
     { OBJECT_KM1, &gKm1Skel },
     { OBJECT_KW1, &gKw1Skel },
 };
@@ -127,7 +127,7 @@ typedef enum EnKoAnimation {
     /* 33 */ ENKO_ANIM_LIFTING_ROCK
 } EnKoAnimation;
 
-static AnimationInfo sAnimationInfo[] = {
+static AnimationInfo animetbl[] = {
     { &gKokiriBlockingAnim, 1.0f, 2.0f, 14.0f, ANIMMODE_LOOP_PARTIAL, 0.0f },
     { &gKokiriBlockingAnim, 0.0f, 1.0f, 1.0f, ANIMMODE_LOOP_PARTIAL, 0.0f },
     { &gKokiriStandUpAnim, 0.0f, 0.0f, 0.0f, ANIMMODE_ONCE, 0.0f },
@@ -164,7 +164,7 @@ static AnimationInfo sAnimationInfo[] = {
     { &gKokiriLiftingRockAnim, 1.0f, 0.0f, -1.0f, ANIMMODE_LOOP, -8.0f },
 };
 
-static u8 sOsAnimeLookup[13][5] = {
+static u8 ctanime[13][5] = {
     /* ENKO_TYPE_CHILD_0    */ { ENKO_ANIM_LIFTING_ROCK_NOMORPH, ENKO_ANIM_RECLINED_STANDING,
                                  ENKO_ANIM_RECLINED_STANDING, ENKO_ANIM_SITTING, ENKO_ANIM_PUNCHING_NOMORPH },
     /* ENKO_TYPE_CHILD_1    */
@@ -217,7 +217,7 @@ typedef enum KokiriGender {
     /* 2 */ KO_FADO
 } KokiriGender;
 
-static EnKoModelInfo sModelInfo[] = {
+static EnKoModelInfo ko_data[] = {
     /* ENKO_TYPE_CHILD_0    */ { KO_BOY, KO_BOY, { 0, 130, 70, 255 }, KO_BOY, { 110, 170, 20, 255 } },
     /* ENKO_TYPE_CHILD_1    */ { KO_GIRL, KO_GIRL, { 70, 190, 60, 255 }, KO_GIRL, { 100, 30, 0, 255 } },
     /* ENKO_TYPE_CHILD_2    */ { KO_BOY, KO_BOY, { 0, 130, 70, 255 }, KO_BOY, { 110, 170, 20, 255 } },
@@ -239,7 +239,7 @@ typedef struct EnKoInteractInfo {
     /* 0x8 */ f32 appearDist;
 } EnKoInteractInfo; // size = 0xC
 
-static EnKoInteractInfo sInteractInfo[] = {
+static EnKoInteractInfo actor_ct_data[] = {
     /* ENKO_TYPE_CHILD_0    */ { 6, 30.0f, 180.0f },
     /* ENKO_TYPE_CHILD_1    */ { 6, 30.0f, 180.0f },
     /* ENKO_TYPE_CHILD_2    */ { 6, 30.0f, 180.0f },
@@ -255,57 +255,57 @@ static EnKoInteractInfo sInteractInfo[] = {
     /* ENKO_TYPE_CHILD_FADO */ { 6, 30.0f, 180.0f },
 };
 
-s32 EnKo_AreObjectsAvailable(EnKo* this, PlayState* play) {
-    u8 headId = sModelInfo[ENKO_TYPE].headId;
-    u8 bodyId = sModelInfo[ENKO_TYPE].bodyId;
-    u8 legsId = sModelInfo[ENKO_TYPE].legsId;
+static s32 get_bank_id(EnKo* this, PlayState* play) {
+    u8 headId = ko_data[ENKO_TYPE].headId;
+    u8 bodyId = ko_data[ENKO_TYPE].bodyId;
+    u8 legsId = ko_data[ENKO_TYPE].legsId;
 
-    this->legsObjectSlot = Object_GetSlot(&play->objectCtx, sSkeleton[legsId].objectId);
+    this->legsObjectSlot = Object_Exchange_bank_check(&play->objectCtx, body[legsId].objectId);
     if (this->legsObjectSlot < 0) {
         return false;
     }
 
-    this->bodyObjectSlot = Object_GetSlot(&play->objectCtx, sSkeleton[bodyId].objectId);
+    this->bodyObjectSlot = Object_Exchange_bank_check(&play->objectCtx, body[bodyId].objectId);
     if (this->bodyObjectSlot < 0) {
         return false;
     }
 
-    this->headObjectSlot = Object_GetSlot(&play->objectCtx, sHead[headId].objectId);
+    this->headObjectSlot = Object_Exchange_bank_check(&play->objectCtx, head[headId].objectId);
     if (this->headObjectSlot < 0) {
         return false;
     }
     return true;
 }
 
-s32 EnKo_AreObjectsLoaded(EnKo* this, PlayState* play) {
-    if (!Object_IsLoaded(&play->objectCtx, this->legsObjectSlot)) {
+static s32 bank_trans_check(EnKo* this, PlayState* play) {
+    if (!Object_Exchange_bank_dma_check(&play->objectCtx, this->legsObjectSlot)) {
         return false;
     }
-    if (!Object_IsLoaded(&play->objectCtx, this->bodyObjectSlot)) {
+    if (!Object_Exchange_bank_dma_check(&play->objectCtx, this->bodyObjectSlot)) {
         return false;
     }
-    if (!Object_IsLoaded(&play->objectCtx, this->headObjectSlot)) {
+    if (!Object_Exchange_bank_dma_check(&play->objectCtx, this->headObjectSlot)) {
         return false;
     }
     return true;
 }
 
-s32 EnKo_IsOsAnimeAvailable(EnKo* this, PlayState* play) {
-    this->osAnimeObjectSlot = Object_GetSlot(&play->objectCtx, OBJECT_OS_ANIME);
+static s32 get_animation_bank_id(EnKo* this, PlayState* play) {
+    this->osAnimeObjectSlot = Object_Exchange_bank_check(&play->objectCtx, OBJECT_OS_ANIME);
     if (this->osAnimeObjectSlot < 0) {
         return false;
     }
     return true;
 }
 
-s32 EnKo_IsOsAnimeLoaded(EnKo* this, PlayState* play) {
-    if (!Object_IsLoaded(&play->objectCtx, this->osAnimeObjectSlot)) {
+static s32 animation_bank_trans_check(EnKo* this, PlayState* play) {
+    if (!Object_Exchange_bank_dma_check(&play->objectCtx, this->osAnimeObjectSlot)) {
         return false;
     }
     return true;
 }
 
-u16 EnKo_GetTextIdChild(PlayState* play, Actor* thisx) {
+u16 ko_set_message_ch(PlayState* play, Actor* thisx) {
     EnKo* this = (EnKo*)thisx;
     switch (ENKO_TYPE) {
         case ENKO_TYPE_CHILD_FADO:
@@ -404,7 +404,7 @@ u16 EnKo_GetTextIdChild(PlayState* play, Actor* thisx) {
     return 0;
 }
 
-u16 EnKo_GetTextIdAdult(PlayState* play, Actor* thisx) {
+u16 ko_set_message_ad(PlayState* play, Actor* thisx) {
     Player* player = GET_PLAYER(play);
     EnKo* this = (EnKo*)thisx;
 
@@ -489,35 +489,35 @@ u16 EnKo_GetTextIdAdult(PlayState* play, Actor* thisx) {
     }
 }
 
-u16 EnKo_GetTextId(PlayState* play, Actor* thisx) {
+u16 ko_set_message(PlayState* play, Actor* thisx) {
     u16 textId;
     EnKo* this = (EnKo*)thisx;
 
     if (ENKO_TYPE == ENKO_TYPE_CHILD_0 || ENKO_TYPE == ENKO_TYPE_CHILD_2 || ENKO_TYPE == ENKO_TYPE_CHILD_3 ||
         ENKO_TYPE == ENKO_TYPE_CHILD_4 || ENKO_TYPE == ENKO_TYPE_CHILD_7 || ENKO_TYPE == ENKO_TYPE_CHILD_8 ||
         ENKO_TYPE == ENKO_TYPE_CHILD_11) {
-        textId = MaskReaction_GetTextId(play, MASK_REACTION_SET_KOKIRI_1);
+        textId = get_mask_message(play, MASK_REACTION_SET_KOKIRI_1);
     }
     if (ENKO_TYPE == ENKO_TYPE_CHILD_1 || ENKO_TYPE == ENKO_TYPE_CHILD_5 || ENKO_TYPE == ENKO_TYPE_CHILD_6 ||
         ENKO_TYPE == ENKO_TYPE_CHILD_9 || ENKO_TYPE == ENKO_TYPE_CHILD_10) {
-        textId = MaskReaction_GetTextId(play, MASK_REACTION_SET_KOKIRI_2);
+        textId = get_mask_message(play, MASK_REACTION_SET_KOKIRI_2);
     }
     if (ENKO_TYPE == ENKO_TYPE_CHILD_FADO) {
-        textId = MaskReaction_GetTextId(play, MASK_REACTION_SET_FADO);
+        textId = get_mask_message(play, MASK_REACTION_SET_FADO);
     }
     if (textId != 0) {
         return textId;
     }
     if (LINK_IS_ADULT) {
-        return EnKo_GetTextIdAdult(play, thisx);
+        return ko_set_message_ad(play, thisx);
     }
-    return EnKo_GetTextIdChild(play, thisx);
+    return ko_set_message_ch(play, thisx);
 }
 
-s16 EnKo_UpdateTalkState(PlayState* play, Actor* thisx) {
+s16 ko_end_message(PlayState* play, Actor* thisx) {
     EnKo* this = (EnKo*)thisx;
 
-    switch (Message_GetState(&play->msgCtx)) {
+    switch (message_check(&play->msgCtx)) {
         case TEXT_STATE_CLOSING:
             switch (this->actor.textId) {
                 case 0x1005:
@@ -562,28 +562,28 @@ s16 EnKo_UpdateTalkState(PlayState* play, Actor* thisx) {
                 case 0x10B7:
                 case 0x10B8:
                     if (this->unk_210 == 0) {
-                        Audio_PlaySfxGeneral(NA_SE_SY_TRE_BOX_APPEAR, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                        Nai_FxFlagEntry(NA_SE_SY_TRE_BOX_APPEAR, &_dummy_zero_f, 4, &_dummy_one,
+                                             &_dummy_one, &_dummy_zero_s8);
                         this->unk_210 = 1;
                     }
             }
             return NPC_TALK_STATE_TALKING;
         case TEXT_STATE_CHOICE:
-            if (Message_ShouldAdvance(play)) {
+            if (pad_on_check(play)) {
                 switch (this->actor.textId) {
                     case 0x1035:
                         this->actor.textId = (play->msgCtx.choiceIndex == 0) ? 0x1036 : 0x1037;
-                        Message_ContinueTextbox(play, this->actor.textId);
+                        message_set2(play, this->actor.textId);
                         break;
                     case 0x1038:
                         this->actor.textId = (play->msgCtx.choiceIndex != 0)
                                                  ? (play->msgCtx.choiceIndex == 1) ? 0x103A : 0x103B
                                                  : 0x1039;
-                        Message_ContinueTextbox(play, this->actor.textId);
+                        message_set2(play, this->actor.textId);
                         break;
                     case 0x103E:
                         this->actor.textId = (play->msgCtx.choiceIndex == 0) ? 0x103F : 0x1040;
-                        Message_ContinueTextbox(play, this->actor.textId);
+                        message_set2(play, this->actor.textId);
                         break;
                     case 0x10B7:
 #if OOT_VERSION < NTSC_1_1
@@ -600,7 +600,7 @@ s16 EnKo_UpdateTalkState(PlayState* play, Actor* thisx) {
             }
             break;
         case TEXT_STATE_DONE:
-            if (Message_ShouldAdvance(play)) {
+            if (pad_on_check(play)) {
                 return NPC_TALK_STATE_ITEM_GIVEN;
             }
     }
@@ -609,28 +609,28 @@ s16 EnKo_UpdateTalkState(PlayState* play, Actor* thisx) {
 
 #include "z_en_ko_anm.inc.c"
 
-void func_80A9877C(EnKo* this, PlayState* play) {
+void ko_sub_action(EnKo* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    if ((play->csCtx.state != CS_STATE_IDLE) || gDebugCamEnabled) {
+    if ((play->csCtx.state != CS_STATE_IDLE) || debug_camera_sw) {
         this->interactInfo.trackPos = play->view.eye;
         this->interactInfo.yOffset = 40.0f;
         if (ENKO_TYPE != ENKO_TYPE_CHILD_0) {
-            Npc_TrackPoint(&this->actor, &this->interactInfo, 2, NPC_TRACKING_HEAD_AND_TORSO);
+            eye_moveM(&this->actor, &this->interactInfo, 2, NPC_TRACKING_HEAD_AND_TORSO);
         }
     } else {
         this->interactInfo.trackPos = player->actor.world.pos;
-        this->interactInfo.yOffset = func_80A97BC0(this);
-        if ((func_80A98ECC(this, play) == 0) && (this->interactInfo.talkState == NPC_TALK_STATE_IDLE)) {
+        this->interactInfo.yOffset = get_anchor_offs(this);
+        if ((ko_pose(this, play) == 0) && (this->interactInfo.talkState == NPC_TALK_STATE_IDLE)) {
             return;
         }
     }
-    if (Npc_UpdateTalking(play, &this->actor, &this->interactInfo.talkState, this->lookDist, EnKo_GetTextId,
-                          EnKo_UpdateTalkState) &&
+    if (npc_talk(play, &this->actor, &this->interactInfo.talkState, this->lookDist, ko_set_message,
+                          ko_end_message) &&
         ENKO_TYPE == ENKO_TYPE_CHILD_FADO && play->sceneId == SCENE_LOST_WOODS) {
         this->actor.textId = INV_CONTENT(ITEM_TRADE_ADULT) > ITEM_ODD_POTION ? 0x10B9 : 0x10DF;
 
-        if (Actor_GetPlayerExchangeItemId(play) == EXCH_ITEM_ODD_POTION) {
+        if (Actor_get_item_check(play) == EXCH_ITEM_ODD_POTION) {
 #if OOT_VERSION < NTSC_1_1
             this->actor.textId = GET_INFTABLE(INFTABLE_B6) ? 0x10B8 : 0x10B7;
 #else
@@ -643,7 +643,7 @@ void func_80A9877C(EnKo* this, PlayState* play) {
 }
 
 // Checks if the Kokiri should spawn based on quest progress
-s32 EnKo_CanSpawn(EnKo* this, PlayState* play) {
+static s32 appearance_check(EnKo* this, PlayState* play) {
     switch (play->sceneId) {
         case SCENE_KOKIRI_FOREST:
             if (ENKO_TYPE >= ENKO_TYPE_CHILD_7 && ENKO_TYPE != ENKO_TYPE_CHILD_FADO) {
@@ -713,24 +713,24 @@ s32 EnKo_CanSpawn(EnKo* this, PlayState* play) {
     }
 }
 
-void EnKo_Blink(EnKo* this) {
+void ko_eye_paci2(EnKo* this) {
     void** eyeTextures;
     s32 headId;
 
     if (DECR(this->blinkTimer) == 0) {
-        headId = sModelInfo[ENKO_TYPE].headId;
+        headId = ko_data[ENKO_TYPE].headId;
         this->eyeTextureIndex++;
-        eyeTextures = sHead[headId].eyeTextures;
+        eyeTextures = head[headId].eyeTextures;
         if (eyeTextures != NULL && eyeTextures[this->eyeTextureIndex] == NULL) {
-            this->blinkTimer = Rand_S16Offset(30, 30);
+            this->blinkTimer = get_random_timer(30, 30);
             this->eyeTextureIndex = 0;
         }
     }
 }
 
-void func_80A98CD8(EnKo* this) {
+static void separate_actor_data_set(EnKo* this) {
     s32 type = ENKO_TYPE;
-    EnKoInteractInfo* info = &sInteractInfo[type];
+    EnKoInteractInfo* info = &actor_ct_data[type];
 
     this->actor.attentionRangeType = info->attentionRangeType;
     this->lookDist = info->lookDist;
@@ -739,7 +739,7 @@ void func_80A98CD8(EnKo* this) {
 }
 
 // Used to fetch actor animation?
-s32 EnKo_GetForestQuestState2(EnKo* this) {
+s32 get_condition(EnKo* this) {
     if (LINK_IS_ADULT) {
         return CHECK_QUEST_ITEM(QUEST_MEDALLION_FOREST) ? ENKO_FQS_ADULT_SAVED : ENKO_FQS_ADULT_ENEMY;
     }
@@ -749,20 +749,20 @@ s32 EnKo_GetForestQuestState2(EnKo* this) {
     return ENKO_FQS_CHILD_START;
 }
 
-void func_80A98DB4(EnKo* this, PlayState* play) {
+void ko_alpha_set(EnKo* this, PlayState* play) {
     f32 dist;
 
     if (play->sceneId != SCENE_LOST_WOODS && play->sceneId != SCENE_KOKIRI_FOREST) {
         this->modelAlpha = 255.0f;
         return;
     }
-    if ((play->csCtx.state != CS_STATE_IDLE) || gDebugCamEnabled) {
-        dist = Math_Vec3f_DistXYZ(&this->actor.world.pos, &play->view.eye) * 0.25f;
+    if ((play->csCtx.state != CS_STATE_IDLE) || debug_camera_sw) {
+        dist = search_position_distance(&this->actor.world.pos, &play->view.eye) * 0.25f;
     } else {
         dist = this->actor.xzDistToPlayer;
     }
 
-    Math_SmoothStepToF(&this->modelAlpha, (this->appearDist < dist) ? 0.0f : 255.0f, 0.3f, 40.0f, 1.0f);
+    add_calc(&this->modelAlpha, (this->appearDist < dist) ? 0.0f : 255.0f, 0.3f, 40.0f, 1.0f);
     if (this->modelAlpha < 10.0f) {
         this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
     } else {
@@ -770,145 +770,145 @@ void func_80A98DB4(EnKo* this, PlayState* play) {
     }
 }
 
-s32 func_80A98ECC(EnKo* this, PlayState* play) {
+s32 ko_pose(EnKo* this, PlayState* play) {
     if (play->sceneId == SCENE_LOST_WOODS && ENKO_TYPE == ENKO_TYPE_CHILD_FADO) {
-        return func_80A97E18(this, play);
+        return ko_eye_move_02(this, play);
     }
-    switch (EnKo_GetForestQuestState(this)) {
+    switch (ko_period_check(this)) {
         case ENKO_FQS_CHILD_START:
-            return EnKo_ChildStart(this, play);
+            return ko_sub_action_00(this, play);
         case ENKO_FQS_CHILD_STONE:
-            return EnKo_ChildStone(this, play);
+            return ko_sub_action_01(this, play);
         case ENKO_FQS_CHILD_SARIA:
-            return EnKo_ChildSaria(this, play);
+            return ko_sub_action_02(this, play);
         case ENKO_FQS_ADULT_ENEMY:
-            return EnKo_AdultEnemy(this, play);
+            return ko_sub_action_03(this, play);
         case ENKO_FQS_ADULT_SAVED:
-            return EnKo_AdultSaved(this, play);
+            return ko_sub_action_04(this, play);
     }
     // Note this function assumes the kokiri type is valid
     UNREACHABLE();
 }
 
-void EnKo_Init(Actor* thisx, PlayState* play) {
+void En_Ko_Actor_ct(Actor* thisx, PlayState* play) {
     EnKo* this = (EnKo*)thisx;
 
-    if (ENKO_TYPE >= ENKO_TYPE_CHILD_MAX || !EnKo_IsOsAnimeAvailable(this, play) ||
-        !EnKo_AreObjectsAvailable(this, play)) {
-        Actor_Kill(thisx);
+    if (ENKO_TYPE >= ENKO_TYPE_CHILD_MAX || !get_animation_bank_id(this, play) ||
+        !get_bank_id(this, play)) {
+        Actor_delete(thisx);
     }
-    if (!EnKo_CanSpawn(this, play)) {
-        Actor_Kill(thisx);
+    if (!appearance_check(this, play)) {
+        Actor_delete(thisx);
     }
-    this->actionFunc = func_80A99048;
+    this->actionFunc = init;
 }
 
-void EnKo_Destroy(Actor* thisx, PlayState* play) {
+void En_Ko_Actor_dt(Actor* thisx, PlayState* play) {
     EnKo* this = (EnKo*)thisx;
-    Collider_DestroyCylinder(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider);
 }
 
-void func_80A99048(EnKo* this, PlayState* play) {
-    if (EnKo_IsOsAnimeLoaded(this, play) && EnKo_AreObjectsLoaded(this, play)) {
+static void init(EnKo* this, PlayState* play) {
+    if (animation_bank_trans_check(this, play) && bank_trans_check(this, play)) {
         this->actor.flags &= ~ACTOR_FLAG_UPDATE_CULLING_DISABLED;
         this->actor.objectSlot = this->legsObjectSlot;
-        gSegments[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[this->actor.objectSlot].segment);
-        SkelAnime_InitFlex(play, &this->skelAnime, sSkeleton[sModelInfo[ENKO_TYPE].legsId].flexSkeletonHeader, NULL,
+        SegmentBaseAddress[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[this->actor.objectSlot].segment);
+        Skeleton_Info2_SV_M_ct(play, &this->skelAnime, body[ko_data[ENKO_TYPE].legsId].flexSkeletonHeader, NULL,
                            this->jointTable, this->morphTable, 16);
-        ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 18.0f);
-        gSegments[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[this->osAnimeObjectSlot].segment);
-        Collider_InitCylinder(play, &this->collider);
-        Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
-        CollisionCheck_SetInfo2(&this->actor.colChkInfo, NULL, &sColChkInfoInit);
+        Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 18.0f);
+        SegmentBaseAddress[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[this->osAnimeObjectSlot].segment);
+        ClObjPipe_ct(play, &this->collider);
+        ClObjPipe_set5(play, &this->collider, &this->actor, &KoCoInfoData);
+        CollisionCheck_Status_set3(&this->actor.colChkInfo, NULL, &KoStatusData);
         if (ENKO_TYPE == ENKO_TYPE_CHILD_7) {
             // "Angle Z"
             PRINTF(VT_BGCOL(BLUE) "  アングルＺ->(%d)\n" VT_RST, this->actor.shape.rot.z);
             if (LINK_IS_ADULT && !CHECK_QUEST_ITEM(QUEST_MEDALLION_FOREST)) {
                 if (this->actor.shape.rot.z != 1) {
-                    Actor_Kill(&this->actor);
+                    Actor_delete(&this->actor);
                     return;
                 }
             } else if (this->actor.shape.rot.z != 0) {
-                Actor_Kill(&this->actor);
+                Actor_delete(&this->actor);
                 return;
             }
         }
         if (ENKO_TYPE == ENKO_TYPE_CHILD_5) {
             this->collider.base.ocFlags1 |= 0x40;
         }
-        this->forestQuestState = EnKo_GetForestQuestState2(this);
-        Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, sOsAnimeLookup[ENKO_TYPE][this->forestQuestState]);
-        Actor_SetScale(&this->actor, 0.01f);
-        func_80A98CD8(this);
+        this->forestQuestState = get_condition(this);
+        npc_anime_ct(&this->skelAnime, animetbl, ctanime[ENKO_TYPE][this->forestQuestState]);
+        Actor_set_scale(&this->actor, 0.01f);
+        separate_actor_data_set(this);
         this->modelAlpha = 0.0f;
-        this->path = Path_GetByIndex(play, ENKO_PATH, 0xFF);
-        Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_EN_ELF, this->actor.world.pos.x,
+        this->path = get_path_data(play, ENKO_PATH, 0xFF);
+        Actor_info_make_child_actor(&play->actorCtx, &this->actor, play, ACTOR_EN_ELF, this->actor.world.pos.x,
                            this->actor.world.pos.y, this->actor.world.pos.z, 0, 0, 0, 3);
         if (ENKO_TYPE == ENKO_TYPE_CHILD_3) {
             if (!CHECK_QUEST_ITEM(QUEST_KOKIRI_EMERALD)) {
                 this->collider.dim.height += 200;
-                this->actionFunc = func_80A995CC;
+                this->actionFunc = stopper;
                 return;
             }
-            Path_CopyLastPoint(this->path, &this->actor.world.pos);
+            get_path_goal_position(this->path, &this->actor.world.pos);
         }
-        this->actionFunc = func_80A99384;
+        this->actionFunc = wait_nw;
     }
 }
 
-void func_80A99384(EnKo* this, PlayState* play) {
+static void wait_nw(EnKo* this, PlayState* play) {
     if (ENKO_TYPE == ENKO_TYPE_CHILD_FADO && this->interactInfo.talkState != NPC_TALK_STATE_IDLE &&
         this->actor.textId == 0x10B9) {
-        Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENKO_ANIM_LAUGHING);
-        this->actionFunc = func_80A99438;
+        npc_anime_ct(&this->skelAnime, animetbl, ENKO_ANIM_LAUGHING);
+        this->actionFunc = ko_kusukusu;
     } else if (ENKO_TYPE == ENKO_TYPE_CHILD_FADO && this->interactInfo.talkState == NPC_TALK_STATE_ACTION) {
-        this->actionFunc = func_80A99504;
+        this->actionFunc = ko_carry_request;
         play->msgCtx.stateTimer = 4;
         play->msgCtx.msgMode = MSGMODE_TEXT_CLOSING;
     }
 }
 
-void func_80A99438(EnKo* this, PlayState* play) {
+void ko_kusukusu(EnKo* this, PlayState* play) {
     if (ENKO_TYPE == ENKO_TYPE_CHILD_FADO && this->interactInfo.talkState == NPC_TALK_STATE_ACTION) {
-        Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENKO_ANIM_IDLE);
-        this->actionFunc = func_80A99504;
+        npc_anime_ct(&this->skelAnime, animetbl, ENKO_ANIM_IDLE);
+        this->actionFunc = ko_carry_request;
         play->msgCtx.stateTimer = 4;
         play->msgCtx.msgMode = MSGMODE_TEXT_CLOSING;
     } else if (this->interactInfo.talkState == NPC_TALK_STATE_IDLE || this->actor.textId != 0x10B9) {
-        Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENKO_ANIM_IDLE);
-        this->actionFunc = func_80A99384;
+        npc_anime_ct(&this->skelAnime, animetbl, ENKO_ANIM_IDLE);
+        this->actionFunc = wait_nw;
     }
 }
 
-void func_80A99504(EnKo* this, PlayState* play) {
-    if (Actor_HasParent(&this->actor, play)) {
+void ko_carry_request(EnKo* this, PlayState* play) {
+    if (Actor_carry_check(&this->actor, play)) {
         this->actor.parent = NULL;
-        this->actionFunc = func_80A99560;
+        this->actionFunc = ko_carry_end;
     } else {
-        Actor_OfferGetItem(&this->actor, play, GI_POACHERS_SAW, 120.0f, 10.0f);
+        Actor_carry_request_set2(&this->actor, play, GI_POACHERS_SAW, 120.0f, 10.0f);
     }
 }
 
-void func_80A99560(EnKo* this, PlayState* play) {
+void ko_carry_end(EnKo* this, PlayState* play) {
     if (this->interactInfo.talkState == NPC_TALK_STATE_ITEM_GIVEN) {
         this->actor.textId = 0x10B9;
-        Message_ContinueTextbox(play, this->actor.textId);
+        message_set2(play, this->actor.textId);
         this->interactInfo.talkState = NPC_TALK_STATE_TALKING;
         SET_ITEMGETINF(ITEMGETINF_31);
-        this->actionFunc = func_80A99384;
+        this->actionFunc = wait_nw;
     }
 }
 
-void func_80A995CC(EnKo* this, PlayState* play) {
+void stopper(EnKo* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     f32 temp_f2;
     f32 phi_f0;
-    s16 homeYawToPlayer = Math_Vec3f_Yaw(&this->actor.home.pos, &player->actor.world.pos);
+    s16 homeYawToPlayer = search_position_angleY(&this->actor.home.pos, &player->actor.world.pos);
 
     this->actor.world.pos.x = this->actor.home.pos.x;
-    this->actor.world.pos.x += 80.0f * Math_SinS(homeYawToPlayer);
+    this->actor.world.pos.x += 80.0f * sin_s(homeYawToPlayer);
     this->actor.world.pos.z = this->actor.home.pos.z;
-    this->actor.world.pos.z += 80.0f * Math_CosS(homeYawToPlayer);
+    this->actor.world.pos.z += 80.0f * cos_s(homeYawToPlayer);
     this->actor.shape.rot.y = this->actor.world.rot.y = this->actor.yawTowardsPlayer;
 
     if (this->interactInfo.talkState == NPC_TALK_STATE_IDLE || !this->actor.isLockedOn) {
@@ -924,38 +924,38 @@ void func_80A995CC(EnKo* this, PlayState* play) {
     }
 }
 
-void EnKo_Update(Actor* thisx, PlayState* play) {
+void En_Ko_Actor_move(Actor* thisx, PlayState* play) {
     ColliderCylinder* collider;
     EnKo* this = (EnKo*)thisx;
     s32 pad;
 
-    if (this->actionFunc != func_80A99048) {
+    if (this->actionFunc != init) {
         if ((s32)this->modelAlpha != 0) {
-            gSegments[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[this->osAnimeObjectSlot].segment);
-            SkelAnime_Update(&this->skelAnime);
-            func_80A98DB4(this, play);
-            EnKo_Blink(this);
+            SegmentBaseAddress[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[this->osAnimeObjectSlot].segment);
+            Skeleton_Info2_anime_play(&this->skelAnime);
+            ko_alpha_set(this, play);
+            ko_eye_paci2(this);
         } else {
-            func_80A98DB4(this, play);
+            ko_alpha_set(this, play);
         }
     }
     if (this->interactInfo.talkState == NPC_TALK_STATE_IDLE) {
-        Actor_MoveXZGravity(&this->actor);
+        Actor_position_moveF(&this->actor);
     }
-    if (func_80A97C7C(this)) {
-        Actor_UpdateBgCheckInfo(play, &this->actor, 0.0f, 0.0f, 0.0f, UPDBGCHECKINFO_FLAG_2);
+    if (ko_bgcheck_cnd(this)) {
+        Actor_BGcheck2(play, &this->actor, 0.0f, 0.0f, 0.0f, UPDBGCHECKINFO_FLAG_2);
         this->actor.gravity = -1.0f;
     } else {
         this->actor.gravity = 0.0f;
     }
     this->actionFunc(this, play);
-    func_80A9877C(this, play);
+    ko_sub_action(this, play);
     collider = &this->collider;
-    Collider_UpdateCylinder(&this->actor, collider);
-    CollisionCheck_SetOC(play, &play->colChkCtx, &collider->base);
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, collider);
+    CollisionCheck_setOC(play, &play->colChkCtx, &collider->base);
 }
 
-s32 EnKo_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx, Gfx** gfx) {
+static s32 before_display(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx, Gfx** gfx) {
     EnKo* this = (EnKo*)thisx;
     void* eyeTexture;
     Vec3s limbRot;
@@ -964,50 +964,50 @@ s32 EnKo_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* po
 
     if (limbIndex == 15) {
         gSPSegment((*gfx)++, 0x06, play->objectCtx.slots[this->headObjectSlot].segment);
-        gSegments[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[this->headObjectSlot].segment);
+        SegmentBaseAddress[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[this->headObjectSlot].segment);
 
-        headId = sModelInfo[ENKO_TYPE].headId;
-        *dList = sHead[headId].dList;
-        if (sHead[headId].eyeTextures != NULL) {
-            eyeTexture = sHead[headId].eyeTextures[this->eyeTextureIndex];
+        headId = ko_data[ENKO_TYPE].headId;
+        *dList = head[headId].dList;
+        if (head[headId].eyeTextures != NULL) {
+            eyeTexture = head[headId].eyeTextures[this->eyeTextureIndex];
             gSPSegment((*gfx)++, 0x0A, SEGMENTED_TO_VIRTUAL(eyeTexture));
         }
-        gSegments[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[this->legsObjectSlot].segment);
+        SegmentBaseAddress[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[this->legsObjectSlot].segment);
     }
     if (limbIndex == 8) {
         limbRot = this->interactInfo.torsoRot;
-        Matrix_RotateX(BINANG_TO_RAD_ALT(-limbRot.y), MTXMODE_APPLY);
-        Matrix_RotateZ(BINANG_TO_RAD_ALT(limbRot.x), MTXMODE_APPLY);
+        Matrix_rotateX(BINANG_TO_RAD_ALT(-limbRot.y), MTXMODE_APPLY);
+        Matrix_rotateZ(BINANG_TO_RAD_ALT(limbRot.x), MTXMODE_APPLY);
     }
     if (limbIndex == 15) {
-        Matrix_Translate(1200.0f, 0.0f, 0.0f, MTXMODE_APPLY);
+        Matrix_translate(1200.0f, 0.0f, 0.0f, MTXMODE_APPLY);
         limbRot = this->interactInfo.headRot;
-        Matrix_RotateX(BINANG_TO_RAD_ALT(limbRot.y), MTXMODE_APPLY);
-        Matrix_RotateZ(BINANG_TO_RAD_ALT(limbRot.x), MTXMODE_APPLY);
-        Matrix_Translate(-1200.0f, 0.0f, 0.0f, MTXMODE_APPLY);
+        Matrix_rotateX(BINANG_TO_RAD_ALT(limbRot.y), MTXMODE_APPLY);
+        Matrix_rotateZ(BINANG_TO_RAD_ALT(limbRot.x), MTXMODE_APPLY);
+        Matrix_translate(-1200.0f, 0.0f, 0.0f, MTXMODE_APPLY);
     }
     if (limbIndex == 8 || limbIndex == 9 || limbIndex == 12) {
-        rot->y += Math_SinS(this->fidgetTableY[limbIndex]) * FIDGET_AMPLITUDE;
-        rot->z += Math_CosS(this->fidgetTableZ[limbIndex]) * FIDGET_AMPLITUDE;
+        rot->y += sin_s(this->fidgetTableY[limbIndex]) * FIDGET_AMPLITUDE;
+        rot->z += cos_s(this->fidgetTableZ[limbIndex]) * FIDGET_AMPLITUDE;
     }
     return false;
 }
 
-void EnKo_PostLimbDraw(PlayState* play2, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx, Gfx** gfx) {
+static void after_display(PlayState* play2, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx, Gfx** gfx) {
     PlayState* play = play2;
     EnKo* this = (EnKo*)thisx;
     Vec3f D_80A9A774 = { 0.0f, 0.0f, 0.0f };
 
     if (limbIndex == 7) {
         gSPSegment((*gfx)++, 0x06, play->objectCtx.slots[this->bodyObjectSlot].segment);
-        gSegments[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[this->bodyObjectSlot].segment);
+        SegmentBaseAddress[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[this->bodyObjectSlot].segment);
     }
     if (limbIndex == 15) {
-        Matrix_MultVec3f(&D_80A9A774, &this->actor.focus.pos);
+        Matrix_Position(&D_80A9A774, &this->actor.focus.pos);
     }
 }
 
-Gfx* EnKo_SetEnvColor(GraphicsContext* gfxCtx, u8 r, u8 g, u8 b, u8 a) {
+static Gfx* pa(GraphicsContext* gfxCtx, u8 r, u8 g, u8 b, u8 a) {
     Gfx* dList = GRAPH_ALLOC(gfxCtx, sizeof(Gfx) * 2);
 
     gDPSetEnvColor(dList, r, g, b, a);
@@ -1015,28 +1015,28 @@ Gfx* EnKo_SetEnvColor(GraphicsContext* gfxCtx, u8 r, u8 g, u8 b, u8 a) {
     return dList;
 }
 
-void EnKo_Draw(Actor* thisx, PlayState* play) {
+void En_Ko_Actor_draw(Actor* thisx, PlayState* play) {
     EnKo* this = (EnKo*)thisx;
-    Color_RGBA8 tunicColor = sModelInfo[ENKO_TYPE].tunicColor;
-    Color_RGBA8 bootsColor = sModelInfo[ENKO_TYPE].bootsColor;
+    Color_RGBA8 tunicColor = ko_data[ENKO_TYPE].tunicColor;
+    Color_RGBA8 bootsColor = ko_data[ENKO_TYPE].bootsColor;
 
     this->actor.shape.shadowAlpha = this->modelAlpha;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_ko.c", 2095);
     if ((s16)this->modelAlpha == 255) {
         gSPSegment(POLY_OPA_DISP++, 0x08,
-                   EnKo_SetEnvColor(play->state.gfxCtx, tunicColor.r, tunicColor.g, tunicColor.b, 255));
+                   pa(play->state.gfxCtx, tunicColor.r, tunicColor.g, tunicColor.b, 255));
         gSPSegment(POLY_OPA_DISP++, 0x09,
-                   EnKo_SetEnvColor(play->state.gfxCtx, bootsColor.r, bootsColor.g, bootsColor.b, 255));
-        func_80034BA0(play, &this->skelAnime, EnKo_OverrideLimbDraw, EnKo_PostLimbDraw, &this->actor, this->modelAlpha);
+                   pa(play->state.gfxCtx, bootsColor.r, bootsColor.g, bootsColor.b, 255));
+        no_clarity(play, &this->skelAnime, before_display, after_display, &this->actor, this->modelAlpha);
     } else if ((s16)this->modelAlpha != 0) {
         tunicColor.a = this->modelAlpha;
         bootsColor.a = this->modelAlpha;
         gSPSegment(POLY_XLU_DISP++, 0x08,
-                   EnKo_SetEnvColor(play->state.gfxCtx, tunicColor.r, tunicColor.g, tunicColor.b, tunicColor.a));
+                   pa(play->state.gfxCtx, tunicColor.r, tunicColor.g, tunicColor.b, tunicColor.a));
         gSPSegment(POLY_XLU_DISP++, 0x09,
-                   EnKo_SetEnvColor(play->state.gfxCtx, bootsColor.r, bootsColor.g, bootsColor.b, bootsColor.a));
-        func_80034CC4(play, &this->skelAnime, EnKo_OverrideLimbDraw, EnKo_PostLimbDraw, &this->actor, this->modelAlpha);
+                   pa(play->state.gfxCtx, bootsColor.r, bootsColor.g, bootsColor.b, bootsColor.a));
+        clarity(play, &this->skelAnime, before_display, after_display, &this->actor, this->modelAlpha);
     }
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_ko.c", 2136);
 }

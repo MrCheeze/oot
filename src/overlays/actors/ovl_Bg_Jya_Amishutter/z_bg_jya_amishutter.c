@@ -9,19 +9,19 @@
 
 #define FLAGS 0
 
-void BgJyaAmishutter_Init(Actor* thisx, PlayState* play);
-void BgJyaAmishutter_Destroy(Actor* thisx, PlayState* play);
-void BgJyaAmishutter_Update(Actor* thisx, PlayState* play);
-void BgJyaAmishutter_Draw(Actor* thisx, PlayState* play);
+void Bg_Jya_Amishutter_actor_ct(Actor* thisx, PlayState* play);
+void Bg_Jya_Amishutter_actor_dt(Actor* thisx, PlayState* play);
+void Bg_Jya_Amishutter_actor_move(Actor* thisx, PlayState* play);
+void Bg_Jya_Amishutter_actor_draw(Actor* thisx, PlayState* play);
 
-void BgJyaAmishutter_SetupWaitForPlayer(BgJyaAmishutter* this);
-void BgJyaAmishutter_WaitForPlayer(BgJyaAmishutter* this);
-void func_80893428(BgJyaAmishutter* this);
-void func_80893438(BgJyaAmishutter* this);
-void func_808934B0(BgJyaAmishutter* this);
-void func_808934C0(BgJyaAmishutter* this);
-void func_808934FC(BgJyaAmishutter* this);
-void func_8089350C(BgJyaAmishutter* this);
+void mv_close_init(BgJyaAmishutter* this);
+void mv_close(BgJyaAmishutter* this);
+static void mv_up_init(BgJyaAmishutter* this);
+static void mv_up(BgJyaAmishutter* this);
+void mv_open_init(BgJyaAmishutter* this);
+void mv_open(BgJyaAmishutter* this);
+static void mv_down_init(BgJyaAmishutter* this);
+static void mv_down(BgJyaAmishutter* this);
 
 ActorProfile Bg_Jya_Amishutter_Profile = {
     /**/ ACTOR_BG_JYA_AMISHUTTER,
@@ -29,26 +29,26 @@ ActorProfile Bg_Jya_Amishutter_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_JYA_OBJ,
     /**/ sizeof(BgJyaAmishutter),
-    /**/ BgJyaAmishutter_Init,
-    /**/ BgJyaAmishutter_Destroy,
-    /**/ BgJyaAmishutter_Update,
-    /**/ BgJyaAmishutter_Draw,
+    /**/ Bg_Jya_Amishutter_actor_ct,
+    /**/ Bg_Jya_Amishutter_actor_dt,
+    /**/ Bg_Jya_Amishutter_actor_move,
+    /**/ Bg_Jya_Amishutter_actor_draw,
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDistance, 1000, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeScale, 200, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDownward, 1000, ICHAIN_STOP),
 };
 
-void BgJyaAmishutter_InitDynaPoly(BgJyaAmishutter* this, PlayState* play, CollisionHeader* collision, s32 flag) {
+static void set_dynaPoly(BgJyaAmishutter* this, PlayState* play, CollisionHeader* collision, s32 flag) {
     s32 pad1;
     CollisionHeader* colHeader = NULL;
 
-    DynaPolyActor_Init(&this->dyna, flag);
-    CollisionHeader_GetVirtual(collision, &colHeader);
-    this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
+    MoveBG_ct(&this->dyna, flag);
+    DynaPolyUty_bgdi_SG2KSG(collision, &colHeader);
+    this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
 
 #if DEBUG_FEATURES
     if (this->dyna.bgId == BG_ACTOR_MAX) {
@@ -60,72 +60,72 @@ void BgJyaAmishutter_InitDynaPoly(BgJyaAmishutter* this, PlayState* play, Collis
 #endif
 }
 
-void BgJyaAmishutter_Init(Actor* thisx, PlayState* play) {
+void Bg_Jya_Amishutter_actor_ct(Actor* thisx, PlayState* play) {
     BgJyaAmishutter* this = (BgJyaAmishutter*)thisx;
 
-    BgJyaAmishutter_InitDynaPoly(this, play, &gAmishutterCol, 0);
-    Actor_ProcessInitChain(&this->dyna.actor, sInitChain);
-    BgJyaAmishutter_SetupWaitForPlayer(this);
+    set_dynaPoly(this, play, &gAmishutterCol, 0);
+    ValueSet_process(&this->dyna.actor, value_init);
+    mv_close_init(this);
 }
 
-void BgJyaAmishutter_Destroy(Actor* thisx, PlayState* play) {
+void Bg_Jya_Amishutter_actor_dt(Actor* thisx, PlayState* play) {
     BgJyaAmishutter* this = (BgJyaAmishutter*)thisx;
 
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
 }
 
-void BgJyaAmishutter_SetupWaitForPlayer(BgJyaAmishutter* this) {
-    this->actionFunc = BgJyaAmishutter_WaitForPlayer;
+void mv_close_init(BgJyaAmishutter* this) {
+    this->actionFunc = mv_close;
 }
 
-void BgJyaAmishutter_WaitForPlayer(BgJyaAmishutter* this) {
+void mv_close(BgJyaAmishutter* this) {
     if ((this->dyna.actor.xzDistToPlayer < 60.0f) && (fabsf(this->dyna.actor.yDistToPlayer) < 30.0f)) {
-        func_80893428(this);
+        mv_up_init(this);
     }
 }
 
-void func_80893428(BgJyaAmishutter* this) {
-    this->actionFunc = func_80893438;
+static void mv_up_init(BgJyaAmishutter* this) {
+    this->actionFunc = mv_up;
 }
 
-void func_80893438(BgJyaAmishutter* this) {
-    if (Math_StepToF(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y + 100.0f, 3.0f)) {
-        func_808934B0(this);
-        Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_METALDOOR_STOP);
+static void mv_up(BgJyaAmishutter* this) {
+    if (chase_f(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y + 100.0f, 3.0f)) {
+        mv_open_init(this);
+        Actor_SE_set(&this->dyna.actor, NA_SE_EV_METALDOOR_STOP);
     } else {
-        Actor_PlaySfx_Flagged(&this->dyna.actor, NA_SE_EV_METALDOOR_SLIDE - SFX_FLAG);
+        Actor_level_SE_set(&this->dyna.actor, NA_SE_EV_METALDOOR_SLIDE - SFX_FLAG);
     }
 }
 
-void func_808934B0(BgJyaAmishutter* this) {
-    this->actionFunc = func_808934C0;
+void mv_open_init(BgJyaAmishutter* this) {
+    this->actionFunc = mv_open;
 }
 
-void func_808934C0(BgJyaAmishutter* this) {
+void mv_open(BgJyaAmishutter* this) {
     if (this->dyna.actor.xzDistToPlayer > 300.0f) {
-        func_808934FC(this);
+        mv_down_init(this);
     }
 }
 
-void func_808934FC(BgJyaAmishutter* this) {
-    this->actionFunc = func_8089350C;
+static void mv_down_init(BgJyaAmishutter* this) {
+    this->actionFunc = mv_down;
 }
 
-void func_8089350C(BgJyaAmishutter* this) {
-    if (Math_StepToF(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y, 3.0f)) {
-        BgJyaAmishutter_SetupWaitForPlayer(this);
-        Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_METALDOOR_STOP);
+static void mv_down(BgJyaAmishutter* this) {
+    if (chase_f(&this->dyna.actor.world.pos.y, this->dyna.actor.home.pos.y, 3.0f)) {
+        mv_close_init(this);
+        Actor_SE_set(&this->dyna.actor, NA_SE_EV_METALDOOR_STOP);
     } else {
-        Actor_PlaySfx_Flagged(&this->dyna.actor, NA_SE_EV_METALDOOR_SLIDE - SFX_FLAG);
+        Actor_level_SE_set(&this->dyna.actor, NA_SE_EV_METALDOOR_SLIDE - SFX_FLAG);
     }
 }
 
-void BgJyaAmishutter_Update(Actor* thisx, PlayState* play) {
+void Bg_Jya_Amishutter_actor_move(Actor* thisx, PlayState* play) {
     BgJyaAmishutter* this = (BgJyaAmishutter*)thisx;
 
     this->actionFunc(this);
 }
 
-void BgJyaAmishutter_Draw(Actor* thisx, PlayState* play) {
-    Gfx_DrawDListOpa(play, gAmishutterDL);
+void Bg_Jya_Amishutter_actor_draw(Actor* thisx, PlayState* play) {
+    Cheap_gfx_display(play, gAmishutterDL);
 }

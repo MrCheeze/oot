@@ -10,15 +10,15 @@
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void BgSpot11Oasis_Init(Actor* thisx, PlayState* play);
-void BgSpot11Oasis_Update(Actor* thisx, PlayState* play);
-void BgSpot11Oasis_Draw(Actor* thisx, PlayState* play);
-void func_808B2970(BgSpot11Oasis* this);
-void func_808B2980(BgSpot11Oasis* this, PlayState* play);
-void func_808B29E0(BgSpot11Oasis* this);
-void func_808B29F0(BgSpot11Oasis* this, PlayState* play);
-void func_808B2AA8(BgSpot11Oasis* this);
-void func_808B2AB8(BgSpot11Oasis* this, PlayState* play);
+void Bg_Spot11_Oasis_actor_ct(Actor* thisx, PlayState* play);
+void Bg_Spot11_Oasis_actor_move(Actor* thisx, PlayState* play);
+void Bg_Spot11_Oasis_actor_draw(Actor* thisx, PlayState* play);
+static void mv_stop_init(BgSpot11Oasis* this);
+static void mv_stop(BgSpot11Oasis* this, PlayState* play);
+static void mv_up_init(BgSpot11Oasis* this);
+static void mv_up(BgSpot11Oasis* this, PlayState* play);
+static void mv_end_init(BgSpot11Oasis* this);
+static void mv_end(BgSpot11Oasis* this, PlayState* play);
 
 ActorProfile Bg_Spot11_Oasis_Profile = {
     /**/ ACTOR_BG_SPOT11_OASIS,
@@ -26,121 +26,121 @@ ActorProfile Bg_Spot11_Oasis_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_SPOT11_OBJ,
     /**/ sizeof(BgSpot11Oasis),
-    /**/ BgSpot11Oasis_Init,
-    /**/ Actor_Noop,
-    /**/ BgSpot11Oasis_Update,
+    /**/ Bg_Spot11_Oasis_actor_ct,
+    /**/ Cheap_non_move,
+    /**/ Bg_Spot11_Oasis_actor_move,
     /**/ NULL,
 };
 
-static s16 D_808B2E10[][2] = {
+static s16 Oasis_ocarina_posXZ[][2] = {
     { 1260, 2040 }, { 1259, 1947 }, { 1135, 1860 }, { 1087, 1912 }, { 1173, 2044 },
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F(scale, 1, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDistance, 3000, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeScale, 1200, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDownward, 1000, ICHAIN_STOP),
 };
 
-static Vec3f D_808B2E34[] = {
+static Vec3f awa_pos[] = {
     { 0.0f, -100.0f, 0.0f },   { 100.0f, -80.0f, -50.0f }, { -50.0f, -80.0f, -100.0f },
     { -75.0f, -90.0f, 90.0f }, { 30.0f, -100.0f, 40.0f },
 };
 
-void func_808B27F0(PlayState* play, s16 waterSurface) {
+static void set_waterPosY(PlayState* play, s16 waterSurface) {
     WaterBox* waterBox = &play->colCtx.colHeader->waterBoxes[0];
 
     waterBox->ySurface = waterSurface;
 }
 
-s32 func_808B280C(PlayState* play) {
+s32 check_ocarina_pos(PlayState* play) {
     Player* player = GET_PLAYER(play);
     Vec3f sp58;
     Vec3f sp4C;
     Vec3f sp40;
     s32 i;
 
-    sp58.x = D_808B2E10[0][0];
-    sp58.z = D_808B2E10[0][1];
+    sp58.x = Oasis_ocarina_posXZ[0][0];
+    sp58.z = Oasis_ocarina_posXZ[0][1];
     sp58.y = 0.0f;
 
     sp4C.y = 0.0f;
     sp40.y = 0.0f;
 
-    for (i = 1; i < ARRAY_COUNT(D_808B2E10) - 1; i++) {
-        sp4C.x = D_808B2E10[i][0];
-        sp4C.z = D_808B2E10[i][1];
-        sp40.x = D_808B2E10[i + 1][0];
-        sp40.z = D_808B2E10[i + 1][1];
-        if (Math3D_TriChkPointParaYSlopedY(&sp58, &sp4C, &sp40, player->actor.world.pos.z, player->actor.world.pos.x)) {
+    for (i = 1; i < ARRAY_COUNT(Oasis_ocarina_posXZ) - 1; i++) {
+        sp4C.x = Oasis_ocarina_posXZ[i][0];
+        sp4C.z = Oasis_ocarina_posXZ[i][1];
+        sp40.x = Oasis_ocarina_posXZ[i + 1][0];
+        sp40.z = Oasis_ocarina_posXZ[i + 1][1];
+        if (Math3DTriangleCrossYCheck(&sp58, &sp4C, &sp40, player->actor.world.pos.z, player->actor.world.pos.x)) {
             return 1;
         }
     }
     return 0;
 }
 
-void BgSpot11Oasis_Init(Actor* thisx, PlayState* play) {
+void Bg_Spot11_Oasis_actor_ct(Actor* thisx, PlayState* play) {
     BgSpot11Oasis* this = (BgSpot11Oasis*)thisx;
 
-    Actor_ProcessInitChain(&this->actor, sInitChain);
-    func_808B2970(this);
+    ValueSet_process(&this->actor, value_init);
+    mv_stop_init(this);
     this->actor.world.pos.y = -100.0f;
-    func_808B27F0(play, -100);
+    set_waterPosY(play, -100);
 }
 
-void func_808B2970(BgSpot11Oasis* this) {
-    this->actionFunc = func_808B2980;
+static void mv_stop_init(BgSpot11Oasis* this) {
+    this->actionFunc = mv_stop;
 }
 
-void func_808B2980(BgSpot11Oasis* this, PlayState* play) {
-    if (CutsceneFlags_Get(play, 5) && func_808B280C(play)) {
-        OnePointCutscene_Init(play, 4150, -99, &this->actor, CAM_ID_MAIN);
-        func_808B29E0(this);
+static void mv_stop(BgSpot11Oasis* this, PlayState* play) {
+    if (eventbit_check(play, 5) && check_ocarina_pos(play)) {
+        makeOnepointDemo(play, 4150, -99, &this->actor, CAM_ID_MAIN);
+        mv_up_init(this);
     }
 }
 
-void func_808B29E0(BgSpot11Oasis* this) {
-    this->actionFunc = func_808B29F0;
+static void mv_up_init(BgSpot11Oasis* this) {
+    this->actionFunc = mv_up;
 }
 
-void func_808B29F0(BgSpot11Oasis* this, PlayState* play) {
-    if (Math_StepToF(&this->actor.world.pos.y, 0.0f, 0.7f)) {
-        func_808B2AA8(this);
-        Actor_Spawn(&play->actorCtx, play, ACTOR_EN_ELF, this->actor.world.pos.x, this->actor.world.pos.y + 40.0f,
+static void mv_up(BgSpot11Oasis* this, PlayState* play) {
+    if (chase_f(&this->actor.world.pos.y, 0.0f, 0.7f)) {
+        mv_end_init(this);
+        Actor_info_make_actor(&play->actorCtx, play, ACTOR_EN_ELF, this->actor.world.pos.x, this->actor.world.pos.y + 40.0f,
                     this->actor.world.pos.z, 0, 0, 0, FAIRY_SPAWNER);
-        Sfx_PlaySfxCentered(NA_SE_SY_CORRECT_CHIME);
+        Na_StartSystemSe_F(NA_SE_SY_CORRECT_CHIME);
     }
-    func_808B27F0(play, this->actor.world.pos.y);
+    set_waterPosY(play, this->actor.world.pos.y);
 }
 
-void func_808B2AA8(BgSpot11Oasis* this) {
-    this->actionFunc = func_808B2AB8;
+static void mv_end_init(BgSpot11Oasis* this) {
+    this->actionFunc = mv_end;
 }
 
-void func_808B2AB8(BgSpot11Oasis* this, PlayState* play) {
+static void mv_end(BgSpot11Oasis* this, PlayState* play) {
 }
 
-void BgSpot11Oasis_Update(Actor* thisx, PlayState* play) {
+void Bg_Spot11_Oasis_actor_move(Actor* thisx, PlayState* play) {
     BgSpot11Oasis* this = (BgSpot11Oasis*)thisx;
     s32 pad;
     u32 gameplayFrames;
 
     this->actionFunc(this, play);
-    if (this->actionFunc == func_808B2980) {
+    if (this->actionFunc == mv_stop) {
         this->actor.draw = NULL;
         return;
     }
-    this->actor.draw = BgSpot11Oasis_Draw;
+    this->actor.draw = Bg_Spot11_Oasis_actor_draw;
     if (this->unk_150 && (this->actor.projectedPos.z < 400.0f) && (this->actor.projectedPos.z > -40.0f)) {
         gameplayFrames = play->gameplayFrames;
         if (gameplayFrames & 4) {
             Vec3f sp30;
 
-            Math_Vec3f_Sum(&this->actor.world.pos, &D_808B2E34[this->unk_151], &sp30);
-            EffectSsBubble_Spawn(play, &sp30, 0.0f, 15.0f, 50.0f, (Rand_ZeroOne() * 0.12f) + 0.02f);
-            if (Rand_ZeroOne() < 0.3f) {
-                this->unk_151 = Rand_ZeroOne() * 4.9f;
+            xyz_t_add(&this->actor.world.pos, &awa_pos[this->unk_151], &sp30);
+            Effect_SS_Bubble_ct(play, &sp30, 0.0f, 15.0f, 50.0f, (fqrand() * 0.12f) + 0.02f);
+            if (fqrand() < 0.3f) {
+                this->unk_151 = fqrand() * 4.9f;
             }
         }
     } else {
@@ -148,14 +148,14 @@ void BgSpot11Oasis_Update(Actor* thisx, PlayState* play) {
     }
 }
 
-void BgSpot11Oasis_Draw(Actor* thisx, PlayState* play) {
+void Bg_Spot11_Oasis_actor_draw(Actor* thisx, PlayState* play) {
     u32 gameplayFrames = play->gameplayFrames;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_bg_spot11_oasis.c", 327);
-    Gfx_SetupDL_25Xlu(play->state.gfxCtx);
+    _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
     MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx, "../z_bg_spot11_oasis.c", 331);
     gSPSegment(POLY_XLU_DISP++, 0x08,
-               Gfx_TwoTexScroll(play->state.gfxCtx, G_TX_RENDERTILE, 127 - (gameplayFrames % 128),
+               two_tex_scroll(play->state.gfxCtx, G_TX_RENDERTILE, 127 - (gameplayFrames % 128),
                                 (gameplayFrames * 1) % 128, 32, 32, 1, gameplayFrames % 128, (gameplayFrames * 1) % 128,
                                 32, 32));
     gSPDisplayList(POLY_XLU_DISP++, gDesertColossusOasisDL);

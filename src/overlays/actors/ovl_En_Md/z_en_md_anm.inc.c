@@ -1,4 +1,4 @@
-void EnMd_ReverseAnimation(EnMd* this) {
+static void anime_revers(EnMd* this) {
     f32 startFrame;
 
     startFrame = this->skelAnime.startFrame;
@@ -8,274 +8,274 @@ void EnMd_ReverseAnimation(EnMd* this) {
     this->skelAnime.playSpeed = -1.0f;
 }
 
-void EnMd_UpdateAnimSequence_IdleToHalt(EnMd* this) {
+static void ply_1_2(EnMd* this) {
     switch (this->animSequenceEntry) {
         case 0:
-            Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENMD_ANIM_INDEX_IDLE_TO_HALT);
+            npc_anime_ct(&this->skelAnime, animetbl, ENMD_ANIM_INDEX_IDLE_TO_HALT);
             this->animSequenceEntry++;
             FALLTHROUGH;
         case 1:
-            if (Animation_OnFrame(&this->skelAnime, this->skelAnime.endFrame)) {
-                Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENMD_ANIM_INDEX_HALT);
+            if (Skeleton_Info_frame_check(&this->skelAnime, this->skelAnime.endFrame)) {
+                npc_anime_ct(&this->skelAnime, animetbl, ENMD_ANIM_INDEX_HALT);
                 this->animSequenceEntry++;
             }
             break;
     }
 }
 
-void EnMd_UpdateAnimSequence_HaltToCurious(EnMd* this) {
+void ply_3_4(EnMd* this) {
     switch (this->animSequenceEntry) {
         case 0:
-            Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENMD_ANIM_INDEX_HALT_TO_CURIOUS);
+            npc_anime_ct(&this->skelAnime, animetbl, ENMD_ANIM_INDEX_HALT_TO_CURIOUS);
             this->animSequenceEntry++;
             FALLTHROUGH;
         case 1:
-            if (Animation_OnFrame(&this->skelAnime, this->skelAnime.endFrame)) {
-                Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENMD_ANIM_INDEX_CURIOUS);
+            if (Skeleton_Info_frame_check(&this->skelAnime, this->skelAnime.endFrame)) {
+                npc_anime_ct(&this->skelAnime, animetbl, ENMD_ANIM_INDEX_CURIOUS);
                 this->animSequenceEntry++;
             }
             break;
     }
 }
 
-void EnMd_UpdateAnimSequence_WalkAway(EnMd* this) {
+void ply_1rv_8_9(EnMd* this) {
     switch (this->animSequenceEntry) {
         case 0:
-            Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENMD_ANIM_INDEX_IDLE_TO_HALT);
-            EnMd_ReverseAnimation(this);
+            npc_anime_ct(&this->skelAnime, animetbl, ENMD_ANIM_INDEX_IDLE_TO_HALT);
+            anime_revers(this);
             this->animSequenceEntry++;
             FALLTHROUGH;
         case 1:
-            if (Animation_OnFrame(&this->skelAnime, this->skelAnime.endFrame)) {
-                Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENMD_ANIM_INDEX_IDLE_TO_WALK);
+            if (Skeleton_Info_frame_check(&this->skelAnime, this->skelAnime.endFrame)) {
+                npc_anime_ct(&this->skelAnime, animetbl, ENMD_ANIM_INDEX_IDLE_TO_WALK);
                 this->animSequenceEntry++;
             } else {
                 break;
             }
             FALLTHROUGH;
         case 2:
-            if (Animation_OnFrame(&this->skelAnime, this->skelAnime.endFrame)) {
-                Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENMD_ANIM_INDEX_WALK);
+            if (Skeleton_Info_frame_check(&this->skelAnime, this->skelAnime.endFrame)) {
+                npc_anime_ct(&this->skelAnime, animetbl, ENMD_ANIM_INDEX_WALK);
                 this->animSequenceEntry++;
             }
             break;
     }
 }
 
-void EnMd_UpdateAnimSequence_TwitchIdle_Unused(EnMd* this) {
+void ply_8_k(EnMd* this) {
     switch (this->animSequenceEntry) {
         case 0:
-            Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENMD_ANIM_INDEX_IDLE_TO_WALK);
+            npc_anime_ct(&this->skelAnime, animetbl, ENMD_ANIM_INDEX_IDLE_TO_WALK);
             this->animSequenceEntry++;
             FALLTHROUGH;
         case 1:
-            if (Animation_OnFrame(&this->skelAnime, this->skelAnime.endFrame)) {
-                Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENMD_ANIM_INDEX_IDLE);
+            if (Skeleton_Info_frame_check(&this->skelAnime, this->skelAnime.endFrame)) {
+                npc_anime_ct(&this->skelAnime, animetbl, ENMD_ANIM_INDEX_IDLE);
                 this->animSequenceEntry++;
             }
             break;
     }
 }
 
-void EnMd_UpdateAnimSequence_HaltToIdle(EnMd* this) {
+void ply_1rv_k(EnMd* this) {
     switch (this->animSequenceEntry) {
         case 0:
-            Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENMD_ANIM_INDEX_IDLE_TO_HALT);
-            EnMd_ReverseAnimation(this);
+            npc_anime_ct(&this->skelAnime, animetbl, ENMD_ANIM_INDEX_IDLE_TO_HALT);
+            anime_revers(this);
             this->animSequenceEntry++;
             FALLTHROUGH;
         case 1:
-            if (Animation_OnFrame(&this->skelAnime, this->skelAnime.endFrame)) {
-                Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENMD_ANIM_INDEX_IDLE);
+            if (Skeleton_Info_frame_check(&this->skelAnime, this->skelAnime.endFrame)) {
+                npc_anime_ct(&this->skelAnime, animetbl, ENMD_ANIM_INDEX_IDLE);
                 this->animSequenceEntry++;
             }
             break;
     }
 }
 
-void EnMd_UpdateAnimSequence_SurpriseToAnnoyed(EnMd* this) {
+void ply_10_6(EnMd* this) {
     switch (this->animSequenceEntry) {
         case 0:
-            Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENMD_ANIM_INDEX_IDLE_TO_SURPISE);
+            npc_anime_ct(&this->skelAnime, animetbl, ENMD_ANIM_INDEX_IDLE_TO_SURPISE);
             this->animSequenceEntry++;
             FALLTHROUGH;
         case 1:
-            if (Animation_OnFrame(&this->skelAnime, this->skelAnime.endFrame)) {
-                Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENMD_ANIM_INDEX_ANNOYED);
+            if (Skeleton_Info_frame_check(&this->skelAnime, this->skelAnime.endFrame)) {
+                npc_anime_ct(&this->skelAnime, animetbl, ENMD_ANIM_INDEX_ANNOYED);
                 this->animSequenceEntry++;
             }
             break;
     }
 }
 
-void EnMd_UpdateAnimSequence_SurpriseToIdle(EnMd* this) {
+void ply_10rv_k(EnMd* this) {
     switch (this->animSequenceEntry) {
         case 0:
-            Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENMD_ANIM_INDEX_IDLE_TO_SURPISE);
-            EnMd_ReverseAnimation(this);
+            npc_anime_ct(&this->skelAnime, animetbl, ENMD_ANIM_INDEX_IDLE_TO_SURPISE);
+            anime_revers(this);
             this->animSequenceEntry++;
             FALLTHROUGH;
         case 1:
-            if (Animation_OnFrame(&this->skelAnime, this->skelAnime.endFrame)) {
-                Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENMD_ANIM_INDEX_IDLE);
+            if (Skeleton_Info_frame_check(&this->skelAnime, this->skelAnime.endFrame)) {
+                npc_anime_ct(&this->skelAnime, animetbl, ENMD_ANIM_INDEX_IDLE);
                 this->animSequenceEntry++;
             }
             break;
     }
 }
 
-void EnMd_UpdateAnimSequence_CuriousToAnnoyed(EnMd* this) {
+void ply_5_6(EnMd* this) {
     switch (this->animSequenceEntry) {
         case 0:
-            Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENMD_ANIM_INDEX_CURIOUS_TO_ANNOYED);
+            npc_anime_ct(&this->skelAnime, animetbl, ENMD_ANIM_INDEX_CURIOUS_TO_ANNOYED);
             this->animSequenceEntry++;
             FALLTHROUGH;
         case 1:
-            if (Animation_OnFrame(&this->skelAnime, this->skelAnime.endFrame)) {
-                Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENMD_ANIM_INDEX_ANNOYED);
+            if (Skeleton_Info_frame_check(&this->skelAnime, this->skelAnime.endFrame)) {
+                npc_anime_ct(&this->skelAnime, animetbl, ENMD_ANIM_INDEX_ANNOYED);
                 this->animSequenceEntry++;
             }
             break;
     }
 }
 
-void EnMd_UpdateAnimSequence_AnnoyedToHalt(EnMd* this) {
+void ply_7_2(EnMd* this) {
     switch (this->animSequenceEntry) {
         case 0:
-            Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENMD_ANIM_INDEX_ANNOYED_TO_HALT);
+            npc_anime_ct(&this->skelAnime, animetbl, ENMD_ANIM_INDEX_ANNOYED_TO_HALT);
             this->animSequenceEntry++;
             FALLTHROUGH;
         case 1:
-            if (Animation_OnFrame(&this->skelAnime, this->skelAnime.endFrame)) {
-                Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENMD_ANIM_INDEX_HALT);
+            if (Skeleton_Info_frame_check(&this->skelAnime, this->skelAnime.endFrame)) {
+                npc_anime_ct(&this->skelAnime, animetbl, ENMD_ANIM_INDEX_HALT);
                 this->animSequenceEntry++;
             }
             break;
     }
 }
 
-void EnMd_UpdateAnimSequence_IdleToAnnoyed(EnMd* this) {
+void ply_8_6(EnMd* this) {
     switch (this->animSequenceEntry) {
         case 0:
-            Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENMD_ANIM_INDEX_IDLE_TO_ANNOYED);
+            npc_anime_ct(&this->skelAnime, animetbl, ENMD_ANIM_INDEX_IDLE_TO_ANNOYED);
             this->animSequenceEntry++;
             FALLTHROUGH;
         case 1:
-            if (Animation_OnFrame(&this->skelAnime, this->skelAnime.endFrame)) {
-                Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENMD_ANIM_INDEX_ANNOYED);
+            if (Skeleton_Info_frame_check(&this->skelAnime, this->skelAnime.endFrame)) {
+                npc_anime_ct(&this->skelAnime, animetbl, ENMD_ANIM_INDEX_ANNOYED);
                 this->animSequenceEntry++;
             }
             break;
     }
 }
 
-void EnMd_UpdateAnimSequence_StopWalking(EnMd* this) {
+void ply_8rv_k(EnMd* this) {
     switch (this->animSequenceEntry) {
         case 0:
-            Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENMD_ANIM_INDEX_IDLE_TO_WALK);
-            EnMd_ReverseAnimation(this);
+            npc_anime_ct(&this->skelAnime, animetbl, ENMD_ANIM_INDEX_IDLE_TO_WALK);
+            anime_revers(this);
             this->animSequenceEntry++;
             FALLTHROUGH;
         case 1:
-            if (Animation_OnFrame(&this->skelAnime, this->skelAnime.endFrame)) {
-                Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENMD_ANIM_INDEX_IDLE);
+            if (Skeleton_Info_frame_check(&this->skelAnime, this->skelAnime.endFrame)) {
+                npc_anime_ct(&this->skelAnime, animetbl, ENMD_ANIM_INDEX_IDLE);
                 this->animSequenceEntry++;
             }
             break;
     }
 }
 
-void EnMd_SetAnimSequence(EnMd* this, u8 state) {
+static void set_play_anime_mode(EnMd* this, u8 state) {
     this->animSequence = state;
     this->animSequenceEntry = 0;
 }
 
-void EnMd_UpdateAnimSequence(EnMd* this) {
+void md_chg_anime_sub(EnMd* this) {
     switch (this->animSequence) {
         case ENMD_ANIM_SEQ_IDLE_TO_HALT:
-            EnMd_UpdateAnimSequence_IdleToHalt(this);
+            ply_1_2(this);
             break;
         case ENMD_ANIM_SEQ_HALT_TO_CURIOUS:
-            EnMd_UpdateAnimSequence_HaltToCurious(this);
+            ply_3_4(this);
             break;
         case ENMD_ANIM_SEQ_WALK_AWAY:
-            EnMd_UpdateAnimSequence_WalkAway(this);
+            ply_1rv_8_9(this);
             break;
         case ENMD_ANIM_SEQ_TWITCH_IDLE_UNUSED:
             // unreachable
-            EnMd_UpdateAnimSequence_TwitchIdle_Unused(this);
+            ply_8_k(this);
             break;
         case ENMD_ANIM_SEQ_HALT_TO_IDLE:
-            EnMd_UpdateAnimSequence_HaltToIdle(this);
+            ply_1rv_k(this);
             break;
         case ENMD_ANIM_SEQ_SURPRISE_TO_ANNOYED:
-            EnMd_UpdateAnimSequence_SurpriseToAnnoyed(this);
+            ply_10_6(this);
             break;
         case ENMD_ANIM_SEQ_SURPRISE_TO_IDLE:
-            EnMd_UpdateAnimSequence_SurpriseToIdle(this);
+            ply_10rv_k(this);
             break;
         case ENMD_ANIM_SEQ_CURIOUS_TO_ANNOYED:
-            EnMd_UpdateAnimSequence_CuriousToAnnoyed(this);
+            ply_5_6(this);
             break;
         case ENMD_ANIM_SEQ_ANNOYED_TO_HALT:
-            EnMd_UpdateAnimSequence_AnnoyedToHalt(this);
+            ply_7_2(this);
             break;
         case ENMD_ANIM_SEQ_IDLE_TO_ANNOYED:
-            EnMd_UpdateAnimSequence_IdleToAnnoyed(this);
+            ply_8_6(this);
             break;
         case ENMD_ANIM_SEQ_STOP_WALKING:
-            EnMd_UpdateAnimSequence_StopWalking(this);
+            ply_8rv_k(this);
     }
 }
 
-void EnMd_UpdateAnimSequence_WithTalking(EnMd* this) {
+void md_chg_anime(EnMd* this) {
     if (this->interactInfo.talkState != NPC_TALK_STATE_IDLE) {
         switch (this->actor.textId) {
             case 0x102F:
                 if ((this->messageEntry == 0) && (this->animSequence != ENMD_ANIM_SEQ_IDLE_TO_HALT)) {
-                    EnMd_SetAnimSequence(this, ENMD_ANIM_SEQ_IDLE_TO_HALT);
+                    set_play_anime_mode(this, ENMD_ANIM_SEQ_IDLE_TO_HALT);
                 }
                 if ((this->messageEntry == 2) && (this->animSequence != ENMD_ANIM_SEQ_HALT_TO_CURIOUS)) {
-                    EnMd_SetAnimSequence(this, ENMD_ANIM_SEQ_HALT_TO_CURIOUS);
+                    set_play_anime_mode(this, ENMD_ANIM_SEQ_HALT_TO_CURIOUS);
                 }
                 if ((this->messageEntry == 5) && (this->animSequence != ENMD_ANIM_SEQ_CURIOUS_TO_ANNOYED)) {
-                    EnMd_SetAnimSequence(this, ENMD_ANIM_SEQ_CURIOUS_TO_ANNOYED);
+                    set_play_anime_mode(this, ENMD_ANIM_SEQ_CURIOUS_TO_ANNOYED);
                 }
                 if ((this->messageEntry == 11) && (this->animSequence != ENMD_ANIM_SEQ_ANNOYED_TO_HALT)) {
-                    EnMd_SetAnimSequence(this, ENMD_ANIM_SEQ_ANNOYED_TO_HALT);
+                    set_play_anime_mode(this, ENMD_ANIM_SEQ_ANNOYED_TO_HALT);
                 }
                 break;
             case 0x1033:
                 if ((this->messageEntry == 0) && (this->animSequence != ENMD_ANIM_SEQ_IDLE_TO_HALT)) {
-                    EnMd_SetAnimSequence(this, ENMD_ANIM_SEQ_IDLE_TO_HALT);
+                    set_play_anime_mode(this, ENMD_ANIM_SEQ_IDLE_TO_HALT);
                 }
                 if ((this->messageEntry == 1) && (this->animSequence != ENMD_ANIM_SEQ_HALT_TO_CURIOUS)) {
-                    EnMd_SetAnimSequence(this, ENMD_ANIM_SEQ_HALT_TO_CURIOUS);
+                    set_play_anime_mode(this, ENMD_ANIM_SEQ_HALT_TO_CURIOUS);
                 }
                 if ((this->messageEntry == 5) && (this->animSequence != ENMD_ANIM_SEQ_IDLE_TO_ANNOYED)) {
-                    EnMd_SetAnimSequence(this, ENMD_ANIM_SEQ_IDLE_TO_ANNOYED);
+                    set_play_anime_mode(this, ENMD_ANIM_SEQ_IDLE_TO_ANNOYED);
                 }
                 if ((this->messageEntry == 7) && (this->animSequence != ENMD_ANIM_SEQ_ANNOYED_TO_HALT)) {
-                    EnMd_SetAnimSequence(this, ENMD_ANIM_SEQ_ANNOYED_TO_HALT);
+                    set_play_anime_mode(this, ENMD_ANIM_SEQ_ANNOYED_TO_HALT);
                 }
                 break;
             case 0x1030:
             case 0x1034:
             case 0x1045:
                 if ((this->messageEntry == 0) && (this->animSequence != ENMD_ANIM_SEQ_IDLE_TO_HALT)) {
-                    EnMd_SetAnimSequence(this, ENMD_ANIM_SEQ_IDLE_TO_HALT);
+                    set_play_anime_mode(this, ENMD_ANIM_SEQ_IDLE_TO_HALT);
                 }
                 break;
             case 0x1046:
                 if ((this->messageEntry == 0) && (this->animSequence != ENMD_ANIM_SEQ_SURPRISE_TO_ANNOYED)) {
-                    EnMd_SetAnimSequence(this, ENMD_ANIM_SEQ_SURPRISE_TO_ANNOYED);
+                    set_play_anime_mode(this, ENMD_ANIM_SEQ_SURPRISE_TO_ANNOYED);
                 }
                 break;
         }
     } else if (this->skelAnime.animation != &gMidoIdleAnim) {
-        Animation_ChangeByInfo(&this->skelAnime, sAnimationInfo, ENMD_ANIM_INDEX_IDLE);
-        EnMd_SetAnimSequence(this, ENMD_ANIM_SEQ_NONE);
+        npc_anime_ct(&this->skelAnime, animetbl, ENMD_ANIM_INDEX_IDLE);
+        set_play_anime_mode(this, ENMD_ANIM_SEQ_NONE);
     }
 
-    EnMd_UpdateAnimSequence(this);
+    md_chg_anime_sub(this);
 }

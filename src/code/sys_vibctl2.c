@@ -17,8 +17,8 @@
 /**
  * Rumble manager update, runs on Vertical Retrace on the padmgr thread.
  */
-void RumbleMgr_Update(RumbleMgr* rumbleMgr) {
-    static u8 sWasEnabled = true;
+void vibctl2_move(RumbleMgr* rumbleMgr) {
+    static u8 vib_pause_old = true;
     s32 i;
     s32 strength;
     s32 strongestIndex = -1;
@@ -29,22 +29,22 @@ void RumbleMgr_Update(RumbleMgr* rumbleMgr) {
     }
 
     if (!rumbleMgr->updateEnabled) {
-        if (sWasEnabled) {
+        if (vib_pause_old) {
             // If it was previously enabled, reset pak type
             for (i = 0; i < MAXCONTROLLERS; i++) {
-                gPadMgr.pakType[i] = CONT_PAK_NONE;
+                padmgr.pakType[i] = CONT_PAK_NONE;
             }
         }
-        sWasEnabled = rumbleMgr->updateEnabled;
+        vib_pause_old = rumbleMgr->updateEnabled;
         return;
     }
 
-    sWasEnabled = rumbleMgr->updateEnabled;
+    vib_pause_old = rumbleMgr->updateEnabled;
 
     if (rumbleMgr->state == RUMBLE_STATE_RESET) {
         // Reset
         for (i = 0; i < MAXCONTROLLERS; i++) {
-            gPadMgr.pakType[i] = CONT_PAK_NONE;
+            padmgr.pakType[i] = CONT_PAK_NONE;
         }
 
         for (i = 0; i < RUMBLE_MAX_REQUESTS; i++) {
@@ -140,13 +140,13 @@ void RumbleMgr_Update(RumbleMgr* rumbleMgr) {
     }
 }
 
-void RumbleMgr_Init(RumbleMgr* rumbleMgr) {
+void vibctl2_init(RumbleMgr* rumbleMgr) {
     bzero(rumbleMgr, sizeof(RumbleMgr));
     rumbleMgr->state = RUMBLE_STATE_RESET;
     rumbleMgr->updateEnabled = true;
 }
 
-void RumbleMgr_Destroy(RumbleMgr* rumbleMgr) {
+void vibctl2_cleanup(RumbleMgr* rumbleMgr) {
 #if DEBUG_FEATURES
     bzero(rumbleMgr, sizeof(RumbleMgr));
 #endif

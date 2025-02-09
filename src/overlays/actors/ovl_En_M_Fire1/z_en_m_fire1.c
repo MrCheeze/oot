@@ -8,9 +8,9 @@
 
 #define FLAGS 0
 
-void EnMFire1_Init(Actor* thisx, PlayState* play);
-void EnMFire1_Destroy(Actor* thisx, PlayState* play);
-void EnMFire1_Update(Actor* thisx, PlayState* play);
+void En_M_Fire1_actor_ct(Actor* thisx, PlayState* play);
+void En_M_Fire1_actor_dt(Actor* thisx, PlayState* play);
+void En_M_Fire1_actor_deku_move(Actor* thisx, PlayState* play);
 
 ActorProfile En_M_Fire1_Profile = {
     /**/ ACTOR_EN_M_FIRE1,
@@ -18,13 +18,13 @@ ActorProfile En_M_Fire1_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(EnMFire1),
-    /**/ EnMFire1_Init,
-    /**/ EnMFire1_Destroy,
-    /**/ EnMFire1_Update,
+    /**/ En_M_Fire1_actor_ct,
+    /**/ En_M_Fire1_actor_dt,
+    /**/ En_M_Fire1_actor_deku_move,
     /**/ NULL,
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit AcOcInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_ON | AT_TYPE_PLAYER,
@@ -44,32 +44,32 @@ static ColliderCylinderInit sCylinderInit = {
     { 200, 200, 0, { 0 } },
 };
 
-void EnMFire1_Init(Actor* thisx, PlayState* play) {
+void En_M_Fire1_actor_ct(Actor* thisx, PlayState* play) {
     EnMFire1* this = (EnMFire1*)thisx;
     s32 pad;
 
     if (this->actor.params < 0) {
-        Actor_ChangeCategory(play, &play->actorCtx, &this->actor, ACTORCAT_ITEMACTION);
+        Actor_info_part_chg(play, &play->actorCtx, &this->actor, ACTORCAT_ITEMACTION);
     }
 
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set5(play, &this->collider, &this->actor, &AcOcInfoData);
 }
 
-void EnMFire1_Destroy(Actor* thisx, PlayState* play) {
+void En_M_Fire1_actor_dt(Actor* thisx, PlayState* play) {
     EnMFire1* this = (EnMFire1*)thisx;
 
-    Collider_DestroyCylinder(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider);
 }
 
-void EnMFire1_Update(Actor* thisx, PlayState* play) {
+void En_M_Fire1_actor_deku_move(Actor* thisx, PlayState* play) {
     EnMFire1* this = (EnMFire1*)thisx;
     s32 pad;
 
-    if (Math_StepToF(&this->timer, 1.0f, 0.2f)) {
-        Actor_Kill(&this->actor);
+    if (chase_f(&this->timer, 1.0f, 0.2f)) {
+        Actor_delete(&this->actor);
     } else {
-        Collider_UpdateCylinder(&this->actor, &this->collider);
-        CollisionCheck_SetAT(play, &play->colChkCtx, &this->collider.base);
+        CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
+        CollisionCheck_setAT(play, &play->colChkCtx, &this->collider.base);
     }
 }

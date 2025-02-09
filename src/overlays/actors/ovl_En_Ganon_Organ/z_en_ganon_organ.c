@@ -9,10 +9,10 @@
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED)
 
-void EnGanonOrgan_Init(Actor* thisx, PlayState* play);
-void EnGanonOrgan_Destroy(Actor* thisx, PlayState* play);
-void EnGanonOrgan_Update(Actor* thisx, PlayState* play);
-void EnGanonOrgan_Draw(Actor* thisx, PlayState* play);
+void En_Ganon_Organ_Actor_ct(Actor* thisx, PlayState* play);
+void En_Ganon_Organ_Actor_dt(Actor* thisx, PlayState* play);
+void En_Ganon_Organ_Actor_move(Actor* thisx, PlayState* play);
+void En_Ganon_Organ_Actor_draw(Actor* thisx, PlayState* play);
 
 ActorProfile En_Ganon_Organ_Profile = {
     /**/ ACTOR_EN_GANON_ORGAN,
@@ -20,37 +20,37 @@ ActorProfile En_Ganon_Organ_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GANON,
     /**/ sizeof(EnGanonOrgan),
-    /**/ EnGanonOrgan_Init,
-    /**/ EnGanonOrgan_Destroy,
-    /**/ EnGanonOrgan_Update,
-    /**/ EnGanonOrgan_Draw,
+    /**/ En_Ganon_Organ_Actor_ct,
+    /**/ En_Ganon_Organ_Actor_dt,
+    /**/ En_Ganon_Organ_Actor_move,
+    /**/ En_Ganon_Organ_Actor_draw,
 };
 
-static u64 sForceAlignment = 0;
+static u64 dammy = 0;
 
 #include "assets/overlays/ovl_En_Ganon_Organ/z_en_ganon_organ.c"
 
-void EnGanonOrgan_Init(Actor* thisx, PlayState* play) {
+void En_Ganon_Organ_Actor_ct(Actor* thisx, PlayState* play) {
     thisx->flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
 }
 
-void EnGanonOrgan_Destroy(Actor* thisx, PlayState* play) {
+void En_Ganon_Organ_Actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void EnGanonOrgan_Update(Actor* thisx, PlayState* play) {
+void En_Ganon_Organ_Actor_move(Actor* thisx, PlayState* play) {
     BossGanon* dorf;
 
     PRINTF("ORGAN MOVE 1\n");
     if (thisx->params == 1) {
         dorf = (BossGanon*)thisx->parent;
         if (dorf->organAlpha == 0) {
-            Actor_Kill(thisx);
+            Actor_delete(thisx);
         }
     }
     PRINTF("ORGAN MOVE 2\n");
 }
 
-Gfx* EnGanonOrgan_EmptyDList(GraphicsContext* gfxCtx) {
+Gfx* organ_mode_normal(GraphicsContext* gfxCtx) {
     Gfx* displayList;
 
     displayList = GRAPH_ALLOC(gfxCtx, sizeof(Gfx));
@@ -58,7 +58,7 @@ Gfx* EnGanonOrgan_EmptyDList(GraphicsContext* gfxCtx) {
     return displayList;
 }
 
-Gfx* func_80A280BC(GraphicsContext* gfxCtx, BossGanon* dorf) {
+Gfx* organ_mode_1(GraphicsContext* gfxCtx, BossGanon* dorf) {
     Gfx* displayList;
     Gfx* displayListHead;
 
@@ -71,7 +71,7 @@ Gfx* func_80A280BC(GraphicsContext* gfxCtx, BossGanon* dorf) {
     return displayList;
 }
 
-Gfx* func_80A28148(GraphicsContext* gfxCtx, BossGanon* dorf) {
+Gfx* organ_mode_2(GraphicsContext* gfxCtx, BossGanon* dorf) {
     Gfx* displayList;
     Gfx* displayListHead;
 
@@ -84,25 +84,25 @@ Gfx* func_80A28148(GraphicsContext* gfxCtx, BossGanon* dorf) {
     return displayList;
 }
 
-void EnGanonOrgan_Draw(Actor* thisx, PlayState* play) {
+void En_Ganon_Organ_Actor_draw(Actor* thisx, PlayState* play) {
     BossGanon* dorf = (BossGanon*)thisx->parent;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_ganon_organ.c", 205);
 
     PRINTF("ORGAN DRAW  1\n");
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
     if ((thisx->params == 1) && (dorf->organAlpha != 255)) {
-        gSPSegment(POLY_OPA_DISP++, 0x08, func_80A280BC(play->state.gfxCtx, dorf));
-        gSPSegment(POLY_OPA_DISP++, 0x09, func_80A28148(play->state.gfxCtx, dorf));
+        gSPSegment(POLY_OPA_DISP++, 0x08, organ_mode_1(play->state.gfxCtx, dorf));
+        gSPSegment(POLY_OPA_DISP++, 0x09, organ_mode_2(play->state.gfxCtx, dorf));
     } else {
-        gSPSegment(POLY_OPA_DISP++, 0x08, EnGanonOrgan_EmptyDList(play->state.gfxCtx));
-        gSPSegment(POLY_OPA_DISP++, 0x09, EnGanonOrgan_EmptyDList(play->state.gfxCtx));
+        gSPSegment(POLY_OPA_DISP++, 0x08, organ_mode_normal(play->state.gfxCtx));
+        gSPSegment(POLY_OPA_DISP++, 0x09, organ_mode_normal(play->state.gfxCtx));
     }
-    Matrix_Translate(0.0f, 0.0f, 0.0f, MTXMODE_NEW);
+    Matrix_translate(0.0f, 0.0f, 0.0f, MTXMODE_NEW);
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_en_ganon_organ.c", 221);
 
-    gSPDisplayList(POLY_OPA_DISP++, sRoomOrganAndFloorDL);
-    gSPDisplayList(POLY_OPA_DISP++, sRoomStatuesDL);
+    gSPDisplayList(POLY_OPA_DISP++, gnr_organ_model);
+    gSPDisplayList(POLY_OPA_DISP++, gnr_decolations_model);
 
     PRINTF("ORGAN DRAW  2\n");
 

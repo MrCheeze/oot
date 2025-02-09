@@ -19,16 +19,16 @@
 #define rAlphaStep regs[10]
 #define rAlphaMode regs[11] // if mode is 0 alpha decreases over time, otherwise it increases
 
-u32 EffectSsDeadDd_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
-void EffectSsDeadDd_Draw(PlayState* play, u32 index, EffectSs* this);
-void EffectSsDeadDd_Update(PlayState* play, u32 index, EffectSs* this);
+u32 Effect_SS_Dead_Dd_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
+void Effect_SS_Dd_disp_mode(PlayState* play, u32 index, EffectSs* this);
+void Effect_SS_Dd_func_proc(PlayState* play, u32 index, EffectSs* this);
 
 EffectSsProfile Effect_Ss_Dead_Dd_Profile = {
     EFFECT_SS_DEAD_DD,
-    EffectSsDeadDd_Init,
+    Effect_SS_Dead_Dd_ct,
 };
 
-u32 EffectSsDeadDd_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
+u32 Effect_SS_Dead_Dd_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
     EffectSsDeadDdInitParams* initParams = (EffectSsDeadDdInitParams*)initParamsx;
 
     if (initParams->type == 0) {
@@ -45,8 +45,8 @@ u32 EffectSsDeadDd_Init(PlayState* play, u32 index, EffectSs* this, void* initPa
             this->rAlphaStep = initParams->alpha / initParams->life;
         }
 
-        this->draw = EffectSsDeadDd_Draw;
-        this->update = EffectSsDeadDd_Update;
+        this->draw = Effect_SS_Dd_disp_mode;
+        this->update = Effect_SS_Dd_func_proc;
         this->rScale = initParams->scale;
         this->rPrimColorR = initParams->primColor.r;
         this->rPrimColorG = initParams->primColor.g;
@@ -71,16 +71,16 @@ u32 EffectSsDeadDd_Init(PlayState* play, u32 index, EffectSs* this, void* initPa
         this->rEnvColorR = 250;
         this->rEnvColorG = 180;
         this->rEnvColorB = 0;
-        this->draw = EffectSsDeadDd_Draw;
-        this->update = EffectSsDeadDd_Update;
+        this->draw = Effect_SS_Dd_disp_mode;
+        this->update = Effect_SS_Dd_func_proc;
 
         for (i = initParams->randIter; i > 0; i--) {
-            this->pos.x = ((Rand_ZeroOne() - 0.5f) * initParams->randPosScale) + initParams->pos.x;
-            this->pos.y = ((Rand_ZeroOne() - 0.5f) * initParams->randPosScale) + initParams->pos.y;
-            this->pos.z = ((Rand_ZeroOne() - 0.5f) * initParams->randPosScale) + initParams->pos.z;
-            this->accel.x = this->velocity.x = (Rand_ZeroOne() - 0.5f) * 2.0f;
-            this->accel.y = this->velocity.y = (Rand_ZeroOne() - 0.5f) * 2.0f;
-            this->accel.z = this->velocity.z = (Rand_ZeroOne() - 0.5f) * 2.0f;
+            this->pos.x = ((fqrand() - 0.5f) * initParams->randPosScale) + initParams->pos.x;
+            this->pos.y = ((fqrand() - 0.5f) * initParams->randPosScale) + initParams->pos.y;
+            this->pos.z = ((fqrand() - 0.5f) * initParams->randPosScale) + initParams->pos.z;
+            this->accel.x = this->velocity.x = (fqrand() - 0.5f) * 2.0f;
+            this->accel.y = this->velocity.y = (fqrand() - 0.5f) * 2.0f;
+            this->accel.z = this->velocity.z = (fqrand() - 0.5f) * 2.0f;
         }
     } else {
         PRINTF("Effect_SS_Dd_disp_mode():mode_swが変です。\n");
@@ -90,7 +90,7 @@ u32 EffectSsDeadDd_Init(PlayState* play, u32 index, EffectSs* this, void* initPa
     return 1;
 }
 
-void EffectSsDeadDd_Draw(PlayState* play, u32 index, EffectSs* this) {
+void Effect_SS_Dd_disp_mode(PlayState* play, u32 index, EffectSs* this) {
     GraphicsContext* gfxCtx = play->state.gfxCtx;
     MtxF mfTrans;
     MtxF mfScale;
@@ -101,14 +101,14 @@ void EffectSsDeadDd_Draw(PlayState* play, u32 index, EffectSs* this) {
     OPEN_DISPS(gfxCtx, "../z_eff_ss_dead_dd.c", 214);
 
     scale = this->rScale * 0.01f;
-    SkinMatrix_SetTranslate(&mfTrans, this->pos.x, this->pos.y, this->pos.z);
-    SkinMatrix_SetScale(&mfScale, scale, scale, scale);
-    SkinMatrix_MtxFMtxFMult(&mfTrans, &mfScale, &mfResult);
+    Skin_Matrix_SetTranslate(&mfTrans, this->pos.x, this->pos.y, this->pos.z);
+    Skin_Matrix_SetScale(&mfScale, scale, scale, scale);
+    Skin_Matrix_MulMatrix(&mfTrans, &mfScale, &mfResult);
 
-    mtx = SkinMatrix_MtxFToNewMtx(gfxCtx, &mfResult);
+    mtx = Skin_Matrix_to_Mtx_new(gfxCtx, &mfResult);
 
     if (mtx != NULL) {
-        Gfx_SetupDL_60NoCDXlu(gfxCtx);
+        texture_z_cld_poly_xlu(gfxCtx);
         gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, this->rPrimColorR, this->rPrimColorG, this->rPrimColorB, this->rAlpha);
         gDPSetEnvColor(POLY_XLU_DISP++, this->rEnvColorR, this->rEnvColorG, this->rEnvColorB, this->rAlpha);
         gSPMatrix(POLY_XLU_DISP++, mtx, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
@@ -121,7 +121,7 @@ void EffectSsDeadDd_Draw(PlayState* play, u32 index, EffectSs* this) {
     CLOSE_DISPS(gfxCtx, "../z_eff_ss_dead_dd.c", 259);
 }
 
-void EffectSsDeadDd_Update(PlayState* play, u32 index, EffectSs* this) {
+void Effect_SS_Dd_func_proc(PlayState* play, u32 index, EffectSs* this) {
 
     this->rScale += this->rScaleStep;
 

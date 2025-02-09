@@ -9,21 +9,21 @@
  * but make each page correspond to the opposite page instead of the page to the right.
  */
 
-s16 sKaleidoSetupUnusedPageIndex[] = {
+s16 kaleido_pt[] = {
     PAUSE_QUEST, // PAUSE_ITEM
     PAUSE_EQUIP, // PAUSE_MAP
     PAUSE_ITEM,  // PAUSE_QUEST
     PAUSE_MAP,   // PAUSE_EQUIP
 };
 
-f32 sKaleidoSetupUnusedEyeX[] = {
+f32 eye_x[] = {
     PAUSE_EYE_DIST * -PAUSE_QUEST_X, // PAUSE_ITEM
     PAUSE_EYE_DIST * -PAUSE_EQUIP_X, // PAUSE_MAP
     PAUSE_EYE_DIST * -PAUSE_ITEM_X,  // PAUSE_QUEST
     PAUSE_EYE_DIST * -PAUSE_MAP_X,   // PAUSE_EQUIP
 };
 
-f32 sKaleidoSetupUnusedEyeZ[] = {
+f32 eye_z[] = {
     PAUSE_EYE_DIST * -PAUSE_QUEST_Z, // PAUSE_ITEM
     PAUSE_EYE_DIST * -PAUSE_EQUIP_Z, // PAUSE_MAP
     PAUSE_EYE_DIST * -PAUSE_ITEM_Z,  // PAUSE_QUEST
@@ -36,28 +36,28 @@ f32 sKaleidoSetupUnusedEyeZ[] = {
  * For example to open the menu on page PAUSE_ITEM, the menu would open on PAUSE_MAP and scroll left to PAUSE_ITEM.
  */
 
-s16 sKaleidoSetupRightPageIndex[] = {
+s16 kaleido_pt1[] = {
     PAUSE_MAP,   // PAUSE_ITEM
     PAUSE_QUEST, // PAUSE_MAP
     PAUSE_EQUIP, // PAUSE_QUEST
     PAUSE_ITEM,  // PAUSE_EQUIP
 };
 
-f32 sKaleidoSetupRightPageEyeX[] = {
+f32 eye_x1[] = {
     PAUSE_EYE_DIST * -PAUSE_MAP_X,   // PAUSE_ITEM
     PAUSE_EYE_DIST * -PAUSE_QUEST_X, // PAUSE_MAP
     PAUSE_EYE_DIST * -PAUSE_EQUIP_X, // PAUSE_QUEST
     PAUSE_EYE_DIST * -PAUSE_ITEM_X,  // PAUSE_EQUIP
 };
 
-f32 sKaleidoSetupRightPageEyeZ[] = {
+f32 eye_z1[] = {
     PAUSE_EYE_DIST * -PAUSE_MAP_Z,   // PAUSE_ITEM
     PAUSE_EYE_DIST * -PAUSE_QUEST_Z, // PAUSE_MAP
     PAUSE_EYE_DIST * -PAUSE_EQUIP_Z, // PAUSE_QUEST
     PAUSE_EYE_DIST * -PAUSE_ITEM_Z,  // PAUSE_EQUIP
 };
 
-void KaleidoSetup_Update(PlayState* play) {
+void kaleido_scope_pause(PlayState* play) {
     PauseContext* pauseCtx = &play->pauseCtx;
     Input* input = &play->state.input[0];
 #if PLATFORM_N64
@@ -66,10 +66,10 @@ void KaleidoSetup_Update(PlayState* play) {
 
     if (!IS_PAUSED(pauseCtx) && play->gameOverCtx.state == GAMEOVER_INACTIVE &&
         play->transitionTrigger == TRANS_TRIGGER_OFF && play->transitionMode == TRANS_MODE_OFF &&
-        gSaveContext.save.cutsceneIndex < 0xFFF0 && gSaveContext.nextCutsceneIndex < 0xFFF0 && !Play_InCsMode(play) &&
-        play->shootingGalleryStatus <= 1 && gSaveContext.magicState != MAGIC_STATE_STEP_CAPACITY &&
-        gSaveContext.magicState != MAGIC_STATE_FILL &&
-        (play->sceneId != SCENE_BOMBCHU_BOWLING_ALLEY || !Flags_GetSwitch(play, 0x38))) {
+        z_common_data.save.cutsceneIndex < 0xFFF0 && z_common_data.nextCutsceneIndex < 0xFFF0 && !Game_play_demo_mode_check(play) &&
+        play->shootingGalleryStatus <= 1 && z_common_data.magicState != MAGIC_STATE_STEP_CAPACITY &&
+        z_common_data.magicState != MAGIC_STATE_FILL &&
+        (play->sceneId != SCENE_BOMBCHU_BOWLING_ALLEY || !Actor_Environment_sw_Check(play, 0x38))) {
 
         if (CHECK_BTN_ALL(input->cur.button, BTN_L) && CHECK_BTN_ALL(input->press.button, BTN_CUP)) {
             if (DEBUG_FEATURES && BREG(0)) {
@@ -77,7 +77,7 @@ void KaleidoSetup_Update(PlayState* play) {
             }
         } else if (CHECK_BTN_ALL(input->press.button, BTN_START)) {
             // The start button was pressed, pause
-            gSaveContext.prevHudVisibilityMode = gSaveContext.hudVisibilityMode;
+            z_common_data.prevHudVisibilityMode = z_common_data.hudVisibilityMode;
 
             WREG(16) = -175;
             WREG(17) = 155;
@@ -93,14 +93,14 @@ void KaleidoSetup_Update(PlayState* play) {
             if (ZREG(48) == 0) {
                 // Never reached, unused, and the data would be wrong anyway
                 // (scrolling left from this would not bring to the initial page)
-                pauseCtx->eye.x = sKaleidoSetupUnusedEyeX[pauseCtx->pageIndex];
-                pauseCtx->eye.z = sKaleidoSetupUnusedEyeZ[pauseCtx->pageIndex];
-                pauseCtx->pageIndex = sKaleidoSetupUnusedPageIndex[pauseCtx->pageIndex];
+                pauseCtx->eye.x = eye_x[pauseCtx->pageIndex];
+                pauseCtx->eye.z = eye_z[pauseCtx->pageIndex];
+                pauseCtx->pageIndex = kaleido_pt[pauseCtx->pageIndex];
             } else {
                 // Set eye position and pageIndex such that scrolling left brings to the desired page
-                pauseCtx->eye.x = sKaleidoSetupRightPageEyeX[pauseCtx->pageIndex];
-                pauseCtx->eye.z = sKaleidoSetupRightPageEyeZ[pauseCtx->pageIndex];
-                pauseCtx->pageIndex = sKaleidoSetupRightPageIndex[pauseCtx->pageIndex];
+                pauseCtx->eye.x = eye_x1[pauseCtx->pageIndex];
+                pauseCtx->eye.z = eye_z1[pauseCtx->pageIndex];
+                pauseCtx->pageIndex = kaleido_pt1[pauseCtx->pageIndex];
             }
 
             // Set next page mode to scroll left
@@ -115,16 +115,16 @@ void KaleidoSetup_Update(PlayState* play) {
             R_PAUSE_PAGES_Y_ORIGIN_2 = PAUSE_PAGES_Y_ORIGIN_2_LOWER;
             R_UPDATE_RATE = 2;
 
-            if (Letterbox_GetSizeTarget() != 0) {
-                Letterbox_SetSizeTarget(0);
+            if (shrink_window_getval() != 0) {
+                shrink_window_setval(0);
             }
 
-            func_800F64E0(1);
+            Na_SetWindowSound(1);
         }
     }
 }
 
-void KaleidoSetup_Init(PlayState* play) {
+void kaleido_scope_ct(PlayState* play) {
     PauseContext* pauseCtx = &play->pauseCtx;
 
     pauseCtx->state = PAUSE_STATE_OFF;
@@ -174,7 +174,7 @@ void KaleidoSetup_Init(PlayState* play) {
     pauseCtx->ocarinaSongIdx = -1;
     pauseCtx->cursorSpecialPos = 0;
 
-    View_Init(&pauseCtx->view, play->state.gfxCtx);
+    initView(&pauseCtx->view, play->state.gfxCtx);
 
 #if PLATFORM_N64
     if ((B_80121220 != NULL) && (B_80121220->unk_3C != NULL)) {
@@ -183,7 +183,7 @@ void KaleidoSetup_Init(PlayState* play) {
 #endif
 }
 
-void KaleidoSetup_Destroy(PlayState* play) {
+void kaleido_scope_dt(PlayState* play) {
 #if PLATFORM_N64
     if ((B_80121220 != NULL) && (B_80121220->unk_40 != NULL)) {
         B_80121220->unk_40();

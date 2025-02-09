@@ -8,12 +8,12 @@
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY)
 
-void EnOE2_Init(Actor* thisx, PlayState* play);
-void EnOE2_Destroy(Actor* thisx, PlayState* play);
-void EnOE2_Update(Actor* thisx, PlayState* play);
-void EnOE2_Draw(Actor* thisx, PlayState* play);
+void En_OE2_Actor_ct(Actor* thisx, PlayState* play);
+void En_OE2_Actor_dt(Actor* thisx, PlayState* play);
+void En_OE2_Actor_move(Actor* thisx, PlayState* play);
+void En_OE2_Actor_draw(Actor* thisx, PlayState* play);
 
-void EnOE2_DoNothing(EnOE2* this, PlayState* play);
+static void matsu(EnOE2* this, PlayState* play);
 
 ActorProfile En_OE2_Profile = {
     /**/ ACTOR_EN_OE2,
@@ -21,30 +21,30 @@ ActorProfile En_OE2_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_OE2,
     /**/ sizeof(EnOE2),
-    /**/ EnOE2_Init,
-    /**/ EnOE2_Destroy,
-    /**/ EnOE2_Update,
-    /**/ EnOE2_Draw,
+    /**/ En_OE2_Actor_ct,
+    /**/ En_OE2_Actor_dt,
+    /**/ En_OE2_Actor_move,
+    /**/ En_OE2_Actor_draw,
 };
 
-void EnOE2_SetupAction(EnOE2* this, EnOE2ActionFunc actionFunc) {
+void En_OE2_actor_set_process(EnOE2* this, EnOE2ActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
 
-void EnOE2_Init(Actor* thisx, PlayState* play) {
+void En_OE2_Actor_ct(Actor* thisx, PlayState* play) {
     EnOE2* this = (EnOE2*)thisx;
 
-    EnOE2_SetupAction(this, EnOE2_DoNothing);
+    En_OE2_actor_set_process(this, matsu);
 }
 
-void EnOE2_Destroy(Actor* thisx, PlayState* play) {
+void En_OE2_Actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void EnOE2_DoNothing(EnOE2* this, PlayState* play) {
+static void matsu(EnOE2* this, PlayState* play) {
 }
 
-void EnOE2_Update(Actor* thisx, PlayState* play) {
+void En_OE2_Actor_move(Actor* thisx, PlayState* play) {
 }
 
-void EnOE2_Draw(Actor* thisx, PlayState* play) {
+void En_OE2_Actor_draw(Actor* thisx, PlayState* play) {
 }

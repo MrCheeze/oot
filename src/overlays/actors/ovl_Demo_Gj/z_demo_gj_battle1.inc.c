@@ -1,15 +1,15 @@
-void DemoGj_InitRubbleAroundArena(DemoGj* this, PlayState* play) {
-    DemoGj_InitSetIndices(this, play, 0, 1, &gGanonsCastleRubbleAroundArenaCol);
+void Demo_Gj_Actor_init_battle1(DemoGj* this, PlayState* play) {
+    Demo_Gj_Actor_init_battle_common(this, play, 0, 1, &gGanonsCastleRubbleAroundArenaCol);
 }
 
 // func_8097ADF0
-void DemoGj_UpdateRubbleAroundArena(DemoGj* this, PlayState* play) {
-    DemoGj_FindGanon(this, play);
-    DemoGj_SpawnSmokePreBattle1(this, play);
-    DemoGj_SpawnSmokePreBattle2(this, play);
-    DemoGj_SpawnSmokePreBattle3(this, play);
+void Demo_Gj_main_Stand_battle1(DemoGj* this, PlayState* play) {
+    Demo_Gj_Search_Boss_Ganon(this, play);
+    Birth1_Dust_In_Demo_Gj_battle2_1(this, play);
+    Birth1_Dust_In_Demo_Gj_battle2_2(this, play);
+    Birth1_Dust_In_Demo_Gj_battle2_7(this, play);
 }
 
-void DemoGj_DrawRubbleAroundArena(DemoGj* this, PlayState* play) {
-    DemoGj_DrawCommon(this, play, gGanonsCastleRubbleAroundArenaDL);
+void Demo_Gj_draw_normal_battle1(DemoGj* this, PlayState* play) {
+    Demo_Gj_draw_normal_common(this, play, gGanonsCastleRubbleAroundArenaDL);
 }

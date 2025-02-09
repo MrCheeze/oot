@@ -1,13 +1,13 @@
 #include "global.h"
 
-void Sample_HandleStateChange(SampleState* this) {
+void sample_move(SampleState* this) {
     if (CHECK_BTN_ALL(this->state.input[0].press.button, BTN_START)) {
-        SET_NEXT_GAMESTATE(&this->state, Play_Init, PlayState);
+        SET_NEXT_GAMESTATE(&this->state, play_init, PlayState);
         this->state.running = false;
     }
 }
 
-void Sample_Draw(SampleState* this) {
+void sample_draw(SampleState* this) {
     GraphicsContext* gfxCtx = this->state.gfxCtx;
     View* view = &this->view;
 
@@ -16,10 +16,10 @@ void Sample_Draw(SampleState* this) {
     gSPSegment(POLY_OPA_DISP++, 0x00, NULL);
     gSPSegment(POLY_OPA_DISP++, 0x01, this->staticSegment);
 
-    Gfx_SetupFrame(gfxCtx, 0, 0, 0);
+    DisplayList_initialize(gfxCtx, 0, 0, 0);
 
     view->flags = VIEW_VIEWING | VIEW_VIEWPORT | VIEW_PROJECTION_PERSPECTIVE;
-    View_Apply(view, VIEW_ALL);
+    showView(view, VIEW_ALL);
 
     {
         Mtx* mtx = GRAPH_ALLOC(gfxCtx, sizeof(Mtx));
@@ -28,8 +28,8 @@ void Sample_Draw(SampleState* this) {
         gSPMatrix(POLY_OPA_DISP++, mtx, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
     }
 
-    POLY_OPA_DISP = Gfx_SetFog2(POLY_OPA_DISP, 255, 255, 255, 0, 0, 0);
-    Gfx_SetupDL_25Opa(gfxCtx);
+    POLY_OPA_DISP = set_fog(POLY_OPA_DISP, 255, 255, 255, 0, 0, 0);
+    _texture_z_light_fog_prim(gfxCtx);
 
     gDPSetCycleType(POLY_OPA_DISP++, G_CYC_1CYCLE);
     gDPSetRenderMode(POLY_OPA_DISP++, G_RM_AA_ZB_OPA_SURF, G_RM_AA_ZB_OPA_SURF2);
@@ -39,23 +39,23 @@ void Sample_Draw(SampleState* this) {
     CLOSE_DISPS(gfxCtx, "../z_sample.c", 111);
 }
 
-void Sample_Main(GameState* thisx) {
+void sample_main(GameState* thisx) {
     SampleState* this = (SampleState*)thisx;
 
-    Sample_Draw(this);
-    Sample_HandleStateChange(this);
+    sample_draw(this);
+    sample_move(this);
 }
 
-void Sample_Destroy(GameState* thisx) {
+void sample_cleanup(GameState* thisx) {
 }
 
-void Sample_SetupView(SampleState* this) {
+void sample_view_init(SampleState* this) {
     View* view = &this->view;
     GraphicsContext* gfxCtx = this->state.gfxCtx;
 
-    View_Init(view, gfxCtx);
+    initView(view, gfxCtx);
     SET_FULLSCREEN_VIEWPORT(view);
-    View_SetPerspective(view, 60.0f, 10.0f, 12800.0f);
+    setPerspectiveView(view, 60.0f, 10.0f, 12800.0f);
 
     {
         Vec3f eye;
@@ -72,25 +72,25 @@ void Sample_SetupView(SampleState* this) {
         up.z = 0.0f;
         up.y = 1.0f;
 
-        View_LookAt(view, &eye, &lookAt, &up);
+        setLookAtView(view, &eye, &lookAt, &up);
     }
 }
 
-void Sample_LoadTitleStatic(SampleState* this) {
+void sample_data_init(SampleState* this) {
     u32 size = _title_staticSegmentRomEnd - _title_staticSegmentRomStart;
 
     this->staticSegment = GAME_STATE_ALLOC(&this->state, size, "../z_sample.c", 163);
     DMA_REQUEST_SYNC(this->staticSegment, (uintptr_t)_title_staticSegmentRomStart, size, "../z_sample.c", 164);
 }
 
-void Sample_Init(GameState* thisx) {
+void sample_init(GameState* thisx) {
     SampleState* this = (SampleState*)thisx;
 
-    this->state.main = Sample_Main;
-    this->state.destroy = Sample_Destroy;
+    this->state.main = sample_main;
+    this->state.destroy = sample_cleanup;
     R_UPDATE_RATE = 1;
-    Sample_SetupView(this);
-    Sample_LoadTitleStatic(this);
+    sample_view_init(this);
+    sample_data_init(this);
     SREG(37) = 0;
     SREG(38) = 0;
     SREG(39) = 0;

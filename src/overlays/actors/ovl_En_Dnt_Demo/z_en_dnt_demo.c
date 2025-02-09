@@ -18,13 +18,13 @@ typedef enum EnDntDemoResults {
     /* 2 */ DNT_LOVE
 } EnDntDemoResults;
 
-void EnDntDemo_Init(Actor* thisx, PlayState* play2);
-void EnDntDemo_Destroy(Actor* thisx, PlayState* play);
-void EnDntDemo_Update(Actor* thisx, PlayState* play);
+void En_Dnt_Demo_actor_ct(Actor* thisx, PlayState* play2);
+void En_Dnt_Demo_actor_dt(Actor* thisx, PlayState* play);
+void En_Dnt_Demo_actor_move(Actor* thisx, PlayState* play);
 
-void EnDntDemo_Judge(EnDntDemo* this, PlayState* play);
-void EnDntDemo_Results(EnDntDemo* this, PlayState* play);
-void EnDntDemo_Prize(EnDntDemo* this, PlayState* play);
+static void mode_check(EnDntDemo* this, PlayState* play);
+void mode_help_check(EnDntDemo* this, PlayState* play);
+static void mode_no_move(EnDntDemo* this, PlayState* play);
 
 ActorProfile En_Dnt_Demo_Profile = {
     /**/ ACTOR_EN_DNT_DEMO,
@@ -32,16 +32,16 @@ ActorProfile En_Dnt_Demo_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(EnDntDemo),
-    /**/ EnDntDemo_Init,
-    /**/ EnDntDemo_Destroy,
-    /**/ EnDntDemo_Update,
+    /**/ En_Dnt_Demo_actor_ct,
+    /**/ En_Dnt_Demo_actor_dt,
+    /**/ En_Dnt_Demo_actor_move,
     /**/ NULL,
 };
 
 //! @bug
 //! This table is missing a column for the Mask of Truth, so it reads the first value of the next row. In the last row,
-//! it reads the first entry of sResultValues (4), which is an invalid result. The scrubs have no reaction in this case.
-static s16 sResultTable[8][7] = {
+//! it reads the first entry of mode_data (4), which is an invalid result. The scrubs have no reaction in this case.
+static s16 demo_type_table_data[8][7] = {
     /* Keaton    Skull     Spooky    Bunny     Goron      Zora     Gerudo         Truth   */
     { DNT_LIKE, DNT_HATE, DNT_LIKE, DNT_HATE, DNT_LOVE, DNT_LIKE, DNT_HATE }, /* DNT_HATE */
     { DNT_HATE, DNT_LIKE, DNT_HATE, DNT_LIKE, DNT_HATE, DNT_HATE, DNT_LOVE }, /* DNT_LOVE */
@@ -53,22 +53,22 @@ static s16 sResultTable[8][7] = {
     { DNT_LOVE, DNT_LOVE, DNT_LOVE, DNT_LOVE, DNT_LOVE, DNT_LOVE, DNT_LOVE }, /* INVALID  */
 };
 
-static s16 sResultValues[3][2] = {
+static s16 mode_data[3][2] = {
     /* DNT_LIKE */ { DNT_SIGNAL_HIDE, DNT_ACTION_LOW_RUPEES },
     /* DNT_HATE */ { DNT_SIGNAL_HIDE, DNT_ACTION_ATTACK },
     /* DNT_LOVE */ { DNT_SIGNAL_DANCE, DNT_ACTION_DANCE },
 };
 
-static Vec3f sScrubPos[] = {
+static Vec3f nomal_pos_Data[] = {
     { 3810.0f, -20.0f, 1010.0f }, { 3890.0f, -20.0f, 990.0f }, { 3730.0f, -20.0f, 950.0f },
     { 3840.0f, -20.0f, 930.0f },  { 3910.0f, -20.0f, 870.0f }, { 3780.0f, -20.0f, 860.0f },
     { 3710.0f, -20.0f, 840.0f },  { 3860.0f, -20.0f, 790.0f }, { 3750.0f, -20.0f, 750.0f },
 };
 
-void EnDntDemo_Destroy(Actor* thisx, PlayState* play) {
+void En_Dnt_Demo_actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void EnDntDemo_Init(Actor* thisx, PlayState* play2) {
+void En_Dnt_Demo_actor_ct(Actor* thisx, PlayState* play2) {
     PlayState* play = play2;
     EnDntDemo* this = (EnDntDemo*)thisx;
     s32 i;
@@ -78,8 +78,8 @@ void EnDntDemo_Init(Actor* thisx, PlayState* play2) {
     // "Deku Scrub mask show start"
     PRINTF(VT_FGCOL(GREEN) "☆☆☆☆☆ デグナッツお面品評会開始 ☆☆☆☆☆ \n" VT_RST);
     for (i = 0; i < 9; i++) {
-        this->scrubPos[i] = sScrubPos[i];
-        this->scrubs[i] = (EnDntNomal*)Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_EN_DNT_NOMAL,
+        this->scrubPos[i] = nomal_pos_Data[i];
+        this->scrubs[i] = (EnDntNomal*)Actor_info_make_child_actor(&play->actorCtx, &this->actor, play, ACTOR_EN_DNT_NOMAL,
                                                           this->scrubPos[i].x, this->scrubPos[i].y, this->scrubPos[i].z,
                                                           0, 0, 0, i + ENDNTNOMAL_STAGE);
         if (this->scrubs[i] != NULL) {
@@ -91,7 +91,7 @@ void EnDntDemo_Init(Actor* thisx, PlayState* play2) {
     this->leaderPos.x = 4050.0f;
     this->leaderPos.y = -20.0f;
     this->leaderPos.z = 1000.0f;
-    this->leader = (EnDntJiji*)Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_EN_DNT_JIJI,
+    this->leader = (EnDntJiji*)Actor_info_make_child_actor(&play->actorCtx, &this->actor, play, ACTOR_EN_DNT_JIJI,
                                                   this->leaderPos.x, this->leaderPos.y, this->leaderPos.z, 0, 0, 0, 0);
     if (this->leader != NULL) {
         // "jiji jiji jiji jiji jiji" [onomatopoeia for the scrub sound?]
@@ -99,10 +99,10 @@ void EnDntDemo_Init(Actor* thisx, PlayState* play2) {
     }
     this->subCamId = SUB_CAM_ID_DONE;
     this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
-    this->actionFunc = EnDntDemo_Judge;
+    this->actionFunc = mode_check;
 }
 
-void EnDntDemo_Judge(EnDntDemo* this, PlayState* play) {
+static void mode_check(EnDntDemo* this, PlayState* play) {
     s16 delay;
     s16 reaction;
     s16 rand9;
@@ -121,8 +121,8 @@ void EnDntDemo_Judge(EnDntDemo* this, PlayState* play) {
             this->leader->stageSignal = DNT_LEADER_SIGNAL_BURROW;
         }
         this->leaderSignal = DNT_SIGNAL_NONE;
-        this->actionFunc = EnDntDemo_Results;
-    } else if ((this->actor.xzDistToPlayer > 30.0f) || (Player_GetMask(play) == 0)) {
+        this->actionFunc = mode_help_check;
+    } else if ((this->actor.xzDistToPlayer > 30.0f) || (mask_check(play) == 0)) {
         this->debugArrowTimer++;
         if (this->subCamId != SUB_CAM_ID_DONE) {
             this->subCamId = SUB_CAM_ID_DONE;
@@ -134,8 +134,8 @@ void EnDntDemo_Judge(EnDntDemo* this, PlayState* play) {
             this->judgeTimer = 0;
         }
     } else {
-        if ((Player_GetMask(play) != 0) && (this->subCamId == SUB_CAM_ID_DONE)) {
-            this->subCamId = OnePointCutscene_Init(play, 2220, -99, &this->scrubs[3]->actor, CAM_ID_MAIN);
+        if ((mask_check(play) != 0) && (this->subCamId == SUB_CAM_ID_DONE)) {
+            this->subCamId = makeOnepointDemo(play, 2220, -99, &this->scrubs[3]->actor, CAM_ID_MAIN);
         }
         this->debugArrowTimer = 0;
         if (this->judgeTimer == 40) {
@@ -146,7 +146,7 @@ void EnDntDemo_Judge(EnDntDemo* this, PlayState* play) {
         if (this->judgeTimer > 40) {
             // "gera gera" [onomatopoeia for loud giggling]
             PRINTF(VT_FGCOL(RED) "☆☆☆☆☆ げらげら ☆☆☆☆☆ \n" VT_RST);
-            func_800F436C(&this->actor.projectedPos, NA_SE_EV_CROWD - SFX_FLAG, 2.0f);
+            Na_SetMotorSe(&this->actor.projectedPos, NA_SE_EV_CROWD - SFX_FLAG, 2.0f);
         }
         if (this->judgeTimer < 120) {
             this->judgeTimer++;
@@ -154,7 +154,7 @@ void EnDntDemo_Judge(EnDntDemo* this, PlayState* play) {
             ignore = false;
             reaction = DNT_SIGNAL_NONE;
             delay = 0;
-            switch (Player_GetMask(play)) {
+            switch (mask_check(play)) {
                 case PLAYER_MASK_SKULL:
                     if (!GET_ITEMGETINF(ITEMGETINF_FOREST_STAGE_STICK_UPGRADE)) {
                         reaction = DNT_SIGNAL_CELEBRATE;
@@ -165,16 +165,16 @@ void EnDntDemo_Judge(EnDntDemo* this, PlayState* play) {
                     FALLTHROUGH;
                 case PLAYER_MASK_TRUTH:
                     if (!GET_ITEMGETINF(ITEMGETINF_FOREST_STAGE_NUT_UPGRADE) &&
-                        (Player_GetMask(play) != PLAYER_MASK_SKULL)) {
-                        Audio_PlaySfxGeneral(NA_SE_SY_TRE_BOX_APPEAR, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                        (mask_check(play) != PLAYER_MASK_SKULL)) {
+                        Nai_FxFlagEntry(NA_SE_SY_TRE_BOX_APPEAR, &_dummy_zero_f, 4, &_dummy_one,
+                                             &_dummy_one, &_dummy_zero_s8);
                         this->prize = DNT_PRIZE_NUTS;
                         this->leader->stageSignal = DNT_LEADER_SIGNAL_UP;
                         reaction = DNT_SIGNAL_LOOK;
                         if (this->subCamId != SUB_CAM_ID_DONE) {
                             this->subCamId = SUB_CAM_ID_DONE;
                             reaction = DNT_SIGNAL_LOOK;
-                            OnePointCutscene_Init(play, 2340, -99, &this->leader->actor, CAM_ID_MAIN);
+                            makeOnepointDemo(play, 2340, -99, &this->leader->actor, CAM_ID_MAIN);
                         }
                         break;
                     }
@@ -185,9 +185,9 @@ void EnDntDemo_Judge(EnDntDemo* this, PlayState* play) {
                 case PLAYER_MASK_GORON:
                 case PLAYER_MASK_ZORA:
                 case PLAYER_MASK_GERUDO:
-                    rand9 = Rand_ZeroFloat(8.99f);
-                    // fake match, possible alternative is `maskIdx = Player_GetMask(play); maskIdx--;` on one line
-                    maskIdx = (s16)Player_GetMask(play) - 1;
+                    rand9 = rnd_f(8.99f);
+                    // fake match, possible alternative is `maskIdx = mask_check(play); maskIdx--;` on one line
+                    maskIdx = (s16)mask_check(play) - 1;
                     if (rand9 == 8) {
                         ignore = true;
                         delay = 8;
@@ -201,12 +201,12 @@ void EnDntDemo_Judge(EnDntDemo* this, PlayState* play) {
                             PRINTF(VT_FGCOL(YELLOW) "☆☆☆☆☆ ヤバいよこれ！ ☆☆☆☆☆ \n" VT_RST);
                             PRINTF(VT_FGCOL(MAGENTA) "☆☆☆☆☆ ヤバいよこれ！ ☆☆☆☆☆ \n" VT_RST);
                             PRINTF(VT_FGCOL(CYAN) "☆☆☆☆☆ ヤバいよこれ！ ☆☆☆☆☆ \n" VT_RST);
-                            maskIdx = Rand_ZeroFloat(7.99f);
+                            maskIdx = rnd_f(7.99f);
                         }
 
-                        resultIdx = sResultTable[rand9][maskIdx];
-                        reaction = sResultValues[resultIdx][0];
-                        this->action = sResultValues[resultIdx][1];
+                        resultIdx = demo_type_table_data[rand9][maskIdx];
+                        reaction = mode_data[resultIdx][0];
+                        this->action = mode_data[resultIdx][1];
                         switch (this->action) {
                             case DNT_ACTION_LOW_RUPEES:
                                 SEQCMD_PLAY_SEQUENCE(SEQ_PLAYER_BGM_MAIN, 0, 0, NA_BGM_COURTYARD);
@@ -214,7 +214,7 @@ void EnDntDemo_Judge(EnDntDemo* this, PlayState* play) {
                             case DNT_ACTION_ATTACK:
                                 if (this->subCamId != SUB_CAM_ID_DONE) {
                                     this->subCamId = SUB_CAM_ID_DONE;
-                                    OnePointCutscene_Init(play, 2350, -99, &this->scrubs[3]->actor, CAM_ID_MAIN);
+                                    makeOnepointDemo(play, 2350, -99, &this->scrubs[3]->actor, CAM_ID_MAIN);
                                 }
                                 SEQCMD_PLAY_SEQUENCE(SEQ_PLAYER_BGM_MAIN, 0, 8, NA_BGM_ENEMY);
                                 break;
@@ -258,13 +258,13 @@ void EnDntDemo_Judge(EnDntDemo* this, PlayState* play) {
                         }
                     }
                 }
-                this->actionFunc = EnDntDemo_Results;
+                this->actionFunc = mode_help_check;
             }
         }
     }
 }
 
-void EnDntDemo_Results(EnDntDemo* this, PlayState* play) {
+void mode_help_check(EnDntDemo* this, PlayState* play) {
     s32 i;
     s16 offsetAngle;
     Vec3f leaderPos;
@@ -285,7 +285,7 @@ void EnDntDemo_Results(EnDntDemo* this, PlayState* play) {
         }
         this->leader->timer = 0;
         this->leaderSignal = this->action = DNT_SIGNAL_NONE;
-        this->actionFunc = EnDntDemo_Prize;
+        this->actionFunc = mode_no_move;
     } else if (this->prize == DNT_PRIZE_STICK) {
         for (i = 0; i < 9; i++) {
             offsetAngle = -this->leader->actor.shape.rot.y;
@@ -296,14 +296,14 @@ void EnDntDemo_Results(EnDntDemo* this, PlayState* play) {
             }
             offsetDist = ((i + 1) * 20.0f) + 20.0f;
             this->scrubs[i]->timer2 = 10;
-            this->scrubs[i]->targetPos.x = leaderPos.x + Math_SinS(offsetAngle) * offsetDist;
+            this->scrubs[i]->targetPos.x = leaderPos.x + sin_s(offsetAngle) * offsetDist;
             this->scrubs[i]->targetPos.y = leaderPos.y;
-            this->scrubs[i]->targetPos.z = leaderPos.z + Math_CosS(offsetAngle) * offsetDist;
+            this->scrubs[i]->targetPos.z = leaderPos.z + cos_s(offsetAngle) * offsetDist;
         }
     }
 }
 
-void EnDntDemo_Prize(EnDntDemo* this, PlayState* play) {
+static void mode_no_move(EnDntDemo* this, PlayState* play) {
     s32 i;
 
     if (this->leaderSignal != DNT_SIGNAL_NONE) {
@@ -316,7 +316,7 @@ void EnDntDemo_Prize(EnDntDemo* this, PlayState* play) {
     }
 }
 
-void EnDntDemo_Update(Actor* thisx, PlayState* play) {
+void En_Dnt_Demo_actor_move(Actor* thisx, PlayState* play) {
     s32 pad;
     EnDntDemo* this = (EnDntDemo*)thisx;
 
@@ -331,12 +331,12 @@ void EnDntDemo_Update(Actor* thisx, PlayState* play) {
     if (DEBUG_FEATURES && BREG(0) != 0) {
         if (this->debugArrowTimer != 0) {
             if (!(this->debugArrowTimer & 1)) {
-                DebugDisplay_AddObject(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
+                Debug_Display_new(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
                                        this->actor.world.rot.x, this->actor.world.rot.y, this->actor.world.rot.z, 1.0f,
                                        1.0f, 1.0f, 120, 120, 0, 255, 4, play->state.gfxCtx);
             }
         } else {
-            DebugDisplay_AddObject(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
+            Debug_Display_new(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
                                    this->actor.world.rot.x, this->actor.world.rot.y, this->actor.world.rot.z, 1.0f,
                                    1.0f, 1.0f, 255, 255, 255, 255, 4, play->state.gfxCtx);
         }

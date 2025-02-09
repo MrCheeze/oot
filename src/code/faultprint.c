@@ -32,7 +32,7 @@ typedef struct FaultDrawer {
     /* 0x38 */ void (*inputCallback)(void);
 } FaultDrawer; // size = 0x3C
 
-const u32 sFaultDrawerFont[] = {
+const u32 font_00[] = {
     0x00DFFD00, 0x0AEEFFA0, 0x0DF22DD0, 0x06611DC0, 0x01122DD0, 0x06719900, 0x011EED10, 0x077EF700, 0x01562990,
     0x05589760, 0x0DD22990, 0x05599770, 0x04DFFD40, 0x026EF700, 0x00000000, 0x00000000, 0x08BFFB00, 0x0EFFFFC0,
     0x0BF00FB0, 0x0FF00330, 0x0FF00FF0, 0x0FF00220, 0x0CFBBF60, 0x0FFCCE20, 0x0DD44FF0, 0x0FF00220, 0x0FF00FF0,
@@ -67,7 +67,7 @@ const u32 sFaultDrawerFont[] = {
 #define FAULT_DRAWER_CURSOR_X 22
 #define FAULT_DRAWER_CURSOR_Y 16
 
-FaultDrawer sFaultDrawerDefault = {
+FaultDrawer default_faultprint = {
     (u16*)(PHYS_TO_K0(0x400000) - sizeof(u16[SCREEN_HEIGHT][SCREEN_WIDTH])),
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
@@ -79,7 +79,7 @@ FaultDrawer sFaultDrawerDefault = {
     GPACK_RGBA5551(0, 0, 0, 0),
     FAULT_DRAWER_CURSOR_X,
     FAULT_DRAWER_CURSOR_Y,
-    sFaultDrawerFont,
+    font_00,
     8,
     8,
     0,
@@ -103,17 +103,17 @@ FaultDrawer sFaultDrawerDefault = {
 
 #pragma increment_block_number "gc-eu:128 gc-eu-mq:128"
 
-FaultDrawer sFaultDrawer;
+FaultDrawer faultprint_class;
 
-void Fault_SetOsSyncPrintfEnabled(u32 enabled) {
-    sFaultDrawer.osSyncPrintfEnabled = enabled;
+void faultprint_SyncPrintMode(u32 enabled) {
+    faultprint_class.osSyncPrintfEnabled = enabled;
 }
 
-void Fault_DrawRecImpl(s32 xStart, s32 yStart, s32 xEnd, s32 yEnd, u16 color) {
+void faultprint_FillRectangle(s32 xStart, s32 yStart, s32 xEnd, s32 yEnd, u16 color) {
     u16* fb;
     s32 x, y;
-    s32 xDiff = sFaultDrawer.w - xStart;
-    s32 yDiff = sFaultDrawer.h - yStart;
+    s32 xDiff = faultprint_class.w - xStart;
+    s32 yDiff = faultprint_class.h - yStart;
     s32 xSize = xEnd - xStart + 1;
     s32 ySize = yEnd - yStart + 1;
 
@@ -126,170 +126,170 @@ void Fault_DrawRecImpl(s32 xStart, s32 yStart, s32 xEnd, s32 yEnd, u16 color) {
             ySize = yDiff;
         }
 
-        fb = sFaultDrawer.fb + sFaultDrawer.w * yStart + xStart;
+        fb = faultprint_class.fb + faultprint_class.w * yStart + xStart;
         for (y = 0; y < ySize; y++) {
             for (x = 0; x < xSize; x++) {
                 *fb++ = color;
             }
-            fb += sFaultDrawer.w - xSize;
+            fb += faultprint_class.w - xSize;
         }
 
         osWritebackDCacheAll();
     }
 }
 
-void Fault_DrawChar(char c) {
+void faultprint_PrintCharacter(char c) {
     u16* fb;
     s32 x, y;
     const u32* dataPtr;
     u32 data;
-    s32 cursorX = sFaultDrawer.cursorX;
-    s32 cursorY = sFaultDrawer.cursorY;
-    const u32** fontData = &sFaultDrawer.fontData;
+    s32 cursorX = faultprint_class.cursorX;
+    s32 cursorY = faultprint_class.cursorY;
+    const u32** fontData = &faultprint_class.fontData;
     s32 shift = c % 4;
 
     dataPtr = &fontData[0][(((c / 8) * 16) + ((c & 4) >> 2))];
-    fb = sFaultDrawer.fb + (sFaultDrawer.w * cursorY) + cursorX;
+    fb = faultprint_class.fb + (faultprint_class.w * cursorY) + cursorX;
 
-    if ((sFaultDrawer.xStart <= cursorX) && ((sFaultDrawer.charW + cursorX - 1) <= sFaultDrawer.xEnd) &&
-        (sFaultDrawer.yStart <= cursorY) && ((sFaultDrawer.charH + cursorY - 1) <= sFaultDrawer.yEnd)) {
-        for (y = 0; y < sFaultDrawer.charH; y++) {
+    if ((faultprint_class.xStart <= cursorX) && ((faultprint_class.charW + cursorX - 1) <= faultprint_class.xEnd) &&
+        (faultprint_class.yStart <= cursorY) && ((faultprint_class.charH + cursorY - 1) <= faultprint_class.yEnd)) {
+        for (y = 0; y < faultprint_class.charH; y++) {
             u32 mask = 0x10000000 << shift;
 
             data = *dataPtr;
-            for (x = 0; x < sFaultDrawer.charW; x++) {
+            for (x = 0; x < faultprint_class.charW; x++) {
                 if (mask & data) {
-                    fb[x] = sFaultDrawer.foreColor;
-                } else if (sFaultDrawer.backColor & 1) {
-                    fb[x] = sFaultDrawer.backColor;
+                    fb[x] = faultprint_class.foreColor;
+                } else if (faultprint_class.backColor & 1) {
+                    fb[x] = faultprint_class.backColor;
                 }
                 mask >>= 4;
             }
-            fb += sFaultDrawer.w;
+            fb += faultprint_class.w;
             dataPtr += 2;
         }
     }
 }
 
-s32 Fault_ColorToPrintColor(u16 color) {
+s32 faultprint_ColorConvert(u16 color) {
     s32 i;
 
-    for (i = 0; i < ARRAY_COUNT(sFaultDrawer.printColors); i++) {
-        if (color == sFaultDrawer.printColors[i]) {
+    for (i = 0; i < ARRAY_COUNT(faultprint_class.printColors); i++) {
+        if (color == faultprint_class.printColors[i]) {
             return i;
         }
     }
     return -1;
 }
 
-void Fault_UpdatePrintColor(void) {
+void faultprint_SyncPrintColor(void) {
     s32 idx;
 
-    if (sFaultDrawer.osSyncPrintfEnabled) {
+    if (faultprint_class.osSyncPrintfEnabled) {
         osSyncPrintf(VT_RST);
 
-        idx = Fault_ColorToPrintColor(sFaultDrawer.foreColor);
-        if (idx >= 0 && idx < ARRAY_COUNT(sFaultDrawer.printColors) - 2) {
+        idx = faultprint_ColorConvert(faultprint_class.foreColor);
+        if (idx >= 0 && idx < ARRAY_COUNT(faultprint_class.printColors) - 2) {
             osSyncPrintf(VT_SGR("3%d"), idx);
         }
 
-        idx = Fault_ColorToPrintColor(sFaultDrawer.backColor);
-        if (idx >= 0 && idx < ARRAY_COUNT(sFaultDrawer.printColors) - 2) {
+        idx = faultprint_ColorConvert(faultprint_class.backColor);
+        if (idx >= 0 && idx < ARRAY_COUNT(faultprint_class.printColors) - 2) {
             osSyncPrintf(VT_SGR("4%d"), idx);
         }
     }
 }
 
-void Fault_SetForeColor(u16 color) {
-    sFaultDrawer.foreColor = color;
-    Fault_UpdatePrintColor();
+void faultprint_SetForegroundColor(u16 color) {
+    faultprint_class.foreColor = color;
+    faultprint_SyncPrintColor();
 }
 
-void Fault_SetBackColor(u16 color) {
-    sFaultDrawer.backColor = color;
-    Fault_UpdatePrintColor();
+void faultprint_SetBackgroundColor(u16 color) {
+    faultprint_class.backColor = color;
+    faultprint_SyncPrintColor();
 }
 
-void Fault_SetFontColor(u16 color) {
-    Fault_SetForeColor(color | 1); // force alpha to be set
+void faultprint_Color(u16 color) {
+    faultprint_SetForegroundColor(color | 1); // force alpha to be set
 }
 
-void Fault_SetCharPad(s8 padW, s8 padH) {
-    sFaultDrawer.charWPad = padW;
-    sFaultDrawer.charHPad = padH;
+void faultprint_SetMargin(s8 padW, s8 padH) {
+    faultprint_class.charWPad = padW;
+    faultprint_class.charHPad = padH;
 }
 
-void Fault_SetCursor(s32 x, s32 y) {
-    if (sFaultDrawer.osSyncPrintfEnabled) {
-        osSyncPrintf(VT_CUP("%d", "%d"), (y - sFaultDrawer.yStart) / (sFaultDrawer.charH + sFaultDrawer.charHPad),
-                     (x - sFaultDrawer.xStart) / (sFaultDrawer.charW + sFaultDrawer.charWPad));
+void faultprint_Locate(s32 x, s32 y) {
+    if (faultprint_class.osSyncPrintfEnabled) {
+        osSyncPrintf(VT_CUP("%d", "%d"), (y - faultprint_class.yStart) / (faultprint_class.charH + faultprint_class.charHPad),
+                     (x - faultprint_class.xStart) / (faultprint_class.charW + faultprint_class.charWPad));
     }
-    sFaultDrawer.cursorX = x;
-    sFaultDrawer.cursorY = y;
+    faultprint_class.cursorX = x;
+    faultprint_class.cursorY = y;
 }
 
-void Fault_FillScreen(void) {
-    if (sFaultDrawer.osSyncPrintfEnabled) {
+void faultprint_ClearScreen(void) {
+    if (faultprint_class.osSyncPrintfEnabled) {
         osSyncPrintf(VT_CLS);
     }
 
-    Fault_DrawRecImpl(sFaultDrawer.xStart, sFaultDrawer.yStart, sFaultDrawer.xEnd, sFaultDrawer.yEnd,
-                      sFaultDrawer.backColor | 1);
-    Fault_SetCursor(sFaultDrawer.xStart, sFaultDrawer.yStart);
+    faultprint_FillRectangle(faultprint_class.xStart, faultprint_class.yStart, faultprint_class.xEnd, faultprint_class.yEnd,
+                      faultprint_class.backColor | 1);
+    faultprint_Locate(faultprint_class.xStart, faultprint_class.yStart);
 }
 
-void* Fault_PrintCallback(void* arg, const char* str, size_t count) {
+void* faultprint_callback(void* arg, const char* str, size_t count) {
     for (; count != 0; count--, str++) {
         s32 curXStart;
         s32 curXEnd;
 
-        if (sFaultDrawer.escCode) {
-            sFaultDrawer.escCode = false;
+        if (faultprint_class.escCode) {
+            faultprint_class.escCode = false;
             if (*str > '0' && *str <= '9') {
-                Fault_SetForeColor(sFaultDrawer.printColors[*str - '0']);
+                faultprint_SetForegroundColor(faultprint_class.printColors[*str - '0']);
             }
 
-            curXStart = sFaultDrawer.cursorX;
-            curXEnd = sFaultDrawer.xEnd - sFaultDrawer.charW;
+            curXStart = faultprint_class.cursorX;
+            curXEnd = faultprint_class.xEnd - faultprint_class.charW;
         } else {
             switch (*str) {
                 case '\n':
-                    if (sFaultDrawer.osSyncPrintfEnabled) {
+                    if (faultprint_class.osSyncPrintfEnabled) {
                         osSyncPrintf("\n");
                     }
 
-                    sFaultDrawer.cursorX = sFaultDrawer.w;
-                    curXStart = sFaultDrawer.cursorX;
-                    curXEnd = sFaultDrawer.xEnd - sFaultDrawer.charW;
+                    faultprint_class.cursorX = faultprint_class.w;
+                    curXStart = faultprint_class.cursorX;
+                    curXEnd = faultprint_class.xEnd - faultprint_class.charW;
                     break;
                 case FAULT_ESC:
-                    sFaultDrawer.escCode = true;
-                    curXStart = sFaultDrawer.cursorX;
-                    curXEnd = sFaultDrawer.xEnd - sFaultDrawer.charW;
+                    faultprint_class.escCode = true;
+                    curXStart = faultprint_class.cursorX;
+                    curXEnd = faultprint_class.xEnd - faultprint_class.charW;
                     break;
                 default:
-                    if (sFaultDrawer.osSyncPrintfEnabled) {
+                    if (faultprint_class.osSyncPrintfEnabled) {
                         osSyncPrintf("%c", *str);
                     }
 
-                    Fault_DrawChar(*str);
-                    sFaultDrawer.cursorX += sFaultDrawer.charW + sFaultDrawer.charWPad;
+                    faultprint_PrintCharacter(*str);
+                    faultprint_class.cursorX += faultprint_class.charW + faultprint_class.charWPad;
 
-                    curXStart = sFaultDrawer.cursorX;
-                    curXEnd = sFaultDrawer.xEnd - sFaultDrawer.charW;
+                    curXStart = faultprint_class.cursorX;
+                    curXEnd = faultprint_class.xEnd - faultprint_class.charW;
                     break;
             }
         }
 
         if (curXEnd <= curXStart) {
-            sFaultDrawer.cursorX = sFaultDrawer.xStart;
-            sFaultDrawer.cursorY += sFaultDrawer.charH + sFaultDrawer.charHPad;
-            if (sFaultDrawer.yEnd - sFaultDrawer.charH <= sFaultDrawer.cursorY) {
-                if (sFaultDrawer.inputCallback) {
-                    sFaultDrawer.inputCallback();
-                    Fault_FillScreen();
+            faultprint_class.cursorX = faultprint_class.xStart;
+            faultprint_class.cursorY += faultprint_class.charH + faultprint_class.charHPad;
+            if (faultprint_class.yEnd - faultprint_class.charH <= faultprint_class.cursorY) {
+                if (faultprint_class.inputCallback) {
+                    faultprint_class.inputCallback();
+                    faultprint_ClearScreen();
                 }
-                sFaultDrawer.cursorY = sFaultDrawer.yStart;
+                faultprint_class.cursorY = faultprint_class.yStart;
             }
         }
     }
@@ -298,46 +298,46 @@ void* Fault_PrintCallback(void* arg, const char* str, size_t count) {
     return arg;
 }
 
-s32 Fault_VPrintf(const char* fmt, va_list args) {
-    return _Printf(Fault_PrintCallback, &sFaultDrawer, fmt, args);
+s32 faultprint_Vprintf(const char* fmt, va_list args) {
+    return _Printf(faultprint_callback, &faultprint_class, fmt, args);
 }
 
-s32 Fault_Printf(const char* fmt, ...) {
+s32 faultprint_Printf(const char* fmt, ...) {
     s32 ret;
     va_list args;
     va_start(args, fmt);
 
-    ret = Fault_VPrintf(fmt, args);
+    ret = faultprint_Vprintf(fmt, args);
 
     va_end(args);
     return ret;
 }
 
-void Fault_DrawText(s32 x, s32 y, const char* fmt, ...) {
+void faultprint_PosPrintf(s32 x, s32 y, const char* fmt, ...) {
     va_list args;
     va_start(args, fmt);
 
-    Fault_SetCursor(x, y);
-    Fault_VPrintf(fmt, args);
+    faultprint_Locate(x, y);
+    faultprint_Vprintf(fmt, args);
 
     va_end(args);
 }
 
-void Fault_SetDrawerFB(void* fb, u16 w, u16 h) {
-    sFaultDrawer.fb = fb;
-    sFaultDrawer.w = w;
-    sFaultDrawer.h = h;
+void faultprint_SetFrameBuffer(void* fb, u16 w, u16 h) {
+    faultprint_class.fb = fb;
+    faultprint_class.w = w;
+    faultprint_class.h = h;
 }
 
-void Fault_SetInputCallback(void (*callback)(void)) {
-    sFaultDrawer.inputCallback = callback;
+void faultprint_SetNextPageCallback(void (*callback)(void)) {
+    faultprint_class.inputCallback = callback;
 }
 
-void Fault_WritebackFBDCache(void) {
-    osWritebackDCache(sFaultDrawer.fb, sFaultDrawer.w * sFaultDrawer.h * sizeof(u16));
+void faultprint_Flush(void) {
+    osWritebackDCache(faultprint_class.fb, faultprint_class.w * faultprint_class.h * sizeof(u16));
 }
 
-void Fault_InitDrawer(void) {
-    bcopy(&sFaultDrawerDefault, &sFaultDrawer, sizeof(FaultDrawer));
-    sFaultDrawer.fb = (u16*)(PHYS_TO_K0(osMemSize) - sizeof(u16[SCREEN_HEIGHT][SCREEN_WIDTH]));
+void faultprint_Initial(void) {
+    bcopy(&default_faultprint, &faultprint_class, sizeof(FaultDrawer));
+    faultprint_class.fb = (u16*)(PHYS_TO_K0(osMemSize) - sizeof(u16[SCREEN_HEIGHT][SCREEN_WIDTH]));
 }

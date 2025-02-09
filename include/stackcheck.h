@@ -19,9 +19,9 @@ typedef struct StackEntry {
     /* 0x18 */ const char* name;
 } StackEntry;
 
-void StackCheck_Init(StackEntry* entry, void* stackBottom, void* stackTop, u32 initValue, s32 minSpace,
+void stackcheck_init(StackEntry* entry, void* stackBottom, void* stackTop, u32 initValue, s32 minSpace,
                      const char* name);
-void StackCheck_Cleanup(StackEntry* entry);
-u32 StackCheck_Check(StackEntry* entry);
+void stackcheck_cleanup(StackEntry* entry);
+u32 stackcheck_check_stack(StackEntry* entry);
 
 #endif

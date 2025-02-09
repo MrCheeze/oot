@@ -2,7 +2,7 @@
 #include "z64cutscene_commands.h"
 
 // clang-format off
-CutsceneData gDoorOfTimeOpeningCs[] = {
+CutsceneData tokinoma_sekiban_data[] = {
     CS_HEADER(18, 3000),
     CS_UNK_DATA_LIST(0x00000021, 1),
         CS_UNK_DATA(0x00010000, 0x0BB80000, 0x00000000, 0x00000000, 0xFFFFFFAA, 0xFFFFFFAE, 0x00000000, 0xFFFFFFAA, 0xFFFFFFAE, 0x00000000, 0x00000000, 0x00000000),

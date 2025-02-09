@@ -8,42 +8,42 @@
 #pragma increment_block_number "gc-eu:97 gc-eu-mq:97 gc-jp:97 gc-jp-ce:97 gc-jp-mq:97 gc-us:97 gc-us-mq:97 ique-cn:97" \
                                "ntsc-1.0:80 ntsc-1.1:80 ntsc-1.2:79 pal-1.0:80 pal-1.1:80 hiratsu3:97"
 
-s32 Math3D_LineVsLineClosestTwoPoints(Vec3f* lineAPointA, Vec3f* lineAPointB, Vec3f* lineBPointA, Vec3f* lineBPointB,
+s32 Math3D_2LineNear2Pos(Vec3f* lineAPointA, Vec3f* lineAPointB, Vec3f* lineBPointA, Vec3f* lineBPointB,
                                       Vec3f* lineAClosestToB, Vec3f* lineBClosestToA);
-s32 Math3D_TriLineIntersect(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx, f32 ny, f32 nz, f32 originDist, Vec3f* linePointA,
+s32 Math3DCheckTriangleCrossLine_xyz_t_cp(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx, f32 ny, f32 nz, f32 originDist, Vec3f* linePointA,
                             Vec3f* linePointB, Vec3f* intersect, s32 fromFront);
-s32 Math3D_PlaneVsPlaneNewLine(f32 planeAA, f32 planeAB, f32 planeAC, f32 planeADist, f32 planeBA, f32 planeBB,
+s32 Math3D2PlaneCrossLine(f32 planeAA, f32 planeAB, f32 planeAC, f32 planeADist, f32 planeBA, f32 planeBB,
                                f32 planeBC, f32 planeBDist, InfiniteLine* intersect);
-s32 Math3D_CirSquareVsTriSquare(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2, f32 centerX, f32 centerY, f32 radius);
-s32 Math3D_SphCubeVsTriCube(Vec3f* v0, Vec3f* v1, Vec3f* v2, Vec3f* center, f32 radius);
+s32 Math3DCheck3PointMinMaxAreaInside2D(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2, f32 centerX, f32 centerY, f32 radius);
+s32 Math3DCheck3PointMinMaxAreaInside3D(Vec3f* v0, Vec3f* v1, Vec3f* v2, Vec3f* center, f32 radius);
 
 /**
  * Creates an infinite line along the intersection of the plane defined from `planeAA`x + `planeAB`y + `planeAB`z +
  * `planeADist` = 0 and `planeBA`x + `planeBB`y + `planeBC`z + `planeBDist` = 0, and finds the closest point on that
  * intersection to the line segment `linePointA and linePointB`, outputs the intersection to `closestPoint`
  */
-s32 Math3D_PlaneVsLineSegClosestPoint(f32 planeAA, f32 planeAB, f32 planeAC, f32 planeADist, f32 planeBA, f32 planeBB,
+s32 Math3D_2PlaneLine_LineNearPos(f32 planeAA, f32 planeAB, f32 planeAC, f32 planeADist, f32 planeBA, f32 planeBB,
                                       f32 planeBC, f32 planeBDist, Vec3f* linePointA, Vec3f* linePointB,
                                       Vec3f* closestPoint) {
-    static InfiniteLine planeIntersectLine;
-    static Linef planeIntersectSeg;
+    static InfiniteLine l1;
+    static Linef ls1;
 
     Vec3f sp34; // unused
 
-    if (!Math3D_PlaneVsPlaneNewLine(planeAA, planeAB, planeAC, planeADist, planeBA, planeBB, planeBC, planeBDist,
-                                    &planeIntersectLine)) {
+    if (!Math3D2PlaneCrossLine(planeAA, planeAB, planeAC, planeADist, planeBA, planeBB, planeBC, planeBDist,
+                                    &l1)) {
         // The planes are parallel
         return false;
     }
 
     // create a line segment on the plane.
-    Math_Vec3f_Copy(&planeIntersectSeg.a, &planeIntersectLine.point);
-    planeIntersectSeg.b.x = (planeIntersectLine.dir.x * 100.0f) + planeIntersectLine.point.x;
-    planeIntersectSeg.b.y = (planeIntersectLine.dir.y * 100.0f) + planeIntersectLine.point.y;
-    planeIntersectSeg.b.z = (planeIntersectLine.dir.z * 100.0f) + planeIntersectLine.point.z;
+    xyz_t_move(&ls1.a, &l1.point);
+    ls1.b.x = (l1.dir.x * 100.0f) + l1.point.x;
+    ls1.b.y = (l1.dir.y * 100.0f) + l1.point.y;
+    ls1.b.z = (l1.dir.z * 100.0f) + l1.point.z;
 
-    // closestPoint is a point on planeIntersect, sp34 is a point on linePointA, linePointB
-    if (!Math3D_LineVsLineClosestTwoPoints(&planeIntersectSeg.a, &planeIntersectSeg.b, linePointA, linePointB,
+    // closestPoint is a point on p2cl, sp34 is a point on linePointA, linePointB
+    if (!Math3D_2LineNear2Pos(&ls1.a, &ls1.b, linePointA, linePointB,
                                            closestPoint, &sp34)) {
         return false;
     }
@@ -53,7 +53,7 @@ s32 Math3D_PlaneVsLineSegClosestPoint(f32 planeAA, f32 planeAB, f32 planeAC, f32
 /**
  * Finds the two points on lines A and B where the lines are closest together.
  */
-s32 Math3D_LineVsLineClosestTwoPoints(Vec3f* lineAPointA, Vec3f* lineAPointB, Vec3f* lineBPointA, Vec3f* lineBPointB,
+s32 Math3D_2LineNear2Pos(Vec3f* lineAPointA, Vec3f* lineAPointB, Vec3f* lineBPointA, Vec3f* lineBPointB,
                                       Vec3f* lineAClosestToB, Vec3f* lineBClosestToA) {
     f32 sqMag;
     f32 scaleB;
@@ -121,18 +121,18 @@ s32 Math3D_LineVsLineClosestTwoPoints(Vec3f* lineAPointA, Vec3f* lineAPointB, Ve
  * Determines the closest point on the line `line` to `pos`, by forming a line perpendicular from
  * `point` to `line` closest point is placed in `closestPoint`
  */
-void Math3D_LineClosestToPoint(InfiniteLine* line, Vec3f* pos, Vec3f* closestPoint) {
+void Math3D_lineVsPosSuisenCross(InfiniteLine* line, Vec3f* pos, Vec3f* closestPoint) {
     f32 dirVectorLengthSq;
     f32 t;
 
-    dirVectorLengthSq = Math3D_Vec3fMagnitudeSq(&line->dir);
+    dirVectorLengthSq = Math3DVecLengthSquare(&line->dir);
     if (IS_ZERO(dirVectorLengthSq)) {
         PRINTF_COLOR_WARNING();
         PRINTF(T("Math3D_lineVsPosSuisenCross():直線の長さがありません\n",
                  "Math3D_lineVsPosSuisenCross(): No straight line length\n"));
         PRINTF(T("cross = pos を返します。\n", "Returns cross = pos.\n"));
         PRINTF_RST();
-        Math_Vec3f_Copy(closestPoint, pos);
+        xyz_t_move(closestPoint, pos);
         //! @bug Missing early return
     }
 
@@ -144,7 +144,7 @@ void Math3D_LineClosestToPoint(InfiniteLine* line, Vec3f* pos, Vec3f* closestPoi
     closestPoint->z = (line->dir.z * t) + line->point.z;
 }
 
-void Math3D_FindPointOnPlaneIntersect(f32 planeAAxis1Norm, f32 planeAAxis2Norm, f32 planeBAxis1Norm,
+void Math2D2PlaneCrossLineProcWork(f32 planeAAxis1Norm, f32 planeAAxis2Norm, f32 planeBAxis1Norm,
                                       f32 planeBAxis2Norm, f32 axis3Direction, f32 planeADist, f32 planeBDist,
                                       f32* axis1Point, f32* axis2Point) {
     *axis1Point = ((planeAAxis2Norm * planeBDist) - (planeBAxis2Norm * planeADist)) / axis3Direction;
@@ -156,7 +156,7 @@ void Math3D_FindPointOnPlaneIntersect(f32 planeAAxis1Norm, f32 planeAAxis2Norm, 
  * `planeADist` = 0 and `planeBA`x + `planeBB`y + `planeBC`z + `planeBDist` = 0, and outputs the line to `intersect`.
  * Returns false if the planes are parallel.
  */
-s32 Math3D_PlaneVsPlaneNewLine(f32 planeAA, f32 planeAB, f32 planeAC, f32 planeADist, f32 planeBA, f32 planeBB,
+s32 Math3D2PlaneCrossLine(f32 planeAA, f32 planeAB, f32 planeAC, f32 planeADist, f32 planeBA, f32 planeBB,
                                f32 planeBC, f32 planeBDist, InfiniteLine* intersect) {
     char pad[4];
     Vec3f planeANormal;
@@ -168,7 +168,7 @@ s32 Math3D_PlaneVsPlaneNewLine(f32 planeAA, f32 planeAB, f32 planeAC, f32 planeA
     VEC_SET(planeANormal, planeAA, planeAB, planeAC);
     VEC_SET(planeBNormal, planeBA, planeBB, planeBC);
 
-    Math3D_Vec3f_Cross(&planeANormal, &planeBNormal, &intersect->dir);
+    Math3DVectorProduct2Vec(&planeANormal, &planeBNormal, &intersect->dir);
 
     if (IS_ZERO(intersect->dir.x) && IS_ZERO(intersect->dir.y) && IS_ZERO(intersect->dir.z)) {
         // planes are parallel
@@ -180,15 +180,15 @@ s32 Math3D_PlaneVsPlaneNewLine(f32 planeAA, f32 planeAB, f32 planeAC, f32 planeA
     dirZ = fabsf(intersect->dir.z);
 
     if ((dirX >= dirY) && (dirX >= dirZ)) {
-        Math3D_FindPointOnPlaneIntersect(planeAB, planeAC, planeBB, planeBC, intersect->dir.x, planeADist, planeBDist,
+        Math2D2PlaneCrossLineProcWork(planeAB, planeAC, planeBB, planeBC, intersect->dir.x, planeADist, planeBDist,
                                          &intersect->point.y, &intersect->point.z);
         intersect->point.x = 0.0f;
     } else if ((dirY >= dirX) && (dirY >= dirZ)) {
-        Math3D_FindPointOnPlaneIntersect(planeAC, planeAA, planeBC, planeBA, intersect->dir.y, planeADist, planeBDist,
+        Math2D2PlaneCrossLineProcWork(planeAC, planeAA, planeBC, planeBA, intersect->dir.y, planeADist, planeBDist,
                                          &intersect->point.z, &intersect->point.x);
         intersect->point.y = 0.0f;
     } else {
-        Math3D_FindPointOnPlaneIntersect(planeAA, planeAB, planeBA, planeBB, intersect->dir.z, planeADist, planeBDist,
+        Math2D2PlaneCrossLineProcWork(planeAA, planeAB, planeBA, planeBB, intersect->dir.z, planeADist, planeBDist,
                                          &intersect->point.x, &intersect->point.y);
         intersect->point.z = 0.0f;
     }
@@ -202,15 +202,15 @@ s32 Math3D_PlaneVsPlaneNewLine(f32 planeAA, f32 planeAB, f32 planeAC, f32 planeA
  * the point on the intersection line closest to `point` is placed in `closestPoint`
  * returns false if the planes are parallel.
  */
-s32 Math3D_PlaneVsPlaneVsLineClosestPoint(f32 planeAA, f32 planeAB, f32 planeAC, f32 planeADist, f32 planeBA,
+s32 Math3D2PlaneLinePosNearPos(f32 planeAA, f32 planeAB, f32 planeAC, f32 planeADist, f32 planeBA,
                                           f32 planeBB, f32 planeBC, f32 planeBDist, Vec3f* point, Vec3f* closestPoint) {
-    static InfiniteLine planeIntersect;
+    static InfiniteLine p2cl;
 
-    if (!Math3D_PlaneVsPlaneNewLine(planeAA, planeAB, planeAC, planeADist, planeBA, planeBB, planeBC, planeBDist,
-                                    &planeIntersect)) {
+    if (!Math3D2PlaneCrossLine(planeAA, planeAB, planeAC, planeADist, planeBA, planeBB, planeBC, planeBDist,
+                                    &p2cl)) {
         return false;
     }
-    Math3D_LineClosestToPoint(&planeIntersect, point, closestPoint);
+    Math3D_lineVsPosSuisenCross(&p2cl, point, closestPoint);
     return true;
 }
 
@@ -218,7 +218,7 @@ s32 Math3D_PlaneVsPlaneVsLineClosestPoint(f32 planeAA, f32 planeAB, f32 planeAC,
  * Finds a point on the line from starting point `v0`, and directional vector `dir`
  * which is `dist` length from the starting point.  Result is placed in `ret`
  */
-void Math3D_PointOnInfiniteLine(Vec3f* v0, Vec3f* dir, f32 dist, Vec3f* ret) {
+void Math3DInDivPos1(Vec3f* v0, Vec3f* dir, f32 dist, Vec3f* ret) {
     ret->x = (dir->x * dist) + v0->x;
     ret->y = (dir->y * dist) + v0->y;
     ret->z = (dir->z * dist) + v0->z;
@@ -228,20 +228,20 @@ void Math3D_PointOnInfiniteLine(Vec3f* v0, Vec3f* dir, f32 dist, Vec3f* ret) {
  * Splits the line segment from end points `v0` and `v1`, and splits that segment
  * by `ratio` of `v0`:`v1`, places the resulting point on the line in `ret`
  */
-void Math3D_LineSplitRatio(Vec3f* v0, Vec3f* v1, f32 ratio, Vec3f* ret) {
+void Math3DInDivPos2(Vec3f* v0, Vec3f* v1, f32 ratio, Vec3f* ret) {
     Vec3f diff;
 
-    Math_Vec3f_Diff(v1, v0, &diff);
-    Math3D_PointOnInfiniteLine(v0, &diff, ratio, ret);
+    xyz_t_sub(v1, v0, &diff);
+    Math3DInDivPos1(v0, &diff, ratio, ret);
 }
 
 /**
  * Calculates the cosine between vectors `a` and `b`
  */
-f32 Math3D_Cos(Vec3f* a, Vec3f* b) {
+f32 M3D_getCos(Vec3f* a, Vec3f* b) {
     f32 ret;
 
-    Math3D_CosOut(a, b, &ret);
+    M3D_getCos2(a, b, &ret);
     return ret;
 }
 
@@ -249,10 +249,10 @@ f32 Math3D_Cos(Vec3f* a, Vec3f* b) {
  * Calculates the cosine between vectors `a` and `b` and places the result in `ret`
  * returns true if the cosine cannot be calculated because the product of the magnitudes is zero
  */
-s32 Math3D_CosOut(Vec3f* a, Vec3f* b, f32* dst) {
+s32 M3D_getCos2(Vec3f* a, Vec3f* b, f32* dst) {
     f32 magProduct;
 
-    magProduct = Math3D_Vec3fMagnitude(a) * Math3D_Vec3fMagnitude(b);
+    magProduct = Math3DVecLength(a) * Math3DVecLength(b);
     if (IS_ZERO(magProduct)) {
         *dst = 0.0f;
         return true;
@@ -262,10 +262,10 @@ s32 Math3D_CosOut(Vec3f* a, Vec3f* b, f32* dst) {
 }
 
 /**
- * Reflects vector `vec` across the normal vector `normal`, reflection vector is placed in
+ * Reflects vector `vec` across the mult_vec vector `mult_vec`, reflection vector is placed in
  * `reflVec`
  */
-void Math3D_Vec3fReflect(Vec3f* vec, Vec3f* normal, Vec3f* reflVec) {
+void M3D_getRefVec(Vec3f* vec, Vec3f* mult_vec, Vec3f* reflVec) {
 
     f32 normScaleY;
     Vec3f negVec;
@@ -277,11 +277,11 @@ void Math3D_Vec3fReflect(Vec3f* vec, Vec3f* normal, Vec3f* reflVec) {
     negVec.y = vec->y * -1.0f;
     negVec.z = vec->z * -1.0f;
 
-    vecDotNorm = Math3D_Cos(&negVec, normal);
+    vecDotNorm = M3D_getCos(&negVec, mult_vec);
 
-    normScaleX = normal->x * vecDotNorm;
-    normScaleY = normal->y * vecDotNorm;
-    normScaleZ = normal->z * vecDotNorm;
+    normScaleX = mult_vec->x * vecDotNorm;
+    normScaleY = mult_vec->y * vecDotNorm;
+    normScaleZ = mult_vec->z * vecDotNorm;
 
     reflVec->x = ((normScaleX + vec->x) + (normScaleX + vec->x)) + negVec.x;
     reflVec->y = ((normScaleY + vec->y) + (normScaleY + vec->y)) + negVec.y;
@@ -292,7 +292,7 @@ void Math3D_Vec3fReflect(Vec3f* vec, Vec3f* normal, Vec3f* reflVec) {
  * Checks if the point (`x`,`y`) is contained within the square formed from (`upperLeftX`,`upperLeftY`) to
  * (`lowerRightX`,`lowerRightY`)
  */
-s32 Math3D_PointInSquare2D(f32 upperLeftX, f32 lowerRightX, f32 upperLeftY, f32 lowerRightY, f32 x, f32 y) {
+s32 Math3D_Check2DInArea(f32 upperLeftX, f32 lowerRightX, f32 upperLeftY, f32 lowerRightY, f32 x, f32 y) {
     if (x >= upperLeftX && x <= lowerRightX && y >= upperLeftY && y <= lowerRightY) {
         return true;
     }
@@ -304,7 +304,7 @@ s32 Math3D_PointInSquare2D(f32 upperLeftX, f32 lowerRightX, f32 upperLeftY, f32 
  * touches any portion of the square formed around the triangle with vertices (`x0`,`y0`), (`x1`,`y1`),
  * and (`x2`,`y2`)
  */
-s32 Math3D_CirSquareVsTriSquare(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2, f32 centerX, f32 centerY, f32 radius) {
+s32 Math3DCheck3PointMinMaxAreaInside2D(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2, f32 centerX, f32 centerY, f32 radius) {
     f32 minX;
     f32 maxX;
     f32 minY;
@@ -349,7 +349,7 @@ s32 Math3D_CirSquareVsTriSquare(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2, 
  * has any portion touching the cube formed around the sphere with center `center`
  * and radius of `radius`
  */
-s32 Math3D_SphCubeVsTriCube(Vec3f* v0, Vec3f* v1, Vec3f* v2, Vec3f* center, f32 radius) {
+s32 Math3DCheck3PointMinMaxAreaInside3D(Vec3f* v0, Vec3f* v1, Vec3f* v2, Vec3f* center, f32 radius) {
     f32 minX;
     f32 maxX;
     f32 minY;
@@ -408,121 +408,121 @@ s32 Math3D_SphCubeVsTriCube(Vec3f* v0, Vec3f* v1, Vec3f* v2, Vec3f* center, f32 
 /**
  * Returns the distance squared between `a` and `b` on a single axis
  */
-f32 Math3D_Dist1DSq(f32 a, f32 b) {
+f32 Math3DVecLengthSquare2D(f32 a, f32 b) {
     return SQ(a) + SQ(b);
 }
 
 /**
  * Returns the distance between `a` and `b` on a single axis
  */
-f32 Math3D_Dist1D(f32 a, f32 b) {
-    return sqrtf(Math3D_Dist1DSq(a, b));
+f32 Math3DVecLength2D(f32 a, f32 b) {
+    return sqrtf(Math3DVecLengthSquare2D(a, b));
 }
 
 /**
  * Returns the distance squared between (`x0`,`y0`) and (`x1`,`x2`)
  */
-f32 Math3D_Dist2DSq(f32 x0, f32 y0, f32 x1, f32 y1) {
-    return Math3D_Dist1DSq(x0 - x1, y0 - y1);
+f32 Math3DLengthSquare2D(f32 x0, f32 y0, f32 x1, f32 y1) {
+    return Math3DVecLengthSquare2D(x0 - x1, y0 - y1);
 }
 
 /**
  * Returns the distance between points (`x0`,`y0`) and (`x1`,`y1`)
  */
-f32 Math3D_Dist2D(f32 x0, f32 y0, f32 x1, f32 y1) {
-    return sqrtf(Math3D_Dist2DSq(x0, y0, x1, y1));
+f32 Math3DLength2D(f32 x0, f32 y0, f32 x1, f32 y1) {
+    return sqrtf(Math3DLengthSquare2D(x0, y0, x1, y1));
 }
 
 /**
  * Returns the magnitude (length) squared of `vec`
  */
-f32 Math3D_Vec3fMagnitudeSq(Vec3f* vec) {
+f32 Math3DVecLengthSquare(Vec3f* vec) {
     return SQ(vec->x) + SQ(vec->y) + SQ(vec->z);
 }
 
 /**
  * Returns the magnitude (length) of `vec`
  */
-f32 Math3D_Vec3fMagnitude(Vec3f* vec) {
-    return sqrt(Math3D_Vec3fMagnitudeSq(vec));
+f32 Math3DVecLength(Vec3f* vec) {
+    return sqrt(Math3DVecLengthSquare(vec));
 }
 
 /**
  * Returns the distance between `a` and `b` squared.
  */
-f32 Math3D_Vec3fDistSq(Vec3f* a, Vec3f* b) {
+f32 Math3DLengthSquare(Vec3f* a, Vec3f* b) {
     Vec3f diff;
 
-    Math_Vec3f_Diff(a, b, &diff);
-    return Math3D_Vec3fMagnitudeSq(&diff);
+    xyz_t_sub(a, b, &diff);
+    return Math3DVecLengthSquare(&diff);
 }
 
 /*
  * Calculates the distance between points `a` and `b`
  */
-f32 Math3D_Vec3f_DistXYZ(Vec3f* a, Vec3f* b) {
-    return Math_Vec3f_DistXYZ(a, b);
+f32 Math3DLength(Vec3f* a, Vec3f* b) {
+    return search_position_distance(a, b);
 }
 
 /*
  * Calculates the distance between `a` and `b`.
  */
-f32 Math3D_DistXYZ16toF(Vec3s* a, Vec3f* b) {
+f32 Math3DLength_s_f(Vec3s* a, Vec3f* b) {
     Vec3f diff;
 
     diff.x = a->x - b->x;
     diff.y = a->y - b->y;
     diff.z = a->z - b->z;
-    return Math3D_Vec3fMagnitude(&diff);
+    return Math3DVecLength(&diff);
 }
 
 /**
  * Gets the Z portion of the cross product of vectors `a - (`dx`,`dy`,z) and `b` - (`dx`,`dy`,z)
  */
-f32 Math3D_Vec3fDiff_CrossZ(Vec3f* a, Vec3f* b, f32 dx, f32 dy) {
+f32 Math3DVectorProductXY(Vec3f* a, Vec3f* b, f32 dx, f32 dy) {
     return ((a->x - dx) * (b->y - dy)) - ((a->y - dy) * (b->x - dx));
 }
 
 /**
  * Gets the X portion of the cross product of vectors `a - (x,`dy`,`dz`) and `b` - (x,`dy`,`dz`)
  */
-f32 Math3D_Vec3fDiff_CrossX(Vec3f* a, Vec3f* b, f32 dy, f32 dz) {
+f32 Math3DVectorProductYZ(Vec3f* a, Vec3f* b, f32 dy, f32 dz) {
     return ((a->y - dy) * (b->z - dz)) - ((a->z - dz) * (b->y - dy));
 }
 
 /**
  * Gets the Y portion of the cross product of vectors `a - (`dx`,y,`dz`) and `b` - (`dx`,y,`dz`)
  */
-f32 Math3D_Vec3fDiff_CrossY(Vec3f* a, Vec3f* b, f32 dz, f32 dx) {
+f32 Math3DVectorProductZX(Vec3f* a, Vec3f* b, f32 dz, f32 dx) {
     return ((a->z - dz) * (b->x - dx)) - ((a->x - dx) * (b->z - dz));
 }
 
 /**
  * Gets the Cross Product of vectors `a` and `b` and places the result in `ret`
  */
-void Math3D_Vec3f_Cross(Vec3f* a, Vec3f* b, Vec3f* ret) {
+void Math3DVectorProduct2Vec(Vec3f* a, Vec3f* b, Vec3f* ret) {
     ret->x = (a->y * b->z) - (a->z * b->y);
     ret->y = (a->z * b->x) - (a->x * b->z);
     ret->z = (a->x * b->y) - (a->y * b->x);
 }
 
 /*
- * Calculates the normal vector to a surface with sides `vb` - `va` and `vc` - `va`
- * outputs the normal to `normal`
+ * Calculates the mult_vec vector to a surface with sides `vb` - `va` and `vc` - `va`
+ * outputs the mult_vec to `mult_vec`
  */
-void Math3D_SurfaceNorm(Vec3f* va, Vec3f* vb, Vec3f* vc, Vec3f* normal) {
-    static Vec3f abDiff;
-    static Vec3f acDiff;
+void Math3DVectorProductXYZ(Vec3f* va, Vec3f* vb, Vec3f* vc, Vec3f* mult_vec) {
+    static Vec3f vec01;
+    static Vec3f vec02;
 
-    Math_Vec3f_Diff(vb, va, &abDiff);
-    Math_Vec3f_Diff(vc, va, &acDiff);
-    Math3D_Vec3f_Cross(&abDiff, &acDiff, normal);
+    xyz_t_sub(vb, va, &vec01);
+    xyz_t_sub(vc, va, &vec02);
+    Math3DVectorProduct2Vec(&vec01, &vec02, mult_vec);
 }
 
 /**
  * Creates flags relative to the faces of a cube.
  */
-s32 Math3D_PointRelativeToCubeFaces(Vec3f* point, Vec3f* min, Vec3f* max) {
+s32 Math3DCheckBoxPos_CheckPosition_xyz_t(Vec3f* point, Vec3f* min, Vec3f* max) {
     s32 ret = 0;
 
     if (point->x > max->x) {
@@ -555,7 +555,7 @@ s32 Math3D_PointRelativeToCubeFaces(Vec3f* point, Vec3f* min, Vec3f* max) {
 /**
  * Creates flags of `point` relative to the edges of a cube
  */
-s32 Math3D_PointRelativeToCubeEdges(Vec3f* point, Vec3f* min, Vec3f* max) {
+s32 Math3DCheckBoxEdgePlane_Bevel2DCheck_xyz_t(Vec3f* point, Vec3f* min, Vec3f* max) {
     s32 ret = 0;
 
     if ((-min->x + max->y) < (-point->x + point->y)) {
@@ -611,7 +611,7 @@ s32 Math3D_PointRelativeToCubeEdges(Vec3f* point, Vec3f* min, Vec3f* max) {
 /**
  * Creates flags for `point` relative to the vertices of a cube
  */
-s32 Math3D_PointRelativeToCubeVertices(Vec3f* point, Vec3f* min, Vec3f* max) {
+s32 Math3DCheckBoxEdgePlane_Bevel3DCheck_xyz_t(Vec3f* point, Vec3f* min, Vec3f* max) {
     s32 ret = 0;
 
     if ((max->x + max->y + max->z) < (point->x + point->y + point->z)) {
@@ -652,21 +652,21 @@ s32 Math3D_PointRelativeToCubeVertices(Vec3f* point, Vec3f* min, Vec3f* max) {
 /**
  * Checks if a line segment with endpoints `a` and `b` intersect a cube
  */
-s32 Math3D_LineVsCube(Vec3f* min, Vec3f* max, Vec3f* a, Vec3f* b) {
-    static Vec3f triVtx0;
-    static Vec3f triVtx1;
-    static Vec3f triVtx2;
-    static Vec3f intersectPoint;
+s32 Math3DCheckBoxCrossLine_xyz_t(Vec3f* min, Vec3f* max, Vec3f* a, Vec3f* b) {
+    static Vec3f tp0;
+    static Vec3f tp1;
+    static Vec3f tp2;
+    static Vec3f cross_pos;
 
     s32 flags[2];
 
     flags[0] = flags[1] = 0;
-    flags[0] = Math3D_PointRelativeToCubeFaces(a, min, max);
+    flags[0] = Math3DCheckBoxPos_CheckPosition_xyz_t(a, min, max);
     if (!flags[0]) {
         return true;
     }
 
-    flags[1] = Math3D_PointRelativeToCubeFaces(b, min, max);
+    flags[1] = Math3DCheckBoxPos_CheckPosition_xyz_t(b, min, max);
     if (!flags[1]) {
         return true;
     }
@@ -675,173 +675,173 @@ s32 Math3D_LineVsCube(Vec3f* min, Vec3f* max, Vec3f* a, Vec3f* b) {
         return false;
     }
 
-    flags[0] |= (Math3D_PointRelativeToCubeEdges(a, min, max) << 8);
-    flags[1] |= (Math3D_PointRelativeToCubeEdges(b, min, max) << 8);
+    flags[0] |= (Math3DCheckBoxEdgePlane_Bevel2DCheck_xyz_t(a, min, max) << 8);
+    flags[1] |= (Math3DCheckBoxEdgePlane_Bevel2DCheck_xyz_t(b, min, max) << 8);
     if (flags[0] & flags[1]) {
         return false;
     }
 
-    flags[0] |= (Math3D_PointRelativeToCubeVertices(a, min, max) << 0x18);
-    flags[1] |= (Math3D_PointRelativeToCubeVertices(b, min, max) << 0x18);
+    flags[0] |= (Math3DCheckBoxEdgePlane_Bevel3DCheck_xyz_t(a, min, max) << 0x18);
+    flags[1] |= (Math3DCheckBoxEdgePlane_Bevel3DCheck_xyz_t(b, min, max) << 0x18);
     if (flags[0] & flags[1]) {
         return false;
     }
 
     // face 1
-    triVtx0.x = min->x;
-    triVtx0.y = min->y;
-    triVtx0.z = min->z;
-    triVtx1.x = min->x;
-    triVtx1.y = min->y;
-    triVtx1.z = max->z;
-    triVtx2.x = min->x;
-    triVtx2.y = max->y;
-    triVtx2.z = max->z;
-    if (Math3D_TriLineIntersect(&triVtx0, &triVtx1, &triVtx2, -1.0f, 0.0f, 0.0f, min->x, a, b, &intersectPoint, 0)) {
+    tp0.x = min->x;
+    tp0.y = min->y;
+    tp0.z = min->z;
+    tp1.x = min->x;
+    tp1.y = min->y;
+    tp1.z = max->z;
+    tp2.x = min->x;
+    tp2.y = max->y;
+    tp2.z = max->z;
+    if (Math3DCheckTriangleCrossLine_xyz_t_cp(&tp0, &tp1, &tp2, -1.0f, 0.0f, 0.0f, min->x, a, b, &cross_pos, 0)) {
         return true;
     }
 
-    triVtx0.x = min->x;
-    triVtx0.y = min->y;
-    triVtx0.z = min->z;
-    triVtx1.x = min->x;
-    triVtx1.y = max->y;
-    triVtx1.z = max->z;
-    triVtx2.x = min->x;
-    triVtx2.y = max->y;
-    triVtx2.z = min->z;
-    if (Math3D_TriLineIntersect(&triVtx0, &triVtx1, &triVtx2, -1.0f, 0.0f, 0.0f, min->x, a, b, &intersectPoint, 0)) {
+    tp0.x = min->x;
+    tp0.y = min->y;
+    tp0.z = min->z;
+    tp1.x = min->x;
+    tp1.y = max->y;
+    tp1.z = max->z;
+    tp2.x = min->x;
+    tp2.y = max->y;
+    tp2.z = min->z;
+    if (Math3DCheckTriangleCrossLine_xyz_t_cp(&tp0, &tp1, &tp2, -1.0f, 0.0f, 0.0f, min->x, a, b, &cross_pos, 0)) {
         return true;
     }
 
     // face 2
-    triVtx0.x = min->x;
-    triVtx0.y = max->y;
-    triVtx0.z = max->z;
-    triVtx1.x = min->x;
-    triVtx1.y = min->y;
-    triVtx1.z = max->z;
-    triVtx2.x = max->x;
-    triVtx2.y = max->y;
-    triVtx2.z = max->z;
-    if (Math3D_TriLineIntersect(&triVtx0, &triVtx1, &triVtx2, 0.0f, 0.0f, 1.0f, -max->z, a, b, &intersectPoint, 0)) {
+    tp0.x = min->x;
+    tp0.y = max->y;
+    tp0.z = max->z;
+    tp1.x = min->x;
+    tp1.y = min->y;
+    tp1.z = max->z;
+    tp2.x = max->x;
+    tp2.y = max->y;
+    tp2.z = max->z;
+    if (Math3DCheckTriangleCrossLine_xyz_t_cp(&tp0, &tp1, &tp2, 0.0f, 0.0f, 1.0f, -max->z, a, b, &cross_pos, 0)) {
         return true;
     }
-    triVtx0.x = max->x;
-    triVtx0.y = max->y;
-    triVtx0.z = max->z;
-    triVtx1.x = min->x;
-    triVtx1.y = min->y;
-    triVtx1.z = max->z;
-    triVtx2.x = max->x;
-    //! @bug trVtx1.y should be triVtx2.y, prevents a tri on the cube from being checked.
-    triVtx1.y = min->y;
-    triVtx2.z = max->z;
-    if (Math3D_TriLineIntersect(&triVtx0, &triVtx1, &triVtx2, 0.0f, 0.0f, 1.0f, -max->z, a, b, &intersectPoint, 0)) {
+    tp0.x = max->x;
+    tp0.y = max->y;
+    tp0.z = max->z;
+    tp1.x = min->x;
+    tp1.y = min->y;
+    tp1.z = max->z;
+    tp2.x = max->x;
+    //! @bug trVtx1.y should be tp2.y, prevents a tri on the cube from being checked.
+    tp1.y = min->y;
+    tp2.z = max->z;
+    if (Math3DCheckTriangleCrossLine_xyz_t_cp(&tp0, &tp1, &tp2, 0.0f, 0.0f, 1.0f, -max->z, a, b, &cross_pos, 0)) {
         return true;
     }
 
     // face 3
-    triVtx0.x = max->x;
-    triVtx0.y = max->y;
-    triVtx0.z = max->z;
-    triVtx1.x = min->x;
-    triVtx1.y = max->y;
-    triVtx1.z = min->z;
-    triVtx2.x = min->x;
-    triVtx2.y = max->y;
-    triVtx2.z = max->z;
-    if (Math3D_TriLineIntersect(&triVtx0, &triVtx1, &triVtx2, 0.0f, 1.0f, 0.0f, -max->y, a, b, &intersectPoint, 0)) {
+    tp0.x = max->x;
+    tp0.y = max->y;
+    tp0.z = max->z;
+    tp1.x = min->x;
+    tp1.y = max->y;
+    tp1.z = min->z;
+    tp2.x = min->x;
+    tp2.y = max->y;
+    tp2.z = max->z;
+    if (Math3DCheckTriangleCrossLine_xyz_t_cp(&tp0, &tp1, &tp2, 0.0f, 1.0f, 0.0f, -max->y, a, b, &cross_pos, 0)) {
         return true;
     }
-    triVtx0.x = max->x;
-    triVtx0.y = max->y;
-    triVtx0.z = max->z;
-    triVtx1.x = max->x;
-    triVtx1.y = max->y;
-    triVtx1.z = min->z;
-    triVtx2.x = min->x;
-    triVtx2.y = max->y;
-    triVtx2.z = min->z;
-    if (Math3D_TriLineIntersect(&triVtx0, &triVtx1, &triVtx2, 0.0f, 1.0f, 0.0f, -max->y, a, b, &intersectPoint, 0)) {
+    tp0.x = max->x;
+    tp0.y = max->y;
+    tp0.z = max->z;
+    tp1.x = max->x;
+    tp1.y = max->y;
+    tp1.z = min->z;
+    tp2.x = min->x;
+    tp2.y = max->y;
+    tp2.z = min->z;
+    if (Math3DCheckTriangleCrossLine_xyz_t_cp(&tp0, &tp1, &tp2, 0.0f, 1.0f, 0.0f, -max->y, a, b, &cross_pos, 0)) {
         return true;
     }
 
     // face 4
-    triVtx0.x = min->x;
-    triVtx0.y = min->y;
-    triVtx0.z = min->z;
-    triVtx1.x = min->x;
-    triVtx1.y = max->y;
-    triVtx1.z = min->z;
-    triVtx2.x = max->x;
-    triVtx2.y = max->y;
-    triVtx2.z = min->z;
-    if (Math3D_TriLineIntersect(&triVtx0, &triVtx1, &triVtx2, 0.0f, 0.0f, -1.0f, min->z, a, b, &intersectPoint, 0)) {
+    tp0.x = min->x;
+    tp0.y = min->y;
+    tp0.z = min->z;
+    tp1.x = min->x;
+    tp1.y = max->y;
+    tp1.z = min->z;
+    tp2.x = max->x;
+    tp2.y = max->y;
+    tp2.z = min->z;
+    if (Math3DCheckTriangleCrossLine_xyz_t_cp(&tp0, &tp1, &tp2, 0.0f, 0.0f, -1.0f, min->z, a, b, &cross_pos, 0)) {
         return true;
     }
-    triVtx0.x = min->x;
-    triVtx0.y = min->y;
-    triVtx0.z = min->z;
-    triVtx1.x = max->x;
-    triVtx1.y = max->y;
-    triVtx1.z = min->z;
-    triVtx2.x = max->x;
-    triVtx2.y = min->y;
-    triVtx2.z = min->z;
+    tp0.x = min->x;
+    tp0.y = min->y;
+    tp0.z = min->z;
+    tp1.x = max->x;
+    tp1.y = max->y;
+    tp1.z = min->z;
+    tp2.x = max->x;
+    tp2.y = min->y;
+    tp2.z = min->z;
 
     // face 5
-    if (Math3D_TriLineIntersect(&triVtx0, &triVtx1, &triVtx2, 0.0f, 0.0f, -1.0f, min->z, a, b, &intersectPoint, 0)) {
+    if (Math3DCheckTriangleCrossLine_xyz_t_cp(&tp0, &tp1, &tp2, 0.0f, 0.0f, -1.0f, min->z, a, b, &cross_pos, 0)) {
         return true;
     }
-    triVtx0.x = min->x;
-    triVtx0.y = min->y;
-    triVtx0.z = min->z;
-    triVtx1.x = max->x;
-    triVtx1.y = min->y;
-    triVtx1.z = min->z;
-    triVtx2.x = max->x;
-    triVtx2.y = min->y;
-    triVtx2.z = max->z;
-    if (Math3D_TriLineIntersect(&triVtx0, &triVtx1, &triVtx2, 0.0f, -1.0f, 0.0f, min->y, a, b, &intersectPoint, 0)) {
+    tp0.x = min->x;
+    tp0.y = min->y;
+    tp0.z = min->z;
+    tp1.x = max->x;
+    tp1.y = min->y;
+    tp1.z = min->z;
+    tp2.x = max->x;
+    tp2.y = min->y;
+    tp2.z = max->z;
+    if (Math3DCheckTriangleCrossLine_xyz_t_cp(&tp0, &tp1, &tp2, 0.0f, -1.0f, 0.0f, min->y, a, b, &cross_pos, 0)) {
         return true;
     }
-    triVtx0.x = min->x;
-    triVtx0.y = min->y;
-    triVtx0.z = min->z;
-    triVtx1.x = max->x;
-    triVtx1.y = min->y;
-    triVtx1.z = max->z;
-    triVtx2.x = min->x;
-    triVtx2.y = min->y;
-    triVtx2.z = max->z;
+    tp0.x = min->x;
+    tp0.y = min->y;
+    tp0.z = min->z;
+    tp1.x = max->x;
+    tp1.y = min->y;
+    tp1.z = max->z;
+    tp2.x = min->x;
+    tp2.y = min->y;
+    tp2.z = max->z;
 
     // face 6
-    if (Math3D_TriLineIntersect(&triVtx0, &triVtx1, &triVtx2, 0.0f, -1.0f, 0.0f, min->y, a, b, &intersectPoint, 0)) {
+    if (Math3DCheckTriangleCrossLine_xyz_t_cp(&tp0, &tp1, &tp2, 0.0f, -1.0f, 0.0f, min->y, a, b, &cross_pos, 0)) {
         return true;
     }
-    triVtx0.x = max->x;
-    triVtx0.y = max->y;
-    triVtx0.z = max->z;
-    triVtx1.x = max->x;
-    triVtx1.y = min->y;
-    triVtx1.z = min->z;
-    triVtx2.x = max->x;
-    triVtx2.y = max->y;
-    triVtx2.z = min->z;
-    if (Math3D_TriLineIntersect(&triVtx0, &triVtx1, &triVtx2, 1.0f, 0.0f, 0.0f, -max->x, a, b, &intersectPoint, 0)) {
+    tp0.x = max->x;
+    tp0.y = max->y;
+    tp0.z = max->z;
+    tp1.x = max->x;
+    tp1.y = min->y;
+    tp1.z = min->z;
+    tp2.x = max->x;
+    tp2.y = max->y;
+    tp2.z = min->z;
+    if (Math3DCheckTriangleCrossLine_xyz_t_cp(&tp0, &tp1, &tp2, 1.0f, 0.0f, 0.0f, -max->x, a, b, &cross_pos, 0)) {
         return true;
     }
-    triVtx0.x = max->x;
-    triVtx0.y = max->y;
-    triVtx0.z = max->z;
-    triVtx1.x = max->x;
-    triVtx1.y = min->y;
-    triVtx1.z = max->z;
-    triVtx2.x = max->x;
-    triVtx2.y = min->y;
-    triVtx2.z = min->z;
-    if (Math3D_TriLineIntersect(&triVtx0, &triVtx1, &triVtx2, 1.0f, 0.0f, 0.0f, -max->x, a, b, &intersectPoint, 0)) {
+    tp0.x = max->x;
+    tp0.y = max->y;
+    tp0.z = max->z;
+    tp1.x = max->x;
+    tp1.y = min->y;
+    tp1.z = max->z;
+    tp2.x = max->x;
+    tp2.y = min->y;
+    tp2.z = min->z;
+    if (Math3DCheckTriangleCrossLine_xyz_t_cp(&tp0, &tp1, &tp2, 1.0f, 0.0f, 0.0f, -max->x, a, b, &cross_pos, 0)) {
         return true;
     }
 
@@ -851,34 +851,34 @@ s32 Math3D_LineVsCube(Vec3f* min, Vec3f* max, Vec3f* a, Vec3f* b) {
 /**
  * Checks if a line segment with endpoints `a` and `b` intersect a cube
  */
-s32 Math3D_LineVsCubeShort(Vec3s* min, Vec3s* max, Vec3s* a, Vec3s* b) {
-    static Vec3f minF;
-    static Vec3f maxF;
-    static Vec3f aF;
-    static Vec3f bF;
+s32 Math3DCheckBoxCrossLine(Vec3s* min, Vec3s* max, Vec3s* a, Vec3s* b) {
+    static Vec3f min_p;
+    static Vec3f max_p;
+    static Vec3f lps_p;
+    static Vec3f lpe_p;
 
-    minF.x = min->x;
-    minF.y = min->y;
-    minF.z = min->z;
-    maxF.x = max->x;
-    maxF.y = max->y;
-    maxF.z = max->z;
-    aF.x = a->x;
-    aF.y = a->y;
-    aF.z = a->z;
-    bF.x = b->x;
-    bF.y = b->y;
-    bF.z = b->z;
-    return Math3D_LineVsCube(&minF, &maxF, &aF, &bF);
+    min_p.x = min->x;
+    min_p.y = min->y;
+    min_p.z = min->z;
+    max_p.x = max->x;
+    max_p.y = max->y;
+    max_p.z = max->z;
+    lps_p.x = a->x;
+    lps_p.y = a->y;
+    lps_p.z = a->z;
+    lpe_p.x = b->x;
+    lpe_p.y = b->y;
+    lpe_p.z = b->z;
+    return Math3DCheckBoxCrossLine_xyz_t(&min_p, &max_p, &lps_p, &lpe_p);
 }
 
 /**
  * Rotates the xz plane around the y axis `angle` degrees.
  * outputs the plane equation `a``pointOnPlane->x` + 0y + `c``pointOnPlane->z`+`d` = 0
  */
-void Math3D_RotateXZPlane(Vec3f* pointOnPlane, s16 angle, f32* a, f32* c, f32* d) {
-    *a = Math_SinS(angle) * 32767.0f;
-    *c = Math_CosS(angle) * 32767.0f;
+void Math3DPlanePosAngleY(Vec3f* pointOnPlane, s16 angle, f32* a, f32* c, f32* d) {
+    *a = sin_s(angle) * 32767.0f;
+    *c = cos_s(angle) * 32767.0f;
     *d = -((*a * pointOnPlane->x) + (*c * pointOnPlane->z));
 }
 
@@ -887,19 +887,19 @@ void Math3D_RotateXZPlane(Vec3f* pointOnPlane, s16 angle, f32* a, f32* c, f32* d
  * `nx`, `ny`, and `nz`.  Distance from the origin is output to `originDist`
  * Satisfies the plane equation NxVx + NyVy + NzVz + D = 0
  */
-void Math3D_DefPlane(Vec3f* va, Vec3f* vb, Vec3f* vc, f32* nx, f32* ny, f32* nz, f32* originDist) {
-    static Vec3f normal;
+void Math3DPlane(Vec3f* va, Vec3f* vb, Vec3f* vc, f32* nx, f32* ny, f32* nz, f32* originDist) {
+    static Vec3f mult_vec;
 
     f32 normMagnitude;
     f32 normMagInv;
 
-    Math3D_SurfaceNorm(va, vb, vc, &normal);
-    normMagnitude = sqrtf(SQ(normal.x) + SQ(normal.y) + SQ(normal.z));
+    Math3DVectorProductXYZ(va, vb, vc, &mult_vec);
+    normMagnitude = sqrtf(SQ(mult_vec.x) + SQ(mult_vec.y) + SQ(mult_vec.z));
     if (!IS_ZERO(normMagnitude)) {
         normMagInv = 1.0f / normMagnitude;
-        *nx = normal.x * normMagInv;
-        *ny = normal.y * normMagInv;
-        *nz = normal.z * normMagInv;
+        *nx = mult_vec.x * normMagInv;
+        *ny = mult_vec.y * normMagInv;
+        *nz = mult_vec.z * normMagInv;
         *originDist = -((*nx * va->x) + (*ny * va->y) + (*nz * va->z));
     } else {
         *originDist = 0.0f;
@@ -912,14 +912,14 @@ void Math3D_DefPlane(Vec3f* va, Vec3f* vb, Vec3f* vc, f32* nx, f32* ny, f32* nz,
 /*
  * Returns the answer to the plane equation with elements specified by arguments.
  */
-f32 Math3D_Planef(f32 nx, f32 ny, f32 nz, f32 originDist, Vec3f* pointOnPlane) {
+f32 Math3DPlaneFunc(f32 nx, f32 ny, f32 nz, f32 originDist, Vec3f* pointOnPlane) {
     return (nx * pointOnPlane->x) + (ny * pointOnPlane->y) + (nz * pointOnPlane->z) + originDist;
 }
 
 /*
  * Returns the answer to the plane equation
  */
-f32 Math3D_Plane(Plane* plane, Vec3f* pointOnPlane) {
+f32 T_PolygonF_planeFunc(Plane* plane, Vec3f* pointOnPlane) {
     return (plane->normal.x * pointOnPlane->x) + (plane->normal.y * pointOnPlane->y) +
            (plane->normal.z * pointOnPlane->z) + plane->originDist;
 }
@@ -928,7 +928,7 @@ f32 Math3D_Plane(Plane* plane, Vec3f* pointOnPlane) {
  * Calculates the absolute distance from a point `p` to the plane defined as
  * `nx`, `ny`, `nz`, and `originDist`
  */
-f32 Math3D_UDistPlaneToPos(f32 nx, f32 ny, f32 nz, f32 originDist, Vec3f* p) {
+f32 Math3DLengthPlaneAndPos(f32 nx, f32 ny, f32 nz, f32 originDist, Vec3f* p) {
     if (DEBUG_FEATURES && IS_ZERO(sqrtf(SQ(nx) + SQ(ny) + SQ(nz)))) {
         PRINTF_COLOR_WARNING();
         PRINTF(T("Math3DLengthPlaneAndPos():法線size がゼロ近いです%f %f %f\n",
@@ -937,14 +937,14 @@ f32 Math3D_UDistPlaneToPos(f32 nx, f32 ny, f32 nz, f32 originDist, Vec3f* p) {
         PRINTF_RST();
         return 0.0f;
     }
-    return fabsf(Math3D_DistPlaneToPos(nx, ny, nz, originDist, p));
+    return fabsf(Math3DSignedLengthPlaneAndPos(nx, ny, nz, originDist, p));
 }
 
 /*
  * Calculates the signed distance from a point `p` to a plane defined as
  * `nx`, `ny`, `nz`, and `originDist`
  */
-f32 Math3D_DistPlaneToPos(f32 nx, f32 ny, f32 nz, f32 originDist, Vec3f* p) {
+f32 Math3DSignedLengthPlaneAndPos(f32 nx, f32 ny, f32 nz, f32 originDist, Vec3f* p) {
     f32 normMagnitude;
 
     normMagnitude = sqrtf(SQ(nx) + SQ(ny) + SQ(nz));
@@ -956,13 +956,13 @@ f32 Math3D_DistPlaneToPos(f32 nx, f32 ny, f32 nz, f32 originDist, Vec3f* p) {
         PRINTF_RST();
         return 0.0f;
     }
-    return Math3D_Planef(nx, ny, nz, originDist, p) / normMagnitude;
+    return Math3DPlaneFunc(nx, ny, nz, originDist, p) / normMagnitude;
 }
 
 /**
  * Checks if the point defined by (`z`,`x`) is within distance of the triangle defined from `v0`,`v1`, and `v2`
  */
-s32 Math3D_TriChkPointParaYImpl(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 z, f32 x, f32 detMax, f32 chkDist, f32 ny) {
+s32 Math3DTriangleCrossYCheck_general(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 z, f32 x, f32 detMax, f32 chkDist, f32 ny) {
     f32 detv0v1;
     f32 detv1v2;
     f32 detv2v0;
@@ -970,7 +970,7 @@ s32 Math3D_TriChkPointParaYImpl(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 z, f32 x, f
     f32 chkDistSq;
 
     // first check if the point is within range of the triangle.
-    if (!Math3D_CirSquareVsTriSquare(v0->z, v0->x, v1->z, v1->x, v2->z, v2->x, z, x, chkDist)) {
+    if (!Math3DCheck3PointMinMaxAreaInside2D(v0->z, v0->x, v1->z, v1->x, v2->z, v2->x, z, x, chkDist)) {
         return false;
     }
 
@@ -995,39 +995,39 @@ s32 Math3D_TriChkPointParaYImpl(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 z, f32 x, f
 
     if (fabsf(ny) > 0.5f) {
         // Do a check on each face of the triangle, if the point is within `chkDist` units return true.
-        if (Math3D_PointDistSqToLine2D(z, x, v0->z, v0->x, v1->z, v1->x, &distToEdgeSq) && (distToEdgeSq < chkDistSq)) {
+        if (Math3D_pointVsLineSegmentLengthSquare2D(z, x, v0->z, v0->x, v1->z, v1->x, &distToEdgeSq) && (distToEdgeSq < chkDistSq)) {
             return true;
         }
 
-        if (Math3D_PointDistSqToLine2D(z, x, v1->z, v1->x, v2->z, v2->x, &distToEdgeSq) && (distToEdgeSq < chkDistSq)) {
+        if (Math3D_pointVsLineSegmentLengthSquare2D(z, x, v1->z, v1->x, v2->z, v2->x, &distToEdgeSq) && (distToEdgeSq < chkDistSq)) {
             return true;
         }
 
-        if (Math3D_PointDistSqToLine2D(z, x, v2->z, v2->x, v0->z, v0->x, &distToEdgeSq) && (distToEdgeSq < chkDistSq)) {
+        if (Math3D_pointVsLineSegmentLengthSquare2D(z, x, v2->z, v2->x, v0->z, v0->x, &distToEdgeSq) && (distToEdgeSq < chkDistSq)) {
             return true;
         }
     }
     return false;
 }
 
-s32 Math3D_TriChkPointParaYDeterminate(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 z, f32 x, f32 detMax, f32 ny) {
-    return Math3D_TriChkPointParaYImpl(v0, v1, v2, z, x, detMax, 1.0f, ny);
+s32 Math3DTriangleCrossYCheck_chparam(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 z, f32 x, f32 detMax, f32 ny) {
+    return Math3DTriangleCrossYCheck_general(v0, v1, v2, z, x, detMax, 1.0f, ny);
 }
 
-s32 Math3D_TriChkPointParaYSlopedY(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 z, f32 x) {
-    return Math3D_TriChkPointParaYImpl(v0, v1, v2, z, x, 300.0f, 1.0f, 0.6f);
+s32 Math3DTriangleCrossYCheck(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 z, f32 x) {
+    return Math3DTriangleCrossYCheck_general(v0, v1, v2, z, x, 300.0f, 1.0f, 0.6f);
 }
 
 /**
  * Performs the triangle and point check parallel to the Y axis, outputs the y coordinate of the point to `yIntersect`
  */
-s32 Math3D_TriChkPointParaYIntersectDist(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx, f32 ny, f32 nz, f32 originDist, f32 z,
+s32 Math3DTriangleCrossYLine_sukimaR(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx, f32 ny, f32 nz, f32 originDist, f32 z,
                                          f32 x, f32* yIntersect, f32 chkDist) {
     if (IS_ZERO(ny)) {
         return false;
     }
 
-    if (Math3D_TriChkPointParaYImpl(v0, v1, v2, z, x, 300.0f, chkDist, ny)) {
+    if (Math3DTriangleCrossYCheck_general(v0, v1, v2, z, x, 300.0f, chkDist, ny)) {
         *yIntersect = (f32)((((-nx * x) - (nz * z)) - originDist) / ny);
         return true;
     }
@@ -1035,13 +1035,13 @@ s32 Math3D_TriChkPointParaYIntersectDist(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx
     return false;
 }
 
-s32 Math3D_TriChkPointParaYIntersectInsideTri(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx, f32 ny, f32 nz, f32 originDist,
+s32 Math3DTriangleCrossYLine_sukimaR_VP0(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx, f32 ny, f32 nz, f32 originDist,
                                               f32 z, f32 x, f32* yIntersect, f32 chkDist) {
     if (IS_ZERO(ny)) {
         return false;
     }
 
-    if (Math3D_TriChkPointParaYImpl(v0, v1, v2, z, x, 0.0f, chkDist, ny)) {
+    if (Math3DTriangleCrossYCheck_general(v0, v1, v2, z, x, 0.0f, chkDist, ny)) {
         *yIntersect = (f32)((((-nx * x) - (nz * z)) - originDist) / ny);
         return true;
     }
@@ -1049,38 +1049,38 @@ s32 Math3D_TriChkPointParaYIntersectInsideTri(Vec3f* v0, Vec3f* v1, Vec3f* v2, f
     return false;
 }
 
-s32 Math3D_TriChkPointParaY(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 ny, f32 z, f32 x) {
+s32 Math3DTriangleCrossYLine_noCross(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 ny, f32 z, f32 x) {
     if (IS_ZERO(ny)) {
         return false;
     }
-    if (Math3D_TriChkPointParaYImpl(v0, v1, v2, z, x, 300.0f, 1.0f, ny)) {
+    if (Math3DTriangleCrossYCheck_general(v0, v1, v2, z, x, 300.0f, 1.0f, ny)) {
         return true;
     }
     return false;
 }
 
-s32 Math3D_TriChkLineSegParaYIntersect(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx, f32 ny, f32 nz, f32 originDist, f32 z,
+s32 Math3DTriangleCrossYLine_scope(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx, f32 ny, f32 nz, f32 originDist, f32 z,
                                        f32 x, f32* yIntersect, f32 y0, f32 y1) {
     f32 pointADist;
     f32 pointBDist;
-    Vec3f planePos;
+    Vec3f pos;
 
     if (IS_ZERO(ny)) {
         return false;
     }
 
-    planePos.x = x;
-    planePos.y = y0;
-    planePos.z = z;
+    pos.x = x;
+    pos.y = y0;
+    pos.z = z;
 
-    pointADist = Math3D_Planef(nx, ny, nz, originDist, &planePos);
-    planePos.y = y1;
-    pointBDist = Math3D_Planef(nx, ny, nz, originDist, &planePos);
+    pointADist = Math3DPlaneFunc(nx, ny, nz, originDist, &pos);
+    pos.y = y1;
+    pointBDist = Math3DPlaneFunc(nx, ny, nz, originDist, &pos);
     if (((pointADist > 0.0f) && (pointBDist > 0.0f)) || ((pointADist < 0.0f) && (pointBDist < 0.0f))) {
         return false;
     }
 
-    if (Math3D_TriChkPointParaYImpl(v0, v1, v2, z, x, 300.0f, 1.0f, ny)) {
+    if (Math3DTriangleCrossYCheck_general(v0, v1, v2, z, x, 300.0f, 1.0f, ny)) {
         *yIntersect = (((-nx * x) - (nz * z)) - originDist) / ny;
         return true;
     }
@@ -1088,26 +1088,26 @@ s32 Math3D_TriChkLineSegParaYIntersect(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx, 
     return false;
 }
 
-s32 Math3D_TriChkPointParaYDist(Vec3f* v0, Vec3f* v1, Vec3f* v2, Plane* plane, f32 z, f32 x, f32 chkDist) {
+s32 Math3DTrianglePFCrossYLine_noCross_sukimaR(Vec3f* v0, Vec3f* v1, Vec3f* v2, Plane* plane, f32 z, f32 x, f32 chkDist) {
     if (IS_ZERO(plane->normal.y)) {
         return false;
     }
 
-    if (Math3D_TriChkPointParaYImpl(v0, v1, v2, z, x, 0.0f, chkDist, plane->normal.y)) {
+    if (Math3DTriangleCrossYCheck_general(v0, v1, v2, z, x, 0.0f, chkDist, plane->normal.y)) {
         return true;
     }
 
     return false;
 }
 
-s32 Math3D_TriChkPointParaXImpl(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 y, f32 z, f32 detMax, f32 chkDist, f32 nx) {
+s32 Math3DTriangleCrossXCheck_general(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 y, f32 z, f32 detMax, f32 chkDist, f32 nx) {
     f32 detv0v1;
     f32 detv1v2;
     f32 detv2v0;
     f32 distToEdgeSq;
     f32 chkDistSq;
 
-    if (!Math3D_CirSquareVsTriSquare(v0->y, v0->z, v1->y, v1->z, v2->y, v2->z, y, z, chkDist)) {
+    if (!Math3DCheck3PointMinMaxAreaInside2D(v0->y, v0->z, v1->y, v1->z, v2->y, v2->z, y, z, chkDist)) {
         return false;
     }
 
@@ -1129,51 +1129,51 @@ s32 Math3D_TriChkPointParaXImpl(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 y, f32 z, f
 
     if (fabsf(nx) > 0.5f) {
 
-        if (Math3D_PointDistSqToLine2D(y, z, v0->y, v0->z, v1->y, v1->z, &distToEdgeSq) && (distToEdgeSq < chkDistSq)) {
+        if (Math3D_pointVsLineSegmentLengthSquare2D(y, z, v0->y, v0->z, v1->y, v1->z, &distToEdgeSq) && (distToEdgeSq < chkDistSq)) {
             return true;
         }
 
-        if (Math3D_PointDistSqToLine2D(y, z, v1->y, v1->z, v2->y, v2->z, &distToEdgeSq) && (distToEdgeSq < chkDistSq)) {
+        if (Math3D_pointVsLineSegmentLengthSquare2D(y, z, v1->y, v1->z, v2->y, v2->z, &distToEdgeSq) && (distToEdgeSq < chkDistSq)) {
             return true;
         }
 
-        if (Math3D_PointDistSqToLine2D(y, z, v2->y, v2->z, v0->y, v0->z, &distToEdgeSq) && (distToEdgeSq < chkDistSq)) {
+        if (Math3D_pointVsLineSegmentLengthSquare2D(y, z, v2->y, v2->z, v0->y, v0->z, &distToEdgeSq) && (distToEdgeSq < chkDistSq)) {
             return true;
         }
     }
     return false;
 }
 
-s32 Math3D_TriChkPointParaXDeterminate(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 y, f32 z, f32 detMax, f32 nx) {
-    return Math3D_TriChkPointParaXImpl(v0, v1, v2, y, z, detMax, 1.0f, nx);
+s32 Math3DTriangleCrossXCheck_chparam(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 y, f32 z, f32 detMax, f32 nx) {
+    return Math3DTriangleCrossXCheck_general(v0, v1, v2, y, z, detMax, 1.0f, nx);
 }
 
-s32 Math3D_TriChkPointParaXIntersect(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx, f32 ny, f32 nz, f32 originDist, f32 y,
+s32 Math3DTriangleCrossXLine(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx, f32 ny, f32 nz, f32 originDist, f32 y,
                                      f32 z, f32* xIntersect) {
     if (IS_ZERO(nx)) {
         return false;
     }
 
-    if (Math3D_TriChkPointParaXImpl(v0, v1, v2, y, z, 300.0f, 1.0f, nx)) {
+    if (Math3DTriangleCrossXCheck_general(v0, v1, v2, y, z, 300.0f, 1.0f, nx)) {
         *xIntersect = (((-ny * y) - (nz * z)) - originDist) / nx;
         return true;
     }
     return false;
 }
 
-s32 Math3D_TriChkPointParaX(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx, f32 y, f32 z) {
+s32 Math3DTriangleCrossXLine_noCross(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx, f32 y, f32 z) {
     if (IS_ZERO(nx)) {
         return false;
     }
-    if (Math3D_TriChkPointParaXImpl(v0, v1, v2, y, z, 300.0f, 1.0f, nx)) {
+    if (Math3DTriangleCrossXCheck_general(v0, v1, v2, y, z, 300.0f, 1.0f, nx)) {
         return true;
     }
     return false;
 }
 
-s32 Math3D_TriChkLineSegParaXIntersect(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx, f32 ny, f32 nz, f32 originDist, f32 y,
+s32 Math3DTriangleCrossXLine_scope(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx, f32 ny, f32 nz, f32 originDist, f32 y,
                                        f32 z, f32* xIntersect, f32 x0, f32 x1) {
-    static Vec3f planePos;
+    static Vec3f pos;
 
     f32 pointADist;
     f32 pointBDist;
@@ -1182,43 +1182,43 @@ s32 Math3D_TriChkLineSegParaXIntersect(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx, 
         return false;
     }
 
-    planePos.x = x0;
-    planePos.y = y;
-    planePos.z = z;
-    pointADist = Math3D_Planef(nx, ny, nz, originDist, &planePos);
+    pos.x = x0;
+    pos.y = y;
+    pos.z = z;
+    pointADist = Math3DPlaneFunc(nx, ny, nz, originDist, &pos);
 
-    planePos.x = x1;
-    pointBDist = Math3D_Planef(nx, ny, nz, originDist, &planePos);
+    pos.x = x1;
+    pointBDist = Math3DPlaneFunc(nx, ny, nz, originDist, &pos);
 
     if (((pointADist > 0.0f) && (pointBDist > 0.0f)) || ((pointADist < 0.0f) && (pointBDist < 0.0f))) {
         return false;
     }
 
-    if (Math3D_TriChkPointParaXImpl(v0, v1, v2, y, z, 300.0f, 1.0f, nx)) {
+    if (Math3DTriangleCrossXCheck_general(v0, v1, v2, y, z, 300.0f, 1.0f, nx)) {
         *xIntersect = (((-ny * y) - (nz * z)) - originDist) / nx;
         return true;
     }
     return false;
 }
 
-s32 Math3D_TriChkPointParaXDist(Vec3f* v0, Vec3f* v1, Vec3f* v2, Plane* plane, f32 y, f32 z, f32 chkDist) {
+s32 Math3DTrianglePFCrossXLine_noCross_sukimaR(Vec3f* v0, Vec3f* v1, Vec3f* v2, Plane* plane, f32 y, f32 z, f32 chkDist) {
     if (IS_ZERO(plane->normal.x)) {
         return false;
     }
-    if (Math3D_TriChkPointParaXImpl(v0, v1, v2, y, z, 0.0f, chkDist, plane->normal.x)) {
+    if (Math3DTriangleCrossXCheck_general(v0, v1, v2, y, z, 0.0f, chkDist, plane->normal.x)) {
         return true;
     }
     return false;
 }
 
-s32 Math3D_TriChkPointParaZImpl(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 x, f32 y, f32 detMax, f32 chkDist, f32 nz) {
+s32 Math3DTriangleCrossZCheck_general(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 x, f32 y, f32 detMax, f32 chkDist, f32 nz) {
     f32 detv0v1;
     f32 detv1v2;
     f32 detv2v0;
     f32 distToEdgeSq;
     f32 chkDistSq;
 
-    if (!Math3D_CirSquareVsTriSquare(v0->x, v0->y, v1->x, v1->y, v2->x, v2->y, x, y, chkDist)) {
+    if (!Math3DCheck3PointMinMaxAreaInside2D(v0->x, v0->y, v1->x, v1->y, v2->x, v2->y, x, y, chkDist)) {
         return false;
     }
 
@@ -1241,15 +1241,15 @@ s32 Math3D_TriChkPointParaZImpl(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 x, f32 y, f
 
     if (fabsf(nz) > 0.5f) {
 
-        if (Math3D_PointDistSqToLine2D(x, y, v0->x, v0->y, v1->x, v1->y, &distToEdgeSq) && (distToEdgeSq < chkDistSq)) {
+        if (Math3D_pointVsLineSegmentLengthSquare2D(x, y, v0->x, v0->y, v1->x, v1->y, &distToEdgeSq) && (distToEdgeSq < chkDistSq)) {
             return true;
         }
 
-        if (Math3D_PointDistSqToLine2D(x, y, v1->x, v1->y, v2->x, v2->y, &distToEdgeSq) && (distToEdgeSq < chkDistSq)) {
+        if (Math3D_pointVsLineSegmentLengthSquare2D(x, y, v1->x, v1->y, v2->x, v2->y, &distToEdgeSq) && (distToEdgeSq < chkDistSq)) {
             return true;
         }
 
-        if (Math3D_PointDistSqToLine2D(x, y, v2->x, v2->y, v0->x, v0->y, &distToEdgeSq) && (distToEdgeSq < chkDistSq)) {
+        if (Math3D_pointVsLineSegmentLengthSquare2D(x, y, v2->x, v2->y, v0->x, v0->y, &distToEdgeSq) && (distToEdgeSq < chkDistSq)) {
             return true;
         }
     }
@@ -1257,37 +1257,37 @@ s32 Math3D_TriChkPointParaZImpl(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 x, f32 y, f
     return false;
 }
 
-s32 Math3D_TriChkPointParaZDeterminate(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 x, f32 y, f32 detMax, f32 nz) {
-    return Math3D_TriChkPointParaZImpl(v0, v1, v2, x, y, detMax, 1.0f, nz);
+s32 Math3DTriangleCrossZCheck_chparam(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 x, f32 y, f32 detMax, f32 nz) {
+    return Math3DTriangleCrossZCheck_general(v0, v1, v2, x, y, detMax, 1.0f, nz);
 }
 
-s32 Math3D_TriChkPointParaZIntersect(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx, f32 ny, f32 nz, f32 originDist, f32 x,
+s32 Math3DTriangleCrossZLine(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx, f32 ny, f32 nz, f32 originDist, f32 x,
                                      f32 y, f32* zIntersect) {
 
     if (IS_ZERO(nz)) {
         return false;
     }
 
-    if (Math3D_TriChkPointParaZImpl(v0, v1, v2, x, y, 300.0f, 1.0f, nz)) {
+    if (Math3DTriangleCrossZCheck_general(v0, v1, v2, x, y, 300.0f, 1.0f, nz)) {
         *zIntersect = (f32)((((-nx * x) - (ny * y)) - originDist) / nz);
         return true;
     }
     return false;
 }
 
-s32 Math3D_TriChkPointParaZ(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nz, f32 x, f32 y) {
+s32 Math3DTriangleCrossZLine_noCross(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nz, f32 x, f32 y) {
     if (IS_ZERO(nz)) {
         return false;
     }
-    if (Math3D_TriChkPointParaZImpl(v0, v1, v2, x, y, 300.0f, 1.0f, nz)) {
+    if (Math3DTriangleCrossZCheck_general(v0, v1, v2, x, y, 300.0f, 1.0f, nz)) {
         return true;
     }
     return false;
 }
 
-s32 Math3D_TriChkLineSegParaZIntersect(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx, f32 ny, f32 nz, f32 originDist, f32 x,
+s32 Math3DTriangleCrossZLine_scope(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx, f32 ny, f32 nz, f32 originDist, f32 x,
                                        f32 y, f32* zIntersect, f32 z0, f32 z1) {
-    static Vec3f planePos;
+    static Vec3f pos;
 
     f32 pointADist;
     f32 pointBDist;
@@ -1295,36 +1295,36 @@ s32 Math3D_TriChkLineSegParaZIntersect(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx, 
     if (IS_ZERO(nz)) {
         return false;
     }
-    planePos.x = x;
-    planePos.y = y;
-    planePos.z = z0;
-    pointADist = Math3D_Planef(nx, ny, nz, originDist, &planePos);
+    pos.x = x;
+    pos.y = y;
+    pos.z = z0;
+    pointADist = Math3DPlaneFunc(nx, ny, nz, originDist, &pos);
 
-    planePos.z = z1;
-    pointBDist = Math3D_Planef(nx, ny, nz, originDist, &planePos);
+    pos.z = z1;
+    pointBDist = Math3DPlaneFunc(nx, ny, nz, originDist, &pos);
     if (((pointADist > 0.0f) && (pointBDist > 0.0f)) || ((pointADist < 0.0f) && (pointBDist < 0.0f))) {
         // points on the line segment are on the same side of the plane
         return false;
     }
 
-    if (Math3D_TriChkPointParaZImpl(v0, v1, v2, x, y, 300.0f, 1.0f, nz)) {
+    if (Math3DTriangleCrossZCheck_general(v0, v1, v2, x, y, 300.0f, 1.0f, nz)) {
         *zIntersect = (((-nx * x) - (ny * y)) - originDist) / nz;
         return true;
     }
     return false;
 }
 
-s32 Math3D_TriChkLineSegParaZDist(Vec3f* v0, Vec3f* v1, Vec3f* v2, Plane* plane, f32 x, f32 y, f32 chkDist) {
+s32 Math3DTrianglePFCrossZLine_noCross_sukimaR(Vec3f* v0, Vec3f* v1, Vec3f* v2, Plane* plane, f32 x, f32 y, f32 chkDist) {
     if (IS_ZERO(plane->normal.z)) {
         return false;
     }
-    if (Math3D_TriChkPointParaZImpl(v0, v1, v2, x, y, 0.0f, chkDist, plane->normal.z)) {
+    if (Math3DTriangleCrossZCheck_general(v0, v1, v2, x, y, 0.0f, chkDist, plane->normal.z)) {
         return true;
     }
     return false;
 }
 
-s32 Math3D_LineSegFindPlaneIntersect(f32 pointADist, f32 pointBDist, Vec3f* pointA, Vec3f* pointB, Vec3f* intersect) {
+s32 Math3DCheckInfPlaneCrossInfLine_proc(f32 pointADist, f32 pointBDist, Vec3f* pointA, Vec3f* pointB, Vec3f* intersect) {
     f32 distDiff;
 
     distDiff = pointADist - pointBDist;
@@ -1342,7 +1342,7 @@ s32 Math3D_LineSegFindPlaneIntersect(f32 pointADist, f32 pointBDist, Vec3f* poin
         *intersect = *pointB;
     } else {
         // place the point at the intersection point.
-        Math3D_LineSplitRatio(pointA, pointB, pointADist / distDiff, intersect);
+        Math3DInDivPos2(pointA, pointB, pointADist / distDiff, intersect);
     }
     return true;
 }
@@ -1352,13 +1352,13 @@ s32 Math3D_LineSegFindPlaneIntersect(f32 pointADist, f32 pointBDist, Vec3f* poin
  * from `nx` + `ny` + `nz` + `originDist` = 0.  If fromFront is set, then detection will only
  * be true if point A crosses from the front of the plane
  */
-s32 Math3D_LineSegVsPlane(f32 nx, f32 ny, f32 nz, f32 originDist, Vec3f* linePointA, Vec3f* linePointB,
+s32 Math3DCheckPlaneCrossLine_xyz_t_cp(f32 nx, f32 ny, f32 nz, f32 originDist, Vec3f* linePointA, Vec3f* linePointB,
                           Vec3f* intersect, s32 fromFront) {
     f32 pointADist;
     f32 pointBDist;
 
-    pointADist = Math3D_Planef(nx, ny, nz, originDist, linePointA);
-    pointBDist = Math3D_Planef(nx, ny, nz, originDist, linePointB);
+    pointADist = Math3DPlaneFunc(nx, ny, nz, originDist, linePointA);
+    pointBDist = Math3DPlaneFunc(nx, ny, nz, originDist, linePointB);
 
     if ((pointADist * pointBDist) > 0.0f) {
         *intersect = *linePointB;
@@ -1370,25 +1370,25 @@ s32 Math3D_LineSegVsPlane(f32 nx, f32 ny, f32 nz, f32 originDist, Vec3f* linePoi
         return false;
     }
 
-    return Math3D_LineSegFindPlaneIntersect(pointADist, pointBDist, linePointA, linePointB, intersect);
+    return Math3DCheckInfPlaneCrossInfLine_proc(pointADist, pointBDist, linePointA, linePointB, intersect);
 }
 
 /*
  * Determines if the line formed by `linePointA` and `linePointB` intersect with Triangle formed from
- * vertices `v0`, `v1`, and `v2` with normal vector `nx`, `ny`, and `nz` with plane distance from origin
+ * vertices `v0`, `v1`, and `v2` with mult_vec vector `nx`, `ny`, and `nz` with plane distance from origin
  * `originDist` Outputs the intersection point at to `intersect`
  * Returns 1 if the line intersects with the triangle, 0 otherwise
  */
-s32 Math3D_TriLineIntersect(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx, f32 ny, f32 nz, f32 originDist, Vec3f* linePointA,
+s32 Math3DCheckTriangleCrossLine_xyz_t_cp(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx, f32 ny, f32 nz, f32 originDist, Vec3f* linePointA,
                             Vec3f* linePointB, Vec3f* intersect, s32 fromFront) {
 
-    if (!Math3D_LineSegVsPlane(nx, ny, nz, originDist, linePointA, linePointB, intersect, fromFront)) {
+    if (!Math3DCheckPlaneCrossLine_xyz_t_cp(nx, ny, nz, originDist, linePointA, linePointB, intersect, fromFront)) {
         return false;
     }
 
-    if (((nx == 0.0f) || (Math3D_TriChkPointParaX(v0, v1, v2, nx, intersect->y, intersect->z))) &&
-        ((ny == 0.0f) || (Math3D_TriChkPointParaY(v0, v1, v2, ny, intersect->z, intersect->x))) &&
-        ((nz == 0.0f) || (Math3D_TriChkPointParaZ(v0, v1, v2, nz, intersect->x, intersect->y)))) {
+    if (((nx == 0.0f) || (Math3DTriangleCrossXLine_noCross(v0, v1, v2, nx, intersect->y, intersect->z))) &&
+        ((ny == 0.0f) || (Math3DTriangleCrossYLine_noCross(v0, v1, v2, ny, intersect->z, intersect->x))) &&
+        ((nz == 0.0f) || (Math3DTriangleCrossZLine_noCross(v0, v1, v2, nz, intersect->x, intersect->y)))) {
         return true;
     }
 
@@ -1397,22 +1397,22 @@ s32 Math3D_TriLineIntersect(Vec3f* v0, Vec3f* v1, Vec3f* v2, f32 nx, f32 ny, f32
 }
 
 /*
- * Creates a TriNorm output to `tri`, and calculates the normal vector and plane from vertices
+ * Creates a TriNorm output to `tri`, and calculates the mult_vec vector and plane from vertices
  * `va`, `vb`, and `vc`
  */
-void Math3D_TriNorm(TriNorm* tri, Vec3f* va, Vec3f* vb, Vec3f* vc) {
+void Math3D_triangle_ct(TriNorm* tri, Vec3f* va, Vec3f* vb, Vec3f* vc) {
     tri->vtx[0] = *va;
     tri->vtx[1] = *vb;
     tri->vtx[2] = *vc;
-    Math3D_DefPlane(va, vb, vc, &tri->plane.normal.x, &tri->plane.normal.y, &tri->plane.normal.z,
+    Math3DPlane(va, vb, vc, &tri->plane.normal.x, &tri->plane.normal.y, &tri->plane.normal.z,
                     &tri->plane.originDist);
 }
 
 /*
  * Determines if point `point` lies within `sphere`
  */
-s32 Math3D_PointInSph(Sphere16* sphere, Vec3f* point) {
-    if (Math3D_DistXYZ16toF(&sphere->center, point) < sphere->radius) {
+s32 Math3D_sphereCollisionPoint(Sphere16* sphere, Vec3f* point) {
+    if (Math3DLength_s_f(&sphere->center, point) < sphere->radius) {
         return true;
     }
     return false;
@@ -1423,8 +1423,8 @@ s32 Math3D_PointInSph(Sphere16* sphere, Vec3f* point) {
  * Distance squared is output to `lineLenSq`, returns true if the point perpendicular from (`x0`,`y0`)
  * is contained within the segment between (`x1`,`y1`) and (`x2`,`y2`)
  */
-s32 Math3D_PointDistSqToLine2D(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2, f32* lineLenSq) {
-    static Vec3f perpendicularPoint;
+s32 Math3D_pointVsLineSegmentLengthSquare2D(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2, f32* lineLenSq) {
+    static Vec3f h;
 
     f32 perpendicularRatio;
     f32 xDiff;
@@ -1444,23 +1444,23 @@ s32 Math3D_PointDistSqToLine2D(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2, f
     if (perpendicularRatio >= 0.0f && perpendicularRatio <= 1.0f) {
         ret = true;
     }
-    perpendicularPoint.x = (xDiff * perpendicularRatio) + x1;
-    perpendicularPoint.y = (yDiff * perpendicularRatio) + y1;
-    *lineLenSq = SQ(perpendicularPoint.x - x0) + SQ(perpendicularPoint.y - y0);
+    h.x = (xDiff * perpendicularRatio) + x1;
+    h.y = (yDiff * perpendicularRatio) + y1;
+    *lineLenSq = SQ(h.x - x0) + SQ(h.y - y0);
     return ret;
 }
 
 /**
  * Determines if the line `line` is touching the sphere `sphere` at any point in the line.
  */
-s32 Math3D_LineVsSph(Sphere16* sphere, Linef* line) {
-    static Vec3f sphLinePerpendicularPoint;
+s32 Math3D_sphereCrossLineSegment(Sphere16* sphere, Linef* line) {
+    static Vec3f h;
 
     Vec3f lineDiff;
     f32 temp_f0_2;
     f32 lineLenSq;
 
-    if ((Math3D_PointInSph(sphere, &line->a)) || (Math3D_PointInSph(sphere, &line->b))) {
+    if ((Math3D_sphereCollisionPoint(sphere, &line->a)) || (Math3D_sphereCollisionPoint(sphere, &line->b))) {
         // either point of the line is in the sphere.
         return true;
     }
@@ -1480,12 +1480,12 @@ s32 Math3D_LineVsSph(Sphere16* sphere, Linef* line) {
         return false;
     }
 
-    sphLinePerpendicularPoint.x = (lineDiff.x * temp_f0_2) + line->a.x;
-    sphLinePerpendicularPoint.y = (lineDiff.y * temp_f0_2) + line->a.y;
-    sphLinePerpendicularPoint.z = (lineDiff.z * temp_f0_2) + line->a.z;
+    h.x = (lineDiff.x * temp_f0_2) + line->a.x;
+    h.y = (lineDiff.y * temp_f0_2) + line->a.y;
+    h.z = (lineDiff.z * temp_f0_2) + line->a.z;
 
-    if (SQ(sphLinePerpendicularPoint.x - sphere->center.x) + SQ(sphLinePerpendicularPoint.y - sphere->center.y) +
-            SQ(sphLinePerpendicularPoint.z - sphere->center.z) <=
+    if (SQ(h.x - sphere->center.x) + SQ(h.y - sphere->center.y) +
+            SQ(h.z - sphere->center.z) <=
         SQ((f32)sphere->radius)) {
         return true;
     }
@@ -1496,38 +1496,38 @@ s32 Math3D_LineVsSph(Sphere16* sphere, Linef* line) {
  * Gets the surface point of `sphere` intersecting with `tri` generated from the line formed from the
  * sphere's surface to the midpoint of the line formed from the first two vertices of the tri
  */
-void Math3D_GetSphVsTriIntersectPoint(Sphere16* sphere, TriNorm* tri, Vec3f* intersectPoint) {
-    static Vec3f v0v1Center;
-    static Vec3f sphereCenter;
+void Math3D_sphereCrossTriangleCalc_cp(Sphere16* sphere, TriNorm* tri, Vec3f* cross_pos) {
+    static Vec3f tr_center;
+    static Vec3f sp_center;
 
     f32 dist;
     f32 splitRatio;
 
-    v0v1Center.x = ((tri->vtx[0].x + tri->vtx[1].x) * 0.5f);
-    v0v1Center.y = ((tri->vtx[0].y + tri->vtx[1].y) * 0.5f);
-    v0v1Center.z = ((tri->vtx[0].z + tri->vtx[1].z) * 0.5f);
-    sphereCenter.x = sphere->center.x;
-    sphereCenter.y = sphere->center.y;
-    sphereCenter.z = sphere->center.z;
-    dist = Math3D_Vec3f_DistXYZ(&v0v1Center, &sphereCenter);
+    tr_center.x = ((tri->vtx[0].x + tri->vtx[1].x) * 0.5f);
+    tr_center.y = ((tri->vtx[0].y + tri->vtx[1].y) * 0.5f);
+    tr_center.z = ((tri->vtx[0].z + tri->vtx[1].z) * 0.5f);
+    sp_center.x = sphere->center.x;
+    sp_center.y = sphere->center.y;
+    sp_center.z = sphere->center.z;
+    dist = Math3DLength(&tr_center, &sp_center);
     // Distance from the sphere's center to the center of the line formed from v0->v1
     if (IS_ZERO(dist)) {
-        intersectPoint->x = sphereCenter.x;
-        intersectPoint->y = sphereCenter.y;
-        intersectPoint->z = sphereCenter.z;
+        cross_pos->x = sp_center.x;
+        cross_pos->y = sp_center.y;
+        cross_pos->z = sp_center.z;
         return;
     }
     splitRatio = sphere->radius / dist;
-    Math3D_LineSplitRatio(&sphereCenter, &v0v1Center, splitRatio, intersectPoint);
+    Math3DInDivPos2(&sp_center, &tr_center, splitRatio, cross_pos);
 }
 
 /**
- * Determines if `sphere` and `tri` and touching, and outputs the intersection point to `intersectPoint`
+ * Determines if `sphere` and `tri` and touching, and outputs the intersection point to `cross_pos`
  */
-s32 Math3D_TriVsSphIntersect(Sphere16* sphere, TriNorm* tri, Vec3f* intersectPoint) {
-    static Linef triTestLine;
-    static Vec3f sphereCenter;
-    static Vec3f sphPlanePos;
+s32 Math3D_sphereCrossTriangle3_cp(Sphere16* sphere, TriNorm* tri, Vec3f* cross_pos) {
+    static Linef ls;
+    static Vec3f center;
+    static Vec3f cross;
 
     f32 radius;
     f32 nx;
@@ -1535,17 +1535,17 @@ s32 Math3D_TriVsSphIntersect(Sphere16* sphere, TriNorm* tri, Vec3f* intersectPoi
     f32 nz;
     f32 planeDist;
 
-    sphereCenter.x = sphere->center.x;
-    sphereCenter.y = sphere->center.y;
-    sphereCenter.z = sphere->center.z;
+    center.x = sphere->center.x;
+    center.y = sphere->center.y;
+    center.z = sphere->center.z;
     radius = sphere->radius;
 
-    if (!Math3D_SphCubeVsTriCube(&tri->vtx[0], &tri->vtx[1], &tri->vtx[2], &sphereCenter, radius)) {
+    if (!Math3DCheck3PointMinMaxAreaInside3D(&tri->vtx[0], &tri->vtx[1], &tri->vtx[2], &center, radius)) {
         return false;
     }
 
-    planeDist = Math3D_UDistPlaneToPos(tri->plane.normal.x, tri->plane.normal.y, tri->plane.normal.z,
-                                       tri->plane.originDist, &sphereCenter);
+    planeDist = Math3DLengthPlaneAndPos(tri->plane.normal.x, tri->plane.normal.y, tri->plane.normal.z,
+                                       tri->plane.originDist, &center);
     if (radius < planeDist) {
         // the point that lies within the plane of the triangle which is perpendicular to the sphere's center is more
         // than the radius of the sphere, the plane never crosses the sphere.
@@ -1553,24 +1553,24 @@ s32 Math3D_TriVsSphIntersect(Sphere16* sphere, TriNorm* tri, Vec3f* intersectPoi
     }
 
     // tests if any of the edges of the triangle are intersecting the sphere
-    triTestLine.a = tri->vtx[0];
-    triTestLine.b = tri->vtx[1];
-    if (Math3D_LineVsSph(sphere, &triTestLine)) {
-        Math3D_GetSphVsTriIntersectPoint(sphere, tri, intersectPoint);
+    ls.a = tri->vtx[0];
+    ls.b = tri->vtx[1];
+    if (Math3D_sphereCrossLineSegment(sphere, &ls)) {
+        Math3D_sphereCrossTriangleCalc_cp(sphere, tri, cross_pos);
         return true;
     }
 
-    triTestLine.a = tri->vtx[1];
-    triTestLine.b = tri->vtx[2];
-    if (Math3D_LineVsSph(sphere, &triTestLine)) {
-        Math3D_GetSphVsTriIntersectPoint(sphere, tri, intersectPoint);
+    ls.a = tri->vtx[1];
+    ls.b = tri->vtx[2];
+    if (Math3D_sphereCrossLineSegment(sphere, &ls)) {
+        Math3D_sphereCrossTriangleCalc_cp(sphere, tri, cross_pos);
         return true;
     }
 
-    triTestLine.a = tri->vtx[2];
-    triTestLine.b = tri->vtx[0];
-    if (Math3D_LineVsSph(sphere, &triTestLine)) {
-        Math3D_GetSphVsTriIntersectPoint(sphere, tri, intersectPoint);
+    ls.a = tri->vtx[2];
+    ls.b = tri->vtx[0];
+    if (Math3D_sphereCrossLineSegment(sphere, &ls)) {
+        Math3D_sphereCrossTriangleCalc_cp(sphere, tri, cross_pos);
         return true;
     }
 
@@ -1578,32 +1578,32 @@ s32 Math3D_TriVsSphIntersect(Sphere16* sphere, TriNorm* tri, Vec3f* intersectPoi
     ny = tri->plane.normal.y * planeDist;
     nz = tri->plane.normal.z * planeDist;
 
-    if (Math3D_Planef(tri->plane.normal.x, tri->plane.normal.y, tri->plane.normal.z, tri->plane.originDist,
-                      &sphereCenter) > 0.0f) {
-        sphPlanePos.x = sphereCenter.x - nx;
-        sphPlanePos.y = sphereCenter.y - ny;
-        sphPlanePos.z = sphereCenter.z - nz;
+    if (Math3DPlaneFunc(tri->plane.normal.x, tri->plane.normal.y, tri->plane.normal.z, tri->plane.originDist,
+                      &center) > 0.0f) {
+        cross.x = center.x - nx;
+        cross.y = center.y - ny;
+        cross.z = center.z - nz;
     } else {
-        sphPlanePos.x = sphereCenter.x + nx;
-        sphPlanePos.y = sphereCenter.y + ny;
-        sphPlanePos.z = sphereCenter.z + nz;
+        cross.x = center.x + nx;
+        cross.y = center.y + ny;
+        cross.z = center.z + nz;
     }
 
     if (fabsf(tri->plane.normal.y) > 0.5f) {
-        if (Math3D_TriChkPointParaYDeterminate(&tri->vtx[0], &tri->vtx[1], &tri->vtx[2], sphPlanePos.z, sphPlanePos.x,
+        if (Math3DTriangleCrossYCheck_chparam(&tri->vtx[0], &tri->vtx[1], &tri->vtx[2], cross.z, cross.x,
                                                0.0f, tri->plane.normal.y)) {
-            Math3D_GetSphVsTriIntersectPoint(sphere, tri, intersectPoint);
+            Math3D_sphereCrossTriangleCalc_cp(sphere, tri, cross_pos);
             return true;
         }
     } else if (fabsf(tri->plane.normal.x) > 0.5f) {
-        if (Math3D_TriChkPointParaXDeterminate(&tri->vtx[0], &tri->vtx[1], &tri->vtx[2], sphPlanePos.y, sphPlanePos.z,
+        if (Math3DTriangleCrossXCheck_chparam(&tri->vtx[0], &tri->vtx[1], &tri->vtx[2], cross.y, cross.z,
                                                0.0f, tri->plane.normal.x)) {
-            Math3D_GetSphVsTriIntersectPoint(sphere, tri, intersectPoint);
+            Math3D_sphereCrossTriangleCalc_cp(sphere, tri, cross_pos);
             return true;
         }
-    } else if (Math3D_TriChkPointParaZDeterminate(&tri->vtx[0], &tri->vtx[1], &tri->vtx[2], sphPlanePos.x,
-                                                  sphPlanePos.y, 0.0f, tri->plane.normal.z)) {
-        Math3D_GetSphVsTriIntersectPoint(sphere, tri, intersectPoint);
+    } else if (Math3DTriangleCrossZCheck_chparam(&tri->vtx[0], &tri->vtx[1], &tri->vtx[2], cross.x,
+                                                  cross.y, 0.0f, tri->plane.normal.z)) {
+        Math3D_sphereCrossTriangleCalc_cp(sphere, tri, cross_pos);
         return true;
     }
     return false;
@@ -1613,7 +1613,7 @@ s32 Math3D_TriVsSphIntersect(Sphere16* sphere, TriNorm* tri, Vec3f* intersectPoi
  * Checks if point `point` is within cylinder `cyl`
  * Returns 1 if the point is inside the cylinder, 0 otherwise.
  */
-s32 Math3D_PointInCyl(Cylinder16* cyl, Vec3f* point) {
+s32 Math3D_pipeVsPos(Cylinder16* cyl, Vec3f* point) {
     f32 bottom;
     f32 top;
     f32 x;
@@ -1631,7 +1631,7 @@ s32 Math3D_PointInCyl(Cylinder16* cyl, Vec3f* point) {
     }
 }
 
-s32 Math3D_CylVsLineSeg(Cylinder16* cyl, Vec3f* linePointA, Vec3f* linePointB, Vec3f* intersectA, Vec3f* intersectB) {
+s32 Math3D_pipeCrossLine(Cylinder16* cyl, Vec3f* linePointA, Vec3f* linePointB, Vec3f* intersectA, Vec3f* intersectB) {
     Vec3f cylToPtA;
     Vec3f cylToPtB;
     Vec3f ptAToPtB;
@@ -1653,7 +1653,7 @@ s32 Math3D_CylVsLineSeg(Cylinder16* cyl, Vec3f* linePointA, Vec3f* linePointB, V
     s32 count;
     s32 i;
 
-    if (Math3D_PointInCyl(cyl, linePointA) && Math3D_PointInCyl(cyl, linePointB)) {
+    if (Math3D_pipeVsPos(cyl, linePointA) && Math3D_pipeVsPos(cyl, linePointB)) {
         // both points are in the cylinder
         *intersectA = *linePointA;
         *intersectB = *linePointB;
@@ -1666,7 +1666,7 @@ s32 Math3D_CylVsLineSeg(Cylinder16* cyl, Vec3f* linePointA, Vec3f* linePointB, V
     cylToPtB.x = linePointB->x - cyl->pos.x;
     cylToPtB.y = linePointB->y - cyl->pos.y - cyl->yShift;
     cylToPtB.z = linePointB->z - cyl->pos.z;
-    Math_Vec3f_Diff(&cylToPtB, &cylToPtA, &ptAToPtB);
+    xyz_t_sub(&cylToPtB, &cylToPtA, &ptAToPtB);
     cylRadiusSq = SQ(cyl->radius);
 
     /**
@@ -1798,7 +1798,7 @@ s32 Math3D_CylVsLineSeg(Cylinder16* cyl, Vec3f* linePointA, Vec3f* linePointB, V
             if (count == 0) {
                 *intersectA = intPts[i];
             } else if (count == 1) {
-                if (Math3D_Vec3fDistSq(intersectA, linePointA) < Math3D_Vec3fDistSq(intersectA, &intPts[i])) {
+                if (Math3DLengthSquare(intersectA, linePointA) < Math3DLengthSquare(intersectA, &intPts[i])) {
                     *intersectB = intPts[i];
                 } else {
                     *intersectB = *intersectA;
@@ -1816,11 +1816,11 @@ s32 Math3D_CylVsLineSeg(Cylinder16* cyl, Vec3f* linePointA, Vec3f* linePointB, V
  * Determines if `cyl` and `tri` are touching.  The point of intersection
  * is placed in `intersect` Returns 1 if they are touching, 0 otherwise.
  */
-s32 Math3D_CylTriVsIntersect(Cylinder16* cyl, TriNorm* tri, Vec3f* intersect) {
-    static Sphere16 topSphere;
-    static Sphere16 bottomSphere;
-    static Vec3f cylIntersectA;
-    static Vec3f cylIntersectB;
+s32 Math3D_pipeCrossTriangle_cp(Cylinder16* cyl, TriNorm* tri, Vec3f* intersect) {
+    static Sphere16 sph1;
+    static Sphere16 sph2;
+    static Vec3f cross1;
+    static Vec3f cross2;
 
     f32 yIntersect;
     f32 cylTop;
@@ -1843,24 +1843,24 @@ s32 Math3D_CylTriVsIntersect(Cylinder16* cyl, TriNorm* tri, Vec3f* intersect) {
     }
 
     minDistSq = 1.e38f;
-    if (Math3D_CylVsLineSeg(cyl, &tri->vtx[0], &tri->vtx[1], &cylIntersectA, &cylIntersectB)) {
-        distFromPointAToIntersectASq = Math3D_Vec3fDistSq(&cylIntersectA, &tri->vtx[0]);
+    if (Math3D_pipeCrossLine(cyl, &tri->vtx[0], &tri->vtx[1], &cross1, &cross2)) {
+        distFromPointAToIntersectASq = Math3DLengthSquare(&cross1, &tri->vtx[0]);
         minDistSq = distFromPointAToIntersectASq;
-        *intersect = cylIntersectA;
+        *intersect = cross1;
     }
 
-    if (Math3D_CylVsLineSeg(cyl, &tri->vtx[2], &tri->vtx[1], &cylIntersectA, &cylIntersectB)) {
-        distFromPointAToIntersectASq = Math3D_Vec3fDistSq(&cylIntersectA, &tri->vtx[2]);
+    if (Math3D_pipeCrossLine(cyl, &tri->vtx[2], &tri->vtx[1], &cross1, &cross2)) {
+        distFromPointAToIntersectASq = Math3DLengthSquare(&cross1, &tri->vtx[2]);
         if (distFromPointAToIntersectASq < minDistSq) {
-            *intersect = cylIntersectA;
+            *intersect = cross1;
             minDistSq = distFromPointAToIntersectASq;
         }
     }
 
-    if (Math3D_CylVsLineSeg(cyl, &tri->vtx[0], &tri->vtx[2], &cylIntersectA, &cylIntersectB)) {
-        distFromPointAToIntersectASq = Math3D_Vec3fDistSq(&cylIntersectA, &tri->vtx[0]);
+    if (Math3D_pipeCrossLine(cyl, &tri->vtx[0], &tri->vtx[2], &cross1, &cross2)) {
+        distFromPointAToIntersectASq = Math3DLengthSquare(&cross1, &tri->vtx[0]);
         if (distFromPointAToIntersectASq < minDistSq) {
-            *intersect = cylIntersectA;
+            *intersect = cross1;
             minDistSq = distFromPointAToIntersectASq;
         }
     }
@@ -1869,7 +1869,7 @@ s32 Math3D_CylTriVsIntersect(Cylinder16* cyl, TriNorm* tri, Vec3f* intersect) {
         return true;
     }
 
-    if (Math3D_TriChkLineSegParaYIntersect(&tri->vtx[0], &tri->vtx[1], &tri->vtx[2], tri->plane.normal.x,
+    if (Math3DTriangleCrossYLine_scope(&tri->vtx[0], &tri->vtx[1], &tri->vtx[2], tri->plane.normal.x,
                                            tri->plane.normal.y, tri->plane.normal.z, tri->plane.originDist, cyl->pos.z,
                                            cyl->pos.x, &yIntersect, cylBottom, cylTop)) {
         f32 distFromCylYIntersectTov0v1;
@@ -1882,28 +1882,28 @@ s32 Math3D_CylTriVsIntersect(Cylinder16* cyl, TriNorm* tri, Vec3f* intersect) {
         midpointv0v1.y = (tri->vtx[0].y + tri->vtx[1].y) * 0.5f;
         midpointv0v1.z = (tri->vtx[0].z + tri->vtx[1].z) * 0.5f;
 
-        Math_Vec3f_Diff(&midpointv0v1, &cylIntersectCenter, &diffMidpointIntersect);
+        xyz_t_sub(&midpointv0v1, &cylIntersectCenter, &diffMidpointIntersect);
         distFromCylYIntersectTov0v1 = sqrtf(SQ(diffMidpointIntersect.x) + SQ(diffMidpointIntersect.z));
 
         if (IS_ZERO(distFromCylYIntersectTov0v1)) {
-            Math_Vec3f_Copy(intersect, &midpointv0v1);
+            xyz_t_move(intersect, &midpointv0v1);
             return true;
         }
 
         radiusTodistFromCylYIntersectTov0v1 = cyl->radius / distFromCylYIntersectTov0v1;
-        Math3D_PointOnInfiniteLine(&cylIntersectCenter, &diffMidpointIntersect, radiusTodistFromCylYIntersectTov0v1,
+        Math3DInDivPos1(&cylIntersectCenter, &diffMidpointIntersect, radiusTodistFromCylYIntersectTov0v1,
                                    intersect);
         return true;
     }
 
-    topSphere.center.x = bottomSphere.center.x = cyl->pos.x;
-    topSphere.center.z = bottomSphere.center.z = cyl->pos.z;
-    topSphere.center.y = cylTop;
-    bottomSphere.center.y = cylBottom;
-    topSphere.radius = bottomSphere.radius = cyl->radius;
+    sph1.center.x = sph2.center.x = cyl->pos.x;
+    sph1.center.z = sph2.center.z = cyl->pos.z;
+    sph1.center.y = cylTop;
+    sph2.center.y = cylBottom;
+    sph1.radius = sph2.radius = cyl->radius;
 
-    if ((Math3D_TriVsSphIntersect(&topSphere, tri, intersect)) ||
-        (Math3D_TriVsSphIntersect(&bottomSphere, tri, intersect))) {
+    if ((Math3D_sphereCrossTriangle3_cp(&sph1, tri, intersect)) ||
+        (Math3D_sphereCrossTriangle3_cp(&sph2, tri, intersect))) {
         return true;
     }
     return false;
@@ -1912,35 +1912,35 @@ s32 Math3D_CylTriVsIntersect(Cylinder16* cyl, TriNorm* tri, Vec3f* intersect) {
 /*
  * Determines if `cyl` and `tri` are touching.
  */
-s32 Math3D_CylVsTri(Cylinder16* cyl, TriNorm* tri) {
+s32 Math3D_pipeCrossTriangle(Cylinder16* cyl, TriNorm* tri) {
     Vec3f intersect;
 
-    return Math3D_CylTriVsIntersect(cyl, tri, &intersect);
+    return Math3D_pipeCrossTriangle_cp(cyl, tri, &intersect);
 }
 
 /*
  * Determines if two spheres are touching.
  */
-s32 Math3D_SphVsSph(Sphere16* sphereA, Sphere16* sphereB) {
+s32 Math3D_sphereCrossSphere(Sphere16* sphereA, Sphere16* sphereB) {
     f32 overlapSize;
 
-    return Math3D_SphVsSphOverlap(sphereA, sphereB, &overlapSize);
+    return Math3D_sphereCrossSphere_cl(sphereA, sphereB, &overlapSize);
 }
 
 /*
  * Determines if two spheres are touching.  The amount that they're overlapping is placed in `overlapSize`
  */
-s32 Math3D_SphVsSphOverlap(Sphere16* sphereA, Sphere16* sphereB, f32* overlapSize) {
+s32 Math3D_sphereCrossSphere_cl(Sphere16* sphereA, Sphere16* sphereB, f32* overlapSize) {
     f32 centerDist;
 
-    return Math3D_SphVsSphOverlapCenterDist(sphereA, sphereB, overlapSize, &centerDist);
+    return Math3D_sphereCrossSphere_cl_cc(sphereA, sphereB, overlapSize, &centerDist);
 }
 
 /*
  * Determines if two spheres are touching  The distance from the centers is placed in `centerDist`,
  * and the amount that they're overlapping is placed in `overlapSize`
  */
-s32 Math3D_SphVsSphOverlapCenterDist(Sphere16* sphereA, Sphere16* sphereB, f32* overlapSize, f32* centerDist) {
+s32 Math3D_sphereCrossSphere_cl_cc(Sphere16* sphereA, Sphere16* sphereB, f32* overlapSize, f32* centerDist) {
     Vec3f diff;
 
     diff.x = (f32)sphereA->center.x - (f32)sphereB->center.x;
@@ -1961,19 +1961,19 @@ s32 Math3D_SphVsSphOverlapCenterDist(Sphere16* sphereA, Sphere16* sphereB, f32* 
 /**
  * Checks if `sph` and `cyl` are touching, output the amount of xz overlap to `overlapSize`
  */
-s32 Math3D_SphVsCylOverlap(Sphere16* sph, Cylinder16* cyl, f32* overlapSize) {
+s32 Math3D_sphereVsPipe_cl(Sphere16* sph, Cylinder16* cyl, f32* overlapSize) {
     f32 centerDist;
 
-    return Math3D_SphVsCylOverlapCenterDist(sph, cyl, overlapSize, &centerDist);
+    return Math3D_sphereVsPipe_cl_cc(sph, cyl, overlapSize, &centerDist);
 }
 
 /**
  * Checks if `sph` and `cyl` are touching, output the xz distance of the centers to `centerDist`, and the amount of
  * xz overlap to `overlapSize`
  */
-s32 Math3D_SphVsCylOverlapCenterDist(Sphere16* sph, Cylinder16* cyl, f32* overlapSize, f32* centerDist) {
-    static Cylinderf cylf;
-    static Spheref sphf;
+s32 Math3D_sphereVsPipe_cl_cc(Sphere16* sph, Cylinder16* cyl, f32* overlapSize, f32* centerDist) {
+    static Cylinderf pipeF;
+    static Spheref sphereF;
 
     f32 x;
     f32 z;
@@ -1987,11 +1987,11 @@ s32 Math3D_SphVsCylOverlapCenterDist(Sphere16* sph, Cylinder16* cyl, f32* overla
         // either radius is 0
         return false;
     }
-    sphf.center.y = sph->center.y;
-    sphf.radius = sph->radius;
-    cylf.pos.y = cyl->pos.y;
-    cylf.yShift = cyl->yShift;
-    cylf.height = cyl->height;
+    sphereF.center.y = sph->center.y;
+    sphereF.radius = sph->radius;
+    pipeF.pos.y = cyl->pos.y;
+    pipeF.yShift = cyl->yShift;
+    pipeF.height = cyl->height;
     x = (f32)sph->center.x - cyl->pos.x;
     z = (f32)sph->center.z - cyl->pos.z;
     combinedRadius = (f32)sph->radius + cyl->radius;
@@ -2001,10 +2001,10 @@ s32 Math3D_SphVsCylOverlapCenterDist(Sphere16* sph, Cylinder16* cyl, f32* overla
         return false;
     }
 
-    cylBottom = (cylf.pos.y + cylf.yShift);
-    cylTop = cylBottom + cylf.height;
-    sphBottom = sphf.center.y - sphf.radius;
-    sphTop = sphf.center.y + sphf.radius;
+    cylBottom = (pipeF.pos.y + pipeF.yShift);
+    cylTop = cylBottom + pipeF.height;
+    sphBottom = sphereF.center.y - sphereF.radius;
+    sphTop = sphereF.center.y + sphereF.radius;
 
     if ((sphTop >= cylBottom) && (sphBottom <= cylTop)) {
         // if the cylinder and sphere are intersecting on the xz plane, check if they're intersecting on
@@ -2018,44 +2018,44 @@ s32 Math3D_SphVsCylOverlapCenterDist(Sphere16* sph, Cylinder16* cyl, f32* overla
 /**
  * Checks if `ca` and `cb` are touching, output the amount of xz overlap to `overlapSize`
  */
-s32 Math3D_CylVsCylOverlap(Cylinder16* ca, Cylinder16* cb, f32* overlapSize) {
+s32 Math3D_pipeVsPipe_cl(Cylinder16* ca, Cylinder16* cb, f32* overlapSize) {
     f32 xzDist;
 
-    return Math3D_CylVsCylOverlapCenterDist(ca, cb, overlapSize, &xzDist);
+    return Math3D_pipeVsPipe_cl_cc(ca, cb, overlapSize, &xzDist);
 }
 
 /**
  * Checks if `ca` and `cb` are touching, output the xz distance of the centers to `centerDist`, and the amount of
  * xz overlap to `overlapSize`
  */
-s32 Math3D_CylVsCylOverlapCenterDist(Cylinder16* ca, Cylinder16* cb, f32* overlapSize, f32* centerDist) {
-    static Cylinderf caf;
-    static Cylinderf cbf;
+s32 Math3D_pipeVsPipe_cl_cc(Cylinder16* ca, Cylinder16* cb, f32* overlapSize, f32* centerDist) {
+    static Cylinderf pipe1f;
+    static Cylinderf pipe2f;
 
-    Math_Vec3s_ToVec3f(&caf.pos, &ca->pos);
-    caf.radius = ca->radius;
-    caf.yShift = ca->yShift;
-    caf.height = ca->height;
+    xyz_t_move_s_xyz(&pipe1f.pos, &ca->pos);
+    pipe1f.radius = ca->radius;
+    pipe1f.yShift = ca->yShift;
+    pipe1f.height = ca->height;
 
-    Math_Vec3s_ToVec3f(&cbf.pos, &cb->pos);
-    cbf.radius = cb->radius;
-    cbf.yShift = cb->yShift;
-    cbf.height = cb->height;
+    xyz_t_move_s_xyz(&pipe2f.pos, &cb->pos);
+    pipe2f.radius = cb->radius;
+    pipe2f.yShift = cb->yShift;
+    pipe2f.height = cb->height;
 
-    *centerDist = sqrtf(SQ(caf.pos.x - cbf.pos.x) + SQ(caf.pos.z - cbf.pos.z));
+    *centerDist = sqrtf(SQ(pipe1f.pos.x - pipe2f.pos.x) + SQ(pipe1f.pos.z - pipe2f.pos.z));
 
     // The combined radii are within the xz distance
-    if ((caf.radius + cbf.radius) < *centerDist) {
+    if ((pipe1f.radius + pipe2f.radius) < *centerDist) {
         return false;
     }
 
     // top of ca < bottom of cb or top of cb < bottom of ca
-    if (((caf.pos.y + caf.yShift) + caf.height) < (cbf.pos.y + cbf.yShift) ||
-        (((cbf.pos.y + cbf.yShift) + cbf.height) < (caf.pos.y + caf.yShift))) {
+    if (((pipe1f.pos.y + pipe1f.yShift) + pipe1f.height) < (pipe2f.pos.y + pipe2f.yShift) ||
+        (((pipe2f.pos.y + pipe2f.yShift) + pipe2f.height) < (pipe1f.pos.y + pipe1f.yShift))) {
         return false;
     }
 
-    *overlapSize = caf.radius + cbf.radius - *centerDist;
+    *overlapSize = pipe1f.radius + pipe2f.radius - *centerDist;
     return true;
 }
 
@@ -2064,52 +2064,52 @@ s32 Math3D_CylVsCylOverlapCenterDist(Cylinder16* ca, Cylinder16* cb, f32* overla
  * intersection is output to `intersect.
  * Returns 1 is the triangles intersect, 0 otherwise
  */
-s32 Math3D_TriVsTriIntersect(TriNorm* ta, TriNorm* tb, Vec3f* intersect) {
+s32 Math3D_triangleCrossTriangle_cp(TriNorm* ta, TriNorm* tb, Vec3f* intersect) {
     f32 dist0;
     f32 dist1;
     f32 dist2;
 
-    dist0 = Math3D_Plane(&ta->plane, &tb->vtx[0]);
-    dist1 = Math3D_Plane(&ta->plane, &tb->vtx[1]);
-    dist2 = Math3D_Plane(&ta->plane, &tb->vtx[2]);
+    dist0 = T_PolygonF_planeFunc(&ta->plane, &tb->vtx[0]);
+    dist1 = T_PolygonF_planeFunc(&ta->plane, &tb->vtx[1]);
+    dist2 = T_PolygonF_planeFunc(&ta->plane, &tb->vtx[2]);
 
     if (((dist0 > 0.0f) && (dist1 > 0.0f) && (dist2 > 0.0f)) ||
         (((dist0 < 0.0f) && (dist1 < 0.0f)) && (dist2 < 0.0f))) {
         return false;
     }
 
-    dist0 = Math3D_Plane(&tb->plane, &ta->vtx[0]);
-    dist1 = Math3D_Plane(&tb->plane, &ta->vtx[1]);
-    dist2 = Math3D_Plane(&tb->plane, &ta->vtx[2]);
+    dist0 = T_PolygonF_planeFunc(&tb->plane, &ta->vtx[0]);
+    dist1 = T_PolygonF_planeFunc(&tb->plane, &ta->vtx[1]);
+    dist2 = T_PolygonF_planeFunc(&tb->plane, &ta->vtx[2]);
 
     if ((((dist0 > 0.0f) && (dist1 > 0.0f)) && (dist2 > 0.0f)) ||
         ((dist0 < 0.0f) && (dist1 < 0.0f) && (dist2 < 0.0f))) {
         return false;
     }
 
-    if (Math3D_TriLineIntersect(&tb->vtx[0], &tb->vtx[1], &tb->vtx[2], tb->plane.normal.x, tb->plane.normal.y,
+    if (Math3DCheckTriangleCrossLine_xyz_t_cp(&tb->vtx[0], &tb->vtx[1], &tb->vtx[2], tb->plane.normal.x, tb->plane.normal.y,
                                 tb->plane.normal.z, tb->plane.originDist, &ta->vtx[0], &ta->vtx[1], intersect, 0)) {
         return true;
     }
-    if (Math3D_TriLineIntersect(&tb->vtx[0], &tb->vtx[1], &tb->vtx[2], tb->plane.normal.x, tb->plane.normal.y,
+    if (Math3DCheckTriangleCrossLine_xyz_t_cp(&tb->vtx[0], &tb->vtx[1], &tb->vtx[2], tb->plane.normal.x, tb->plane.normal.y,
                                 tb->plane.normal.z, tb->plane.originDist, &ta->vtx[1], &ta->vtx[2], intersect, 0)) {
         return true;
     }
-    if (Math3D_TriLineIntersect(&tb->vtx[0], &tb->vtx[1], &tb->vtx[2], tb->plane.normal.x, tb->plane.normal.y,
+    if (Math3DCheckTriangleCrossLine_xyz_t_cp(&tb->vtx[0], &tb->vtx[1], &tb->vtx[2], tb->plane.normal.x, tb->plane.normal.y,
                                 tb->plane.normal.z, tb->plane.originDist, &ta->vtx[2], &ta->vtx[0], intersect, 0)) {
         return true;
     }
-    if (Math3D_TriLineIntersect(&ta->vtx[0], &ta->vtx[1], &ta->vtx[2], ta->plane.normal.x, ta->plane.normal.y,
+    if (Math3DCheckTriangleCrossLine_xyz_t_cp(&ta->vtx[0], &ta->vtx[1], &ta->vtx[2], ta->plane.normal.x, ta->plane.normal.y,
                                 ta->plane.normal.z, ta->plane.originDist, &tb->vtx[0], &tb->vtx[1], intersect,
                                 0) == 1) {
         return true;
     }
-    if (Math3D_TriLineIntersect(&ta->vtx[0], &ta->vtx[1], &ta->vtx[2], ta->plane.normal.x, ta->plane.normal.y,
+    if (Math3DCheckTriangleCrossLine_xyz_t_cp(&ta->vtx[0], &ta->vtx[1], &ta->vtx[2], ta->plane.normal.x, ta->plane.normal.y,
                                 ta->plane.normal.z, ta->plane.originDist, &tb->vtx[1], &tb->vtx[2], intersect,
                                 0) == 1) {
         return true;
     }
-    if (Math3D_TriLineIntersect(&ta->vtx[0], &ta->vtx[1], &ta->vtx[2], ta->plane.normal.x, ta->plane.normal.y,
+    if (Math3DCheckTriangleCrossLine_xyz_t_cp(&ta->vtx[0], &ta->vtx[1], &ta->vtx[2], ta->plane.normal.x, ta->plane.normal.y,
                                 ta->plane.normal.z, ta->plane.originDist, &tb->vtx[2], &tb->vtx[0], intersect,
                                 0) == 1) {
         return true;
@@ -2117,7 +2117,7 @@ s32 Math3D_TriVsTriIntersect(TriNorm* ta, TriNorm* tb, Vec3f* intersect) {
     return false;
 }
 
-s32 Math3D_XZInSphere(Sphere16* sphere, f32 x, f32 z) {
+s32 Math3D_sphereCrossXZLine(Sphere16* sphere, f32 x, f32 z) {
     f32 xDiff;
     f32 zDiff;
 
@@ -2129,7 +2129,7 @@ s32 Math3D_XZInSphere(Sphere16* sphere, f32 x, f32 z) {
     return false;
 }
 
-s32 Math3D_XYInSphere(Sphere16* sphere, f32 x, f32 y) {
+s32 Math3D_sphereCrossXYLine(Sphere16* sphere, f32 x, f32 y) {
     f32 xDiff;
     f32 yDiff;
 
@@ -2141,7 +2141,7 @@ s32 Math3D_XYInSphere(Sphere16* sphere, f32 x, f32 y) {
     return false;
 }
 
-s32 Math3D_YZInSphere(Sphere16* sphere, f32 y, f32 z) {
+s32 Math3D_sphereCrossYZLine(Sphere16* sphere, f32 y, f32 z) {
     f32 yDiff;
     f32 zDiff;
 

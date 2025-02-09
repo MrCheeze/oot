@@ -27,31 +27,31 @@
     (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE | ACTOR_FLAG_UPDATE_CULLING_DISABLED | \
      ACTOR_FLAG_HOOKSHOT_PULLS_PLAYER)
 
-void EnRd_Init(Actor* thisx, PlayState* play);
-void EnRd_Destroy(Actor* thisx, PlayState* play);
-void EnRd_Update(Actor* thisx, PlayState* play);
-void EnRd_Draw(Actor* thisx, PlayState* play);
+void En_Rd_Actor_ct(Actor* thisx, PlayState* play);
+void En_Rd_Actor_dt(Actor* thisx, PlayState* play);
+void En_Rd_move(Actor* thisx, PlayState* play);
+void En_Rd_display(Actor* thisx, PlayState* play);
 
-void EnRd_SetupIdle(EnRd* this);
-void EnRd_SetupRiseFromCoffin(EnRd* this);
-void EnRd_SetupWalkToHome(EnRd* this, PlayState* play);
-void EnRd_SetupWalkToParent(EnRd* this);
-void EnRd_SetupGrab(EnRd* this);
-void EnRd_SetupAttemptPlayerFreeze(EnRd* this);
-void EnRd_SetupStandUp(EnRd* this);
-void EnRd_SetupCrouch(EnRd* this);
-void EnRd_Idle(EnRd* this, PlayState* play);
-void EnRd_RiseFromCoffin(EnRd* this, PlayState* play);
-void EnRd_WalkToPlayer(EnRd* this, PlayState* play);
-void EnRd_WalkToHome(EnRd* this, PlayState* play);
-void EnRd_WalkToParent(EnRd* this, PlayState* play);
-void EnRd_Grab(EnRd* this, PlayState* play);
-void EnRd_AttemptPlayerFreeze(EnRd* this, PlayState* play);
-void EnRd_StandUp(EnRd* this, PlayState* play);
-void EnRd_Crouch(EnRd* this, PlayState* play);
-void EnRd_Damaged(EnRd* this, PlayState* play);
-void EnRd_Dead(EnRd* this, PlayState* play);
-void EnRd_Stunned(EnRd* this, PlayState* play);
+void En_Rd_Actor_mode_wait_init(EnRd* this);
+void En_Rd_Actor_mode_wait2_init(EnRd* this);
+void En_Rd_Actor_mode_gohome_init(EnRd* this, PlayState* play);
+void En_Rd_Actor_mode_gomother_init(EnRd* this);
+void En_Rd_Actor_mode_attack_init(EnRd* this);
+void En_Rd_Actor_mode_find_init(EnRd* this);
+void En_Rd_Actor_mode_stand_init(EnRd* this);
+void En_Rd_Actor_mode_shit_init(EnRd* this);
+void En_Rd_Actor_mode_wait(EnRd* this, PlayState* play);
+void En_Rd_Actor_mode_wait2(EnRd* this, PlayState* play);
+void En_Rd_Actor_mode_forward(EnRd* this, PlayState* play);
+void En_Rd_Actor_mode_gohome(EnRd* this, PlayState* play);
+void En_Rd_Actor_mode_gomother(EnRd* this, PlayState* play);
+void En_Rd_Actor_mode_attack(EnRd* this, PlayState* play);
+void En_Rd_Actor_mode_find(EnRd* this, PlayState* play);
+void En_Rd_Actor_mode_stand(EnRd* this, PlayState* play);
+void En_Rd_Actor_mode_shit(EnRd* this, PlayState* play);
+void En_Rd_Actor_mode_damage(EnRd* this, PlayState* play);
+void En_Rd_Actor_mode_down(EnRd* this, PlayState* play);
+void En_Rd_Actor_mode_paralyze(EnRd* this, PlayState* play);
 
 typedef enum EnRdAction {
     /*  0 */ REDEAD_ACTION_IDLE,
@@ -82,13 +82,13 @@ ActorProfile En_Rd_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_RD,
     /**/ sizeof(EnRd),
-    /**/ EnRd_Init,
-    /**/ EnRd_Destroy,
-    /**/ EnRd_Update,
-    /**/ EnRd_Draw,
+    /**/ En_Rd_Actor_ct,
+    /**/ En_Rd_Actor_dt,
+    /**/ En_Rd_move,
+    /**/ En_Rd_display,
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit OcInfoData = {
     {
         COL_MATERIAL_HIT0,
         AT_NONE,
@@ -117,7 +117,7 @@ typedef enum EnRdDamageEffect {
     /* 0xF */ REDEAD_DMGEFF_DAMAGE             // Deals damage without stunning or applying an effect
 } EnRdDamageEffect;
 
-static DamageTable sDamageTable = {
+static DamageTable btl_data = {
     /* Deku nut      */ DMG_ENTRY(0, REDEAD_DMGEFF_NONE),
     /* Deku stick    */ DMG_ENTRY(2, REDEAD_DMGEFF_DAMAGE),
     /* Slingshot     */ DMG_ENTRY(0, REDEAD_DMGEFF_NONE),
@@ -152,23 +152,23 @@ static DamageTable sDamageTable = {
     /* Unknown 2     */ DMG_ENTRY(0, REDEAD_DMGEFF_NONE),
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_F32(lockOnArrowOffset, 2000, ICHAIN_CONTINUE),
     ICHAIN_VEC3F_DIV1000(scale, 10, ICHAIN_CONTINUE),
     ICHAIN_F32_DIV1000(gravity, -3500, ICHAIN_STOP),
 };
 
-void EnRd_SetupAction(EnRd* this, EnRdActionFunc actionFunc) {
+void En_Rd_actor_set_process(EnRd* this, EnRdActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
 
-void EnRd_Init(Actor* thisx, PlayState* play) {
+void En_Rd_Actor_ct(Actor* thisx, PlayState* play) {
     EnRd* this = (EnRd*)thisx;
 
-    Actor_ProcessInitChain(thisx, sInitChain);
+    ValueSet_process(thisx, value_init);
     this->actor.attentionRangeType = ATTENTION_RANGE_0;
-    this->actor.colChkInfo.damageTable = &sDamageTable;
-    ActorShape_Init(&thisx->shape, 0.0f, NULL, 0.0f);
+    this->actor.colChkInfo.damageTable = &btl_data;
+    Shape_Info_init(&thisx->shape, 0.0f, NULL, 0.0f);
     this->upperBodyYRotation = this->headYRotation = 0;
     this->actor.focus.pos = thisx->world.pos;
     this->actor.focus.pos.y += 50.0f;
@@ -184,39 +184,39 @@ void EnRd_Init(Actor* thisx, PlayState* play) {
     }
 
     if (this->actor.params >= REDEAD_TYPE_DOES_NOT_MOURN) {
-        SkelAnime_InitFlex(play, &this->skelAnime, &gRedeadSkel, &gGibdoRedeadIdleAnim, this->jointTable,
+        Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &gRedeadSkel, &gGibdoRedeadIdleAnim, this->jointTable,
                            this->morphTable, REDEAD_GIBDO_LIMB_MAX);
         this->actor.naviEnemyId = NAVI_ENEMY_REDEAD;
     } else {
-        SkelAnime_InitFlex(play, &this->skelAnime, &gGibdoSkel, &gGibdoRedeadIdleAnim, this->jointTable,
+        Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &gGibdoSkel, &gGibdoRedeadIdleAnim, this->jointTable,
                            this->morphTable, REDEAD_GIBDO_LIMB_MAX);
         this->actor.naviEnemyId = NAVI_ENEMY_GIBDO;
     }
 
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinder(play, &this->collider, thisx, &sCylinderInit);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set5(play, &this->collider, thisx, &OcInfoData);
 
     if (this->actor.params >= REDEAD_TYPE_GIBDO) {
-        EnRd_SetupIdle(this);
+        En_Rd_Actor_mode_wait_init(this);
     } else {
-        EnRd_SetupRiseFromCoffin(this);
+        En_Rd_Actor_mode_wait2_init(this);
     }
 
-    SkelAnime_Update(&this->skelAnime);
+    Skeleton_Info2_anime_play(&this->skelAnime);
 
     if (this->actor.params == REDEAD_TYPE_INVISIBLE) {
         this->actor.flags |= ACTOR_FLAG_REACT_TO_LENS;
     }
 }
 
-void EnRd_Destroy(Actor* thisx, PlayState* play) {
+void En_Rd_Actor_dt(Actor* thisx, PlayState* play) {
     EnRd* this = (EnRd*)thisx;
 
-    if (gSaveContext.sunsSongState != SUNSSONG_INACTIVE) {
-        gSaveContext.sunsSongState = SUNSSONG_INACTIVE;
+    if (z_common_data.sunsSongState != SUNSSONG_INACTIVE) {
+        z_common_data.sunsSongState = SUNSSONG_INACTIVE;
     }
 
-    Collider_DestroyCylinder(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider);
 }
 
 /**
@@ -229,7 +229,7 @@ void EnRd_Destroy(Actor* thisx, PlayState* play) {
  * If `shouldMourn` is false, the parent of all other Redeads is cleared so that
  * they stop mourning. This is done when the dead Redead starts fading away.
  */
-void EnRd_UpdateMourningTarget(PlayState* play, Actor* thisx, s32 shouldMourn) {
+void Rd_M_set(PlayState* play, Actor* thisx, s32 shouldMourn) {
     Actor* enemyIterator = play->actorCtx.actorLists[ACTORCAT_ENEMY].head;
 
     while (enemyIterator != NULL) {
@@ -249,37 +249,37 @@ void EnRd_UpdateMourningTarget(PlayState* play, Actor* thisx, s32 shouldMourn) {
     }
 }
 
-void EnRd_SetupIdle(EnRd* this) {
+void En_Rd_Actor_mode_wait_init(EnRd* this) {
     if (this->actor.params != REDEAD_TYPE_CRYING) {
-        Animation_MorphToLoop(&this->skelAnime, &gGibdoRedeadIdleAnim, -6.0f);
+        Skeleton_Info2_init_standard_repeat_morf(&this->skelAnime, &gGibdoRedeadIdleAnim, -6.0f);
     } else {
-        Animation_PlayLoop(&this->skelAnime, &gGibdoRedeadSobbingAnim);
+        Skeleton_Info2_init_standard_repeat(&this->skelAnime, &gGibdoRedeadSobbingAnim);
     }
 
     this->action = REDEAD_ACTION_IDLE;
-    this->timer = (Rand_ZeroOne() * 10.0f) + 5.0f;
+    this->timer = (fqrand() * 10.0f) + 5.0f;
     this->actor.speed = 0.0f;
     this->actor.world.rot.y = this->actor.shape.rot.y;
-    EnRd_SetupAction(this, EnRd_Idle);
+    En_Rd_actor_set_process(this, En_Rd_Actor_mode_wait);
 }
 
-void EnRd_Idle(EnRd* this, PlayState* play) {
-    SkelAnime_Update(&this->skelAnime);
-    Math_SmoothStepToS(&this->headYRotation, 0, 1, 0x64, 0);
-    Math_SmoothStepToS(&this->upperBodyYRotation, 0, 1, 0x64, 0);
+void En_Rd_Actor_mode_wait(EnRd* this, PlayState* play) {
+    Skeleton_Info2_anime_play(&this->skelAnime);
+    add_calc_short_angle2(&this->headYRotation, 0, 1, 0x64, 0);
+    add_calc_short_angle2(&this->upperBodyYRotation, 0, 1, 0x64, 0);
 
     if ((this->actor.params == REDEAD_TYPE_CRYING) && (this->skelAnime.curFrame == 0.0f)) {
-        if (Rand_ZeroOne() >= 0.5f) {
-            Animation_PlayLoop(&this->skelAnime, &gGibdoRedeadSobbingAnim);
+        if (fqrand() >= 0.5f) {
+            Skeleton_Info2_init_standard_repeat(&this->skelAnime, &gGibdoRedeadSobbingAnim);
         } else {
-            Animation_PlayLoop(&this->skelAnime, &gGibdoRedeadWipingTearsAnim);
+            Skeleton_Info2_init_standard_repeat(&this->skelAnime, &gGibdoRedeadWipingTearsAnim);
         }
     } else {
         this->timer--;
         if (this->timer == 0) {
             // This resets the idle animation back to its first frame, making the
             // Redead/Gibdo appear to "judder" in place.
-            this->timer = (Rand_ZeroOne() * 10.0f) + 10.0f;
+            this->timer = (fqrand() * 10.0f) + 10.0f;
             this->skelAnime.curFrame = 0.0f;
         }
     }
@@ -287,37 +287,37 @@ void EnRd_Idle(EnRd* this, PlayState* play) {
     if (this->actor.parent != NULL) {
         if (!this->isMourning) {
             if (this->actor.params != REDEAD_TYPE_CRYING) {
-                EnRd_SetupWalkToParent(this);
+                En_Rd_Actor_mode_gomother_init(this);
             } else {
-                EnRd_SetupStandUp(this);
+                En_Rd_Actor_mode_stand_init(this);
             }
         }
     } else {
         if (this->isMourning) {
             if (this->actor.params != REDEAD_TYPE_CRYING) {
-                EnRd_SetupAttemptPlayerFreeze(this);
+                En_Rd_Actor_mode_find_init(this);
             } else {
-                EnRd_SetupStandUp(this);
+                En_Rd_Actor_mode_stand_init(this);
             }
         }
 
         this->isMourning = false;
-        if ((this->actor.xzDistToPlayer <= 150.0f) && func_8002DDE4(play)) {
+        if ((this->actor.xzDistToPlayer <= 150.0f) && player_big_SE_action_check(play)) {
             if ((this->actor.params != REDEAD_TYPE_CRYING) && !this->isMourning) {
-                EnRd_SetupAttemptPlayerFreeze(this);
+                En_Rd_Actor_mode_find_init(this);
             } else {
-                EnRd_SetupStandUp(this);
+                En_Rd_Actor_mode_stand_init(this);
             }
         }
     }
 
     if ((play->gameplayFrames & 0x5F) == 0) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_REDEAD_CRY);
+        Actor_SE_set(&this->actor, NA_SE_EN_REDEAD_CRY);
     }
 }
 
-void EnRd_SetupRiseFromCoffin(EnRd* this) {
-    Animation_Change(&this->skelAnime, &gGibdoRedeadIdleAnim, 0, 0, Animation_GetLastFrame(&gGibdoRedeadIdleAnim),
+void En_Rd_Actor_mode_wait2_init(EnRd* this) {
+    Skeleton_Info2_init(&this->skelAnime, &gGibdoRedeadIdleAnim, 0, 0, Si2_anime_end_frame(&gGibdoRedeadIdleAnim),
                      ANIMMODE_LOOP, -6.0f);
     this->action = REDEAD_ACTION_RISE_FROM_COFFIN;
     this->timer = 6;
@@ -325,41 +325,41 @@ void EnRd_SetupRiseFromCoffin(EnRd* this) {
     this->actor.gravity = 0.0f;
     this->actor.shape.yOffset = 0.0f;
     this->actor.speed = 0.0f;
-    EnRd_SetupAction(this, EnRd_RiseFromCoffin);
+    En_Rd_actor_set_process(this, En_Rd_Actor_mode_wait2);
 }
 
-void EnRd_RiseFromCoffin(EnRd* this, PlayState* play) {
+void En_Rd_Actor_mode_wait2(EnRd* this, PlayState* play) {
     if (this->actor.shape.rot.x != -0x4000) {
-        Math_SmoothStepToS(&this->actor.shape.rot.x, 0, 1, 0x7D0, 0);
-        if (Math_SmoothStepToF(&this->actor.world.pos.y, this->actor.home.pos.y, 0.3f, 2.0f, 0.3f) == 0.0f) {
+        add_calc_short_angle2(&this->actor.shape.rot.x, 0, 1, 0x7D0, 0);
+        if (add_calc(&this->actor.world.pos.y, this->actor.home.pos.y, 0.3f, 2.0f, 0.3f) == 0.0f) {
             this->actor.gravity = -3.5f;
-            EnRd_SetupIdle(this);
+            En_Rd_Actor_mode_wait_init(this);
         }
     } else {
         if (this->actor.world.pos.y == this->actor.home.pos.y) {
-            Actor_PlaySfx(&this->actor, NA_SE_EN_REDEAD_CRY);
+            Actor_SE_set(&this->actor, NA_SE_EN_REDEAD_CRY);
         }
 
-        if (Math_SmoothStepToF(&this->actor.world.pos.y, this->actor.home.pos.y + 50.0f, 0.3f, 2.0f, 0.3f) == 0.0f) {
+        if (add_calc(&this->actor.world.pos.y, this->actor.home.pos.y + 50.0f, 0.3f, 2.0f, 0.3f) == 0.0f) {
             if (this->timer != 0) {
                 this->timer--;
-                Math_SmoothStepToF(&this->actor.speed, 6.0f, 0.3f, 1.0f, 0.3f);
-            } else if (Math_SmoothStepToF(&this->actor.speed, 0.0f, 0.3f, 1.0f, 0.3f) == 0.0f) {
-                Math_SmoothStepToS(&this->actor.shape.rot.x, 0, 1, 0x7D0, 0);
+                add_calc(&this->actor.speed, 6.0f, 0.3f, 1.0f, 0.3f);
+            } else if (add_calc(&this->actor.speed, 0.0f, 0.3f, 1.0f, 0.3f) == 0.0f) {
+                add_calc_short_angle2(&this->actor.shape.rot.x, 0, 1, 0x7D0, 0);
             }
         }
     }
 }
 
-void EnRd_SetupWalkToPlayer(EnRd* this, PlayState* play) {
-    Animation_Change(&this->skelAnime, &gGibdoRedeadWalkAnim, 1.0f, 4.0f, Animation_GetLastFrame(&gGibdoRedeadWalkAnim),
+void En_Rd_Actor_mode_forward_init(EnRd* this, PlayState* play) {
+    Skeleton_Info2_init(&this->skelAnime, &gGibdoRedeadWalkAnim, 1.0f, 4.0f, Si2_anime_end_frame(&gGibdoRedeadWalkAnim),
                      ANIMMODE_LOOP_INTERP, -4.0f);
     this->actor.speed = 0.4f;
     this->action = REDEAD_ACTION_WALK_TO_PLAYER_OR_RELEASE_GRAB;
-    EnRd_SetupAction(this, EnRd_WalkToPlayer);
+    En_Rd_actor_set_process(this, En_Rd_Actor_mode_forward);
 }
 
-void EnRd_WalkToPlayer(EnRd* this, PlayState* play) {
+void En_Rd_Actor_mode_forward(EnRd* this, PlayState* play) {
     Vec3f D_80AE4918 = { 0.0f, 0.0f, 0.0f };
     Color_RGBA8 D_80AE4924 = { 200, 200, 255, 255 };
     Color_RGBA8 D_80AE4928 = { 0, 0, 255, 0 };
@@ -368,17 +368,17 @@ void EnRd_WalkToPlayer(EnRd* this, PlayState* play) {
     s16 yaw = this->actor.yawTowardsPlayer - this->actor.shape.rot.y - this->headYRotation - this->upperBodyYRotation;
 
     this->skelAnime.playSpeed = this->actor.speed;
-    Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 1, 0xFA, 0);
-    Math_SmoothStepToS(&this->headYRotation, 0, 1, 0x64, 0);
-    Math_SmoothStepToS(&this->upperBodyYRotation, 0, 1, 0x64, 0);
+    add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 1, 0xFA, 0);
+    add_calc_short_angle2(&this->headYRotation, 0, 1, 0x64, 0);
+    add_calc_short_angle2(&this->upperBodyYRotation, 0, 1, 0x64, 0);
     this->actor.world.rot.y = this->actor.shape.rot.y;
-    SkelAnime_Update(&this->skelAnime);
+    Skeleton_Info2_anime_play(&this->skelAnime);
 
-    if (Actor_WorldDistXYZToPoint(&player->actor, &this->actor.home.pos) >= 150.0f) {
-        EnRd_SetupWalkToHome(this, play);
+    if (Actor_search_position_distance(&player->actor, &this->actor.home.pos) >= 150.0f) {
+        En_Rd_Actor_mode_gohome_init(this, play);
     }
 
-    if ((ABS(yaw) < 0x1554) && (Actor_WorldDistXYZToActor(&this->actor, &player->actor) <= 150.0f)) {
+    if ((ABS(yaw) < 0x1554) && (Actor_search_actor_distance(&this->actor, &player->actor) <= 150.0f)) {
         if (!(player->stateFlags1 & (PLAYER_STATE1_DEAD | PLAYER_STATE1_13 | PLAYER_STATE1_14 | PLAYER_STATE1_18 |
                                      PLAYER_STATE1_19 | PLAYER_STATE1_21)) &&
             !(player->stateFlags2 & PLAYER_STATE2_7)) {
@@ -391,19 +391,19 @@ void EnRd_WalkToPlayer(EnRd* this, PlayState* play) {
                     // If Player can't update, `player->zTargetActiveTimer` won't update, which means
                     // the Attention system will not be notified of a new actor lock-on occurring.
                     // So, no reticle will appear. But the camera will still focus on the actor.
-                    Player_SetAutoLockOnActor(play, &this->actor);
+                    to_anchor_set(play, &this->actor);
 
-                    // This is redundant, `autoLockOnActor` gets set by `Player_SetAutoLockOnActor` above
+                    // This is redundant, `autoLockOnActor` gets set by `to_anchor_set` above
                     GET_PLAYER(play)->autoLockOnActor = &this->actor;
 
-                    Rumble_Request(this->actor.xzDistToPlayer, 255, 20, 150);
+                    z_vibctl2_vib_setQ(this->actor.xzDistToPlayer, 255, 20, 150);
                 }
 
                 this->playerStunWaitTimer = 60;
-                Actor_PlaySfx(&this->actor, NA_SE_EN_REDEAD_AIM);
+                Actor_SE_set(&this->actor, NA_SE_EN_REDEAD_AIM);
             }
         } else {
-            EnRd_SetupWalkToHome(this, play);
+            En_Rd_Actor_mode_gohome_init(this, play);
         }
     }
 
@@ -411,85 +411,85 @@ void EnRd_WalkToPlayer(EnRd* this, PlayState* play) {
         this->grabWaitTimer--;
     }
 
-    if (!this->grabWaitTimer && (Actor_WorldDistXYZToActor(&this->actor, &player->actor) <= 45.0f) &&
-        Actor_IsFacingPlayer(&this->actor, 0x38E3)) {
+    if (!this->grabWaitTimer && (Actor_search_actor_distance(&this->actor, &player->actor) <= 45.0f) &&
+        Actor_player_direction_check(&this->actor, 0x38E3)) {
         player->actor.freezeTimer = 0;
         if (play->grabPlayer(play, player)) {
             this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
-            EnRd_SetupGrab(this);
+            En_Rd_Actor_mode_attack_init(this);
         }
     } else if (this->actor.params > REDEAD_TYPE_DOES_NOT_MOURN_IF_WALKING) {
         if (this->actor.parent != NULL) {
-            EnRd_SetupWalkToParent(this);
+            En_Rd_Actor_mode_gomother_init(this);
         } else {
             this->isMourning = false;
         }
     }
 
     if ((this->skelAnime.curFrame == 10.0f) || (this->skelAnime.curFrame == 22.0f)) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_RIZA_WALK);
+        Actor_SE_set(&this->actor, NA_SE_EN_RIZA_WALK);
     } else if ((play->gameplayFrames & 0x5F) == 0) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_REDEAD_CRY);
+        Actor_SE_set(&this->actor, NA_SE_EN_REDEAD_CRY);
     }
 }
 
-void EnRd_SetupWalkToHome(EnRd* this, PlayState* play) {
-    Animation_Change(&this->skelAnime, &gGibdoRedeadWalkAnim, 0.5f, 0, Animation_GetLastFrame(&gGibdoRedeadWalkAnim),
+void En_Rd_Actor_mode_gohome_init(EnRd* this, PlayState* play) {
+    Skeleton_Info2_init(&this->skelAnime, &gGibdoRedeadWalkAnim, 0.5f, 0, Si2_anime_end_frame(&gGibdoRedeadWalkAnim),
                      ANIMMODE_LOOP_INTERP, -4.0f);
     this->action = REDEAD_ACTION_WALK_TO_HOME;
-    EnRd_SetupAction(this, EnRd_WalkToHome);
+    En_Rd_actor_set_process(this, En_Rd_Actor_mode_gohome);
 }
 
-void EnRd_WalkToHome(EnRd* this, PlayState* play) {
+void En_Rd_Actor_mode_gohome(EnRd* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     s32 pad;
-    s16 targetY = Actor_WorldYawTowardPoint(&this->actor, &this->actor.home.pos);
+    s16 targetY = Actor_search_position_angleY(&this->actor, &this->actor.home.pos);
 
-    if (Actor_WorldDistXYZToPoint(&this->actor, &this->actor.home.pos) >= 5.0f) {
-        Math_SmoothStepToS(&this->actor.shape.rot.y, targetY, 1, 0x1C2, 0);
+    if (Actor_search_position_distance(&this->actor, &this->actor.home.pos) >= 5.0f) {
+        add_calc_short_angle2(&this->actor.shape.rot.y, targetY, 1, 0x1C2, 0);
     } else {
         this->actor.speed = 0.0f;
-        if (Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.home.rot.y, 1, 0x1C2, 0) == 0) {
+        if (add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.home.rot.y, 1, 0x1C2, 0) == 0) {
             if (this->actor.params != REDEAD_TYPE_CRYING) {
-                EnRd_SetupIdle(this);
+                En_Rd_Actor_mode_wait_init(this);
             } else {
-                EnRd_SetupCrouch(this);
+                En_Rd_Actor_mode_shit_init(this);
             }
         }
     }
 
-    Math_SmoothStepToS(&this->headYRotation, 0, 1, 0x64, 0);
-    Math_SmoothStepToS(&this->upperBodyYRotation, 0, 1, 0x64, 0);
+    add_calc_short_angle2(&this->headYRotation, 0, 1, 0x64, 0);
+    add_calc_short_angle2(&this->upperBodyYRotation, 0, 1, 0x64, 0);
     this->actor.world.rot.y = this->actor.shape.rot.y;
-    SkelAnime_Update(&this->skelAnime);
+    Skeleton_Info2_anime_play(&this->skelAnime);
 
     if (!(player->stateFlags1 & (PLAYER_STATE1_DEAD | PLAYER_STATE1_13 | PLAYER_STATE1_14 | PLAYER_STATE1_18 |
                                  PLAYER_STATE1_19 | PLAYER_STATE1_21)) &&
         !(player->stateFlags2 & PLAYER_STATE2_7) &&
-        (Actor_WorldDistXYZToPoint(&player->actor, &this->actor.home.pos) < 150.0f)) {
+        (Actor_search_position_distance(&player->actor, &this->actor.home.pos) < 150.0f)) {
         this->actor.attentionRangeType = ATTENTION_RANGE_0;
-        EnRd_SetupWalkToPlayer(this, play);
+        En_Rd_Actor_mode_forward_init(this, play);
     } else if (this->actor.params > REDEAD_TYPE_DOES_NOT_MOURN_IF_WALKING) {
         if (this->actor.parent != NULL) {
-            EnRd_SetupWalkToParent(this);
+            En_Rd_Actor_mode_gomother_init(this);
         } else {
             this->isMourning = false;
         }
     }
 
     if (this->skelAnime.curFrame == 10.0f || this->skelAnime.curFrame == 22.0f) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_RIZA_WALK);
+        Actor_SE_set(&this->actor, NA_SE_EN_RIZA_WALK);
     } else if ((play->gameplayFrames & 0x5F) == 0) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_REDEAD_CRY);
+        Actor_SE_set(&this->actor, NA_SE_EN_REDEAD_CRY);
     }
 }
 
-void EnRd_SetupWalkToParent(EnRd* this) {
-    Animation_Change(&this->skelAnime, &gGibdoRedeadWalkAnim, 0.5f, 0, Animation_GetLastFrame(&gGibdoRedeadWalkAnim),
+void En_Rd_Actor_mode_gomother_init(EnRd* this) {
+    Skeleton_Info2_init(&this->skelAnime, &gGibdoRedeadWalkAnim, 0.5f, 0, Si2_anime_end_frame(&gGibdoRedeadWalkAnim),
                      ANIMMODE_LOOP_INTERP, -4.0f);
     this->action = REDEAD_ACTION_WALK_TO_PARENT;
     this->isMourning = true;
-    EnRd_SetupAction(this, EnRd_WalkToParent);
+    En_Rd_actor_set_process(this, En_Rd_Actor_mode_gomother);
 }
 
 /**
@@ -498,7 +498,7 @@ void EnRd_SetupWalkToParent(EnRd* this) {
  * these Redeads walk over to the corpse and stand near until it begins to
  * fade away.
  */
-void EnRd_WalkToParent(EnRd* this, PlayState* play) {
+void En_Rd_Actor_mode_gomother(EnRd* this, PlayState* play) {
     s32 pad;
     s16 targetY;
     Vec3f parentPos;
@@ -506,129 +506,129 @@ void EnRd_WalkToParent(EnRd* this, PlayState* play) {
     if (this->actor.parent != NULL) {
         parentPos = this->actor.parent->world.pos;
 
-        targetY = Actor_WorldYawTowardPoint(&this->actor, &parentPos);
+        targetY = Actor_search_position_angleY(&this->actor, &parentPos);
 
-        Math_SmoothStepToS(&this->actor.shape.rot.y, targetY, 1, 0xFA, 0);
+        add_calc_short_angle2(&this->actor.shape.rot.y, targetY, 1, 0xFA, 0);
 
-        if (Actor_WorldDistXYZToPoint(&this->actor, &parentPos) >= 45.0f) {
+        if (Actor_search_position_distance(&this->actor, &parentPos) >= 45.0f) {
             this->actor.speed = 0.4f;
         } else {
             this->actor.speed = 0.0f;
 
             if (this->actor.params != REDEAD_TYPE_CRYING) {
-                EnRd_SetupIdle(this);
+                En_Rd_Actor_mode_wait_init(this);
             } else {
-                EnRd_SetupCrouch(this);
+                En_Rd_Actor_mode_shit_init(this);
             }
         }
 
-        Math_SmoothStepToS(&this->headYRotation, 0, 1, 0x64, 0);
-        Math_SmoothStepToS(&this->upperBodyYRotation, 0, 1, 0x64, 0);
+        add_calc_short_angle2(&this->headYRotation, 0, 1, 0x64, 0);
+        add_calc_short_angle2(&this->upperBodyYRotation, 0, 1, 0x64, 0);
     } else {
-        EnRd_SetupWalkToPlayer(this, play);
+        En_Rd_Actor_mode_forward_init(this, play);
     }
 
     this->actor.world.rot.y = this->actor.shape.rot.y;
-    SkelAnime_Update(&this->skelAnime);
+    Skeleton_Info2_anime_play(&this->skelAnime);
 
     if (this->skelAnime.curFrame == 10.0f || this->skelAnime.curFrame == 22.0f) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_RIZA_WALK);
+        Actor_SE_set(&this->actor, NA_SE_EN_RIZA_WALK);
     } else if ((play->gameplayFrames & 0x5F) == 0) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_REDEAD_CRY);
+        Actor_SE_set(&this->actor, NA_SE_EN_REDEAD_CRY);
     }
 }
 
-void EnRd_SetupGrab(EnRd* this) {
-    Animation_PlayOnce(&this->skelAnime, &gGibdoRedeadGrabStartAnim);
+void En_Rd_Actor_mode_attack_init(EnRd* this) {
+    Skeleton_Info2_init_standard_stop(&this->skelAnime, &gGibdoRedeadGrabStartAnim);
     this->timer = this->grabState = 0;
     this->grabDamageTimer = 200;
     this->action = REDEAD_ACTION_GRAB;
     this->actor.speed = 0.0f;
-    EnRd_SetupAction(this, EnRd_Grab);
+    En_Rd_actor_set_process(this, En_Rd_Actor_mode_attack);
 }
 
-void EnRd_Grab(EnRd* this, PlayState* play) {
+void En_Rd_Actor_mode_attack(EnRd* this, PlayState* play) {
     s32 pad;
     Player* player = GET_PLAYER(play);
 
-    if (SkelAnime_Update(&this->skelAnime)) {
+    if (Skeleton_Info2_anime_play(&this->skelAnime)) {
         this->grabState++;
     }
 
     switch (this->grabState) {
         case REDEAD_GRAB_INITIAL_DAMAGE:
-            Animation_PlayLoop(&this->skelAnime, &gGibdoRedeadGrabAttackAnim);
+            Skeleton_Info2_init_standard_repeat(&this->skelAnime, &gGibdoRedeadGrabAttackAnim);
             this->grabState++;
             play->damagePlayer(play, -8);
-            Rumble_Request(this->actor.xzDistToPlayer, 255, 1, 12);
+            z_vibctl2_vib_setQ(this->actor.xzDistToPlayer, 255, 1, 12);
             this->grabDamageTimer = 20;
             FALLTHROUGH;
         case REDEAD_GRAB_START:
-            Math_SmoothStepToS(&this->headYRotation, 0, 1, 0x5DC, 0);
-            Math_SmoothStepToS(&this->upperBodyYRotation, 0, 1, 0x5DC, 0);
+            add_calc_short_angle2(&this->headYRotation, 0, 1, 0x5DC, 0);
+            add_calc_short_angle2(&this->upperBodyYRotation, 0, 1, 0x5DC, 0);
             FALLTHROUGH;
         case REDEAD_GRAB_ATTACK:
             if (!(player->stateFlags2 & PLAYER_STATE2_7)) {
-                Animation_Change(&this->skelAnime, &gGibdoRedeadGrabEndAnim, 0.5f, 0.0f,
-                                 Animation_GetLastFrame(&gGibdoRedeadGrabEndAnim), ANIMMODE_ONCE_INTERP, 0.0f);
+                Skeleton_Info2_init(&this->skelAnime, &gGibdoRedeadGrabEndAnim, 0.5f, 0.0f,
+                                 Si2_anime_end_frame(&gGibdoRedeadGrabEndAnim), ANIMMODE_ONCE_INTERP, 0.0f);
                 this->grabState++;
                 this->action = REDEAD_ACTION_WALK_TO_PLAYER_OR_RELEASE_GRAB;
                 return;
             }
 
             if (!LINK_IS_ADULT) {
-                Math_SmoothStepToF(&this->actor.shape.yOffset, -1500.0f, 1.0f, 150.0f, 0.0f);
+                add_calc(&this->actor.shape.yOffset, -1500.0f, 1.0f, 150.0f, 0.0f);
             }
 
-            Math_SmoothStepToF(&this->actor.world.pos.x,
-                               (Math_SinS(player->actor.shape.rot.y) * -25.0f) + player->actor.world.pos.x, 1.0f, 10.0f,
+            add_calc(&this->actor.world.pos.x,
+                               (sin_s(player->actor.shape.rot.y) * -25.0f) + player->actor.world.pos.x, 1.0f, 10.0f,
                                0.0f);
-            Math_SmoothStepToF(&this->actor.world.pos.y, player->actor.world.pos.y, 1.0f, 10.0f, 0.0f);
-            Math_SmoothStepToF(&this->actor.world.pos.z,
-                               (Math_CosS(player->actor.shape.rot.y) * -25.0f) + player->actor.world.pos.z, 1.0f, 10.0f,
+            add_calc(&this->actor.world.pos.y, player->actor.world.pos.y, 1.0f, 10.0f, 0.0f);
+            add_calc(&this->actor.world.pos.z,
+                               (cos_s(player->actor.shape.rot.y) * -25.0f) + player->actor.world.pos.z, 1.0f, 10.0f,
                                0.0f);
-            Math_SmoothStepToS(&this->actor.shape.rot.y, player->actor.shape.rot.y, 1, 0x1770, 0);
+            add_calc_short_angle2(&this->actor.shape.rot.y, player->actor.shape.rot.y, 1, 0x1770, 0);
 
             if (this->skelAnime.curFrame == 0.0f) {
-                Actor_PlaySfx(&this->actor, NA_SE_EN_REDEAD_ATTACK);
+                Actor_SE_set(&this->actor, NA_SE_EN_REDEAD_ATTACK);
             }
 
             this->grabDamageTimer--;
             if (this->grabDamageTimer == 0) {
                 play->damagePlayer(play, -8);
-                Rumble_Request(this->actor.xzDistToPlayer, 240, 1, 12);
+                z_vibctl2_vib_setQ(this->actor.xzDistToPlayer, 240, 1, 12);
                 this->grabDamageTimer = 20;
-                Player_PlaySfx(player, NA_SE_VO_LI_DAMAGE_S + player->ageProperties->unk_92);
+                player_SE_set(player, NA_SE_VO_LI_DAMAGE_S + player->ageProperties->unk_92);
             }
             break;
 
         case REDEAD_GRAB_RELEASE:
             if (!LINK_IS_ADULT) {
-                Math_SmoothStepToF(&this->actor.shape.yOffset, 0, 1.0f, 400.0f, 0.0f);
+                add_calc(&this->actor.shape.yOffset, 0, 1.0f, 400.0f, 0.0f);
             }
             break;
 
         case REDEAD_GRAB_END:
             if (!LINK_IS_ADULT) {
-                Math_SmoothStepToF(&this->actor.shape.yOffset, 0, 1.0f, 400.0f, 0.0f);
+                add_calc(&this->actor.shape.yOffset, 0, 1.0f, 400.0f, 0.0f);
             }
             this->actor.attentionRangeType = ATTENTION_RANGE_0;
             this->actor.flags |= ACTOR_FLAG_ATTENTION_ENABLED;
             this->playerStunWaitTimer = 0xA;
             this->grabWaitTimer = 0xF;
-            EnRd_SetupWalkToPlayer(this, play);
+            En_Rd_Actor_mode_forward_init(this, play);
             break;
     }
 }
 
-void EnRd_SetupAttemptPlayerFreeze(EnRd* this) {
-    Animation_Change(&this->skelAnime, &gGibdoRedeadLookBackAnim, 0.0f, 0.0f,
-                     Animation_GetLastFrame(&gGibdoRedeadLookBackAnim), ANIMMODE_ONCE, 0.0f);
+void En_Rd_Actor_mode_find_init(EnRd* this) {
+    Skeleton_Info2_init(&this->skelAnime, &gGibdoRedeadLookBackAnim, 0.0f, 0.0f,
+                     Si2_anime_end_frame(&gGibdoRedeadLookBackAnim), ANIMMODE_ONCE, 0.0f);
     this->action = REDEAD_ACTION_ATTEMPT_PLAYER_FREEZE;
-    EnRd_SetupAction(this, EnRd_AttemptPlayerFreeze);
+    En_Rd_actor_set_process(this, En_Rd_Actor_mode_find);
 }
 
-void EnRd_AttemptPlayerFreeze(EnRd* this, PlayState* play) {
+void En_Rd_Actor_mode_find(EnRd* this, PlayState* play) {
     Vec3f D_80AE492C = { 0.0f, 0.0f, 0.0f };
     Color_RGBA8 D_80AE4938 = { 200, 200, 255, 255 };
     Color_RGBA8 D_80AE493C = { 0, 0, 255, 0 };
@@ -638,60 +638,60 @@ void EnRd_AttemptPlayerFreeze(EnRd* this, PlayState* play) {
     if (ABS(yaw) < 0x2008) {
         if (!(this->rdFlags & 0x80)) {
             player->actor.freezeTimer = 60;
-            Rumble_Request(this->actor.xzDistToPlayer, 255, 20, 150);
+            z_vibctl2_vib_setQ(this->actor.xzDistToPlayer, 255, 20, 150);
 
-            // The same note mentioned with this function call in `EnRd_WalkToPlayer` applies here too
-            Player_SetAutoLockOnActor(play, &this->actor);
+            // The same note mentioned with this function call in `En_Rd_Actor_mode_forward` applies here too
+            to_anchor_set(play, &this->actor);
         }
 
-        Actor_PlaySfx(&this->actor, NA_SE_EN_REDEAD_AIM);
-        EnRd_SetupWalkToPlayer(this, play);
+        Actor_SE_set(&this->actor, NA_SE_EN_REDEAD_AIM);
+        En_Rd_Actor_mode_forward_init(this, play);
     }
 }
 
-void EnRd_SetupStandUp(EnRd* this) {
-    Animation_MorphToPlayOnce(&this->skelAnime, &gGibdoRedeadStandUpAnim, -4.0f);
+void En_Rd_Actor_mode_stand_init(EnRd* this) {
+    Skeleton_Info2_init_standard_stop_morf(&this->skelAnime, &gGibdoRedeadStandUpAnim, -4.0f);
     this->action = REDEAD_ACTION_STAND_UP;
-    EnRd_SetupAction(this, EnRd_StandUp);
+    En_Rd_actor_set_process(this, En_Rd_Actor_mode_stand);
 }
 
-void EnRd_StandUp(EnRd* this, PlayState* play) {
-    if (SkelAnime_Update(&this->skelAnime)) {
+void En_Rd_Actor_mode_stand(EnRd* this, PlayState* play) {
+    if (Skeleton_Info2_anime_play(&this->skelAnime)) {
         if (this->actor.parent != NULL) {
-            EnRd_SetupWalkToParent(this);
+            En_Rd_Actor_mode_gomother_init(this);
         } else {
-            EnRd_SetupAttemptPlayerFreeze(this);
+            En_Rd_Actor_mode_find_init(this);
         }
     }
 }
 
-void EnRd_SetupCrouch(EnRd* this) {
-    Animation_Change(&this->skelAnime, &gGibdoRedeadStandUpAnim, -1.0f,
-                     Animation_GetLastFrame(&gGibdoRedeadStandUpAnim), 0.0f, ANIMMODE_ONCE, -4.0f);
+void En_Rd_Actor_mode_shit_init(EnRd* this) {
+    Skeleton_Info2_init(&this->skelAnime, &gGibdoRedeadStandUpAnim, -1.0f,
+                     Si2_anime_end_frame(&gGibdoRedeadStandUpAnim), 0.0f, ANIMMODE_ONCE, -4.0f);
     this->action = REDEAD_ACTION_CROUCH;
-    EnRd_SetupAction(this, EnRd_Crouch);
+    En_Rd_actor_set_process(this, En_Rd_Actor_mode_shit);
 }
 
-void EnRd_Crouch(EnRd* this, PlayState* play) {
-    if (SkelAnime_Update(&this->skelAnime)) {
-        EnRd_SetupIdle(this);
+void En_Rd_Actor_mode_shit(EnRd* this, PlayState* play) {
+    if (Skeleton_Info2_anime_play(&this->skelAnime)) {
+        En_Rd_Actor_mode_wait_init(this);
     }
 }
 
-void EnRd_SetupDamaged(EnRd* this) {
-    Animation_MorphToPlayOnce(&this->skelAnime, &gGibdoRedeadDamageAnim, -6.0f);
+void En_Rd_Actor_mode_damage_init(EnRd* this) {
+    Skeleton_Info2_init_standard_stop_morf(&this->skelAnime, &gGibdoRedeadDamageAnim, -6.0f);
 
     if (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) {
         this->actor.speed = -2.0f;
     }
 
     this->actor.flags |= ACTOR_FLAG_ATTENTION_ENABLED;
-    Actor_PlaySfx(&this->actor, NA_SE_EN_REDEAD_DAMAGE);
+    Actor_SE_set(&this->actor, NA_SE_EN_REDEAD_DAMAGE);
     this->action = REDEAD_ACTION_DAMAGED;
-    EnRd_SetupAction(this, EnRd_Damaged);
+    En_Rd_actor_set_process(this, En_Rd_Actor_mode_damage);
 }
 
-void EnRd_Damaged(EnRd* this, PlayState* play) {
+void En_Rd_Actor_mode_damage(EnRd* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     if (this->actor.speed < 0.0f) {
@@ -699,110 +699,110 @@ void EnRd_Damaged(EnRd* this, PlayState* play) {
     }
 
     this->actor.world.rot.y = this->actor.yawTowardsPlayer;
-    Math_SmoothStepToS(&this->headYRotation, 0, 1, 0x12C, 0);
-    Math_SmoothStepToS(&this->upperBodyYRotation, 0, 1, 0x12C, 0);
-    if (SkelAnime_Update(&this->skelAnime)) {
+    add_calc_short_angle2(&this->headYRotation, 0, 1, 0x12C, 0);
+    add_calc_short_angle2(&this->upperBodyYRotation, 0, 1, 0x12C, 0);
+    if (Skeleton_Info2_anime_play(&this->skelAnime)) {
         this->actor.world.rot.y = this->actor.shape.rot.y;
 
         if (this->actor.parent != NULL) {
-            EnRd_SetupWalkToParent(this);
-        } else if (Actor_WorldDistXYZToPoint(&player->actor, &this->actor.home.pos) >= 150.0f) {
-            EnRd_SetupWalkToHome(this, play);
+            En_Rd_Actor_mode_gomother_init(this);
+        } else if (Actor_search_position_distance(&player->actor, &this->actor.home.pos) >= 150.0f) {
+            En_Rd_Actor_mode_gohome_init(this, play);
         } else {
-            EnRd_SetupWalkToPlayer(this, play);
+            En_Rd_Actor_mode_forward_init(this, play);
         }
 
         this->unk_31D = 0xFF;
     }
 }
 
-void EnRd_SetupDead(EnRd* this) {
-    Animation_MorphToPlayOnce(&this->skelAnime, &gGibdoRedeadDeathAnim, -1.0f);
+void En_Rd_Actor_mode_down_init(EnRd* this) {
+    Skeleton_Info2_init_standard_stop_morf(&this->skelAnime, &gGibdoRedeadDeathAnim, -1.0f);
     this->action = REDEAD_ACTION_DEAD;
     this->timer = 300;
     this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
     this->actor.speed = 0.0f;
-    Actor_PlaySfx(&this->actor, NA_SE_EN_REDEAD_DEAD);
-    EnRd_SetupAction(this, EnRd_Dead);
+    Actor_SE_set(&this->actor, NA_SE_EN_REDEAD_DEAD);
+    En_Rd_actor_set_process(this, En_Rd_Actor_mode_down);
 }
 
-void EnRd_Dead(EnRd* this, PlayState* play) {
+void En_Rd_Actor_mode_down(EnRd* this, PlayState* play) {
     if (this->actor.category != ACTORCAT_PROP) {
-        Actor_ChangeCategory(play, &play->actorCtx, &this->actor, ACTORCAT_PROP);
+        Actor_info_part_chg(play, &play->actorCtx, &this->actor, ACTORCAT_PROP);
     }
 
-    Math_SmoothStepToS(&this->headYRotation, 0, 1, 0x7D0, 0);
-    Math_SmoothStepToS(&this->upperBodyYRotation, 0, 1, 0x7D0, 0);
+    add_calc_short_angle2(&this->headYRotation, 0, 1, 0x7D0, 0);
+    add_calc_short_angle2(&this->upperBodyYRotation, 0, 1, 0x7D0, 0);
 
-    if (SkelAnime_Update(&this->skelAnime)) {
+    if (Skeleton_Info2_anime_play(&this->skelAnime)) {
         if (this->timer == 0) {
-            if (!Flags_GetSwitch(play, this->rdFlags & 0x7F)) {
-                Flags_SetSwitch(play, this->rdFlags & 0x7F);
+            if (!Actor_Environment_sw_Check(play, this->rdFlags & 0x7F)) {
+                Actor_Environment_sw_On(play, this->rdFlags & 0x7F);
             }
 
             if (this->alpha != 0) {
                 if (this->alpha == 180) {
-                    EnRd_UpdateMourningTarget(play, &this->actor, false);
+                    Rd_M_set(play, &this->actor, false);
                 }
 
                 this->actor.scale.y -= 0.000075f;
                 this->alpha -= 5;
             } else {
-                Actor_Kill(&this->actor);
+                Actor_delete(&this->actor);
             }
         } else {
             this->timer--;
         }
     } else if (((s32)this->skelAnime.curFrame == 33) || ((s32)this->skelAnime.curFrame == 40)) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_RIZA_DOWN);
+        Actor_SE_set(&this->actor, NA_SE_EN_RIZA_DOWN);
     }
 }
 
-void EnRd_SetupStunned(EnRd* this) {
+void En_Rd_Actor_mode_paralyze_init(EnRd* this) {
     this->action = REDEAD_ACTION_STUNNED;
     this->actor.speed = 0.0f;
     this->actor.world.rot.y = this->actor.shape.rot.y;
-    if (gSaveContext.sunsSongState != SUNSSONG_INACTIVE) {
+    if (z_common_data.sunsSongState != SUNSSONG_INACTIVE) {
         this->stunnedBySunsSong = true;
         this->sunsSongStunTimer = 600;
-        Actor_PlaySfx(&this->actor, NA_SE_EN_LIGHT_ARROW_HIT);
-        Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_GRAY, COLORFILTER_INTENSITY_FLAG | 200,
+        Actor_SE_set(&this->actor, NA_SE_EN_LIGHT_ARROW_HIT);
+        Set_Fog(&this->actor, COLORFILTER_COLORFLAG_GRAY, COLORFILTER_INTENSITY_FLAG | 200,
                              COLORFILTER_BUFFLAG_OPA, 255);
     } else if (this->damageEffect == REDEAD_DMGEFF_HOOKSHOT) {
-        Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_BLUE, 200, COLORFILTER_BUFFLAG_OPA, 80);
+        Set_Fog(&this->actor, COLORFILTER_COLORFLAG_BLUE, 200, COLORFILTER_BUFFLAG_OPA, 80);
     } else {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_LIGHT_ARROW_HIT);
-        Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_GRAY, 200, COLORFILTER_BUFFLAG_OPA, 80);
+        Actor_SE_set(&this->actor, NA_SE_EN_LIGHT_ARROW_HIT);
+        Set_Fog(&this->actor, COLORFILTER_COLORFLAG_GRAY, 200, COLORFILTER_BUFFLAG_OPA, 80);
     }
 
-    EnRd_SetupAction(this, EnRd_Stunned);
+    En_Rd_actor_set_process(this, En_Rd_Actor_mode_paralyze);
 }
 
-void EnRd_Stunned(EnRd* this, PlayState* play) {
+void En_Rd_Actor_mode_paralyze(EnRd* this, PlayState* play) {
     if (this->stunnedBySunsSong && (this->sunsSongStunTimer != 0)) {
         this->sunsSongStunTimer--;
         if (this->sunsSongStunTimer >= 255) {
-            Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_GRAY, 200, COLORFILTER_BUFFLAG_OPA, 255);
+            Set_Fog(&this->actor, COLORFILTER_COLORFLAG_GRAY, 200, COLORFILTER_BUFFLAG_OPA, 255);
         }
 
         if (this->sunsSongStunTimer == 0) {
             this->stunnedBySunsSong = false;
-            gSaveContext.sunsSongState = SUNSSONG_INACTIVE;
+            z_common_data.sunsSongState = SUNSSONG_INACTIVE;
         }
     }
 
     if (this->actor.colorFilterTimer == 0) {
         if (this->actor.colChkInfo.health == 0) {
-            EnRd_UpdateMourningTarget(play, &this->actor, true);
-            EnRd_SetupDead(this);
-            Item_DropCollectibleRandom(play, &this->actor, &this->actor.world.pos, 0x90);
+            Rd_M_set(play, &this->actor, true);
+            En_Rd_Actor_mode_down_init(this);
+            Item_Set_Std(play, &this->actor, &this->actor.world.pos, 0x90);
         } else {
-            EnRd_SetupDamaged(this);
+            En_Rd_Actor_mode_damage_init(this);
         }
     }
 }
 
-void EnRd_TurnTowardsPlayer(EnRd* this, PlayState* play) {
+void En_Rd_Face_To_Player(EnRd* this, PlayState* play) {
     s16 headAngleTemp = this->actor.yawTowardsPlayer - (s16)(this->actor.shape.rot.y + this->upperBodyYRotation);
     s16 upperBodyAngle = CLAMP(headAngleTemp, -500, 500);
     s16 headAngle;
@@ -822,14 +822,14 @@ void EnRd_TurnTowardsPlayer(EnRd* this, PlayState* play) {
     this->headYRotation = CLAMP(this->headYRotation, -0x256F, 0x256F);
 }
 
-void EnRd_UpdateDamage(EnRd* this, PlayState* play) {
+void En_Rd_damage_proc(EnRd* this, PlayState* play) {
     s32 pad;
     Player* player = GET_PLAYER(play);
 
-    if ((gSaveContext.sunsSongState != SUNSSONG_INACTIVE) && (this->actor.shape.rot.x == 0) &&
+    if ((z_common_data.sunsSongState != SUNSSONG_INACTIVE) && (this->actor.shape.rot.x == 0) &&
         !this->stunnedBySunsSong && (this->action != REDEAD_ACTION_DAMAGED) && (this->action != REDEAD_ACTION_DEAD) &&
         (this->action != REDEAD_ACTION_STUNNED)) {
-        EnRd_SetupStunned(this);
+        En_Rd_Actor_mode_paralyze_init(this);
         return;
     }
 
@@ -838,7 +838,7 @@ void EnRd_UpdateDamage(EnRd* this, PlayState* play) {
         this->damageEffect = this->actor.colChkInfo.damageEffect;
 
         if (this->action != REDEAD_ACTION_RISE_FROM_COFFIN) {
-            Actor_SetDropFlag(&this->actor, &this->collider.elem, true);
+            Hit_bit_set(&this->actor, &this->collider.elem, true);
             if (player->unk_844 != 0) {
                 this->unk_31D = player->unk_845;
             }
@@ -847,8 +847,8 @@ void EnRd_UpdateDamage(EnRd* this, PlayState* play) {
                 if (((this->damageEffect == REDEAD_DMGEFF_HOOKSHOT) ||
                      (this->damageEffect == REDEAD_DMGEFF_LIGHT_MAGIC)) &&
                     (this->action != REDEAD_ACTION_STUNNED)) {
-                    Actor_ApplyDamage(&this->actor);
-                    EnRd_SetupStunned(this);
+                    hp_down(&this->actor);
+                    En_Rd_Actor_mode_paralyze_init(this);
                     return;
                 }
 
@@ -856,35 +856,35 @@ void EnRd_UpdateDamage(EnRd* this, PlayState* play) {
                 this->sunsSongStunTimer = 0;
 
                 if (this->damageEffect == REDEAD_DMGEFF_FIRE_MAGIC) {
-                    Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_OPA, 80);
+                    Set_Fog(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_OPA, 80);
                     this->fireTimer = 40;
                 } else {
-                    Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_OPA, 8);
+                    Set_Fog(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_OPA, 8);
                 }
 
-                Actor_ApplyDamage(&this->actor);
+                hp_down(&this->actor);
                 if (this->actor.colChkInfo.health == 0) {
-                    EnRd_UpdateMourningTarget(play, &this->actor, true);
-                    EnRd_SetupDead(this);
-                    Item_DropCollectibleRandom(play, NULL, &this->actor.world.pos, 0x90);
+                    Rd_M_set(play, &this->actor, true);
+                    En_Rd_Actor_mode_down_init(this);
+                    Item_Set_Std(play, NULL, &this->actor.world.pos, 0x90);
                 } else {
-                    EnRd_SetupDamaged(this);
+                    En_Rd_Actor_mode_damage_init(this);
                 }
             }
         }
     }
 }
 
-void EnRd_Update(Actor* thisx, PlayState* play) {
+void En_Rd_move(Actor* thisx, PlayState* play) {
     s32 pad;
     EnRd* this = (EnRd*)thisx;
     Player* player = GET_PLAYER(play);
     s32 pad2;
 
-    EnRd_UpdateDamage(this, play);
+    En_Rd_damage_proc(this, play);
 
-    if (gSaveContext.sunsSongState != SUNSSONG_INACTIVE && !this->stunnedBySunsSong) {
-        gSaveContext.sunsSongState = SUNSSONG_INACTIVE;
+    if (z_common_data.sunsSongState != SUNSSONG_INACTIVE && !this->stunnedBySunsSong) {
+        z_common_data.sunsSongState = SUNSSONG_INACTIVE;
     }
 
     if (this->damageEffect != REDEAD_DMGEFF_ICE_MAGIC &&
@@ -895,17 +895,17 @@ void EnRd_Update(Actor* thisx, PlayState* play) {
 
         this->actionFunc(this, play);
         if (this->action != REDEAD_ACTION_GRAB && this->actor.speed != 0.0f) {
-            Actor_MoveXZGravity(&this->actor);
+            Actor_position_moveF(&this->actor);
         }
 
         if ((this->actor.shape.rot.x == 0) && (this->action != REDEAD_ACTION_GRAB) && (this->actor.speed != 0.0f)) {
-            Actor_UpdateBgCheckInfo(play, &this->actor, 30.0f, 20.0f, 35.0f,
+            Actor_BGcheck2(play, &this->actor, 30.0f, 20.0f, 35.0f,
                                     UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2 | UPDBGCHECKINFO_FLAG_3 |
                                         UPDBGCHECKINFO_FLAG_4);
         }
 
         if (this->action == REDEAD_ACTION_ATTEMPT_PLAYER_FREEZE) {
-            EnRd_TurnTowardsPlayer(this, play);
+            En_Rd_Face_To_Player(this, play);
         }
     }
 
@@ -913,15 +913,15 @@ void EnRd_Update(Actor* thisx, PlayState* play) {
     this->actor.focus.pos.y += 50.0f;
 
     if ((this->actor.colChkInfo.health > 0) && (this->action != REDEAD_ACTION_GRAB)) {
-        Collider_UpdateCylinder(&this->actor, &this->collider);
-        CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
+        CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
+        CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
         if ((this->action != REDEAD_ACTION_DAMAGED) || ((player->unk_844 != 0) && (player->unk_845 != this->unk_31D))) {
-            CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
+            CollisionCheck_setAC(play, &play->colChkCtx, &this->collider.base);
         }
     }
 }
 
-s32 EnRd_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx, Gfx** gfx) {
+s32 en_rd_display1(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx, Gfx** gfx) {
     EnRd* this = (EnRd*)thisx;
 
     if (limbIndex == REDEAD_GIBDO_LIMB_HEAD_ROOT) {
@@ -933,7 +933,7 @@ s32 EnRd_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* po
     return false;
 }
 
-void EnRd_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx, Gfx** gfx) {
+void en_rd_display2(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx, Gfx** gfx) {
     Vec3f D_80AE4940 = { 300.0f, 0.0f, 0.0f };
     EnRd* this = (EnRd*)thisx;
     s32 idx = -1;
@@ -983,7 +983,7 @@ void EnRd_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, 
         }
 
         if (idx >= 0) {
-            Matrix_MultVec3f(&D_80AE4940, &destPos);
+            Matrix_Position(&D_80AE4940, &destPos);
             this->firePos[idx].x = destPos.x;
             this->firePos[idx].y = destPos.y;
             this->firePos[idx].z = destPos.z;
@@ -991,9 +991,9 @@ void EnRd_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, 
     }
 }
 
-void EnRd_Draw(Actor* thisx, PlayState* play) {
-    static Vec3f D_80AE494C = { 300.0f, 0.0f, 0.0f };
-    static Vec3f sShadowScale = { 0.25f, 0.25f, 0.25f };
+void En_Rd_display(Actor* thisx, PlayState* play) {
+    static Vec3f local_foot = { 300.0f, 0.0f, 0.0f };
+    static Vec3f shadow_scale = { 0.25f, 0.25f, 0.25f };
     s32 pad;
     EnRd* this = (EnRd*)thisx;
     Vec3f thisPos = thisx->world.pos;
@@ -1001,32 +1001,32 @@ void EnRd_Draw(Actor* thisx, PlayState* play) {
     OPEN_DISPS(play->state.gfxCtx, "../z_en_rd.c", 1679);
 
     if (this->alpha == 255) {
-        Gfx_SetupDL_25Opa(play->state.gfxCtx);
+        _texture_z_light_fog_prim(play->state.gfxCtx);
         gDPSetEnvColor(POLY_OPA_DISP++, 0, 0, 0, this->alpha);
-        gSPSegment(POLY_OPA_DISP++, 8, &D_80116280[2]);
+        gSPSegment(POLY_OPA_DISP++, 8, &Actor_change_render_mode[2]);
         POLY_OPA_DISP =
-            SkelAnime_DrawFlex(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
-                               EnRd_OverrideLimbDraw, EnRd_PostLimbDraw, this, POLY_OPA_DISP);
+            Si2_draw2_SV(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
+                               en_rd_display1, en_rd_display2, this, POLY_OPA_DISP);
 
-        func_80033C30(&thisPos, &sShadowScale, 255, play);
+        Shadow_draw(&thisPos, &shadow_scale, 255, play);
 
         if (this->fireTimer != 0) {
             thisx->colorFilterTimer++;
             this->fireTimer--;
             if (this->fireTimer % 4 == 0) {
-                EffectSsEnFire_SpawnVec3s(play, thisx, &this->firePos[this->fireTimer >> 2], 0x4B, 0, 0,
+                Effect_En_Fire_ct_s(play, thisx, &this->firePos[this->fireTimer >> 2], 0x4B, 0, 0,
                                           (this->fireTimer >> 2));
             }
         }
     } else {
-        Gfx_SetupDL_25Xlu(play->state.gfxCtx);
+        _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
         gDPSetEnvColor(POLY_XLU_DISP++, 0, 0, 0, this->alpha);
-        gSPSegment(POLY_XLU_DISP++, 8, &D_80116280[0]);
+        gSPSegment(POLY_XLU_DISP++, 8, &Actor_change_render_mode[0]);
         POLY_XLU_DISP =
-            SkelAnime_DrawFlex(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
-                               EnRd_OverrideLimbDraw, NULL, this, POLY_XLU_DISP);
+            Si2_draw2_SV(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
+                               en_rd_display1, NULL, this, POLY_XLU_DISP);
 
-        func_80033C30(&thisPos, &sShadowScale, this->alpha, play);
+        Shadow_draw(&thisPos, &shadow_scale, this->alpha, play);
     }
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_rd.c", 1735);

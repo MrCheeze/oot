@@ -37,7 +37,7 @@ typedef enum PlayerStartMode {
     /* 12 */ PLAYER_START_MODE_UNUSED_12, // Unused, behaves the same as PLAYER_START_MODE_MOVE_FORWARD_SLOW.
     /* 13 */ PLAYER_START_MODE_IDLE, // Idle standing still, or swim if in water.
     /* 14 */ PLAYER_START_MODE_MOVE_FORWARD_SLOW, // Take a few steps forward at a slow speed (2.0f), or swim if in water.
-    /* 15 */ PLAYER_START_MODE_MOVE_FORWARD, // Take a few steps forward, using the speed from the last exit (gSaveContext.entranceSpeed), or swim if in water.
+    /* 15 */ PLAYER_START_MODE_MOVE_FORWARD, // Take a few steps forward, using the speed from the last exit (z_common_data.entranceSpeed), or swim if in water.
     /* 16 */ PLAYER_START_MODE_MAX // Note: By default, this param has 4 bits allocated. The max value is 16.
 } PlayerStartMode;
 
@@ -68,7 +68,7 @@ typedef enum PlayerBoots {
     /* 0x00 */ PLAYER_BOOTS_KOKIRI,
     /* 0x01 */ PLAYER_BOOTS_IRON,
     /* 0x02 */ PLAYER_BOOTS_HOVER,
-    /* Values below are only relevant when setting regs in Player_SetBootData */
+    /* Values below are only relevant when setting regs in player_performance_init */
     /* 0x03 */ PLAYER_BOOTS_INDOOR,
     /* 0x04 */ PLAYER_BOOTS_IRON_UNDERWATER,
     /* 0x05 */ PLAYER_BOOTS_KOKIRI_CHILD,
@@ -316,7 +316,7 @@ typedef enum PlayerFace {
 } PlayerFace;
 
 typedef enum PlayerModelGroup {
-    /* 0x00 */ PLAYER_MODELGROUP_0, // unused (except for a bug in `Player_OverrideLimbDrawPause`)
+    /* 0x00 */ PLAYER_MODELGROUP_0, // unused (except for a bug in `item_select_before_draw`)
     /* 0x01 */ PLAYER_MODELGROUP_CHILD_HYLIAN_SHIELD,  //hold sword only. used for holding sword only as child link with hylian shield equipped
     /* 0x02 */ PLAYER_MODELGROUP_SWORD_AND_SHIELD, // hold sword and shield or just sword if no shield is equipped
     /* 0x03 */ PLAYER_MODELGROUP_DEFAULT, // non-specific models, for items that don't have particular link models
@@ -385,7 +385,7 @@ typedef enum PlayerAnimType {
 } PlayerAnimType;
 
 /**
- * Temporary names, derived from original animation names in `D_80853914`
+ * Temporary names, derived from original animation names in `link_anime_table`
  */
 typedef enum PlayerAnimGroup {
     /* 0x00 */ PLAYER_ANIMGROUP_wait,
@@ -764,7 +764,7 @@ typedef struct WeaponInfo {
 #define PLAYER_STATE2_25 (1 << 25)
 #define PLAYER_STATE2_26 (1 << 26)
 #define PLAYER_STATE2_USING_OCARINA (1 << 27) // Playing the ocarina or warping out from an ocarina warp song
-#define PLAYER_STATE2_IDLE_FIDGET (1 << 28) // Playing a fidget idle animation (under typical circumstances, see `Player_ChooseNextIdleAnim` for more info)
+#define PLAYER_STATE2_IDLE_FIDGET (1 << 28) // Playing a fidget idle animation (under typical circumstances, see `wait_anime_check_set` for more info)
 #define PLAYER_STATE2_29 (1 << 29)
 #define PLAYER_STATE2_30 (1 << 30)
 #define PLAYER_STATE2_31 (1 << 31)
@@ -868,7 +868,7 @@ typedef struct Player {
     /* 0x0678 */ PlayerAgeProperties* ageProperties;
     /* 0x067C */ u32 stateFlags1;
     /* 0x0680 */ u32 stateFlags2;
-    /* 0x0684 */ Actor* autoLockOnActor; // Actor that is locked onto automatically without player input; see `Player_SetAutoLockOnActor`
+    /* 0x0684 */ Actor* autoLockOnActor; // Actor that is locked onto automatically without player input; see `to_anchor_set`
     /* 0x0688 */ Actor* boomerangActor;
     /* 0x068C */ Actor* naviActor;
     /* 0x0690 */ s16 naviTextId;
@@ -911,22 +911,22 @@ typedef struct Player {
 
     /* 0x084F */ union {
         s8 actionVar1;
-        s8 startedAnim; // Player_Action_TimeTravelEnd: Started playing the animation that was previously frozen
-        s8 facingUpSlope; // Player_Action_SlideOnSlope: Facing uphill when sliding on a slope
-        s8 isLakeHyliaCs; // Player_Action_BlueWarpArrive: In Lake Hylia CS after Water Temple. Floating down is delayed until a specific point in the cutscene.
-        s8 bottleCatchType; // Player_Action_SwingBottle: entry type for `sBottleCatchInfo`, corresponds to actor caught in a bottle
+        s8 startedAnim; // move_m_sword_end: Started playing the animation that was previously frozen
+        s8 facingUpSlope; // move_slope_slip: Facing uphill when sliding on a slope
+        s8 isLakeHyliaCs; // move_from_warp: In Lake Hylia CS after Water Temple. Floating down is delayed until a specific point in the cutscene.
+        s8 bottleCatchType; // move_bottle_attack: entry type for `sBottleCatchInfo`, corresponds to actor caught in a bottle
     } av1; // "Action Variable 1": context dependent variable that has different meanings depending on what action is currently running
 
     /* 0x0850 */ union {
         s16 actionVar2;
-        s16 fallDamageStunTimer; // Player_Action_Idle: Prevents any movement and shakes model up and down quickly to indicate fall damage stun
-        s16 bonked; // Player_Action_Roll: Set to true after bonking into a wall or an actor
-        s16 animDelayTimer; // Player_Action_TimeTravelEnd: Delays playing animation until finished counting down
-        s16 startedTextbox; // Player_Action_SwingBottle: set to true when the textbox is started
-        s16 inWater; // Player_Action_SwingBottle: True if a bottle is swung in water. Used to determine which bottle swing animation to use.
-        s16 csDelayTimer; // Player_Action_WaitForCutscene: Number of frames to wait before responding to a cutscene
-        s16 playedLandingSfx; // Player_Action_BlueWarpArrive: Played sfx when landing on the ground
-        s16 appearTimer; // Player_Action_FaroresWindArrive: Counts up, appear at 20 frames (1 second)
+        s16 fallDamageStunTimer; // move_wait: Prevents any movement and shakes model up and down quickly to indicate fall damage stun
+        s16 bonked; // move_landing_roll: Set to true after bonking into a wall or an actor
+        s16 animDelayTimer; // move_m_sword_end: Delays playing animation until finished counting down
+        s16 startedTextbox; // move_bottle_attack: set to true when the textbox is started
+        s16 inWater; // move_bottle_attack: True if a bottle is swung in water. Used to determine which bottle swing animation to use.
+        s16 csDelayTimer; // move_tool_demo_wait: Number of frames to wait before responding to a cutscene
+        s16 playedLandingSfx; // move_from_warp: Played sfx when landing on the ground
+        s16 appearTimer; // move_from_magic_window: Counts up, appear at 20 frames (1 second)
     } av2; // "Action Variable 2": context dependent variable that has different meanings depending on what action is currently running
 
     /* 0x0854 */ f32 unk_854;
@@ -973,7 +973,7 @@ typedef struct Player {
     /* 0x0A60 */ u8 bodyIsBurning;
     /* 0x0A61 */ u8 bodyFlameTimers[PLAYER_BODYPART_MAX]; // one flame per body part
     /* 0x0A73 */ u8 unk_A73;
-    /* 0x0A74 */ AfterPutAwayFunc afterPutAwayFunc; // See `Player_SetupWaitForPutAway` and `Player_Action_WaitForPutAway`
+    /* 0x0A74 */ AfterPutAwayFunc afterPutAwayFunc; // See `Player_actor_set_demo_init_proc` and `move_demo_init`
     /* 0x0A78 */ s8 invincibilityTimer; // prevents damage when nonzero. Positive values are intangibility, negative are invulnerability
     /* 0x0A79 */ u8 floorTypeTimer; // counts up every frame the current floor type is the same as the last frame
     /* 0x0A7A */ u8 floorProperty;
@@ -988,70 +988,70 @@ typedef struct Player {
 } Player; // size = 0xA94
 
 // z_player_lib.c
-void Player_SetBootData(struct PlayState* play, Player* this);
-int Player_InBlockingCsMode(struct PlayState* play, Player* this);
-int Player_InCsMode(struct PlayState* play);
-s32 Player_CheckHostileLockOn(Player* this);
-int Player_IsChildWithHylianShield(Player* this);
-s32 Player_ActionToModelGroup(Player* this, s32 itemAction);
-void Player_SetModelsForHoldingShield(Player* this);
-void Player_SetModels(Player* this, s32 modelGroup);
-void Player_SetModelGroup(Player* this, s32 modelGroup);
-void func_8008EC70(Player* this);
-void Player_SetEquipmentData(struct PlayState* play, Player* this);
-void Player_UpdateBottleHeld(struct PlayState* play, Player* this, s32 item, s32 itemAction);
-void Player_ReleaseLockOn(Player* this);
-void Player_ClearZTargeting(Player* this);
-void Player_SetAutoLockOnActor(struct PlayState* play, Actor* actor);
-s32 func_8008EF44(struct PlayState* play, s32 ammo);
-int Player_IsBurningStickInRange(struct PlayState* play, Vec3f* pos, f32 xzRange, f32 yRange);
-s32 Player_GetStrength(void);
-u8 Player_GetMask(struct PlayState* play);
-Player* Player_UnsetMask(struct PlayState* play);
-s32 Player_HasMirrorShieldEquipped(struct PlayState* play);
-int Player_HasMirrorShieldSetToDraw(struct PlayState* play);
-s32 Player_ActionToMagicSpell(Player* this, s32 itemAction);
-int Player_HoldsHookshot(Player* this);
-int func_8008F128(Player* this);
-s32 Player_ActionToMeleeWeapon(s32 itemAction);
-s32 Player_GetMeleeWeaponHeld(Player* this);
-s32 Player_HoldsTwoHandedWeapon(Player* this);
-int Player_HoldsBrokenKnife(Player* this);
-s32 Player_ActionToBottle(Player* this, s32 itemAction);
-s32 Player_GetBottleHeld(Player* this);
-s32 Player_ActionToExplosive(Player* this, s32 itemAction);
-s32 Player_GetExplosiveHeld(Player* this);
-s32 func_8008F2BC(Player* this, s32 itemAction);
-s32 Player_GetEnvironmentalHazard(struct PlayState* play);
-void Player_DrawImpl(struct PlayState* play, void** skeleton, Vec3s* jointTable, s32 dListCount, s32 lod, s32 tunic,
+void player_performance_init(struct PlayState* play, Player* this);
+int player_action_check(struct PlayState* play, Player* this);
+int player_demo_check(struct PlayState* play);
+s32 anchor_mode_check(Player* this);
+int child_hyral_shield_check(Player* this);
+s32 item_shape_type_set(Player* this, s32 itemAction);
+void defense_shape_type_set(Player* this);
+void shape_set(Player* this, s32 modelGroup);
+void shape_type_set(Player* this, s32 modelGroup);
+void now_item_cancel(Player* this);
+void player_ability_set(struct PlayState* play, Player* this);
+void bottle_item_change(struct PlayState* play, Player* this, s32 item, s32 itemAction);
+void anchor_cancel(Player* this);
+void anchor_reset(Player* this);
+void to_anchor_set(struct PlayState* play, Actor* actor);
+s32 to_bow_game_set(struct PlayState* play, s32 ammo);
+int player_fire_stick_hit_check(struct PlayState* play, Vec3f* pos, f32 xzRange, f32 yRange);
+s32 player_grove_check(void);
+u8 mask_check(struct PlayState* play);
+Player* mask_cancel(struct PlayState* play);
+s32 mirror_shield_check(struct PlayState* play);
+int mirror_shield_set_check(struct PlayState* play);
+s32 magic_item_check(Player* this, s32 itemAction);
+int hook_check(Player* this);
+int hook_shoot_check(Player* this);
+s32 sword_item_check(s32 itemAction);
+s32 sword_check(Player* this);
+s32 longsword_check(Player* this);
+int break_longsword_check(Player* this);
+s32 bottle_item_check(Player* this, s32 itemAction);
+s32 bottle_check(Player* this);
+s32 bom_item_check(Player* this, s32 itemAction);
+s32 bom_check(Player* this);
+s32 nom2figh_check(Player* this, s32 itemAction);
+s32 player_condition_check(struct PlayState* play);
+void Player_shape_draw(struct PlayState* play, void** skeleton, Vec3s* jointTable, s32 dListCount, s32 lod, s32 tunic,
                      s32 boots, s32 face, OverrideLimbDrawOpa overrideLimbDraw, PostLimbDrawOpa postLimbDraw,
                      void* data);
-s32 Player_OverrideLimbDrawGameplayCommon(struct PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot,
+s32 player_before_draw_joint_move(struct PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot,
                                           void* thisx);
-s32 Player_OverrideLimbDrawGameplayDefault(struct PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot,
+s32 player_before_draw(struct PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot,
                                            void* thisx);
-s32 Player_OverrideLimbDrawGameplayFirstPerson(struct PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos,
+s32 before_high_draw(struct PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos,
                                                Vec3s* rot, void* thisx);
-s32 Player_OverrideLimbDrawGameplayCrawling(struct PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot,
+s32 before_no_draw(struct PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot,
                                             void* thisx);
-u8 func_80090480(struct PlayState* play, ColliderQuad* collider, WeaponInfo* weaponInfo, Vec3f* newTip, Vec3f* newBase);
-void Player_DrawGetItem(struct PlayState* play, Player* this);
-void Player_PostLimbDrawGameplay(struct PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx);
-u32 Player_InitPauseDrawData(struct PlayState* play, u8* segment, SkelAnime* skelAnime);
-void Player_DrawPause(struct PlayState* play, u8* segment, SkelAnime* skelAnime, Vec3f* pos, Vec3s* rot, f32 scale,
+u8 sword_attack_collision_set(struct PlayState* play, ColliderQuad* collider, WeaponInfo* weaponInfo, Vec3f* newTip, Vec3f* newBase);
+void get_item_draw(struct PlayState* play, Player* this);
+void player_after_draw(struct PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx);
+u32 Player_Shape_Read(struct PlayState* play, u8* segment, SkelAnime* skelAnime);
+void Player_Shape_Draw(struct PlayState* play, u8* segment, SkelAnime* skelAnime, Vec3f* pos, Vec3s* rot, f32 scale,
                       s32 sword, s32 tunic, s32 shield, s32 boots);
 
 // z_player_lib.c
-extern FlexSkeletonHeader* gPlayerSkelHeaders[2];
-extern u8 gPlayerModelTypes[PLAYER_MODELGROUP_MAX][PLAYER_MODELGROUPENTRY_MAX];
-extern Gfx* gPlayerLeftHandBgsDLs[];
-extern Gfx* gPlayerLeftHandOpenDLs[];
-extern Gfx* gPlayerLeftHandClosedDLs[];
-extern Gfx* gPlayerLeftHandBoomerangDLs[];
-extern Gfx gCullBackDList[];
-extern Gfx gCullFrontDList[];
+extern FlexSkeletonHeader* skeleton_list[2];
+extern u8 player_shape_type[PLAYER_MODELGROUP_MAX][PLAYER_MODELGROUPENTRY_MAX];
+extern Gfx* l_longsword_model_data[];
+extern Gfx* l_Lhand_model_data[];
+extern Gfx* l_LhandG_model_data[];
+extern Gfx* l_boomhand_model_data[];
+extern Gfx set_cull_back_model[];
+extern Gfx set_cull_front_model[];
 
 // object_table.c
-extern s16 gLinkObjectIds[2];
+extern s16 object_exchange_player_bank[2];
 
 #endif

@@ -10,13 +10,13 @@
 
 #define FLAGS 0
 
-void ObjBombiwa_Init(Actor* thisx, PlayState* play);
-void ObjBombiwa_InitCollision(Actor* thisx, PlayState* play);
-void ObjBombiwa_Destroy(Actor* thisx, PlayState* play2);
-void ObjBombiwa_Update(Actor* thisx, PlayState* play);
-void ObjBombiwa_Draw(Actor* thisx, PlayState* play);
+void Obj_Bombiwa_actor_ct(Actor* thisx, PlayState* play);
+void set_collision_bombiwa(Actor* thisx, PlayState* play);
+void Obj_Bombiwa_actor_dt(Actor* thisx, PlayState* play2);
+void Obj_Bombiwa_actor_move(Actor* thisx, PlayState* play);
+void Obj_Bombiwa_actor_draw(Actor* thisx, PlayState* play);
 
-void ObjBombiwa_Break(ObjBombiwa* this, PlayState* play);
+void set_eff_bombstone(ObjBombiwa* this, PlayState* play);
 
 ActorProfile Obj_Bombiwa_Profile = {
     /**/ ACTOR_OBJ_BOMBIWA,
@@ -24,13 +24,13 @@ ActorProfile Obj_Bombiwa_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_BOMBIWA,
     /**/ sizeof(ObjBombiwa),
-    /**/ ObjBombiwa_Init,
-    /**/ ObjBombiwa_Destroy,
-    /**/ ObjBombiwa_Update,
-    /**/ ObjBombiwa_Draw,
+    /**/ Obj_Bombiwa_actor_ct,
+    /**/ Obj_Bombiwa_actor_dt,
+    /**/ Obj_Bombiwa_actor_move,
+    /**/ Obj_Bombiwa_actor_draw,
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit ClPipeDt_bombiwa = {
     {
         COL_MATERIAL_HARD,
         AT_NONE,
@@ -50,36 +50,36 @@ static ColliderCylinderInit sCylinderInit = {
     { 55, 70, 0, { 0 } },
 };
 
-static CollisionCheckInfoInit sColChkInfoInit = { 0, 12, 60, MASS_IMMOVABLE };
+static CollisionCheckInfoInit StatusDt_bombiwa = { 0, 12, 60, MASS_IMMOVABLE };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDistance, 2000, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeScale, 350, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDownward, 1000, ICHAIN_STOP),
 };
 
-static s16 sEffectScales[] = {
+static s16 scl[] = {
     17, 14, 10, 8, 7, 5, 3, 2,
 };
 
-void ObjBombiwa_InitCollision(Actor* thisx, PlayState* play) {
+void set_collision_bombiwa(Actor* thisx, PlayState* play) {
     ObjBombiwa* this = (ObjBombiwa*)thisx;
 
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
-    Collider_UpdateCylinder(&this->actor, &this->collider);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set5(play, &this->collider, &this->actor, &ClPipeDt_bombiwa);
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
 }
 
-void ObjBombiwa_Init(Actor* thisx, PlayState* play) {
-    Actor_ProcessInitChain(thisx, sInitChain);
-    ObjBombiwa_InitCollision(thisx, play);
-    if ((Flags_GetSwitch(play, PARAMS_GET_U(thisx->params, 0, 6)) != 0)) {
-        Actor_Kill(thisx);
+void Obj_Bombiwa_actor_ct(Actor* thisx, PlayState* play) {
+    ValueSet_process(thisx, value_init);
+    set_collision_bombiwa(thisx, play);
+    if ((Actor_Environment_sw_Check(play, PARAMS_GET_U(thisx->params, 0, 6)) != 0)) {
+        Actor_delete(thisx);
     } else {
-        CollisionCheck_SetInfo(&thisx->colChkInfo, NULL, &sColChkInfoInit);
+        CollisionCheck_Status_set2(&thisx->colChkInfo, NULL, &StatusDt_bombiwa);
         if (thisx->shape.rot.y == 0) {
-            s16 rand = (s16)Rand_ZeroFloat(65536.0f);
+            s16 rand = (s16)rnd_f(65536.0f);
 
             thisx->world.rot.y = rand;
             thisx->shape.rot.y = rand;
@@ -89,14 +89,14 @@ void ObjBombiwa_Init(Actor* thisx, PlayState* play) {
     }
 }
 
-void ObjBombiwa_Destroy(Actor* thisx, PlayState* play2) {
+void Obj_Bombiwa_actor_dt(Actor* thisx, PlayState* play2) {
     PlayState* play = play2;
     ObjBombiwa* this = (ObjBombiwa*)thisx;
 
-    Collider_DestroyCylinder(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider);
 }
 
-void ObjBombiwa_Break(ObjBombiwa* this, PlayState* play) {
+void set_eff_bombstone(ObjBombiwa* this, PlayState* play) {
     Vec3f pos;
     Vec3f velocity;
     Gfx* dlist;
@@ -105,43 +105,43 @@ void ObjBombiwa_Break(ObjBombiwa* this, PlayState* play) {
     s32 i;
 
     dlist = object_bombiwa_DL_0009E0;
-    for (i = 0; i < ARRAY_COUNT(sEffectScales); i++) {
-        pos.x = ((Rand_ZeroOne() - 0.5f) * 10.0f) + this->actor.home.pos.x;
-        pos.y = ((Rand_ZeroOne() * 5.0f) + this->actor.home.pos.y) + 8.0f;
-        pos.z = ((Rand_ZeroOne() - 0.5f) * 10.0f) + this->actor.home.pos.z;
-        velocity.x = (Rand_ZeroOne() - 0.5f) * 15.0f;
-        velocity.y = (Rand_ZeroOne() * 16.0f) + 5.0f;
-        velocity.z = (Rand_ZeroOne() - 0.5f) * 15.0f;
-        scale = sEffectScales[i];
+    for (i = 0; i < ARRAY_COUNT(scl); i++) {
+        pos.x = ((fqrand() - 0.5f) * 10.0f) + this->actor.home.pos.x;
+        pos.y = ((fqrand() * 5.0f) + this->actor.home.pos.y) + 8.0f;
+        pos.z = ((fqrand() - 0.5f) * 10.0f) + this->actor.home.pos.z;
+        velocity.x = (fqrand() - 0.5f) * 15.0f;
+        velocity.y = (fqrand() * 16.0f) + 5.0f;
+        velocity.z = (fqrand() - 0.5f) * 15.0f;
+        scale = scl[i];
         arg5 = (scale >= 11) ? 37 : 33;
-        EffectSsKakera_Spawn(play, &pos, &velocity, &pos, -400, arg5, 10, 2, 0, scale, 1, 0, 80, KAKERA_COLOR_NONE,
+        Effect_Kakera_ct2(play, &pos, &velocity, &pos, -400, arg5, 10, 2, 0, scale, 1, 0, 80, KAKERA_COLOR_NONE,
                              OBJECT_BOMBIWA, dlist);
     }
-    func_80033480(play, &this->actor.world.pos, 60.0f, 8, 100, 160, 1);
+    dust_fly_set2(play, &this->actor.world.pos, 60.0f, 8, 100, 160, 1);
 }
 
-void ObjBombiwa_Update(Actor* thisx, PlayState* play) {
+void Obj_Bombiwa_actor_move(Actor* thisx, PlayState* play) {
     ObjBombiwa* this = (ObjBombiwa*)thisx;
     s32 pad;
 
-    if ((func_80033684(play, &this->actor) != NULL) ||
+    if ((BlastVsMyCheck_c(play, &this->actor) != NULL) ||
         ((this->collider.base.acFlags & AC_HIT) && (this->collider.elem.acHitElem->atDmgInfo.dmgFlags & DMG_HAMMER))) {
-        ObjBombiwa_Break(this, play);
-        Flags_SetSwitch(play, PARAMS_GET_U(this->actor.params, 0, 6));
-        SfxSource_PlaySfxAtFixedWorldPos(play, &this->actor.world.pos, 80, NA_SE_EV_WALL_BROKEN);
+        set_eff_bombstone(this, play);
+        Actor_Environment_sw_On(play, PARAMS_GET_U(this->actor.params, 0, 6));
+        Effect_SE_Info_new(play, &this->actor.world.pos, 80, NA_SE_EV_WALL_BROKEN);
         if (PARAMS_GET_U(this->actor.params, 15, 1) != 0) {
-            Sfx_PlaySfxCentered(NA_SE_SY_CORRECT_CHIME);
+            Na_StartSystemSe_F(NA_SE_SY_CORRECT_CHIME);
         }
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     } else {
         this->collider.base.acFlags &= ~AC_HIT;
         if (this->actor.xzDistToPlayer < 800.0f) {
-            CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
-            CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
+            CollisionCheck_setAC(play, &play->colChkCtx, &this->collider.base);
+            CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
         }
     }
 }
 
-void ObjBombiwa_Draw(Actor* thisx, PlayState* play) {
-    Gfx_DrawDListOpa(play, object_bombiwa_DL_0009E0);
+void Obj_Bombiwa_actor_draw(Actor* thisx, PlayState* play) {
+    Cheap_gfx_display(play, object_bombiwa_DL_0009E0);
 }

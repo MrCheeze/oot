@@ -9,9 +9,9 @@
 
 #define FLAGS 0
 
-void ObjBlockstop_Init(Actor* thisx, PlayState* play);
-void ObjBlockstop_Destroy(Actor* thisx, PlayState* play);
-void ObjBlockstop_Update(Actor* thisx, PlayState* play);
+void Obj_Blockstop_actor_ct(Actor* thisx, PlayState* play);
+void Obj_Blockstop_actor_dt(Actor* thisx, PlayState* play);
+void Obj_Blockstop_actor_move(Actor* thisx, PlayState* play);
 
 ActorProfile Obj_Blockstop_Profile = {
     /**/ ACTOR_OBJ_BLOCKSTOP,
@@ -19,46 +19,46 @@ ActorProfile Obj_Blockstop_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(ObjBlockstop),
-    /**/ ObjBlockstop_Init,
-    /**/ ObjBlockstop_Destroy,
-    /**/ ObjBlockstop_Update,
+    /**/ Obj_Blockstop_actor_ct,
+    /**/ Obj_Blockstop_actor_dt,
+    /**/ Obj_Blockstop_actor_move,
     /**/ NULL,
 };
 
-void ObjBlockstop_Init(Actor* thisx, PlayState* play) {
+void Obj_Blockstop_actor_ct(Actor* thisx, PlayState* play) {
     ObjBlockstop* this = (ObjBlockstop*)thisx;
 
-    if (Flags_GetSwitch(play, this->actor.params)) {
-        Actor_Kill(&this->actor);
+    if (Actor_Environment_sw_Check(play, this->actor.params)) {
+        Actor_delete(&this->actor);
     } else {
         this->actor.world.pos.y++;
     }
 }
 
-void ObjBlockstop_Destroy(Actor* thisx, PlayState* play) {
+void Obj_Blockstop_actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void ObjBlockstop_Update(Actor* thisx, PlayState* play) {
+void Obj_Blockstop_actor_move(Actor* thisx, PlayState* play) {
     ObjBlockstop* this = (ObjBlockstop*)thisx;
     DynaPolyActor* dynaPolyActor;
     Vec3f sp4C;
     s32 bgId;
     s32 pad;
 
-    if (BgCheck_EntityLineTest2(&play->colCtx, &this->actor.home.pos, &this->actor.world.pos, &sp4C,
+    if (T_BGCheck_ObjLineCheck_poly_chgrp_aiac(&play->colCtx, &this->actor.home.pos, &this->actor.world.pos, &sp4C,
                                 &this->actor.floorPoly, false, false, true, true, &bgId, &this->actor)) {
-        dynaPolyActor = DynaPoly_GetActor(&play->colCtx, bgId);
+        dynaPolyActor = DynaPolyInfo_actor_index2pointer(&play->colCtx, bgId);
 
         if (dynaPolyActor != NULL && dynaPolyActor->actor.id == ACTOR_OBJ_OSHIHIKI) {
             if (PARAMS_GET_U(dynaPolyActor->actor.params, 0, 4) == PUSHBLOCK_HUGE_START_ON ||
                 PARAMS_GET_U(dynaPolyActor->actor.params, 0, 4) == PUSHBLOCK_HUGE_START_OFF) {
-                Sfx_PlaySfxCentered(NA_SE_SY_CORRECT_CHIME);
+                Na_StartSystemSe_F(NA_SE_SY_CORRECT_CHIME);
             } else {
-                Sfx_PlaySfxCentered(NA_SE_SY_TRE_BOX_APPEAR);
+                Na_StartSystemSe_F(NA_SE_SY_TRE_BOX_APPEAR);
             }
 
-            Flags_SetSwitch(play, this->actor.params);
-            Actor_Kill(&this->actor);
+            Actor_Environment_sw_On(play, this->actor.params);
+            Actor_delete(&this->actor);
         }
     }
 }

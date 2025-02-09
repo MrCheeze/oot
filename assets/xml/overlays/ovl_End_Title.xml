@@ -1,17 +1,17 @@
 <Root>
     <File Name="ovl_End_Title" OutName="z_end_title">
-        <Texture Name="sTheLegendOfZeldaTex" OutName="the_legend_of_zelda" Format="ia8" Width="120" Height="24" Offset="0x0"/>
-        <Texture Name="sOcarinaOfTimeTex" OutName="ocarina_of_time" Format="ia8" Width="112" Height="16" Offset="0xB40"/>
-        <Texture Name="sTheEndTex" OutName="the_end" Format="ia8" Width="80" Height="24" Offset="0x1240"/>
-        <Texture Name="sNintendoLeftTex" OutName="nintendo_left" Format="ia8" Width="64" Height="48" Offset="0x19C0"/>
-        <Texture Name="sNintendoRightTex" OutName="nintendo_right" Format="ia8" Width="64" Height="48" Offset="0x25C0"/>
-        <Texture Name="sPresentedByTex" OutName="presented_by" Format="ia8" Width="96" Height="16" Offset="0x31C0"/>
+        <Texture Name="h_end_title1_txt" OutName="the_legend_of_zelda" Format="ia8" Width="120" Height="24" Offset="0x0"/>
+        <Texture Name="h_end_title2_txt" OutName="ocarina_of_time" Format="ia8" Width="112" Height="16" Offset="0xB40"/>
+        <Texture Name="h_end_theend_txt" OutName="the_end" Format="ia8" Width="80" Height="24" Offset="0x1240"/>
+        <Texture Name="h_end_nintendo_1_txt" OutName="nintendo_left" Format="ia8" Width="64" Height="48" Offset="0x19C0"/>
+        <Texture Name="h_end_nintendo_2_txt" OutName="nintendo_right" Format="ia8" Width="64" Height="48" Offset="0x25C0"/>
+        <Texture Name="h_end_present_txt" OutName="presented_by" Format="ia8" Width="96" Height="16" Offset="0x31C0"/>
 
-        <Array Name="sTriforceVtx" Count="6" Offset="0x37C0">
+        <Array Name="end_triforce_vtx" Count="6" Offset="0x37C0">
             <Vtx/>
         </Array>
-        <DList Name="sTriforceDL" Offset="0x3820"/>
+        <DList Name="end_triforce_modelT0" Offset="0x3820"/>
 
-        <DList Name="sPresentedByNintendoDL" Offset="0x3880"/>
+        <DList Name="h_end_nintendo_model" Offset="0x3880"/>
     </File>
 </Root>

@@ -9,30 +9,30 @@
 #define SHT_MAX 32767.0f
 #define SHT_MINV (1.0f / SHT_MAX)
 
-float floorf(float);
-double floor(double);
-long lfloorf(float);
-long lfloor(double);
+float __ffloor(float);
+double __floor(double);
+long __iffloor(float);
+long __ifloor(double);
 
-float ceilf(float);
-double ceil(double);
-long lceilf(float);
-long lceil(double);
+float __fceil(float);
+double __ceil(double);
+long __ifceil(float);
+long __iceil(double);
 
-float truncf(float);
-double trunc(double);
-long ltruncf(float);
-long ltrunc(double);
+float __ftrunc(float);
+double __trunc(double);
+long __iftrunc(float);
+long __itrunc(double);
 
-float nearbyintf(float);
-double nearbyint(double);
-long lnearbyintf(float);
-long lnearbyint(double);
+float __fround(float);
+double __round(double);
+long __ifround(float);
+long __iround(double);
 
-float roundf(float);
-double round(double);
-long lroundf(float);
-long lround(double);
+float __frint(float);
+double __rint(double);
+long __ifrint(float);
+long __irint(double);
 
 f32 fabsf(f32 f);
 #ifdef __sgi
@@ -61,13 +61,13 @@ f64 sqrt(f64 f);
 #endif
 
 #if !PLATFORM_N64
-extern float gPositiveInfinity;
-extern float gNegativeInfinity;
-extern float gPositiveZero;
-extern float gNegativeZero;
-extern float qNaN0x3FFFFF;
-extern float qNaN0x10000;
-extern float sNaN0x3FFFFF;
+extern float float_positive_infinity;
+extern float float_negative_infinity;
+extern float float_positive_zero;
+extern float float_negative_zero;
+extern float float_quiet_nan;
+extern float float_quiet_nan_set;
+extern float float_signaling_nan;
 #endif
 
 #endif

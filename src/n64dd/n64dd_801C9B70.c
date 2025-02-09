@@ -49,7 +49,7 @@ s32 func_801C9B70(s32 decNumber) {
 
 // n64ddError_GetLanguage
 s32 func_801C9C48(void) {
-    return (gCurrentRegion == 1) ? 0 : 1;
+    return (z_locale_mode == 1) ? 0 : 1;
 }
 
 // n64ddError_Memset
@@ -102,7 +102,7 @@ void func_801C9DB8(u8* arg0, s32 errorNum) {
 
     //! @bug: both of these functions will write to the pointer target, but errorHeader points to a string literal,
     //! which is meant to be const.
-    if (gCurrentRegion == 1) {
+    if (z_locale_mode == 1) {
         func_801C9CD4(&errorHeader[12], errorNum);
     } else {
         func_801C9D54(&errorHeader[13], errorNum);

@@ -1,25 +1,25 @@
 #include "z_kaleido_scope.h"
 
-static const Vtx sMarkBossVtx[] = {
+static const Vtx BossMarkOBData[] = {
     VTX(-4, 4, 0, 0, 0, 255, 255, 255, 255),
     VTX(-4, -4, 0, 0, 256, 255, 255, 255, 255),
     VTX(4, 4, 0, 256, 0, 255, 255, 255, 255),
     VTX(4, -4, 0, 256, 256, 255, 255, 255, 255),
 };
 
-static const Vtx sMarkChestVtx[] = {
+static const Vtx TreasureMarkOBData[] = {
     VTX(-4, 4, 0, 0, 0, 255, 255, 255, 255),
     VTX(-4, -4, 0, 0, 256, 255, 255, 255, 255),
     VTX(4, 4, 0, 256, 0, 255, 255, 255, 255),
     VTX(4, -4, 0, 256, 256, 255, 255, 255, 255),
 };
 
-PauseMapMarksData gPauseMapMarkDataTable[] = {
+PauseMapMarksData LargeMarkPos[] = {
     // Deku Tree map 0
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           2,
           {
@@ -32,7 +32,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           2,
           {
@@ -45,7 +45,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           1,
           {
@@ -57,7 +57,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           1,
           {
@@ -69,7 +69,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_BOSS,
           23,
-          sMarkBossVtx,
+          BossMarkOBData,
           4,
           1,
           {
@@ -81,7 +81,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           3,
           {
@@ -95,7 +95,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           2,
           {
@@ -104,7 +104,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
           } },
         { PAUSE_MAP_MARK_BOSS,
           23,
-          sMarkBossVtx,
+          BossMarkOBData,
           4,
           1,
           {
@@ -116,7 +116,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           3,
           {
@@ -126,7 +126,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
           } },
         { PAUSE_MAP_MARK_BOSS,
           23,
-          sMarkBossVtx,
+          BossMarkOBData,
           4,
           1,
           {
@@ -142,7 +142,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           7,
           {
@@ -160,7 +160,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           4,
           {
@@ -175,7 +175,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           1,
           {
@@ -187,7 +187,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           1,
           {
@@ -195,7 +195,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
           } },
         { PAUSE_MAP_MARK_BOSS,
           23,
-          sMarkBossVtx,
+          BossMarkOBData,
           4,
           1,
           {
@@ -207,7 +207,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           2,
           {
@@ -224,7 +224,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           6,
           {
@@ -241,7 +241,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           1,
           {
@@ -253,7 +253,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           5,
           {
@@ -265,7 +265,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
           } },
         { PAUSE_MAP_MARK_BOSS,
           23,
-          sMarkBossVtx,
+          BossMarkOBData,
           4,
           1,
           {
@@ -277,7 +277,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           3,
           {
@@ -287,7 +287,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
           } },
         { PAUSE_MAP_MARK_BOSS,
           23,
-          sMarkBossVtx,
+          BossMarkOBData,
           4,
           1,
           {
@@ -299,7 +299,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           2,
           {
@@ -312,7 +312,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           4,
           {
@@ -327,7 +327,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           1,
           {
@@ -339,7 +339,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           2,
           {
@@ -352,7 +352,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           5,
           {
@@ -364,7 +364,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
           } },
         { PAUSE_MAP_MARK_BOSS,
           23,
-          sMarkBossVtx,
+          BossMarkOBData,
           4,
           1,
           {
@@ -376,7 +376,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           6,
           {
@@ -393,7 +393,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           4,
           {
@@ -408,7 +408,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           2,
           {
@@ -421,7 +421,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           2,
           {
@@ -434,7 +434,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           2,
           {
@@ -447,7 +447,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           10,
           {
@@ -464,7 +464,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
           } },
         { PAUSE_MAP_MARK_BOSS,
           23,
-          sMarkBossVtx,
+          BossMarkOBData,
           4,
           1,
           {
@@ -476,7 +476,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           9,
           {
@@ -496,7 +496,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           3,
           {
@@ -510,7 +510,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           1,
           {
@@ -522,7 +522,7 @@ PauseMapMarksData gPauseMapMarkDataTable[] = {
     {
         { PAUSE_MAP_MARK_CHEST,
           23,
-          sMarkChestVtx,
+          TreasureMarkOBData,
           4,
           3,
           {

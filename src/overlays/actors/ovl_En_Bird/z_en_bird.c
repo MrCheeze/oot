@@ -9,15 +9,15 @@
 
 #define FLAGS 0
 
-void EnBird_Init(Actor* thisx, PlayState* play);
-void EnBird_Destroy(Actor* thisx, PlayState* play);
-void EnBird_Update(Actor* thisx, PlayState* play);
-void EnBird_Draw(Actor* thisx, PlayState* play);
+void En_Bird_Actor_ct(Actor* thisx, PlayState* play);
+void En_bird_Actor_dt(Actor* thisx, PlayState* play);
+void En_bird_move(Actor* thisx, PlayState* play);
+void En_bird_display(Actor* thisx, PlayState* play);
 
-void EnBird_SetupMove(EnBird* this, s16 params);
-void EnBird_Move(EnBird* this, PlayState* play);
-void EnBird_Idle(EnBird* this, PlayState* play);
-void EnBird_SetupIdle(EnBird* this, s16 params);
+void En_Bird_mode_rnd_move_init(EnBird* this, s16 params);
+void En_Bird_mode_rnd_move(EnBird* this, PlayState* play);
+void En_Bird_mode_wait(EnBird* this, PlayState* play);
+void En_Bird_mode_wait_init(EnBird* this, s16 params);
 
 ActorProfile En_Bird_Profile = {
     /**/ ACTOR_EN_BIRD,
@@ -25,27 +25,27 @@ ActorProfile En_Bird_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_BIRD,
     /**/ sizeof(EnBird),
-    /**/ EnBird_Init,
-    /**/ EnBird_Destroy,
-    /**/ EnBird_Update,
-    /**/ EnBird_Draw,
+    /**/ En_Bird_Actor_ct,
+    /**/ En_bird_Actor_dt,
+    /**/ En_bird_move,
+    /**/ En_bird_display,
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_F32(lockOnArrowOffset, 5600, ICHAIN_STOP),
 };
 
-void EnBird_SetupAction(EnBird* this, EnBirdActionFunc actionFunc) {
+void En_Bird_set_process(EnBird* this, EnBirdActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
 
-void EnBird_Init(Actor* thisx, PlayState* play) {
+void En_Bird_Actor_ct(Actor* thisx, PlayState* play) {
     EnBird* this = (EnBird*)thisx;
 
-    Actor_ProcessInitChain(&this->actor, sInitChain);
-    Actor_SetScale(&this->actor, 0.01);
-    SkelAnime_Init(play, &this->skelAnime, &gBirdSkel, &gBirdFlyAnim, NULL, NULL, 0);
-    ActorShape_Init(&this->actor.shape, 5500, ActorShadow_DrawCircle, 4);
+    ValueSet_process(&this->actor, value_init);
+    Actor_set_scale(&this->actor, 0.01);
+    Skeleton_Info2_M_ct(play, &this->skelAnime, &gBirdSkel, &gBirdFlyAnim, NULL, NULL, 0);
+    Shape_Info_init(&this->actor.shape, 5500, Actor_shadow_circle, 4);
     this->unk_194 = 0;
     this->timer = 0;
     this->rotYStep = 2500;
@@ -57,70 +57,70 @@ void EnBird_Init(Actor* thisx, PlayState* play) {
     this->posYPhaseStep = 0.0f;
     this->flightDistance = 40.0f;
     this->unk_1BC = 70.0f;
-    EnBird_SetupIdle(this, this->actor.params);
+    En_Bird_mode_wait_init(this, this->actor.params);
 }
 
-void EnBird_Destroy(Actor* thisx, PlayState* play) {
+void En_bird_Actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void EnBird_SetupIdle(EnBird* this, s16 params) {
-    f32 frameCount = Animation_GetLastFrame(&gBirdFlyAnim);
+void En_Bird_mode_wait_init(EnBird* this, s16 params) {
+    f32 frameCount = Si2_anime_end_frame(&gBirdFlyAnim);
     f32 playbackSpeed = this->scaleAnimSpeed ? 0.0f : 1.0f;
 
-    this->timer = Rand_S16Offset(5, 35);
-    Animation_Change(&this->skelAnime, &gBirdFlyAnim, playbackSpeed, 0.0f, frameCount, ANIMMODE_LOOP, 0.0f);
-    EnBird_SetupAction(this, EnBird_Idle);
+    this->timer = get_random_timer(5, 35);
+    Skeleton_Info2_init(&this->skelAnime, &gBirdFlyAnim, playbackSpeed, 0.0f, frameCount, ANIMMODE_LOOP, 0.0f);
+    En_Bird_set_process(this, En_Bird_mode_wait);
 }
 
-void EnBird_Idle(EnBird* this, PlayState* play) {
+void En_Bird_mode_wait(EnBird* this, PlayState* play) {
     this->actor.shape.yOffset += sinf(this->posYPhase) * this->posYMag;
-    Math_SmoothStepToF(&this->actor.speed, 0.0f, 0.1f, 0.5f, 0.0f);
+    add_calc(&this->actor.speed, 0.0f, 0.1f, 0.5f, 0.0f);
 
     if (this->scaleAnimSpeed) {
         this->skelAnime.playSpeed = this->actor.speed * 2.0f;
     }
 
-    SkelAnime_Update(&this->skelAnime);
+    Skeleton_Info2_anime_play(&this->skelAnime);
     this->timer--;
 
     if (this->timer <= 0) {
-        EnBird_SetupMove(this, this->actor.params);
+        En_Bird_mode_rnd_move_init(this, this->actor.params);
     }
 }
 
-void EnBird_SetupMove(EnBird* this, s16 params) {
-    this->timer = Rand_S16Offset(20, 45);
-    EnBird_SetupAction(this, EnBird_Move);
+void En_Bird_mode_rnd_move_init(EnBird* this, s16 params) {
+    this->timer = get_random_timer(20, 45);
+    En_Bird_set_process(this, En_Bird_mode_rnd_move);
 }
 
-void EnBird_Move(EnBird* this, PlayState* play) {
+void En_Bird_mode_rnd_move(EnBird* this, PlayState* play) {
     this->actor.shape.yOffset += sinf(this->posYPhase) * this->posYMag;
-    Math_SmoothStepToF(&this->actor.speed, this->speedTarget, 0.1f, this->speedStep, 0.0f);
+    add_calc(&this->actor.speed, this->speedTarget, 0.1f, this->speedStep, 0.0f);
 
-    if (this->flightDistance < Math_Vec3f_DistXZ(&this->actor.world.pos, &this->actor.home.pos) || this->timer < 4) {
-        Math_StepToAngleS(&this->actor.world.rot.y, Math_Vec3f_Yaw(&this->actor.world.pos, &this->actor.home.pos),
+    if (this->flightDistance < search_position_distanceXZ(&this->actor.world.pos, &this->actor.home.pos) || this->timer < 4) {
+        chase_s3(&this->actor.world.rot.y, search_position_angleY(&this->actor.world.pos, &this->actor.home.pos),
                           this->rotYStep);
     } else {
         this->actor.world.rot.y += (s16)(sinf(this->posYPhase) * this->rotYMag);
     }
 
     this->actor.shape.rot.y = this->actor.world.rot.y;
-    SkelAnime_Update(&this->skelAnime);
+    Skeleton_Info2_anime_play(&this->skelAnime);
     this->timer--;
     if (this->timer < 0) {
-        EnBird_SetupIdle(this, this->actor.params);
+        En_Bird_mode_wait_init(this, this->actor.params);
     }
 }
 
-void EnBird_Update(Actor* thisx, PlayState* play) {
+void En_bird_move(Actor* thisx, PlayState* play) {
     EnBird* this = (EnBird*)thisx;
 
     this->posYPhase += this->posYPhaseStep;
     this->actionFunc(this, play);
 }
 
-void EnBird_Draw(Actor* thisx, PlayState* play) {
+void En_bird_display(Actor* thisx, PlayState* play) {
     EnBird* this = (EnBird*)thisx;
 
-    SkelAnime_DrawOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, NULL, NULL, NULL);
+    Si2_draw(play, this->skelAnime.skeleton, this->skelAnime.jointTable, NULL, NULL, NULL);
 }

@@ -9,17 +9,17 @@
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void EnEg_Init(Actor* thisx, PlayState* play);
-void EnEg_Destroy(Actor* thisx, PlayState* play);
-void EnEg_Update(Actor* thisx, PlayState* play);
-void EnEg_Draw(Actor* thisx, PlayState* play);
+void En_Eg_Actor_ct(Actor* thisx, PlayState* play);
+void En_Eg_Actor_dt(Actor* thisx, PlayState* play);
+void En_Eg_main(Actor* thisx, PlayState* play);
+void En_Eg_draw(Actor* thisx, PlayState* play);
 
-void func_809FFDC8(EnEg* this, PlayState* play);
+void En_Eg_main_Hahen_Wait(EnEg* this, PlayState* play);
 
-static s32 sVoided = false;
+static s32 set_wipe = false;
 
-static EnEgActionFunc sActionFuncs[] = {
-    func_809FFDC8,
+static EnEgActionFunc proc[] = {
+    En_Eg_main_Hahen_Wait,
 };
 
 ActorProfile En_Eg_Profile = {
@@ -28,49 +28,49 @@ ActorProfile En_Eg_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_ZL2,
     /**/ sizeof(EnEg),
-    /**/ EnEg_Init,
-    /**/ EnEg_Destroy,
-    /**/ EnEg_Update,
-    /**/ EnEg_Draw,
+    /**/ En_Eg_Actor_ct,
+    /**/ En_Eg_Actor_dt,
+    /**/ En_Eg_main,
+    /**/ En_Eg_draw,
 };
 
-void EnEg_PlayVoidOutSFX(void) {
-    Sfx_PlaySfxCentered2(NA_SE_OC_ABYSS);
+void En_Eg_Set_TimeoverSound(void) {
+    Na_StartFixSe_F(NA_SE_OC_ABYSS);
 }
 
-void EnEg_Destroy(Actor* thisx, PlayState* play) {
+void En_Eg_Actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void EnEg_Init(Actor* thisx, PlayState* play) {
+void En_Eg_Actor_ct(Actor* thisx, PlayState* play) {
     EnEg* this = (EnEg*)thisx;
 
     this->action = 0;
 }
 
-void func_809FFDC8(EnEg* this, PlayState* play) {
-    if (!sVoided && (gSaveContext.subTimerSeconds <= 0) && Flags_GetSwitch(play, 0x36) &&
+void En_Eg_main_Hahen_Wait(EnEg* this, PlayState* play) {
+    if (!set_wipe && (z_common_data.subTimerSeconds <= 0) && Actor_Environment_sw_Check(play, 0x36) &&
         (!DEBUG_FEATURES || kREG(0) == 0)) {
         // Void the player out
-        Play_TriggerRespawn(play);
-        gSaveContext.respawnFlag = -2;
+        Game_play_down_restart_top(play);
+        z_common_data.respawnFlag = -2;
         SEQCMD_STOP_SEQUENCE(SEQ_PLAYER_BGM_MAIN, 0);
         play->transitionType = TRANS_TYPE_FADE_BLACK;
-        EnEg_PlayVoidOutSFX();
-        sVoided = true;
+        En_Eg_Set_TimeoverSound();
+        set_wipe = true;
     }
 }
 
-void EnEg_Update(Actor* thisx, PlayState* play) {
+void En_Eg_main(Actor* thisx, PlayState* play) {
     EnEg* this = (EnEg*)thisx;
     s32 action = this->action;
 
-    if (((action < 0) || (0 < action)) || (sActionFuncs[action] == NULL)) {
+    if (((action < 0) || (0 < action)) || (proc[action] == NULL)) {
         // "Main Mode is wrong!!!!!!!!!!!!!!!!!!!!!!!!!"
         PRINTF(VT_FGCOL(RED) "メインモードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
     } else {
-        sActionFuncs[action](this, play);
+        proc[action](this, play);
     }
 }
 
-void EnEg_Draw(Actor* thisx, PlayState* play) {
+void En_Eg_draw(Actor* thisx, PlayState* play) {
 }

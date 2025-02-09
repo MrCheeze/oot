@@ -14,22 +14,22 @@
 #define rParam regs[4]
 #define rScale regs[8]
 
-u32 EffectSsFhgFlash_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
-void EffectSsFhgFlash_DrawLightBall(PlayState* play, u32 index, EffectSs* this);
-void EffectSsFhgFlash_UpdateLightBall(PlayState* play, u32 index, EffectSs* this);
-void EffectSsFhgFlash_DrawShock(PlayState* play, u32 index, EffectSs* this);
-void EffectSsFhgFlash_UpdateShock(PlayState* play, u32 index, EffectSs* this);
+u32 Effect_Ss_Fhg_Flash_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
+void Effect_fhg_flash_disp(PlayState* play, u32 index, EffectSs* this);
+void Effect_fhg_flash_move(PlayState* play, u32 index, EffectSs* this);
+void Effect_fhg_flash_mini_disp(PlayState* play, u32 index, EffectSs* this);
+void Effect_fhg_flash_mini_move(PlayState* play, u32 index, EffectSs* this);
 
 EffectSsProfile Effect_Ss_Fhg_Flash_Profile = {
     EFFECT_SS_FHG_FLASH,
-    EffectSsFhgFlash_Init,
+    Effect_Ss_Fhg_Flash_ct,
 };
 
 // Should eventually come from assets/overlays/ovl_Effect_Ss_Fhg_Flash/ovl_Effect_Ss_Fhg_Flash.h
 //! TODO: investigate having ZAPD forward declare static variables
-static Gfx sShockDL[15];
+static Gfx gnf_inazumaMINI2_modelT[15];
 
-u32 EffectSsFhgFlash_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
+u32 Effect_Ss_Fhg_Flash_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
     EffectSsFhgFlashInitParams* initParams = (EffectSsFhgFlashInitParams*)initParamsx;
     s32 pad;
     s32 objectSlot;
@@ -38,11 +38,11 @@ u32 EffectSsFhgFlash_Init(PlayState* play, u32 index, EffectSs* this, void* init
     uintptr_t prevSeg6;
 
     if (initParams->type == FHGFLASH_LIGHTBALL) {
-        objectSlot = Object_GetSlot(&play->objectCtx, OBJECT_FHG);
+        objectSlot = Object_Exchange_bank_check(&play->objectCtx, OBJECT_FHG);
 
-        if ((objectSlot >= 0) && Object_IsLoaded(&play->objectCtx, objectSlot)) {
-            prevSeg6 = gSegments[6];
-            gSegments[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[objectSlot].segment);
+        if ((objectSlot >= 0) && Object_Exchange_bank_dma_check(&play->objectCtx, objectSlot)) {
+            prevSeg6 = SegmentBaseAddress[6];
+            SegmentBaseAddress[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[objectSlot].segment);
             this->rObjectSlot = objectSlot;
             this->pos = initParams->pos;
             this->velocity = initParams->velocity;
@@ -51,10 +51,10 @@ u32 EffectSsFhgFlash_Init(PlayState* play, u32 index, EffectSs* this, void* init
             this->life = 100;
             this->rScale = initParams->scale;
             this->rAlpha = 255;
-            this->draw = EffectSsFhgFlash_DrawLightBall;
-            this->update = EffectSsFhgFlash_UpdateLightBall;
+            this->draw = Effect_fhg_flash_disp;
+            this->update = Effect_fhg_flash_move;
             this->gfx = SEGMENTED_TO_VIRTUAL(gPhantomEnergyBallDL);
-            gSegments[6] = prevSeg6;
+            SegmentBaseAddress[6] = prevSeg6;
         } else {
             PRINTF("Effect_Ss_Fhg_Flash_ct():pffd->modeエラー\n");
             return 0;
@@ -62,30 +62,30 @@ u32 EffectSsFhgFlash_Init(PlayState* play, u32 index, EffectSs* this, void* init
     } else {
         this->actor = initParams->actor;
         this->velocity = this->accel = zeroVec;
-        this->life = (s16)(Rand_ZeroOne() * 10.0f) + 111;
-        this->rScale = (s16)Rand_ZeroFloat(initParams->scale) + initParams->scale;
+        this->life = (s16)(fqrand() * 10.0f) + 111;
+        this->rScale = (s16)rnd_f(initParams->scale) + initParams->scale;
         this->rAlpha = 255;
-        this->draw = EffectSsFhgFlash_DrawShock;
-        this->update = EffectSsFhgFlash_UpdateShock;
+        this->draw = Effect_fhg_flash_mini_disp;
+        this->update = Effect_fhg_flash_mini_move;
         this->rParam = initParams->param;
 
         if (initParams->param != FHGFLASH_SHOCK_NO_ACTOR) {
             this->pos = farAwayVec; // Set the initial position to where the effect cannot be seen
-            this->gfx = SEGMENTED_TO_VIRTUAL(sShockDL);
+            this->gfx = SEGMENTED_TO_VIRTUAL(gnf_inazumaMINI2_modelT);
         } else {
             this->pos = initParams->pos;
-            this->gfx = SEGMENTED_TO_VIRTUAL(sShockDL);
+            this->gfx = SEGMENTED_TO_VIRTUAL(gnf_inazumaMINI2_modelT);
         }
     }
     return 1;
 }
 
-static Color_RGB8 sLightBallColors[] = {
+static Color_RGB8 col[] = {
     { 165, 255, 61 }, { 0, 255, 255 }, { 255, 40, 0 }, { 255, 255, 0 }, { 0, 0, 255 },
     { 255, 0, 255 },  { 255, 150, 0 }, { 0, 0, 0 },    { 0, 0, 0 },
 };
 
-void EffectSsFhgFlash_DrawLightBall(PlayState* play, u32 index, EffectSs* this) {
+void Effect_fhg_flash_disp(PlayState* play, u32 index, EffectSs* this) {
     GraphicsContext* gfxCtx = play->state.gfxCtx;
     s32 pad;
     f32 scale;
@@ -96,24 +96,24 @@ void EffectSsFhgFlash_DrawLightBall(PlayState* play, u32 index, EffectSs* this) 
 
     OPEN_DISPS(gfxCtx, "../z_eff_fhg_flash.c", 268);
 
-    Matrix_Translate(this->pos.x, this->pos.y, this->pos.z, MTXMODE_NEW);
-    Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
-    gSegments[6] = VIRTUAL_TO_PHYSICAL(objectPtr);
+    Matrix_translate(this->pos.x, this->pos.y, this->pos.z, MTXMODE_NEW);
+    Matrix_scale(scale, scale, scale, MTXMODE_APPLY);
+    SegmentBaseAddress[6] = VIRTUAL_TO_PHYSICAL(objectPtr);
     gSPSegment(POLY_XLU_DISP++, 0x06, objectPtr);
-    Gfx_SetupDL_25Xlu(play->state.gfxCtx);
+    _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
     gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, 255, 255, 255, this->rAlpha);
-    gDPSetEnvColor(POLY_XLU_DISP++, sLightBallColors[this->rParam].r, sLightBallColors[this->rParam].g,
-                   sLightBallColors[this->rParam].b, 0);
+    gDPSetEnvColor(POLY_XLU_DISP++, col[this->rParam].r, col[this->rParam].g,
+                   col[this->rParam].b, 0);
     gDPPipeSync(POLY_XLU_DISP++);
-    Matrix_ReplaceRotation(&play->billboardMtxF);
-    Matrix_RotateZ((this->rXZRot / (f32)0x8000) * 3.1416f, MTXMODE_APPLY);
+    Matrix_rotate_scale_exchange(&play->billboardMtxF);
+    Matrix_rotateZ((this->rXZRot / (f32)0x8000) * 3.1416f, MTXMODE_APPLY);
     MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, gfxCtx, "../z_eff_fhg_flash.c", 326);
     gSPDisplayList(POLY_XLU_DISP++, this->gfx);
 
     CLOSE_DISPS(gfxCtx, "../z_eff_fhg_flash.c", 330);
 }
 
-void EffectSsFhgFlash_DrawShock(PlayState* play, u32 index, EffectSs* this) {
+void Effect_fhg_flash_mini_disp(PlayState* play, u32 index, EffectSs* this) {
     GraphicsContext* gfxCtx = play->state.gfxCtx;
     s32 pad;
     f32 scale;
@@ -122,31 +122,31 @@ void EffectSsFhgFlash_DrawShock(PlayState* play, u32 index, EffectSs* this) {
 
     OPEN_DISPS(gfxCtx, "../z_eff_fhg_flash.c", 346);
 
-    Matrix_Translate(this->pos.x, this->pos.y, this->pos.z, MTXMODE_NEW);
-    Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
+    Matrix_translate(this->pos.x, this->pos.y, this->pos.z, MTXMODE_NEW);
+    Matrix_scale(scale, scale, scale, MTXMODE_APPLY);
 
     if (this->rParam != FHGFLASH_SHOCK_NO_ACTOR) {
-        Gfx_SetupDL_44Xlu(play->state.gfxCtx);
-        Matrix_RotateX((this->rXZRot / (f32)0x8000) * 1.1416f, MTXMODE_APPLY);
+        _texture_decal_shadow(play->state.gfxCtx);
+        Matrix_rotateX((this->rXZRot / (f32)0x8000) * 1.1416f, MTXMODE_APPLY);
         gDPSetRenderMode(POLY_XLU_DISP++, G_RM_PASS, G_RM_AA_ZB_XLU_DECAL2);
     } else {
-        Gfx_SetupDL_25Xlu(play->state.gfxCtx);
-        Matrix_ReplaceRotation(&play->billboardMtxF);
+        _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
+        Matrix_rotate_scale_exchange(&play->billboardMtxF);
         gDPSetRenderMode(POLY_XLU_DISP++, G_RM_PASS, G_RM_AA_ZB_XLU_SURF2);
     }
 
     gDPPipeSync(POLY_XLU_DISP++);
     gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, 255, 255, 255, this->rAlpha);
     gDPSetEnvColor(POLY_XLU_DISP++, 0, 255, 155, 0);
-    Matrix_RotateZ((this->rXZRot / (f32)0x8000) * 3.1416f, MTXMODE_APPLY);
+    Matrix_rotateZ((this->rXZRot / (f32)0x8000) * 3.1416f, MTXMODE_APPLY);
     MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, gfxCtx, "../z_eff_fhg_flash.c", 395);
     gSPDisplayList(POLY_XLU_DISP++, this->gfx);
 
     CLOSE_DISPS(gfxCtx, "../z_eff_fhg_flash.c", 399);
 }
 
-void EffectSsFhgFlash_UpdateLightBall(PlayState* play, u32 index, EffectSs* this) {
-    s16 rand = (Rand_ZeroOne() * 20000.0f);
+void Effect_fhg_flash_move(PlayState* play, u32 index, EffectSs* this) {
+    s16 rand = (fqrand() * 20000.0f);
 
     this->rXZRot = (this->rXZRot + rand) + 0x4000;
 
@@ -168,26 +168,26 @@ void EffectSsFhgFlash_UpdateLightBall(PlayState* play, u32 index, EffectSs* this
     }
 }
 
-void EffectSsFhgFlash_UpdateShock(PlayState* play, u32 index, EffectSs* this) {
+void Effect_fhg_flash_mini_move(PlayState* play, u32 index, EffectSs* this) {
     s16 randBodyPart;
-    s16 rotStep = Rand_ZeroOne() * 20000.0f;
+    s16 rotStep = fqrand() * 20000.0f;
 
     this->rXZRot += rotStep + 0x4000;
 
     if (this->rParam == FHGFLASH_SHOCK_PLAYER) {
         Player* player = GET_PLAYER(play);
 
-        randBodyPart = Rand_ZeroFloat(PLAYER_BODYPART_MAX - 0.1f);
-        this->pos.x = player->bodyPartsPos[randBodyPart].x + Rand_CenteredFloat(10.0f);
-        this->pos.y = player->bodyPartsPos[randBodyPart].y + Rand_CenteredFloat(15.0f);
-        this->pos.z = player->bodyPartsPos[randBodyPart].z + Rand_CenteredFloat(10.0f);
+        randBodyPart = rnd_f(PLAYER_BODYPART_MAX - 0.1f);
+        this->pos.x = player->bodyPartsPos[randBodyPart].x + rnd_fx(10.0f);
+        this->pos.y = player->bodyPartsPos[randBodyPart].y + rnd_fx(15.0f);
+        this->pos.z = player->bodyPartsPos[randBodyPart].z + rnd_fx(10.0f);
     } else if (this->rParam == FHGFLASH_SHOCK_PG) {
         BossGanondrof* phantomGanon = (BossGanondrof*)this->actor;
 
-        randBodyPart = Rand_ZeroFloat(23.9f);
-        this->pos.x = phantomGanon->bodyPartsPos[randBodyPart].x + Rand_CenteredFloat(15.0f);
-        this->pos.y = phantomGanon->bodyPartsPos[randBodyPart].y + Rand_CenteredFloat(20.0f);
-        this->pos.z = phantomGanon->bodyPartsPos[randBodyPart].z + Rand_CenteredFloat(15.0f);
+        randBodyPart = rnd_f(23.9f);
+        this->pos.x = phantomGanon->bodyPartsPos[randBodyPart].x + rnd_fx(15.0f);
+        this->pos.y = phantomGanon->bodyPartsPos[randBodyPart].y + rnd_fx(20.0f);
+        this->pos.z = phantomGanon->bodyPartsPos[randBodyPart].z + rnd_fx(15.0f);
     }
 
     if (this->life < 100) {

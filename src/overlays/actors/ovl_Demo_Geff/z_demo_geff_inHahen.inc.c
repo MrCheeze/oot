@@ -1,4 +1,4 @@
-void func_80978030(DemoGeff* this, PlayState* play) {
+void Demo_Geff_main_init_Hahen(DemoGeff* this, PlayState* play) {
     Vec3f* thisScale = &this->actor.scale;
 
     this->action = 1;
@@ -27,7 +27,7 @@ void func_80978030(DemoGeff* this, PlayState* play) {
     }
 }
 
-void func_809781FC(DemoGeff* this, PlayState* play) {
+void Demo_Geff_Search_Gt(DemoGeff* this, PlayState* play) {
     s32 targetParams = 2;
     Actor* propIt;
 
@@ -50,7 +50,7 @@ void func_809781FC(DemoGeff* this, PlayState* play) {
     }
 }
 
-void func_809782A0(DemoGeff* this, PlayState* play) {
+void Demo_Geff_ResetPos(DemoGeff* this, PlayState* play) {
     DemoGt* demoGt = this->demoGt;
     s16 params = this->actor.params;
 
@@ -61,14 +61,14 @@ void func_809782A0(DemoGeff* this, PlayState* play) {
     }
 }
 
-void func_80978308(DemoGeff* this, PlayState* play) {
-    func_809781FC(this, play);
-    func_809782A0(this, play);
+void Demo_Geff_main_Hahen_Wait(DemoGeff* this, PlayState* play) {
+    Demo_Geff_Search_Gt(this, play);
+    Demo_Geff_ResetPos(this, play);
 #if DEBUG_FEATURES
-    func_80978030(this, play);
+    Demo_Geff_main_init_Hahen(this, play);
 #endif
 }
 
-void func_80978344(DemoGeff* this, PlayState* play) {
-    func_80977EA8(play, gGanonRubbleDL);
+void Demo_Geff_draw_Hahen(DemoGeff* this, PlayState* play) {
+    Demo_Geff_draw_normal_1(play, gGanonRubbleDL);
 }

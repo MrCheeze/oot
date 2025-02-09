@@ -10,26 +10,26 @@
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void EnHeishi1_Init(Actor* thisx, PlayState* play2);
-void EnHeishi1_Destroy(Actor* thisx, PlayState* play);
-void EnHeishi1_Update(Actor* thisx, PlayState* play);
-void EnHeishi1_Draw(Actor* thisx, PlayState* play);
+void En_Heishi1_actor_ct(Actor* thisx, PlayState* play2);
+void En_Heishi1_actor_dt(Actor* thisx, PlayState* play);
+void En_Heishi1_actor_move(Actor* thisx, PlayState* play);
+void En_Heishi1_actor_draw(Actor* thisx, PlayState* play);
 
-void EnHeishi1_SetupWait(EnHeishi1* this, PlayState* play);
-void EnHeishi1_SetupWalk(EnHeishi1* this, PlayState* play);
-void EnHeishi1_SetupMoveToLink(EnHeishi1* this, PlayState* play);
-void EnHeishi1_SetupTurnTowardLink(EnHeishi1* this, PlayState* play);
-void EnHeishi1_SetupKick(EnHeishi1* this, PlayState* play);
-void EnHeishi1_SetupWaitNight(EnHeishi1* this, PlayState* play);
+static void mode_wait_init(EnHeishi1* this, PlayState* play);
+static void mode_walk_init(EnHeishi1* this, PlayState* play);
+void mode_dush_init(EnHeishi1* this, PlayState* play);
+static void mode_catch_init(EnHeishi1* this, PlayState* play);
+static void mode_retry_init(EnHeishi1* this, PlayState* play);
+void mode_deadly_init(EnHeishi1* this, PlayState* play);
 
-void EnHeishi1_Wait(EnHeishi1* this, PlayState* play);
-void EnHeishi1_Walk(EnHeishi1* this, PlayState* play);
-void EnHeishi1_MoveToLink(EnHeishi1* this, PlayState* play);
-void EnHeishi1_TurnTowardLink(EnHeishi1* this, PlayState* play);
-void EnHeishi1_Kick(EnHeishi1* this, PlayState* play);
-void EnHeishi1_WaitNight(EnHeishi1* this, PlayState* play);
+static void mode_wait(EnHeishi1* this, PlayState* play);
+static void mode_walk(EnHeishi1* this, PlayState* play);
+void mode_dush(EnHeishi1* this, PlayState* play);
+static void mode_catch(EnHeishi1* this, PlayState* play);
+static void mode_retry(EnHeishi1* this, PlayState* play);
+void mode_deadly_move(EnHeishi1* this, PlayState* play);
 
-static s32 sPlayerIsCaught = false;
+static s32 look_at_me = false;
 
 ActorProfile En_Heishi1_Profile = {
     /**/ 0,
@@ -37,46 +37,46 @@ ActorProfile En_Heishi1_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_SD,
     /**/ sizeof(EnHeishi1),
-    /**/ EnHeishi1_Init,
-    /**/ EnHeishi1_Destroy,
-    /**/ EnHeishi1_Update,
-    /**/ EnHeishi1_Draw,
+    /**/ En_Heishi1_actor_ct,
+    /**/ En_Heishi1_actor_dt,
+    /**/ En_Heishi1_actor_move,
+    /**/ En_Heishi1_actor_draw,
 };
 
-static f32 sAnimParamsInit[][8] = {
+static f32 FLT_data[][8] = {
     { 1.0f, -10.0f, 3.0f, 0.5f, 1000.0f, 200.0f, 0.3f, 1000.0f },
     { 3.0f, -3.0f, 6.0f, 0.8f, 2000.0f, 400.0f, 0.5f, 2000.0f },
     { 1.0f, -10.0f, 3.0f, 0.5f, 1000.0f, 200.0f, 0.3f, 1000.0f },
     { 3.0f, -3.0f, 6.0f, 0.8f, 2000.0f, 400.0f, 0.5f, 2000.0f },
 };
 
-static s16 sBaseHeadTimers[] = { 20, 10, 20, 10, 13, 0 };
+static s16 head_change_time_data[] = { 20, 10, 20, 10, 13, 0 };
 
-static Vec3f sRupeePositions[] = {
+static Vec3f ruppy_pos[] = {
     { 0.0f, 0.0f, 90.0f },  { -55.0f, 0.0f, 90.0f }, { -55.0f, 0.0f, 30.0f }, { -55.0f, 0.0f, -30.0f },
     { 0.0f, 0.0f, -30.0f }, { 55.0f, 0.0f, -30.0f }, { 55.0f, 0.0f, 30.0f },  { 55.0f, 0.0f, 90.0f },
 };
 
-static s32 sBgCamIndices[] = {
+static s32 camera_ID_data[] = {
     7, 7, 2, 2, 2, 2, 3, 3, 4, 4, 5, 6, 4, 4, 5, 6,
 };
 
-static s16 sWaypoints[] = { 0, 4, 1, 5, 2, 6, 3, 7 };
+static s16 random_real_data[] = { 0, 4, 1, 5, 2, 6, 3, 7 };
 
-void EnHeishi1_Init(Actor* thisx, PlayState* play2) {
+void En_Heishi1_actor_ct(Actor* thisx, PlayState* play2) {
     PlayState* play = play2;
     EnHeishi1* this = (EnHeishi1*)thisx;
     Vec3f rupeePos;
     s32 i;
 
-    Actor_SetScale(&this->actor, 0.01f);
-    SkelAnime_Init(play, &this->skelAnime, &gEnHeishiSkel, &gEnHeishiIdleAnim, this->jointTable, this->morphTable, 17);
+    Actor_set_scale(&this->actor, 0.01f);
+    Skeleton_Info2_M_ct(play, &this->skelAnime, &gEnHeishiSkel, &gEnHeishiIdleAnim, this->jointTable, this->morphTable, 17);
 
     this->type = PARAMS_GET_U(this->actor.params, 8, 8);
     this->path = PARAMS_GET_U(this->actor.params, 0, 8);
 
-    for (i = 0; i < ARRAY_COUNT(sAnimParamsInit[0]); i++) {
-        this->animParams[i] = sAnimParamsInit[this->type][i];
+    for (i = 0; i < ARRAY_COUNT(FLT_data[0]); i++) {
+        this->animParams[i] = FLT_data[this->type][i];
     }
 
     // "type"
@@ -98,76 +98,76 @@ void EnHeishi1_Init(Actor* thisx, PlayState* play2) {
     PRINTF(VT_FGCOL(MAGENTA) " (頭)反転アングルスピード加算値 %f\n" VT_RST, this->headTurnSpeedScale);
     // "(head) maximum turning angle speed"
     PRINTF(VT_FGCOL(MAGENTA) " (頭)反転アングルスピード最大☆ %f\n" VT_RST, this->headTurnSpeedMax);
-    PRINTF(VT_FGCOL(GREEN) " 今時間 %d\n" VT_RST, ((void)0, gSaveContext.save.dayTime)); // "current time"
+    PRINTF(VT_FGCOL(GREEN) " 今時間 %d\n" VT_RST, ((void)0, z_common_data.save.dayTime)); // "current time"
     PRINTF(VT_FGCOL(YELLOW) " チェック時間 %d\n" VT_RST, CLOCK_TIME(17, 30) - 1);        // "check time"
     PRINTF("\n\n");
 
     if (this->path == 3) {
-        for (i = 0; i < ARRAY_COUNT(sRupeePositions); i++) {
-            rupeePos = sRupeePositions[i];
-            Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_EN_EX_RUPPY, rupeePos.x, rupeePos.y,
+        for (i = 0; i < ARRAY_COUNT(ruppy_pos); i++) {
+            rupeePos = ruppy_pos[i];
+            Actor_info_make_child_actor(&play->actorCtx, &this->actor, play, ACTOR_EN_EX_RUPPY, rupeePos.x, rupeePos.y,
                                rupeePos.z, 0, 0, 0, 3);
         }
     }
 
     if (this->type != 5) {
-        if (((gSaveContext.save.dayTime < CLOCK_TIME(17, 18) - 1) || IS_DAY) && !GET_EVENTCHKINF(EVENTCHKINF_80)) {
-            this->actionFunc = EnHeishi1_SetupWalk;
+        if (((z_common_data.save.dayTime < CLOCK_TIME(17, 18) - 1) || IS_DAY) && !GET_EVENTCHKINF(EVENTCHKINF_80)) {
+            this->actionFunc = mode_walk_init;
         } else {
-            Actor_Kill(&this->actor);
+            Actor_delete(&this->actor);
         }
     } else {
-        if ((gSaveContext.save.dayTime > CLOCK_TIME(17, 18) - 1) || !IS_DAY || GET_EVENTCHKINF(EVENTCHKINF_80)) {
-            this->actionFunc = EnHeishi1_SetupWaitNight;
+        if ((z_common_data.save.dayTime > CLOCK_TIME(17, 18) - 1) || !IS_DAY || GET_EVENTCHKINF(EVENTCHKINF_80)) {
+            this->actionFunc = mode_deadly_init;
         } else {
-            Actor_Kill(&this->actor);
+            Actor_delete(&this->actor);
         }
     }
 }
 
-void EnHeishi1_Destroy(Actor* thisx, PlayState* play) {
+void En_Heishi1_actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void EnHeishi1_SetupWalk(EnHeishi1* this, PlayState* play) {
-    f32 frameCount = Animation_GetLastFrame(&gEnHeishiWalkAnim);
+static void mode_walk_init(EnHeishi1* this, PlayState* play) {
+    f32 frameCount = Si2_anime_end_frame(&gEnHeishiWalkAnim);
 
-    Animation_Change(&this->skelAnime, &gEnHeishiWalkAnim, this->animSpeed, 0.0f, (s16)frameCount, ANIMMODE_LOOP,
+    Skeleton_Info2_init(&this->skelAnime, &gEnHeishiWalkAnim, this->animSpeed, 0.0f, (s16)frameCount, ANIMMODE_LOOP,
                      this->animMorphFrames);
     this->bodyTurnSpeed = 0.0f;
     this->moveSpeed = 0.0f;
-    this->headDirection = Rand_ZeroFloat(1.99f);
-    this->actionFunc = EnHeishi1_Walk;
+    this->headDirection = rnd_f(1.99f);
+    this->actionFunc = mode_walk;
 }
 
-void EnHeishi1_Walk(EnHeishi1* this, PlayState* play) {
+static void mode_walk(EnHeishi1* this, PlayState* play) {
     Path* path;
     Vec3s* pointPos;
     f32 pathDiffX;
     f32 pathDiffZ;
     s16 randOffset;
 
-    SkelAnime_Update(&this->skelAnime);
+    Skeleton_Info2_anime_play(&this->skelAnime);
 
-    if (Animation_OnFrame(&this->skelAnime, 1.0f) || Animation_OnFrame(&this->skelAnime, 17.0f)) {
-        Actor_PlaySfx(&this->actor, NA_SE_EV_KNIGHT_WALK);
+    if (Skeleton_Info_frame_check(&this->skelAnime, 1.0f) || Skeleton_Info_frame_check(&this->skelAnime, 17.0f)) {
+        Actor_SE_set(&this->actor, NA_SE_EV_KNIGHT_WALK);
     }
 
-    if (!sPlayerIsCaught) {
+    if (!look_at_me) {
         path = &play->pathList[this->path];
         pointPos = SEGMENTED_TO_VIRTUAL(path->points);
         pointPos += this->waypoint;
 
-        Math_ApproachF(&this->actor.world.pos.x, pointPos->x, 1.0f, this->moveSpeed);
-        Math_ApproachF(&this->actor.world.pos.z, pointPos->z, 1.0f, this->moveSpeed);
+        add_calc2(&this->actor.world.pos.x, pointPos->x, 1.0f, this->moveSpeed);
+        add_calc2(&this->actor.world.pos.z, pointPos->z, 1.0f, this->moveSpeed);
 
-        Math_ApproachF(&this->moveSpeed, this->moveSpeedTarget, 1.0f, this->moveSpeedMax);
+        add_calc2(&this->moveSpeed, this->moveSpeedTarget, 1.0f, this->moveSpeedMax);
 
         pathDiffX = pointPos->x - this->actor.world.pos.x;
         pathDiffZ = pointPos->z - this->actor.world.pos.z;
-        Math_SmoothStepToS(&this->actor.shape.rot.y, RAD_TO_BINANG(Math_FAtan2F(pathDiffX, pathDiffZ)), 3,
+        add_calc_short_angle2(&this->actor.shape.rot.y, RAD_TO_BINANG(fatan2(pathDiffX, pathDiffZ)), 3,
                            this->bodyTurnSpeed, 0);
 
-        Math_ApproachF(&this->bodyTurnSpeed, this->bodyTurnSpeedTarget, 1.0f, this->bodyTurnSpeedMax);
+        add_calc2(&this->bodyTurnSpeed, this->bodyTurnSpeedTarget, 1.0f, this->bodyTurnSpeedMax);
 
         if (this->headTimer == 0) {
             this->headDirection++;
@@ -176,11 +176,11 @@ void EnHeishi1_Walk(EnHeishi1* this, PlayState* play) {
             if ((this->headDirection & 1) != 0) {
                 this->headAngleTarget *= -1;
             }
-            randOffset = Rand_ZeroFloat(30.0f);
-            this->headTimer = sBaseHeadTimers[this->type] + randOffset;
+            randOffset = rnd_f(30.0f);
+            this->headTimer = head_change_time_data[this->type] + randOffset;
         }
 
-        Math_ApproachF(&this->headAngle, this->headAngleTarget, this->headTurnSpeedScale, this->headTurnSpeedMax);
+        add_calc2(&this->headAngle, this->headAngleTarget, this->headTurnSpeedScale, this->headTurnSpeedMax);
 
         if (DEBUG_FEATURES && (this->path == BREG(1)) && (BREG(0) != 0)) {
             PRINTF(VT_FGCOL(RED) " 種類  %d\n" VT_RST, this->path);
@@ -195,7 +195,7 @@ void EnHeishi1_Walk(EnHeishi1* this, PlayState* play) {
         if ((fabsf(pathDiffX) < 20.0f) && (fabsf(pathDiffZ) < 20.0f)) {
             if (this->waypointTimer == 0) {
                 if (this->type >= 2) {
-                    if ((this->waypoint >= 4) && (Rand_ZeroFloat(1.99f) > 1.0f)) {
+                    if ((this->waypoint >= 4) && (rnd_f(1.99f) > 1.0f)) {
                         if (this->waypoint == 7) {
                             this->waypoint = 0;
                         }
@@ -206,65 +206,65 @@ void EnHeishi1_Walk(EnHeishi1* this, PlayState* play) {
                         return;
                     }
                 }
-                this->actionFunc = EnHeishi1_SetupWait;
+                this->actionFunc = mode_wait_init;
             }
         }
     }
 }
 
-void EnHeishi1_SetupMoveToLink(EnHeishi1* this, PlayState* play) {
-    f32 frameCount = Animation_GetLastFrame(&gEnHeishiWalkAnim);
+void mode_dush_init(EnHeishi1* this, PlayState* play) {
+    f32 frameCount = Si2_anime_end_frame(&gEnHeishiWalkAnim);
 
-    Animation_Change(&this->skelAnime, &gEnHeishiWalkAnim, 3.0f, 0.0f, (s16)frameCount, ANIMMODE_LOOP, -3.0f);
+    Skeleton_Info2_init(&this->skelAnime, &gEnHeishiWalkAnim, 3.0f, 0.0f, (s16)frameCount, ANIMMODE_LOOP, -3.0f);
     this->bodyTurnSpeed = 0.0f;
     this->moveSpeed = 0.0f;
-    Message_StartTextbox(play, 0x702D, &this->actor);
-    Interface_SetDoAction(play, DO_ACTION_STOP);
-    this->actionFunc = EnHeishi1_MoveToLink;
+    message_set(play, 0x702D, &this->actor);
+    do_action_point_set(play, DO_ACTION_STOP);
+    this->actionFunc = mode_dush;
 }
 
-void EnHeishi1_MoveToLink(EnHeishi1* this, PlayState* play) {
+void mode_dush(EnHeishi1* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    SkelAnime_Update(&this->skelAnime);
-    Math_ApproachF(&this->actor.world.pos.x, player->actor.world.pos.x, 1.0f, this->moveSpeed);
-    Math_ApproachF(&this->actor.world.pos.z, player->actor.world.pos.z, 1.0f, this->moveSpeed);
-    Math_ApproachF(&this->moveSpeed, 6.0f, 1.0f, 0.4f);
-    Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 3, this->bodyTurnSpeed, 0);
-    Math_ApproachF(&this->bodyTurnSpeed, 3000.0f, 1.0f, 300.0f);
-    Math_ApproachZeroF(&this->headAngle, 0.5f, 2000.0f);
+    Skeleton_Info2_anime_play(&this->skelAnime);
+    add_calc2(&this->actor.world.pos.x, player->actor.world.pos.x, 1.0f, this->moveSpeed);
+    add_calc2(&this->actor.world.pos.z, player->actor.world.pos.z, 1.0f, this->moveSpeed);
+    add_calc2(&this->moveSpeed, 6.0f, 1.0f, 0.4f);
+    add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 3, this->bodyTurnSpeed, 0);
+    add_calc2(&this->bodyTurnSpeed, 3000.0f, 1.0f, 300.0f);
+    add_calc0(&this->headAngle, 0.5f, 2000.0f);
 
     if (this->actor.xzDistToPlayer < 70.0f) {
-        this->actionFunc = EnHeishi1_SetupTurnTowardLink;
+        this->actionFunc = mode_catch_init;
     }
 }
 
-void EnHeishi1_SetupWait(EnHeishi1* this, PlayState* play) {
+static void mode_wait_init(EnHeishi1* this, PlayState* play) {
     s16 rand;
-    f32 frameCount = Animation_GetLastFrame(&gEnHeishiIdleAnim);
+    f32 frameCount = Si2_anime_end_frame(&gEnHeishiIdleAnim);
 
-    Animation_Change(&this->skelAnime, &gEnHeishiIdleAnim, this->animSpeed, 0.0f, (s16)frameCount, ANIMMODE_LOOP,
+    Skeleton_Info2_init(&this->skelAnime, &gEnHeishiIdleAnim, this->animSpeed, 0.0f, (s16)frameCount, ANIMMODE_LOOP,
                      this->animMorphFrames);
     this->headBehaviorDecided = false;
-    this->headDirection = Rand_ZeroFloat(1.99f);
-    rand = Rand_ZeroFloat(50.0f);
+    this->headDirection = rnd_f(1.99f);
+    rand = rnd_f(50.0f);
     this->waitTimer = rand + 50;
-    this->actionFunc = EnHeishi1_Wait;
+    this->actionFunc = mode_wait;
 }
 
-void EnHeishi1_Wait(EnHeishi1* this, PlayState* play) {
+static void mode_wait(EnHeishi1* this, PlayState* play) {
     s16 randOffset;
     s32 i;
 
-    SkelAnime_Update(&this->skelAnime);
-    if (!sPlayerIsCaught) {
+    Skeleton_Info2_anime_play(&this->skelAnime);
+    if (!look_at_me) {
         switch (this->headBehaviorDecided) {
             case false:
                 this->headDirection++;
                 // if headDirection is odd, face 52 degrees left
                 this->headAngleTarget = (this->headDirection & 1) ? 0x2500 : -0x2500;
-                randOffset = Rand_ZeroFloat(30.0f);
-                this->headTimer = sBaseHeadTimers[this->type] + randOffset;
+                randOffset = rnd_f(30.0f);
+                this->headTimer = head_change_time_data[this->type] + randOffset;
                 this->headBehaviorDecided = true;
                 break;
             case true:
@@ -278,26 +278,26 @@ void EnHeishi1_Wait(EnHeishi1* this, PlayState* play) {
                         } else {
                             // waypoints are defined with corners as 0-3 and middle points as 4-7
                             // to choose the next waypoint, the order "04152637" is hardcoded in an array
-                            for (i = 0; i < ARRAY_COUNT(sWaypoints); i++) {
-                                if (this->waypoint == sWaypoints[i]) {
+                            for (i = 0; i < ARRAY_COUNT(random_real_data); i++) {
+                                if (this->waypoint == random_real_data[i]) {
                                     i++;
-                                    if (i >= ARRAY_COUNT(sWaypoints)) {
+                                    if (i >= ARRAY_COUNT(random_real_data)) {
                                         i = 0;
                                     }
-                                    this->waypoint = sWaypoints[i];
+                                    this->waypoint = random_real_data[i];
                                     break;
                                 }
                             }
                             this->waypointTimer = 5;
                         }
-                        this->actionFunc = EnHeishi1_SetupWalk;
+                        this->actionFunc = mode_walk_init;
                     } else {
                         this->headBehaviorDecided = false;
                     }
                 }
                 break;
         }
-        Math_ApproachF(&this->headAngle, this->headAngleTarget, this->headTurnSpeedScale,
+        add_calc2(&this->headAngle, this->headAngleTarget, this->headTurnSpeedScale,
                        this->headTurnSpeedMax + this->headTurnSpeedMax);
 
         if (DEBUG_FEATURES && (this->path == BREG(1)) && (BREG(0) != 0)) {
@@ -310,74 +310,74 @@ void EnHeishi1_Wait(EnHeishi1* this, PlayState* play) {
     }
 }
 
-void EnHeishi1_SetupTurnTowardLink(EnHeishi1* this, PlayState* play) {
-    f32 frameCount = Animation_GetLastFrame(&gEnHeishiIdleAnim);
+static void mode_catch_init(EnHeishi1* this, PlayState* play) {
+    f32 frameCount = Si2_anime_end_frame(&gEnHeishiIdleAnim);
 
-    Animation_Change(&this->skelAnime, &gEnHeishiIdleAnim, 1.0f, 0.0f, (s16)frameCount, ANIMMODE_LOOP, -10.0f);
+    Skeleton_Info2_init(&this->skelAnime, &gEnHeishiIdleAnim, 1.0f, 0.0f, (s16)frameCount, ANIMMODE_LOOP, -10.0f);
     this->kickTimer = 30;
-    this->actionFunc = EnHeishi1_TurnTowardLink;
+    this->actionFunc = mode_catch;
 }
 
-void EnHeishi1_TurnTowardLink(EnHeishi1* this, PlayState* play) {
-    SkelAnime_Update(&this->skelAnime);
+static void mode_catch(EnHeishi1* this, PlayState* play) {
+    Skeleton_Info2_anime_play(&this->skelAnime);
 
     if (this->type != 5) {
-        Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 3, this->bodyTurnSpeed, 0);
-        Math_ApproachF(&this->bodyTurnSpeed, 3000.0f, 1.0f, 300.0f);
-        Math_ApproachZeroF(&this->headAngle, 0.5f, 2000.0f);
+        add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 3, this->bodyTurnSpeed, 0);
+        add_calc2(&this->bodyTurnSpeed, 3000.0f, 1.0f, 300.0f);
+        add_calc0(&this->headAngle, 0.5f, 2000.0f);
     }
 
     if (this->kickTimer == 0) {
-        this->actionFunc = EnHeishi1_SetupKick;
+        this->actionFunc = mode_retry_init;
     }
 }
 
-void EnHeishi1_SetupKick(EnHeishi1* this, PlayState* play) {
-    f32 frameCount = Animation_GetLastFrame(&gEnHeishiIdleAnim);
+static void mode_retry_init(EnHeishi1* this, PlayState* play) {
+    f32 frameCount = Si2_anime_end_frame(&gEnHeishiIdleAnim);
 
-    Animation_Change(&this->skelAnime, &gEnHeishiIdleAnim, 1.0f, 0.0f, (s16)frameCount, ANIMMODE_LOOP, -10.0f);
-    this->actionFunc = EnHeishi1_Kick;
+    Skeleton_Info2_init(&this->skelAnime, &gEnHeishiIdleAnim, 1.0f, 0.0f, (s16)frameCount, ANIMMODE_LOOP, -10.0f);
+    this->actionFunc = mode_retry;
 }
 
-void EnHeishi1_Kick(EnHeishi1* this, PlayState* play) {
-    SkelAnime_Update(&this->skelAnime);
+static void mode_retry(EnHeishi1* this, PlayState* play) {
+    Skeleton_Info2_anime_play(&this->skelAnime);
     if (!this->loadStarted) {
         // if dialog state is 5 and textbox has been advanced, kick player out
-        if ((Message_GetState(&play->msgCtx) == TEXT_STATE_EVENT) && Message_ShouldAdvance(play)) {
-            Message_CloseTextbox(play);
+        if ((message_check(&play->msgCtx) == TEXT_STATE_EVENT) && pad_on_check(play)) {
+            message_close(play);
             if (!this->loadStarted) {
                 SET_EVENTCHKINF(EVENTCHKINF_CAUGHT_BY_CASTLE_GUARDS);
                 play->nextEntranceIndex = ENTR_HYRULE_CASTLE_3;
                 play->transitionTrigger = TRANS_TRIGGER_START;
                 this->loadStarted = true;
-                sPlayerIsCaught = false;
+                look_at_me = false;
                 play->transitionType = TRANS_TYPE_CIRCLE(TCA_STARBURST, TCC_WHITE, TCS_FAST);
-                gSaveContext.nextTransitionType = TRANS_TYPE_CIRCLE(TCA_STARBURST, TCC_WHITE, TCS_FAST);
+                z_common_data.nextTransitionType = TRANS_TYPE_CIRCLE(TCA_STARBURST, TCC_WHITE, TCS_FAST);
             }
         }
     }
 }
 
-void EnHeishi1_SetupWaitNight(EnHeishi1* this, PlayState* play) {
-    f32 frameCount = Animation_GetLastFrame(&gEnHeishiIdleAnim);
+void mode_deadly_init(EnHeishi1* this, PlayState* play) {
+    f32 frameCount = Si2_anime_end_frame(&gEnHeishiIdleAnim);
 
-    Animation_Change(&this->skelAnime, &gEnHeishiIdleAnim, 1.0f, 0.0f, (s16)frameCount, ANIMMODE_LOOP, -10.0f);
-    this->actionFunc = EnHeishi1_WaitNight;
+    Skeleton_Info2_init(&this->skelAnime, &gEnHeishiIdleAnim, 1.0f, 0.0f, (s16)frameCount, ANIMMODE_LOOP, -10.0f);
+    this->actionFunc = mode_deadly_move;
 }
 
-void EnHeishi1_WaitNight(EnHeishi1* this, PlayState* play) {
-    SkelAnime_Update(&this->skelAnime);
+void mode_deadly_move(EnHeishi1* this, PlayState* play) {
+    Skeleton_Info2_anime_play(&this->skelAnime);
 
     if (this->actor.xzDistToPlayer < 100.0f) {
-        Message_StartTextbox(play, 0x702D, &this->actor);
-        Sfx_PlaySfxCentered(NA_SE_SY_FOUND);
+        message_set(play, 0x702D, &this->actor);
+        Na_StartSystemSe_F(NA_SE_SY_FOUND);
         PRINTF(VT_FGCOL(GREEN) "☆☆☆☆☆ 発見！ ☆☆☆☆☆ \n" VT_RST); // "Discovered!"
-        Player_SetCsActionWithHaltedActors(play, &this->actor, PLAYER_CSACTION_1);
-        this->actionFunc = EnHeishi1_SetupKick;
+        player_demo_mode_set(play, &this->actor, PLAYER_CSACTION_1);
+        this->actionFunc = mode_retry_init;
     }
 }
 
-void EnHeishi1_Update(Actor* thisx, PlayState* play) {
+void En_Heishi1_actor_move(Actor* thisx, PlayState* play) {
     EnHeishi1* this = (EnHeishi1*)thisx;
     s16 path;
     u8 i;
@@ -410,9 +410,9 @@ void EnHeishi1_Update(Actor* thisx, PlayState* play) {
 
         if (this->type != 5) {
             path = this->path * 2;
-            if ((sBgCamIndices[path] == activeCam->bgCamIndex) || (sBgCamIndices[path + 1] == activeCam->bgCamIndex)) {
-                if (!sPlayerIsCaught) {
-                    if ((this->actionFunc == EnHeishi1_Walk) || (this->actionFunc == EnHeishi1_Wait)) {
+            if ((camera_ID_data[path] == activeCam->bgCamIndex) || (camera_ID_data[path + 1] == activeCam->bgCamIndex)) {
+                if (!look_at_me) {
+                    if ((this->actionFunc == mode_walk) || (this->actionFunc == mode_wait)) {
                         Vec3f searchBallVel;
                         Vec3f searchBallAccel = { 0.0f, 0.0f, 0.0f };
                         Vec3f searchBallMult = { 0.0f, 0.0f, 20.0f };
@@ -422,13 +422,13 @@ void EnHeishi1_Update(Actor* thisx, PlayState* play) {
                         searchBallPos.y = this->actor.world.pos.y + 60.0f;
                         searchBallPos.z = this->actor.world.pos.z;
 
-                        Matrix_Push();
-                        Matrix_RotateY(BINANG_TO_RAD_ALT(this->actor.shape.rot.y + this->headAngle), MTXMODE_NEW);
+                        Matrix_push();
+                        Matrix_rotateY(BINANG_TO_RAD_ALT(this->actor.shape.rot.y + this->headAngle), MTXMODE_NEW);
                         searchBallMult.z = 30.0f;
-                        Matrix_MultVec3f(&searchBallMult, &searchBallVel);
-                        Matrix_Pop();
+                        Matrix_Position(&searchBallMult, &searchBallVel);
+                        Matrix_pull();
 
-                        EffectSsSolderSrchBall_Spawn(play, &searchBallPos, &searchBallVel, &searchBallAccel, 2,
+                        Effect_Ss_Solder_Srch_Ball_ct(play, &searchBallPos, &searchBallVel, &searchBallAccel, 2,
                                                      &this->linkDetected);
 
                         if (this->actor.xzDistToPlayer < 60.0f) {
@@ -453,12 +453,12 @@ void EnHeishi1_Update(Actor* thisx, PlayState* play) {
                                 this->linkDetected = false;
                                 // this 60 unit height check is so the player doesn't get caught when on the upper path
                                 if (fabsf(player->actor.world.pos.y - this->actor.world.pos.y) < 60.0f) {
-                                    Sfx_PlaySfxCentered(NA_SE_SY_FOUND);
+                                    Na_StartSystemSe_F(NA_SE_SY_FOUND);
                                     // "Discovered!"
                                     PRINTF(VT_FGCOL(GREEN) "☆☆☆☆☆ 発見！ ☆☆☆☆☆ \n" VT_RST);
-                                    Player_SetCsActionWithHaltedActors(play, &this->actor, PLAYER_CSACTION_1);
-                                    sPlayerIsCaught = true;
-                                    this->actionFunc = EnHeishi1_SetupMoveToLink;
+                                    player_demo_mode_set(play, &this->actor, PLAYER_CSACTION_1);
+                                    look_at_me = true;
+                                    this->actionFunc = mode_dush_init;
                                 }
                             }
                         }
@@ -469,7 +469,7 @@ void EnHeishi1_Update(Actor* thisx, PlayState* play) {
     }
 }
 
-s32 EnHeishi1_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+s32 En_Heishi1_draw_sub(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     EnHeishi1* this = (EnHeishi1*)thisx;
 
     // turn the guards head to match the direction he is looking
@@ -480,18 +480,18 @@ s32 EnHeishi1_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3
     return false;
 }
 
-void EnHeishi1_Draw(Actor* thisx, PlayState* play) {
+void En_Heishi1_actor_draw(Actor* thisx, PlayState* play) {
     s32 pad;
     EnHeishi1* this = (EnHeishi1*)thisx;
     Vec3f matrixScale = { 0.3f, 0.3f, 0.3f };
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
-    SkelAnime_DrawOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, EnHeishi1_OverrideLimbDraw, NULL,
+    _texture_z_light_fog_prim(play->state.gfxCtx);
+    Si2_draw(play, this->skelAnime.skeleton, this->skelAnime.jointTable, En_Heishi1_draw_sub, NULL,
                       this);
-    func_80033C30(&this->actor.world.pos, &matrixScale, 0xFF, play);
+    Shadow_draw(&this->actor.world.pos, &matrixScale, 0xFF, play);
 
     if (DEBUG_FEATURES && (this->path == BREG(1)) && (BREG(0) != 0)) {
-        DebugDisplay_AddObject(this->actor.world.pos.x, this->actor.world.pos.y + 100.0f, this->actor.world.pos.z,
+        Debug_Display_new(this->actor.world.pos.x, this->actor.world.pos.y + 100.0f, this->actor.world.pos.z,
                                17000, this->actor.world.rot.y, this->actor.world.rot.z, 1.0f, 1.0f, 1.0f, 255, 0, 0,
                                255, 4, play->state.gfxCtx);
     }

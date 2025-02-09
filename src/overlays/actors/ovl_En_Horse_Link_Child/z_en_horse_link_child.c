@@ -20,15 +20,15 @@
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_UPDATE_DURING_OCARINA)
 
-void EnHorseLinkChild_Init(Actor* thisx, PlayState* play);
-void EnHorseLinkChild_Destroy(Actor* thisx, PlayState* play);
-void EnHorseLinkChild_Update(Actor* thisx, PlayState* play);
-void EnHorseLinkChild_Draw(Actor* thisx, PlayState* play);
+void En_HLC_Actor_ct(Actor* thisx, PlayState* play);
+void En_HLC_Actor_dt(Actor* thisx, PlayState* play);
+void En_HLC_Actor_move(Actor* thisx, PlayState* play);
+void En_HLC_Actor_display(Actor* thisx, PlayState* play);
 
-void func_80A69B7C(EnHorseLinkChild* this);
-void func_80A69EC0(EnHorseLinkChild* this);
-void func_80A6A4DC(EnHorseLinkChild* this);
-void func_80A6A724(EnHorseLinkChild* this);
+void En_HLC_Actor_mode_search_player_init_set_stop(EnHorseLinkChild* this);
+void En_HLC_Actor_mode_epona1_init_set_stop(EnHorseLinkChild* this);
+void En_HLC_Actor_mode_epona2_wait_init(EnHorseLinkChild* this);
+void En_HLC_Actor_mode_epona2_trace_p_init(EnHorseLinkChild* this);
 
 ActorProfile En_Horse_Link_Child_Profile = {
     /**/ ACTOR_EN_HORSE_LINK_CHILD,
@@ -36,18 +36,18 @@ ActorProfile En_Horse_Link_Child_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_HORSE_LINK_CHILD,
     /**/ sizeof(EnHorseLinkChild),
-    /**/ EnHorseLinkChild_Init,
-    /**/ EnHorseLinkChild_Destroy,
-    /**/ EnHorseLinkChild_Update,
-    /**/ EnHorseLinkChild_Draw,
+    /**/ En_HLC_Actor_ct,
+    /**/ En_HLC_Actor_dt,
+    /**/ En_HLC_Actor_move,
+    /**/ En_HLC_Actor_display,
 };
 
-static AnimationHeader* sAnimations[] = {
+static AnimationHeader* skin_hlc_anim_tbl[] = {
     &gChildEponaIdleAnim,     &gChildEponaWhinnyAnim,    &gChildEponaWalkingAnim,
     &gChildEponaTrottingAnim, &gChildEponaGallopingAnim,
 };
 
-static ColliderCylinderInitType1 sCylinderInit = {
+static ColliderCylinderInitType1 HLCOcInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -66,7 +66,7 @@ static ColliderCylinderInitType1 sCylinderInit = {
     { 20, 100, 0, { 0, 0, 0 } },
 };
 
-static ColliderJntSphElementInit sJntSphElementInit[1] = {
+static ColliderJntSphElementInit HLCOcInfoJntSphElemData[1] = {
     {
         {
             ELEM_MATERIAL_UNK0,
@@ -80,7 +80,7 @@ static ColliderJntSphElementInit sJntSphElementInit[1] = {
     },
 };
 
-static ColliderJntSphInit sJntSphInit = {
+static ColliderJntSphInit HLCOcInfoJntSphData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -90,132 +90,132 @@ static ColliderJntSphInit sJntSphInit = {
         COLSHAPE_JNTSPH,
     },
     1,
-    sJntSphElementInit,
+    HLCOcInfoJntSphElemData,
 };
 
-static CollisionCheckInfoInit sColCheckInfoInit = { 10, 35, 100, MASS_HEAVY };
+static CollisionCheckInfoInit HLCStatusData = { 10, 35, 100, MASS_HEAVY };
 
-void func_80A693D0(EnHorseLinkChild* this) {
-    static s32 D_80A6AF5C[] = { 1, 19 };
+void En_HLC_Actor_setWalkSound(EnHorseLinkChild* this) {
+    static s32 sound_on_frames[] = { 1, 19 };
 
-    if ((this->skin.skelAnime.curFrame > D_80A6AF5C[this->unk_1F0]) &&
-        !((this->unk_1F0 == 0) && (this->skin.skelAnime.curFrame > D_80A6AF5C[1]))) {
-        Audio_PlaySfxGeneral(NA_SE_EV_KID_HORSE_WALK, &this->actor.projectedPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+    if ((this->skin.skelAnime.curFrame > sound_on_frames[this->unk_1F0]) &&
+        !((this->unk_1F0 == 0) && (this->skin.skelAnime.curFrame > sound_on_frames[1]))) {
+        Nai_FxFlagEntry(NA_SE_EV_KID_HORSE_WALK, &this->actor.projectedPos, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
         this->unk_1F0++;
-        if (this->unk_1F0 >= ARRAY_COUNT(D_80A6AF5C)) {
+        if (this->unk_1F0 >= ARRAY_COUNT(sound_on_frames)) {
             this->unk_1F0 = 0;
         }
     }
 }
 
-void func_80A6948C(EnHorseLinkChild* this) {
+void En_HLC_Actor_setSound(EnHorseLinkChild* this) {
     if (this->animationIdx == 2) {
-        func_80A693D0(this);
+        En_HLC_Actor_setWalkSound(this);
     } else if (this->skin.skelAnime.curFrame == 0.0f) {
         if ((this->animationIdx == 3) || (this->animationIdx == 4)) {
-            Audio_PlaySfxGeneral(NA_SE_EV_KID_HORSE_RUN, &this->actor.projectedPos, 4, &gSfxDefaultFreqAndVolScale,
-                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+            Nai_FxFlagEntry(NA_SE_EV_KID_HORSE_RUN, &this->actor.projectedPos, 4, &_dummy_one,
+                                 &_dummy_one, &_dummy_zero_s8);
         } else if (this->animationIdx == 1) {
-            if (Rand_ZeroOne() > 0.5f) {
-                Audio_PlaySfxGeneral(NA_SE_EV_KID_HORSE_GROAN, &this->actor.projectedPos, 4,
-                                     &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+            if (fqrand() > 0.5f) {
+                Nai_FxFlagEntry(NA_SE_EV_KID_HORSE_GROAN, &this->actor.projectedPos, 4,
+                                     &_dummy_one, &_dummy_one, &_dummy_zero_s8);
             } else {
-                Audio_PlaySfxGeneral(NA_SE_EV_KID_HORSE_NEIGH, &this->actor.projectedPos, 4,
-                                     &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                Nai_FxFlagEntry(NA_SE_EV_KID_HORSE_NEIGH, &this->actor.projectedPos, 4,
+                                     &_dummy_one, &_dummy_one, &_dummy_zero_s8);
             }
         }
     }
 }
 
-static f32 D_80A6AF64[] = { 1.0f, 1.0f, 1.5f, 1.5f, 1.5f };
+static f32 hlc_anim_speed[] = { 1.0f, 1.0f, 1.5f, 1.5f, 1.5f };
 
-f32 func_80A695A4(EnHorseLinkChild* this) {
+f32 En_HLC_calcAnimSpeed(EnHorseLinkChild* this) {
     f32 result;
 
     if (this->animationIdx == 2) {
-        result = D_80A6AF64[this->animationIdx] * this->actor.speed * (1.0f / 2.0f);
+        result = hlc_anim_speed[this->animationIdx] * this->actor.speed * (1.0f / 2.0f);
     } else if (this->animationIdx == 3) {
-        result = D_80A6AF64[this->animationIdx] * this->actor.speed * (1.0f / 3.0f);
+        result = hlc_anim_speed[this->animationIdx] * this->actor.speed * (1.0f / 3.0f);
     } else if (this->animationIdx == 4) {
-        result = D_80A6AF64[this->animationIdx] * this->actor.speed * (1.0f / 5.0f);
+        result = hlc_anim_speed[this->animationIdx] * this->actor.speed * (1.0f / 5.0f);
     } else {
-        result = D_80A6AF64[this->animationIdx];
+        result = hlc_anim_speed[this->animationIdx];
     }
 
     return result;
 }
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_F32(cullingVolumeScale, 1200, ICHAIN_STOP),
 };
 
-void EnHorseLinkChild_Init(Actor* thisx, PlayState* play) {
+void En_HLC_Actor_ct(Actor* thisx, PlayState* play) {
     EnHorseLinkChild* this = (EnHorseLinkChild*)thisx;
     s32 pad;
 
-    Actor_ProcessInitChain(&this->actor, sInitChain);
-    Actor_SetScale(&this->actor, 0.005f);
+    ValueSet_process(&this->actor, value_init);
+    Actor_set_scale(&this->actor, 0.005f);
     this->actor.gravity = -3.5f;
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawHorse, 20.0f);
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_horse, 20.0f);
     this->actor.speed = 0.0f;
     this->action = 1;
     this->actor.focus.pos = this->actor.world.pos;
     this->actor.focus.pos.y += 70.0f;
-    Skin_Init(play, &this->skin, &gChildEponaSkel, &gChildEponaGallopingAnim);
+    Skin_AnimationWorkBuffer2_ct(play, &this->skin, &gChildEponaSkel, &gChildEponaGallopingAnim);
     this->animationIdx = 0;
-    Animation_PlayOnce(&this->skin.skelAnime, sAnimations[0]);
-    Collider_InitCylinder(play, &this->bodyCollider);
-    Collider_SetCylinderType1(play, &this->bodyCollider, &this->actor, &sCylinderInit);
-    Collider_InitJntSph(play, &this->headCollider);
-    Collider_SetJntSph(play, &this->headCollider, &this->actor, &sJntSphInit, this->headElements);
-    CollisionCheck_SetInfo(&this->actor.colChkInfo, NULL, &sColCheckInfoInit);
+    Skeleton_Info2_init_standard_stop(&this->skin.skelAnime, skin_hlc_anim_tbl[0]);
+    ClObjPipe_ct(play, &this->bodyCollider);
+    ClObjPipe_set3(play, &this->bodyCollider, &this->actor, &HLCOcInfoData);
+    ClObjJntSph_ct(play, &this->headCollider);
+    ClObjJntSph_set5_nzm(play, &this->headCollider, &this->actor, &HLCOcInfoJntSphData, this->headElements);
+    CollisionCheck_Status_set2(&this->actor.colChkInfo, NULL, &HLCStatusData);
     this->unk_1F0 = 0;
     this->eyeTexIndex = 0;
 
     if (IS_CUTSCENE_LAYER) {
-        func_80A69EC0(this);
+        En_HLC_Actor_mode_epona1_init_set_stop(this);
     } else if (play->sceneId == SCENE_LON_LON_RANCH) {
-        if (!Flags_GetEventChkInf(EVENTCHKINF_TALON_RETURNED_FROM_CASTLE)) {
-            Actor_Kill(&this->actor);
+        if (!event_check(EVENTCHKINF_TALON_RETURNED_FROM_CASTLE)) {
+            Actor_delete(&this->actor);
             return;
         }
         this->unk_2A0 = GET_EVENTCHKINF(EVENTCHKINF_CAN_LEARN_EPONAS_SONG);
-        func_80A69EC0(this);
+        En_HLC_Actor_mode_epona1_init_set_stop(this);
     } else {
-        func_80A69EC0(this);
+        En_HLC_Actor_mode_epona1_init_set_stop(this);
     }
 
     this->actor.home.rot.z = this->actor.world.rot.z = this->actor.shape.rot.z = 0;
 }
 
-void EnHorseLinkChild_Destroy(Actor* thisx, PlayState* play) {
+void En_HLC_Actor_dt(Actor* thisx, PlayState* play) {
     EnHorseLinkChild* this = (EnHorseLinkChild*)thisx;
 
-    Skin_Free(play, &this->skin);
-    Collider_DestroyCylinder(play, &this->bodyCollider);
-    Collider_DestroyJntSph(play, &this->headCollider);
+    Skin_AnimationWorkBuffer2_dt(play, &this->skin);
+    ClObjPipe_dt(play, &this->bodyCollider);
+    ClObjJntSph_dt_nzf(play, &this->headCollider);
 }
 
-void func_80A6988C(EnHorseLinkChild* this) {
+void En_HLC_Actor_mode_anim_loop_init(EnHorseLinkChild* this) {
     this->action = 0;
     this->animationIdx++;
-    if (this->animationIdx >= ARRAY_COUNT(sAnimations)) {
+    if (this->animationIdx >= ARRAY_COUNT(skin_hlc_anim_tbl)) {
         this->animationIdx = 0;
     }
 
-    Animation_PlayOnce(&this->skin.skelAnime, sAnimations[this->animationIdx]);
-    this->skin.skelAnime.playSpeed = func_80A695A4(this);
+    Skeleton_Info2_init_standard_stop(&this->skin.skelAnime, skin_hlc_anim_tbl[this->animationIdx]);
+    this->skin.skelAnime.playSpeed = En_HLC_calcAnimSpeed(this);
 }
 
-void func_80A698F4(EnHorseLinkChild* this, PlayState* play) {
+void En_HLC_Actor_mode_anim_loop(EnHorseLinkChild* this, PlayState* play) {
     this->actor.speed = 0.0f;
-    if (SkelAnime_Update(&this->skin.skelAnime)) {
-        func_80A6988C(this);
+    if (Skeleton_Info2_anime_play(&this->skin.skelAnime)) {
+        En_HLC_Actor_mode_anim_loop_init(this);
     }
 }
 
-void func_80A6993C(EnHorseLinkChild* this, s32 newAnimationIdx) {
+void En_HLC_Actor_mode_search_wait_init(EnHorseLinkChild* this, s32 newAnimationIdx) {
     this->action = 2;
     this->actor.speed = 0.0f;
 
@@ -225,49 +225,49 @@ void func_80A6993C(EnHorseLinkChild* this, s32 newAnimationIdx) {
 
     if (this->animationIdx != newAnimationIdx) {
         this->animationIdx = newAnimationIdx;
-        Animation_Change(&this->skin.skelAnime, sAnimations[this->animationIdx], func_80A695A4(this), 0.0f,
-                         Animation_GetLastFrame(sAnimations[this->animationIdx]), ANIMMODE_ONCE, -5.0f);
+        Skeleton_Info2_init(&this->skin.skelAnime, skin_hlc_anim_tbl[this->animationIdx], En_HLC_calcAnimSpeed(this), 0.0f,
+                         Si2_anime_end_frame(skin_hlc_anim_tbl[this->animationIdx]), ANIMMODE_ONCE, -5.0f);
     }
 }
 
-void func_80A699FC(EnHorseLinkChild* this, PlayState* play) {
+void En_HLC_Actor_mode_search_wait(EnHorseLinkChild* this, PlayState* play) {
     f32 distFromLink;
     s32 newAnimationIdx;
 
-    distFromLink = Actor_WorldDistXZToActor(&this->actor, &GET_PLAYER(play)->actor);
+    distFromLink = Actor_search_actor_distanceXZ(&this->actor, &GET_PLAYER(play)->actor);
 
-    if (SkelAnime_Update(&this->skin.skelAnime)) {
+    if (Skeleton_Info2_anime_play(&this->skin.skelAnime)) {
         if ((distFromLink < 1000.0f) && (distFromLink > 70.0f)) {
-            func_80A69B7C(this);
+            En_HLC_Actor_mode_search_player_init_set_stop(this);
         } else {
             newAnimationIdx = this->animationIdx == 1 ? 0 : 1;
             if (this->animationIdx != newAnimationIdx) {
                 this->animationIdx = newAnimationIdx;
-                Animation_Change(&this->skin.skelAnime, sAnimations[this->animationIdx], func_80A695A4(this), 0.0f,
-                                 Animation_GetLastFrame(sAnimations[this->animationIdx]), ANIMMODE_ONCE, -5.0f);
+                Skeleton_Info2_init(&this->skin.skelAnime, skin_hlc_anim_tbl[this->animationIdx], En_HLC_calcAnimSpeed(this), 0.0f,
+                                 Si2_anime_end_frame(skin_hlc_anim_tbl[this->animationIdx]), ANIMMODE_ONCE, -5.0f);
             } else {
-                Animation_Change(&this->skin.skelAnime, sAnimations[this->animationIdx], func_80A695A4(this), 0.0f,
-                                 Animation_GetLastFrame(sAnimations[this->animationIdx]), ANIMMODE_ONCE, 0.0);
+                Skeleton_Info2_init(&this->skin.skelAnime, skin_hlc_anim_tbl[this->animationIdx], En_HLC_calcAnimSpeed(this), 0.0f,
+                                 Si2_anime_end_frame(skin_hlc_anim_tbl[this->animationIdx]), ANIMMODE_ONCE, 0.0);
             }
         }
     }
 }
 
-void func_80A69B7C(EnHorseLinkChild* this) {
+void En_HLC_Actor_mode_search_player_init_set_stop(EnHorseLinkChild* this) {
     this->action = 1;
     this->animationIdx = 0;
     this->actor.speed = 0.0f;
-    Animation_Change(&this->skin.skelAnime, sAnimations[this->animationIdx], func_80A695A4(this), 0.0f,
-                     Animation_GetLastFrame(sAnimations[this->animationIdx]), ANIMMODE_ONCE, -5.0f);
+    Skeleton_Info2_init(&this->skin.skelAnime, skin_hlc_anim_tbl[this->animationIdx], En_HLC_calcAnimSpeed(this), 0.0f,
+                     Si2_anime_end_frame(skin_hlc_anim_tbl[this->animationIdx]), ANIMMODE_ONCE, -5.0f);
 }
 
-void func_80A69C18(EnHorseLinkChild* this, PlayState* play) {
+void En_HLC_Actor_mode_search_player(EnHorseLinkChild* this, PlayState* play) {
     s16 yawDiff;
     f32 distFromLink;
     s32 newAnimationIdx;
 
     if ((this->animationIdx == 4) || (this->animationIdx == 3) || (this->animationIdx == 2)) {
-        yawDiff = Actor_WorldYawTowardActor(&this->actor, &GET_PLAYER(play)->actor) - this->actor.world.rot.y;
+        yawDiff = Actor_search_actor_angleY(&this->actor, &GET_PLAYER(play)->actor) - this->actor.world.rot.y;
 
         if (yawDiff > 0x12C) {
             this->actor.world.rot.y += 0x12C;
@@ -280,11 +280,11 @@ void func_80A69C18(EnHorseLinkChild* this, PlayState* play) {
         this->actor.shape.rot.y = this->actor.world.rot.y;
     }
 
-    if (SkelAnime_Update(&this->skin.skelAnime)) {
-        distFromLink = Actor_WorldDistXZToActor(&this->actor, &GET_PLAYER(play)->actor);
+    if (Skeleton_Info2_anime_play(&this->skin.skelAnime)) {
+        distFromLink = Actor_search_actor_distanceXZ(&this->actor, &GET_PLAYER(play)->actor);
 
         if (distFromLink > 1000.0f) {
-            func_80A6993C(this, 0);
+            En_HLC_Actor_mode_search_wait_init(this, 0);
             return;
         } else if ((distFromLink < 1000.0f) && (distFromLink >= 300.0f)) {
             newAnimationIdx = 4;
@@ -297,30 +297,30 @@ void func_80A69C18(EnHorseLinkChild* this, PlayState* play) {
             this->actor.speed = 2.0f;
             this->unk_1F0 = 0;
         } else {
-            func_80A6993C(this, 1);
+            En_HLC_Actor_mode_search_wait_init(this, 1);
             return;
         }
 
         if (this->animationIdx != newAnimationIdx) {
             this->animationIdx = newAnimationIdx;
-            Animation_Change(&this->skin.skelAnime, sAnimations[this->animationIdx], func_80A695A4(this), 0.0f,
-                             Animation_GetLastFrame(sAnimations[this->animationIdx]), ANIMMODE_ONCE, -5.0f);
+            Skeleton_Info2_init(&this->skin.skelAnime, skin_hlc_anim_tbl[this->animationIdx], En_HLC_calcAnimSpeed(this), 0.0f,
+                             Si2_anime_end_frame(skin_hlc_anim_tbl[this->animationIdx]), ANIMMODE_ONCE, -5.0f);
         } else {
-            Animation_Change(&this->skin.skelAnime, sAnimations[this->animationIdx], func_80A695A4(this), 0.0f,
-                             Animation_GetLastFrame(sAnimations[this->animationIdx]), ANIMMODE_ONCE, 0.0f);
+            Skeleton_Info2_init(&this->skin.skelAnime, skin_hlc_anim_tbl[this->animationIdx], En_HLC_calcAnimSpeed(this), 0.0f,
+                             Si2_anime_end_frame(skin_hlc_anim_tbl[this->animationIdx]), ANIMMODE_ONCE, 0.0f);
         }
     }
 }
 
-void func_80A69EC0(EnHorseLinkChild* this) {
+void En_HLC_Actor_mode_epona1_init_set_stop(EnHorseLinkChild* this) {
     this->action = 3;
     this->animationIdx = 0;
     this->actor.speed = 0.0f;
-    Animation_Change(&this->skin.skelAnime, sAnimations[this->animationIdx], func_80A695A4(this), 0.0f,
-                     Animation_GetLastFrame(sAnimations[this->animationIdx]), ANIMMODE_ONCE, -5.0f);
+    Skeleton_Info2_init(&this->skin.skelAnime, skin_hlc_anim_tbl[this->animationIdx], En_HLC_calcAnimSpeed(this), 0.0f,
+                     Si2_anime_end_frame(skin_hlc_anim_tbl[this->animationIdx]), ANIMMODE_ONCE, -5.0f);
 }
 
-void func_80A69F5C(EnHorseLinkChild* this, PlayState* play) {
+void En_HLC_Actor_mode_epona1_calc_angle(EnHorseLinkChild* this, PlayState* play) {
     Player* player;
     s16 yawDiff;
     s32 yawSign;
@@ -329,13 +329,13 @@ void func_80A69F5C(EnHorseLinkChild* this, PlayState* play) {
     if ((this->animationIdx == 4) || (this->animationIdx == 3) || (this->animationIdx == 2)) {
         player = GET_PLAYER(play);
 
-        if (Math3D_Vec3f_DistXYZ(&player->actor.world.pos, &this->actor.home.pos) < 250.0f) {
+        if (Math3DLength(&player->actor.world.pos, &this->actor.home.pos) < 250.0f) {
             yawDiff = player->actor.shape.rot.y;
-            yawSign = Actor_WorldYawTowardActor(&this->actor, &player->actor) > 0 ? 1 : -1;
+            yawSign = Actor_search_actor_angleY(&this->actor, &player->actor) > 0 ? 1 : -1;
             yawOffset = yawSign << 0xE;
             yawDiff += yawOffset;
         } else {
-            yawDiff = Math_Vec3f_Yaw(&this->actor.world.pos, &this->actor.home.pos) - this->actor.world.rot.y;
+            yawDiff = search_position_angleY(&this->actor.world.pos, &this->actor.home.pos) - this->actor.world.rot.y;
         }
 
         if (yawDiff > 0x12C) {
@@ -350,36 +350,36 @@ void func_80A69F5C(EnHorseLinkChild* this, PlayState* play) {
     }
 }
 
-void func_80A6A068(EnHorseLinkChild* this, PlayState* play) {
+void En_HLC_Actor_mode_epona1(EnHorseLinkChild* this, PlayState* play) {
     Player* player;
     f32 distFromLink;
     s32 animationEnded;
     s32 newAnimationIdx;
 
-    func_80A69F5C(this, play);
+    En_HLC_Actor_mode_epona1_calc_angle(this, play);
     player = GET_PLAYER(play);
-    distFromLink = Actor_WorldDistXZToActor(&this->actor, &player->actor);
+    distFromLink = Actor_search_actor_distanceXZ(&this->actor, &player->actor);
 
-    if (gSaveContext.save.entranceIndex == ENTR_LON_LON_RANCH_1) {
-        Audio_PlaySfxGeneral(NA_SE_EV_KID_HORSE_NEIGH, &this->actor.projectedPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
-        func_80A6A724(this);
+    if (z_common_data.save.entranceIndex == ENTR_LON_LON_RANCH_1) {
+        Nai_FxFlagEntry(NA_SE_EV_KID_HORSE_NEIGH, &this->actor.projectedPos, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
+        En_HLC_Actor_mode_epona2_trace_p_init(this);
         return;
     }
 
     if ((GET_EVENTCHKINF(EVENTCHKINF_CAN_LEARN_EPONAS_SONG) && R_EPONAS_SONG_PLAYED) ||
-        ((play->sceneId == SCENE_LON_LON_RANCH) && (gSaveContext.save.cutsceneIndex == 0xFFF1))) {
-        func_80A6A4DC(this);
+        ((play->sceneId == SCENE_LON_LON_RANCH) && (z_common_data.save.cutsceneIndex == 0xFFF1))) {
+        En_HLC_Actor_mode_epona2_wait_init(this);
     } else {
         this->unk_2A0 = GET_EVENTCHKINF(EVENTCHKINF_CAN_LEARN_EPONAS_SONG);
     }
 
     newAnimationIdx = this->animationIdx;
-    animationEnded = SkelAnime_Update(&this->skin.skelAnime);
+    animationEnded = Skeleton_Info2_anime_play(&this->skin.skelAnime);
     if (animationEnded || (this->animationIdx == 1) || (this->animationIdx == 0)) {
         if (GET_EVENTCHKINF(EVENTCHKINF_TALKED_TO_CHILD_MALON_AT_RANCH)) {
-            f32 distFromHome = Math3D_Vec3f_DistXYZ(&this->actor.world.pos, &this->actor.home.pos);
-            f32 distLinkFromHome = Math3D_Vec3f_DistXYZ(&player->actor.world.pos, &this->actor.home.pos);
+            f32 distFromHome = Math3DLength(&this->actor.world.pos, &this->actor.home.pos);
+            f32 distLinkFromHome = Math3DLength(&player->actor.world.pos, &this->actor.home.pos);
 
             if (distLinkFromHome > 250.0f) {
                 if (distFromHome >= 300.0f) {
@@ -432,62 +432,62 @@ void func_80A6A068(EnHorseLinkChild* this, PlayState* play) {
 
     if ((this->animationIdx != newAnimationIdx) || (animationEnded == true)) {
         this->animationIdx = newAnimationIdx;
-        Animation_Change(&this->skin.skelAnime, sAnimations[this->animationIdx], func_80A695A4(this), 0.0f,
-                         Animation_GetLastFrame(sAnimations[this->animationIdx]), ANIMMODE_ONCE, -5.0f);
+        Skeleton_Info2_init(&this->skin.skelAnime, skin_hlc_anim_tbl[this->animationIdx], En_HLC_calcAnimSpeed(this), 0.0f,
+                         Si2_anime_end_frame(skin_hlc_anim_tbl[this->animationIdx]), ANIMMODE_ONCE, -5.0f);
     } else {
-        Animation_Change(&this->skin.skelAnime, sAnimations[this->animationIdx], func_80A695A4(this),
-                         this->skin.skelAnime.curFrame, Animation_GetLastFrame(sAnimations[this->animationIdx]), 2,
+        Skeleton_Info2_init(&this->skin.skelAnime, skin_hlc_anim_tbl[this->animationIdx], En_HLC_calcAnimSpeed(this),
+                         this->skin.skelAnime.curFrame, Si2_anime_end_frame(skin_hlc_anim_tbl[this->animationIdx]), 2,
                          0.0f);
     }
 }
 
-void func_80A6A4DC(EnHorseLinkChild* this) {
+void En_HLC_Actor_mode_epona2_wait_init(EnHorseLinkChild* this) {
     this->action = 5;
-    this->animationIdx = Rand_ZeroOne() > 0.5f ? 0 : 1;
+    this->animationIdx = fqrand() > 0.5f ? 0 : 1;
     R_EPONAS_SONG_PLAYED = false;
-    Animation_Change(&this->skin.skelAnime, sAnimations[this->animationIdx], func_80A695A4(this), 0.0f,
-                     Animation_GetLastFrame(sAnimations[this->animationIdx]), ANIMMODE_ONCE, 0.0f);
+    Skeleton_Info2_init(&this->skin.skelAnime, skin_hlc_anim_tbl[this->animationIdx], En_HLC_calcAnimSpeed(this), 0.0f,
+                     Si2_anime_end_frame(skin_hlc_anim_tbl[this->animationIdx]), ANIMMODE_ONCE, 0.0f);
 }
 
-void func_80A6A5A4(EnHorseLinkChild* this, PlayState* play) {
+void En_HLC_Actor_mode_epona2_wait(EnHorseLinkChild* this, PlayState* play) {
     s16 yawDiff;
 
     if (R_EPONAS_SONG_PLAYED) {
         R_EPONAS_SONG_PLAYED = false;
-        Audio_PlaySfxGeneral(NA_SE_EV_KID_HORSE_NEIGH, &this->actor.projectedPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
-        func_80A6A724(this);
+        Nai_FxFlagEntry(NA_SE_EV_KID_HORSE_NEIGH, &this->actor.projectedPos, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
+        En_HLC_Actor_mode_epona2_trace_p_init(this);
     } else {
         this->actor.speed = 0.0f;
-        yawDiff = Actor_WorldYawTowardActor(&this->actor, &GET_PLAYER(play)->actor) - this->actor.world.rot.y;
+        yawDiff = Actor_search_actor_angleY(&this->actor, &GET_PLAYER(play)->actor) - this->actor.world.rot.y;
         // 0.7071 = cos(pi/4)
-        if ((Math_CosS(yawDiff) < 0.7071f) && (this->animationIdx == 2)) {
-            Horse_RotateToPoint(&this->actor, &GET_PLAYER(play)->actor.world.pos, 300);
+        if ((cos_s(yawDiff) < 0.7071f) && (this->animationIdx == 2)) {
+            horse_rot_trace_pos(&this->actor, &GET_PLAYER(play)->actor.world.pos, 300);
         }
 
-        if (SkelAnime_Update(&this->skin.skelAnime)) {
-            if (Math_CosS(yawDiff) < 0.0f) {
+        if (Skeleton_Info2_anime_play(&this->skin.skelAnime)) {
+            if (cos_s(yawDiff) < 0.0f) {
                 this->animationIdx = 2;
-                Animation_Change(&this->skin.skelAnime, sAnimations[this->animationIdx], D_80A6AF64[this->animationIdx],
-                                 0.0f, Animation_GetLastFrame(sAnimations[this->animationIdx]), ANIMMODE_ONCE, -5.0f);
+                Skeleton_Info2_init(&this->skin.skelAnime, skin_hlc_anim_tbl[this->animationIdx], hlc_anim_speed[this->animationIdx],
+                                 0.0f, Si2_anime_end_frame(skin_hlc_anim_tbl[this->animationIdx]), ANIMMODE_ONCE, -5.0f);
             } else {
-                func_80A6A4DC(this);
+                En_HLC_Actor_mode_epona2_wait_init(this);
             }
         }
     }
 }
 
-void func_80A6A724(EnHorseLinkChild* this) {
+void En_HLC_Actor_mode_epona2_trace_p_init(EnHorseLinkChild* this) {
     this->timer = 0;
     this->action = 4;
     this->animationIdx = 2;
     this->unk_1E8 = false;
     this->actor.speed = 2.0f;
-    Animation_Change(&this->skin.skelAnime, sAnimations[this->animationIdx], func_80A695A4(this), 0.0f,
-                     Animation_GetLastFrame(sAnimations[this->animationIdx]), ANIMMODE_ONCE, -5.0f);
+    Skeleton_Info2_init(&this->skin.skelAnime, skin_hlc_anim_tbl[this->animationIdx], En_HLC_calcAnimSpeed(this), 0.0f,
+                     Si2_anime_end_frame(skin_hlc_anim_tbl[this->animationIdx]), ANIMMODE_ONCE, -5.0f);
 }
 
-void func_80A6A7D0(EnHorseLinkChild* this, PlayState* play) {
+void En_HLC_Actor_mode_epona2_trace_p(EnHorseLinkChild* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     f32 dist;
     s32 newAnimationIdx;
@@ -499,17 +499,17 @@ void func_80A6A7D0(EnHorseLinkChild* this, PlayState* play) {
 
     if ((this->animationIdx == 4) || (this->animationIdx == 3) || (this->animationIdx == 2)) {
         if (!this->unk_1E8) {
-            Horse_RotateToPoint(&this->actor, &player->actor.world.pos, 300);
+            horse_rot_trace_pos(&this->actor, &player->actor.world.pos, 300);
         } else {
-            Horse_RotateToPoint(&this->actor, &this->actor.home.pos, 300);
+            horse_rot_trace_pos(&this->actor, &this->actor.home.pos, 300);
         }
     }
 
-    if (SkelAnime_Update(&this->skin.skelAnime)) {
+    if (Skeleton_Info2_anime_play(&this->skin.skelAnime)) {
         if (!this->unk_1E8) {
-            dist = Actor_WorldDistXZToActor(&this->actor, &GET_PLAYER(play)->actor);
+            dist = Actor_search_actor_distanceXZ(&this->actor, &GET_PLAYER(play)->actor);
         } else {
-            dist = Math3D_Vec3f_DistXYZ(&this->actor.world.pos, &this->actor.home.pos);
+            dist = Math3DLength(&this->actor.world.pos, &this->actor.home.pos);
         }
 
         if (!this->unk_1E8) {
@@ -536,36 +536,36 @@ void func_80A6A7D0(EnHorseLinkChild* this, PlayState* play) {
                 this->actor.speed = 2.0f;
                 this->unk_1F0 = 0;
             } else {
-                func_80A6A4DC(this);
+                En_HLC_Actor_mode_epona2_wait_init(this);
                 return;
             }
         }
 
         if (this->animationIdx != newAnimationIdx) {
             this->animationIdx = newAnimationIdx;
-            Animation_Change(&this->skin.skelAnime, sAnimations[this->animationIdx], func_80A695A4(this), 0.0f,
-                             Animation_GetLastFrame(sAnimations[this->animationIdx]), ANIMMODE_ONCE, -5.0f);
+            Skeleton_Info2_init(&this->skin.skelAnime, skin_hlc_anim_tbl[this->animationIdx], En_HLC_calcAnimSpeed(this), 0.0f,
+                             Si2_anime_end_frame(skin_hlc_anim_tbl[this->animationIdx]), ANIMMODE_ONCE, -5.0f);
         } else {
-            Animation_Change(&this->skin.skelAnime, sAnimations[this->animationIdx], func_80A695A4(this), 0.0f,
-                             Animation_GetLastFrame(sAnimations[this->animationIdx]), ANIMMODE_ONCE, 0.0f);
+            Skeleton_Info2_init(&this->skin.skelAnime, skin_hlc_anim_tbl[this->animationIdx], En_HLC_calcAnimSpeed(this), 0.0f,
+                             Si2_anime_end_frame(skin_hlc_anim_tbl[this->animationIdx]), ANIMMODE_ONCE, 0.0f);
         }
     }
 }
 
-static EnHorseLinkChildActionFunc sActionFuncs[] = {
-    func_80A698F4, func_80A69C18, func_80A699FC, func_80A6A068, func_80A6A7D0, func_80A6A5A4,
+static EnHorseLinkChildActionFunc mode_function[] = {
+    En_HLC_Actor_mode_anim_loop, En_HLC_Actor_mode_search_player, En_HLC_Actor_mode_search_wait, En_HLC_Actor_mode_epona1, En_HLC_Actor_mode_epona2_trace_p, En_HLC_Actor_mode_epona2_wait,
 };
 
-static void* sEyeTextures[] = { gChildEponaEyeOpenTex, gChildEponaEyeHalfTex, gChildEponaEyeCloseTex };
-static u8 sEyeIndexOrder[] = { 0, 1, 2, 1 };
+static void* eye_txt[] = { gChildEponaEyeOpenTex, gChildEponaEyeHalfTex, gChildEponaEyeCloseTex };
+static u8 mepachi_tbl[] = { 0, 1, 2, 1 };
 
-void EnHorseLinkChild_Update(Actor* thisx, PlayState* play) {
+void En_HLC_Actor_move(Actor* thisx, PlayState* play) {
     EnHorseLinkChild* this = (EnHorseLinkChild*)thisx;
     s32 pad;
 
-    sActionFuncs[this->action](this, play);
-    Actor_MoveXZGravity(&this->actor);
-    Actor_UpdateBgCheckInfo(play, &this->actor, 20.0f, 55.0f, 100.0f,
+    mode_function[this->action](this, play);
+    Actor_position_moveF(&this->actor);
+    Actor_BGcheck2(play, &this->actor, 20.0f, 55.0f, 100.0f,
                             UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2 | UPDBGCHECKINFO_FLAG_3 |
                                 UPDBGCHECKINFO_FLAG_4);
 
@@ -576,21 +576,21 @@ void EnHorseLinkChild_Update(Actor* thisx, PlayState* play) {
     this->actor.focus.pos = this->actor.world.pos;
     this->actor.focus.pos.y += 70.0f;
 
-    if ((Rand_ZeroOne() < 0.025f) && (this->eyeTexIndex == 0)) {
+    if ((fqrand() < 0.025f) && (this->eyeTexIndex == 0)) {
         this->eyeTexIndex++;
     } else if (this->eyeTexIndex > 0) {
         this->eyeTexIndex++;
-        if (this->eyeTexIndex >= ARRAY_COUNT(sEyeIndexOrder)) {
+        if (this->eyeTexIndex >= ARRAY_COUNT(mepachi_tbl)) {
             this->eyeTexIndex = 0;
         }
     }
 
-    Collider_UpdateCylinder(&this->actor, &this->bodyCollider);
-    CollisionCheck_SetOC(play, &play->colChkCtx, &this->bodyCollider.base);
-    func_80A6948C(this);
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->bodyCollider);
+    CollisionCheck_setOC(play, &play->colChkCtx, &this->bodyCollider.base);
+    En_HLC_Actor_setSound(this);
 }
 
-void EnHorseLinkChild_PostDraw(Actor* thisx, PlayState* play, Skin* skin) {
+void En_HLC_calc(Actor* thisx, PlayState* play, Skin* skin) {
     Vec3f center;
     Vec3f newCenter;
     EnHorseLinkChild* this = (EnHorseLinkChild*)thisx;
@@ -600,7 +600,7 @@ void EnHorseLinkChild_PostDraw(Actor* thisx, PlayState* play, Skin* skin) {
         center.x = this->headCollider.elements[i].dim.modelSphere.center.x;
         center.y = this->headCollider.elements[i].dim.modelSphere.center.y;
         center.z = this->headCollider.elements[i].dim.modelSphere.center.z;
-        Skin_GetLimbPos(skin, this->headCollider.elements[i].dim.limb, &center, &newCenter);
+        Skin_MatrixPosition2_gfx(skin, this->headCollider.elements[i].dim.limb, &center, &newCenter);
         this->headCollider.elements[i].dim.worldSphere.center.x = newCenter.x;
         this->headCollider.elements[i].dim.worldSphere.center.y = newCenter.y;
         this->headCollider.elements[i].dim.worldSphere.center.z = newCenter.z;
@@ -609,18 +609,18 @@ void EnHorseLinkChild_PostDraw(Actor* thisx, PlayState* play, Skin* skin) {
     }
 
     //! @bug see relevant comment in `EnHorse_SkinCallback1`
-    CollisionCheck_SetOC(play, &play->colChkCtx, &this->headCollider.base);
+    CollisionCheck_setOC(play, &play->colChkCtx, &this->headCollider.base);
 }
 
-s32 EnHorseLinkChild_OverrideLimbDraw(Actor* thisx, PlayState* play, s32 arg2, Skin* skin) {
+s32 En_HLC_joint_proc(Actor* thisx, PlayState* play, s32 arg2, Skin* skin) {
     EnHorseLinkChild* this = (EnHorseLinkChild*)thisx;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_horse_link_child.c", 1467);
 
     if (arg2 == 0xD) {
-        u8 index = sEyeIndexOrder[this->eyeTexIndex];
+        u8 index = mepachi_tbl[this->eyeTexIndex];
 
-        gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(sEyeTextures[index]));
+        gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(eye_txt[index]));
     }
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_horse_link_child.c", 1479);
@@ -628,9 +628,9 @@ s32 EnHorseLinkChild_OverrideLimbDraw(Actor* thisx, PlayState* play, s32 arg2, S
     return 1;
 }
 
-void EnHorseLinkChild_Draw(Actor* thisx, PlayState* play) {
+void En_HLC_Actor_display(Actor* thisx, PlayState* play) {
     EnHorseLinkChild* this = (EnHorseLinkChild*)thisx;
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
-    func_800A6360(&this->actor, play, &this->skin, EnHorseLinkChild_PostDraw, EnHorseLinkChild_OverrideLimbDraw, true);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
+    Skin_disp3(&this->actor, play, &this->skin, En_HLC_calc, En_HLC_joint_proc, true);
 }

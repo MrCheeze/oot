@@ -15,13 +15,13 @@
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED)
 
-void ArmsHook_Init(Actor* thisx, PlayState* play);
-void ArmsHook_Destroy(Actor* thisx, PlayState* play);
-void ArmsHook_Update(Actor* thisx, PlayState* play);
-void ArmsHook_Draw(Actor* thisx, PlayState* play);
+void Arms_Hook_actor_ct(Actor* thisx, PlayState* play);
+void Arms_Hook_actor_dt(Actor* thisx, PlayState* play);
+void Arms_Hook_actor_move(Actor* thisx, PlayState* play);
+void Arms_Hook_actor_draw(Actor* thisx, PlayState* play);
 
-void ArmsHook_Wait(ArmsHook* this, PlayState* play);
-void ArmsHook_Shoot(ArmsHook* this, PlayState* play);
+static void move_catch(ArmsHook* this, PlayState* play);
+static void move_shot(ArmsHook* this, PlayState* play);
 
 ActorProfile Arms_Hook_Profile = {
     /**/ ACTOR_ARMS_HOOK,
@@ -29,13 +29,13 @@ ActorProfile Arms_Hook_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_LINK_BOY,
     /**/ sizeof(ArmsHook),
-    /**/ ArmsHook_Init,
-    /**/ ArmsHook_Destroy,
-    /**/ ArmsHook_Update,
-    /**/ ArmsHook_Draw,
+    /**/ Arms_Hook_actor_ct,
+    /**/ Arms_Hook_actor_dt,
+    /**/ Arms_Hook_actor_move,
+    /**/ Arms_Hook_actor_draw,
 };
 
-static ColliderQuadInit sQuadInit = {
+static ColliderQuadInit ATHookInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_ON | AT_TYPE_PLAYER,
@@ -55,52 +55,52 @@ static ColliderQuadInit sQuadInit = {
     { { { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } } },
 };
 
-static Vec3f sUnusedVec1 = { 0.0f, 0.5f, 0.0f };
-static Vec3f sUnusedVec2 = { 0.0f, 0.5f, 0.0f };
+static Vec3f fire_vec = { 0.0f, 0.5f, 0.0f };
+static Vec3f fire_acc = { 0.0f, 0.5f, 0.0f };
 
-static Color_RGB8 sUnusedColors[] = {
+static Color_RGB8 fire_prim[] = {
     { 255, 255, 100 },
     { 255, 255, 50 },
 };
 
-static Vec3f D_80865B70 = { 0.0f, 0.0f, 0.0f };
-static Vec3f D_80865B7C = { 0.0f, 0.0f, 900.0f };
-static Vec3f D_80865B88 = { 0.0f, 500.0f, -3000.0f };
-static Vec3f D_80865B94 = { 0.0f, -500.0f, -3000.0f };
-static Vec3f D_80865BA0 = { 0.0f, 500.0f, 1200.0f };
-static Vec3f D_80865BAC = { 0.0f, -500.0f, 1200.0f };
+static Vec3f local_BGcheck_point_root = { 0.0f, 0.0f, 0.0f };
+static Vec3f local_shot_BGcheck_point_root = { 0.0f, 0.0f, 900.0f };
+static Vec3f local_sword_top = { 0.0f, 500.0f, -3000.0f };
+static Vec3f local_sword_root = { 0.0f, -500.0f, -3000.0f };
+static Vec3f local_shot_sword_top = { 0.0f, 500.0f, 1200.0f };
+static Vec3f local_shot_sword_root = { 0.0f, -500.0f, 1200.0f };
 
-void ArmsHook_SetupAction(ArmsHook* this, ArmsHookActionFunc actionFunc) {
+void Arms_Hook_actor_set_process(ArmsHook* this, ArmsHookActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
 
-void ArmsHook_Init(Actor* thisx, PlayState* play) {
+void Arms_Hook_actor_ct(Actor* thisx, PlayState* play) {
     ArmsHook* this = (ArmsHook*)thisx;
 
-    Collider_InitQuad(play, &this->collider);
-    Collider_SetQuad(play, &this->collider, &this->actor, &sQuadInit);
-    ArmsHook_SetupAction(this, ArmsHook_Wait);
+    ClObjSwrd_ct(play, &this->collider);
+    ClObjSwrd_set5(play, &this->collider, &this->actor, &ATHookInfoData);
+    Arms_Hook_actor_set_process(this, move_catch);
     this->unk_1E8 = this->actor.world.pos;
 }
 
-void ArmsHook_Destroy(Actor* thisx, PlayState* play) {
+void Arms_Hook_actor_dt(Actor* thisx, PlayState* play) {
     ArmsHook* this = (ArmsHook*)thisx;
 
     if (this->attachedActor != NULL) {
         this->attachedActor->flags &= ~ACTOR_FLAG_HOOKSHOT_ATTACHED;
     }
 
-    Collider_DestroyQuad(play, &this->collider);
+    ClObjSwrd_dt(play, &this->collider);
 }
 
-void ArmsHook_Wait(ArmsHook* this, PlayState* play) {
+static void move_catch(ArmsHook* this, PlayState* play) {
     if (this->actor.parent == NULL) {
         Player* player = GET_PLAYER(play);
         // get correct timer length for hookshot or longshot
         s32 length = (player->heldItemAction == PLAYER_IA_HOOKSHOT) ? 13 : 26;
 
-        ArmsHook_SetupAction(this, ArmsHook_Shoot);
-        Actor_SetProjectileSpeed(&this->actor, 20.0f);
+        Arms_Hook_actor_set_process(this, move_shot);
+        Actor_vector_to_position_speed(&this->actor, 20.0f);
         this->actor.parent = &GET_PLAYER(play)->actor;
         this->timer = length;
     }
@@ -109,14 +109,14 @@ void ArmsHook_Wait(ArmsHook* this, PlayState* play) {
 /**
  * Start pulling Player so he flies toward the hookshot's current location.
  * Setting Player's parent pointer indicates that he should begin flying.
- * See `Player_UpdateUpperBody` and `Player_Action_HookshotFly` for Player's side of the interation.
+ * See `uperbody_action_check` and `move_hook_fly` for Player's side of the interation.
  */
-void ArmsHook_PullPlayer(ArmsHook* this) {
+void player_carry_set(ArmsHook* this) {
     this->actor.child = this->actor.parent;
     this->actor.parent->parent = &this->actor;
 }
 
-s32 ArmsHook_AttachToPlayer(ArmsHook* this, Player* player) {
+s32 player_carry_cancel_check(ArmsHook* this, Player* player) {
     player->actor.child = &this->actor;
     player->heldActor = &this->actor;
     if (this->actor.child != NULL) {
@@ -127,45 +127,45 @@ s32 ArmsHook_AttachToPlayer(ArmsHook* this, Player* player) {
     return false;
 }
 
-void ArmsHook_DetachFromActor(ArmsHook* this) {
+void carry_actor_cancel_check(ArmsHook* this) {
     if (this->attachedActor != NULL) {
         this->attachedActor->flags &= ~ACTOR_FLAG_HOOKSHOT_ATTACHED;
         this->attachedActor = NULL;
     }
 }
 
-s32 ArmsHook_CheckForCancel(ArmsHook* this) {
+s32 player_down_check(ArmsHook* this) {
     Player* player = (Player*)this->actor.parent;
 
-    if (Player_HoldsHookshot(player)) {
+    if (hook_check(player)) {
         if ((player->itemAction != player->heldItemAction) || (player->actor.flags & ACTOR_FLAG_TALK) ||
             ((player->stateFlags1 & (PLAYER_STATE1_DEAD | PLAYER_STATE1_26)))) {
             this->timer = 0;
-            ArmsHook_DetachFromActor(this);
-            Math_Vec3f_Copy(&this->actor.world.pos, &player->unk_3C8);
+            carry_actor_cancel_check(this);
+            xyz_t_move(&this->actor.world.pos, &player->unk_3C8);
             return 1;
         }
     }
     return 0;
 }
 
-void ArmsHook_AttachToActor(ArmsHook* this, Actor* actor) {
+void hook_carry_check(ArmsHook* this, Actor* actor) {
     actor->flags |= ACTOR_FLAG_HOOKSHOT_ATTACHED;
     this->attachedActor = actor;
-    Math_Vec3f_Diff(&actor->world.pos, &this->actor.world.pos, &this->attachPointOffset);
+    xyz_t_sub(&actor->world.pos, &this->actor.world.pos, &this->attachPointOffset);
 }
 
-void ArmsHook_Shoot(ArmsHook* this, PlayState* play) {
+static void move_shot(ArmsHook* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    if ((this->actor.parent == NULL) || (!Player_HoldsHookshot(player))) {
-        ArmsHook_DetachFromActor(this);
-        Actor_Kill(&this->actor);
+    if ((this->actor.parent == NULL) || (!hook_check(player))) {
+        carry_actor_cancel_check(this);
+        Actor_delete(&this->actor);
         return;
     }
 
-    Actor_PlaySfx_Flagged2(&player->actor, NA_SE_IT_HOOKSHOT_CHAIN - SFX_FLAG);
-    ArmsHook_CheckForCancel(this);
+    Actor_player_level_SE_set(&player->actor, NA_SE_IT_HOOKSHOT_CHAIN - SFX_FLAG);
+    player_down_check(this);
 
     if ((this->timer != 0) && (this->collider.base.atFlags & AT_HIT) &&
         (this->collider.elem.atHitElem->elemMaterial != ELEM_MATERIAL_UNK4)) {
@@ -174,16 +174,16 @@ void ArmsHook_Shoot(ArmsHook* this, PlayState* play) {
         if ((touchedActor->update != NULL) &&
             (touchedActor->flags & (ACTOR_FLAG_HOOKSHOT_PULLS_ACTOR | ACTOR_FLAG_HOOKSHOT_PULLS_PLAYER))) {
             if (this->collider.elem.atHitElem->acElemFlags & ACELEM_HOOKABLE) {
-                ArmsHook_AttachToActor(this, touchedActor);
+                hook_carry_check(this, touchedActor);
 
                 if (CHECK_FLAG_ALL(touchedActor->flags, ACTOR_FLAG_HOOKSHOT_PULLS_PLAYER)) {
-                    ArmsHook_PullPlayer(this);
+                    player_carry_set(this);
                 }
             }
         }
         this->timer = 0;
-        Audio_PlaySfxGeneral(NA_SE_IT_ARROW_STICK_CRE, &this->actor.projectedPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        Nai_FxFlagEntry(NA_SE_IT_ARROW_STICK_CRE, &this->actor.projectedPos, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
         return;
     }
 
@@ -206,24 +206,24 @@ void ArmsHook_Shoot(ArmsHook* this, PlayState* play) {
                 attachedActor = NULL;
                 this->attachedActor = NULL;
             } else if (this->actor.child != NULL) {
-                curActorOffsetXYZ = Actor_WorldDistXYZToActor(&this->actor, attachedActor);
+                curActorOffsetXYZ = Actor_search_actor_distance(&this->actor, attachedActor);
                 attachPointOffsetXYZ = sqrtf(SQ(this->attachPointOffset.x) + SQ(this->attachPointOffset.y) +
                                              SQ(this->attachPointOffset.z));
 
                 // Keep the hookshot actor at the same relative offset as the initial attachment even if the actor moves
-                Math_Vec3f_Diff(&attachedActor->world.pos, &this->attachPointOffset, &this->actor.world.pos);
+                xyz_t_sub(&attachedActor->world.pos, &this->attachPointOffset, &this->actor.world.pos);
 
                 // If the actor the hookshot is attached to is moving, the hookshot's current relative
                 // position will be different than the initial attachment position.
                 // If the distance between those two points is larger than 50 units, detach the hookshot.
                 if ((curActorOffsetXYZ - attachPointOffsetXYZ) > 50.0f) {
-                    ArmsHook_DetachFromActor(this);
+                    carry_actor_cancel_check(this);
                     attachedActor = NULL;
                 }
             }
         }
 
-        bodyDistDiff = Math_Vec3f_DistXYZAndStoreDiff(&player->unk_3C8, &this->actor.world.pos, &bodyDistDiffVec);
+        bodyDistDiff = search_position_distance2(&player->unk_3C8, &this->actor.world.pos, &bodyDistDiffVec);
 
         if (bodyDistDiff < 30.0f) {
             velocity = 0.0f;
@@ -250,27 +250,27 @@ void ArmsHook_Shoot(ArmsHook* this, PlayState* play) {
         if (this->actor.child == NULL) {
             // Not pulling Player
             if ((attachedActor != NULL) && (attachedActor->id == ACTOR_BG_SPOT06_OBJECTS)) {
-                Math_Vec3f_Diff(&attachedActor->world.pos, &this->attachPointOffset, &this->actor.world.pos);
+                xyz_t_sub(&attachedActor->world.pos, &this->attachPointOffset, &this->actor.world.pos);
                 phi_f16 = 1.0f;
             } else {
-                Math_Vec3f_Sum(&player->unk_3C8, &newPos, &this->actor.world.pos);
+                xyz_t_add(&player->unk_3C8, &newPos, &this->actor.world.pos);
                 if (attachedActor != NULL) {
-                    Math_Vec3f_Sum(&this->actor.world.pos, &this->attachPointOffset, &attachedActor->world.pos);
+                    xyz_t_add(&this->actor.world.pos, &this->attachPointOffset, &attachedActor->world.pos);
                 }
             }
         } else {
             // Pulling Player
-            Math_Vec3f_Diff(&bodyDistDiffVec, &newPos, &player->actor.velocity);
+            xyz_t_sub(&bodyDistDiffVec, &newPos, &player->actor.velocity);
             player->actor.world.rot.x =
-                Math_Atan2S(sqrtf(SQ(bodyDistDiffVec.x) + SQ(bodyDistDiffVec.z)), -bodyDistDiffVec.y);
+                atans_table(sqrtf(SQ(bodyDistDiffVec.x) + SQ(bodyDistDiffVec.z)), -bodyDistDiffVec.y);
         }
 
         if (phi_f16 < 50.0f) {
-            ArmsHook_DetachFromActor(this);
+            carry_actor_cancel_check(this);
             if (phi_f16 == 0.0f) {
-                ArmsHook_SetupAction(this, ArmsHook_Wait);
-                if (ArmsHook_AttachToPlayer(this, player)) {
-                    Math_Vec3f_Diff(&this->actor.world.pos, &player->actor.world.pos, &player->actor.velocity);
+                Arms_Hook_actor_set_process(this, move_catch);
+                if (player_carry_cancel_check(this, player)) {
+                    xyz_t_sub(&this->actor.world.pos, &player->actor.world.pos, &player->actor.velocity);
                     player->actor.velocity.y -= 20.0f;
                 }
             }
@@ -282,41 +282,41 @@ void ArmsHook_Shoot(ArmsHook* this, PlayState* play) {
         Vec3f prevFrameDiff;
         Vec3f sp60;
 
-        Actor_MoveXZGravity(&this->actor);
-        Math_Vec3f_Diff(&this->actor.world.pos, &this->actor.prevPos, &prevFrameDiff);
-        Math_Vec3f_Sum(&this->unk_1E8, &prevFrameDiff, &this->unk_1E8);
-        this->actor.shape.rot.x = Math_Atan2S(this->actor.speed, -this->actor.velocity.y);
+        Actor_position_moveF(&this->actor);
+        xyz_t_sub(&this->actor.world.pos, &this->actor.prevPos, &prevFrameDiff);
+        xyz_t_add(&this->unk_1E8, &prevFrameDiff, &this->unk_1E8);
+        this->actor.shape.rot.x = atans_table(this->actor.speed, -this->actor.velocity.y);
         sp60.x = this->unk_1F4.x - (this->unk_1E8.x - this->unk_1F4.x);
         sp60.y = this->unk_1F4.y - (this->unk_1E8.y - this->unk_1F4.y);
         sp60.z = this->unk_1F4.z - (this->unk_1E8.z - this->unk_1F4.z);
-        if (BgCheck_EntityLineTest1(&play->colCtx, &sp60, &this->unk_1E8, &intersectPos, &poly, true, true, true, true,
+        if (T_BGCheck_ObjLineCheck_poly_chgrp_ai(&play->colCtx, &sp60, &this->unk_1E8, &intersectPos, &poly, true, true, true, true,
                                     &bgId) &&
-            !func_8002F9EC(play, &this->actor, poly, bgId, &intersectPos)) {
+            !jyabujyabu_kiru_check(play, &this->actor, poly, bgId, &intersectPos)) {
             f32 polyNormalX = COLPOLY_GET_NORMAL(poly->normal.x);
             f32 polyNormalZ = COLPOLY_GET_NORMAL(poly->normal.z);
             s32 pad;
 
-            Math_Vec3f_Copy(&this->actor.world.pos, &intersectPos);
+            xyz_t_move(&this->actor.world.pos, &intersectPos);
             this->actor.world.pos.x += 10.0f * polyNormalX;
             this->actor.world.pos.z += 10.0f * polyNormalZ;
             this->timer = 0;
-            if (SurfaceType_CanHookshot(&play->colCtx, poly, bgId)) {
+            if (T_BGCheck_checkHookShotStick(&play->colCtx, poly, bgId)) {
                 DynaPolyActor* dynaPolyActor;
 
                 if (bgId != BGCHECK_SCENE) {
-                    dynaPolyActor = DynaPoly_GetActor(&play->colCtx, bgId);
+                    dynaPolyActor = DynaPolyInfo_actor_index2pointer(&play->colCtx, bgId);
 
                     if (dynaPolyActor != NULL) {
-                        ArmsHook_AttachToActor(this, &dynaPolyActor->actor);
+                        hook_carry_check(this, &dynaPolyActor->actor);
                     }
                 }
-                ArmsHook_PullPlayer(this);
-                Audio_PlaySfxGeneral(NA_SE_IT_HOOKSHOT_STICK_OBJ, &this->actor.projectedPos, 4,
-                                     &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                player_carry_set(this);
+                Nai_FxFlagEntry(NA_SE_IT_HOOKSHOT_STICK_OBJ, &this->actor.projectedPos, 4,
+                                     &_dummy_one, &_dummy_one, &_dummy_zero_s8);
             } else {
-                CollisionCheck_SpawnShieldParticlesMetal(play, &this->actor.world.pos);
-                Audio_PlaySfxGeneral(NA_SE_IT_HOOKSHOT_REFLECT, &this->actor.projectedPos, 4,
-                                     &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                CollisionCheckSetSparkFlashBlue(play, &this->actor.world.pos);
+                Nai_FxFlagEntry(NA_SE_IT_HOOKSHOT_REFLECT, &this->actor.projectedPos, 4,
+                                     &_dummy_one, &_dummy_one, &_dummy_zero_s8);
             }
         } else if (CHECK_BTN_ANY(play->state.input[0].press.button,
                                  (BTN_A | BTN_B | BTN_R | BTN_CUP | BTN_CDOWN | BTN_CLEFT | BTN_CRIGHT))) {
@@ -325,14 +325,14 @@ void ArmsHook_Shoot(ArmsHook* this, PlayState* play) {
     }
 }
 
-void ArmsHook_Update(Actor* thisx, PlayState* play) {
+void Arms_Hook_actor_move(Actor* thisx, PlayState* play) {
     ArmsHook* this = (ArmsHook*)thisx;
 
     this->actionFunc(this, play);
     this->unk_1F4 = this->unk_1E8;
 }
 
-void ArmsHook_Draw(Actor* thisx, PlayState* play) {
+void Arms_Hook_actor_draw(Actor* thisx, PlayState* play) {
     s32 pad;
     ArmsHook* this = (ArmsHook*)thisx;
     Player* player = GET_PLAYER(play);
@@ -347,28 +347,28 @@ void ArmsHook_Draw(Actor* thisx, PlayState* play) {
 
         if (1) {}
 
-        if ((ArmsHook_Shoot != this->actionFunc) || (this->timer <= 0)) {
-            Matrix_MultVec3f(&D_80865B70, &this->unk_1E8);
-            Matrix_MultVec3f(&D_80865B88, &hookNewTip);
-            Matrix_MultVec3f(&D_80865B94, &hookNewBase);
+        if ((move_shot != this->actionFunc) || (this->timer <= 0)) {
+            Matrix_Position(&local_BGcheck_point_root, &this->unk_1E8);
+            Matrix_Position(&local_sword_top, &hookNewTip);
+            Matrix_Position(&local_sword_root, &hookNewBase);
             this->hookInfo.active = 0;
         } else {
-            Matrix_MultVec3f(&D_80865B7C, &this->unk_1E8);
-            Matrix_MultVec3f(&D_80865BA0, &hookNewTip);
-            Matrix_MultVec3f(&D_80865BAC, &hookNewBase);
+            Matrix_Position(&local_shot_BGcheck_point_root, &this->unk_1E8);
+            Matrix_Position(&local_shot_sword_top, &hookNewTip);
+            Matrix_Position(&local_shot_sword_root, &hookNewBase);
         }
 
-        func_80090480(play, &this->collider, &this->hookInfo, &hookNewTip, &hookNewBase);
-        Gfx_SetupDL_25Opa(play->state.gfxCtx);
+        sword_attack_collision_set(play, &this->collider, &this->hookInfo, &hookNewTip, &hookNewBase);
+        _texture_z_light_fog_prim(play->state.gfxCtx);
         MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_arms_hook.c", 895);
         gSPDisplayList(POLY_OPA_DISP++, gLinkAdultHookshotTipDL);
-        Matrix_Translate(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z, MTXMODE_NEW);
-        Math_Vec3f_Diff(&player->unk_3C8, &this->actor.world.pos, &sp78);
+        Matrix_translate(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z, MTXMODE_NEW);
+        xyz_t_sub(&player->unk_3C8, &this->actor.world.pos, &sp78);
         sp58 = SQ(sp78.x) + SQ(sp78.z);
         sp5C = sqrtf(sp58);
-        Matrix_RotateY(Math_FAtan2F(sp78.x, sp78.z), MTXMODE_APPLY);
-        Matrix_RotateX(Math_FAtan2F(-sp78.y, sp5C), MTXMODE_APPLY);
-        Matrix_Scale(0.015f, 0.015f, sqrtf(SQ(sp78.y) + sp58) * 0.01f, MTXMODE_APPLY);
+        Matrix_rotateY(fatan2(sp78.x, sp78.z), MTXMODE_APPLY);
+        Matrix_rotateX(fatan2(-sp78.y, sp5C), MTXMODE_APPLY);
+        Matrix_scale(0.015f, 0.015f, sqrtf(SQ(sp78.y) + sp58) * 0.01f, MTXMODE_APPLY);
         MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_arms_hook.c", 910);
         gSPDisplayList(POLY_OPA_DISP++, gLinkAdultHookshotChainDL);
 

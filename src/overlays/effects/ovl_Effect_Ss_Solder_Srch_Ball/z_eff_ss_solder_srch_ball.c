@@ -8,28 +8,28 @@
 
 #define rUnused regs[1]
 
-u32 EffectSsSolderSrchBall_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
-void EffectSsSolderSrchBall_Update(PlayState* play, u32 index, EffectSs* this);
+u32 Effect_Ss2_Solder_Srch_Ball_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
+void Effect_Ss_Solder_Srch_Ball_move(PlayState* play, u32 index, EffectSs* this);
 
 EffectSsProfile Effect_Ss_Solder_Srch_Ball_Profile = {
     EFFECT_SS_SOLDER_SRCH_BALL,
-    EffectSsSolderSrchBall_Init,
+    Effect_Ss2_Solder_Srch_Ball_ct,
 };
 
-u32 EffectSsSolderSrchBall_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
+u32 Effect_Ss2_Solder_Srch_Ball_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
     EffectSsSolderSrchBallInitParams* initParams = (EffectSsSolderSrchBallInitParams*)initParamsx;
 
     this->pos = initParams->pos;
     this->velocity = initParams->velocity;
     this->accel = initParams->accel;
-    this->update = EffectSsSolderSrchBall_Update;
+    this->update = Effect_Ss_Solder_Srch_Ball_move;
     this->life = 100;
     this->rUnused = initParams->unused;
     this->actor = (Actor*)initParams->linkDetected; // actor field was incorrectly used as a pointer to something else
     return 1;
 }
 
-void EffectSsSolderSrchBall_Update(PlayState* play, u32 index, EffectSs* this) {
+void Effect_Ss_Solder_Srch_Ball_move(PlayState* play, u32 index, EffectSs* this) {
     s32 pad;
     f32 playerPosDiffX;
     f32 playerPosDiffY;
@@ -43,7 +43,7 @@ void EffectSsSolderSrchBall_Update(PlayState* play, u32 index, EffectSs* this) {
     playerPosDiffY = player->actor.world.pos.y - this->pos.y;
     playerPosDiffZ = player->actor.world.pos.z - this->pos.z;
 
-    if (!BgCheck_SphVsFirstPoly(&play->colCtx, &this->pos, 30.0f)) {
+    if (!T_BGCheck_SimpleCheck(&play->colCtx, &this->pos, 30.0f)) {
         if (sqrtf(SQ(playerPosDiffX) + SQ(playerPosDiffY) + SQ(playerPosDiffZ)) < 70.0f) {
             *linkDetected = true;
         }

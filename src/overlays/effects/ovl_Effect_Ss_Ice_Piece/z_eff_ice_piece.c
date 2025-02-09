@@ -13,16 +13,16 @@
 #define rRotSpeed regs[3]
 #define rScale regs[4]
 
-u32 EffectSsIcePiece_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
-void EffectSsIcePiece_Draw(PlayState* play, u32 index, EffectSs* this);
-void EffectSsIcePiece_Update(PlayState* play, u32 index, EffectSs* this);
+u32 Effect_SS2_Ice_Piece_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
+void Effect_SS_Ice_Piece_disp_mode(PlayState* play, u32 index, EffectSs* this);
+static void Effect_SS_Ice_Piece_func_proc(PlayState* play, u32 index, EffectSs* this);
 
 EffectSsProfile Effect_Ss_Ice_Piece_Profile = {
     EFFECT_SS_ICE_PIECE,
-    EffectSsIcePiece_Init,
+    Effect_SS2_Ice_Piece_ct,
 };
 
-u32 EffectSsIcePiece_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
+u32 Effect_SS2_Ice_Piece_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
     EffectSsIcePieceInitParams* initParams = (EffectSsIcePieceInitParams*)initParamsx;
 
     this->pos = initParams->pos;
@@ -30,19 +30,19 @@ u32 EffectSsIcePiece_Init(PlayState* play, u32 index, EffectSs* this, void* init
     this->velocity = initParams->velocity;
     this->accel = initParams->accel;
     this->life = initParams->life;
-    this->draw = EffectSsIcePiece_Draw;
-    this->update = EffectSsIcePiece_Update;
+    this->draw = Effect_SS_Ice_Piece_disp_mode;
+    this->update = Effect_SS_Ice_Piece_func_proc;
     this->rLifespan = initParams->life;
     this->rScale = initParams->scale * 100.0f;
-    this->rYaw = Math_Atan2S(initParams->velocity.z, initParams->velocity.x);
+    this->rYaw = atans_table(initParams->velocity.z, initParams->velocity.x);
     this->rPitch = 0;
     this->rRotSpeed =
-        ((fabsf(initParams->velocity.x) + fabsf(initParams->velocity.y)) * 100.0f) * (Rand_ZeroFloat(1.0f) + 0.5f);
+        ((fabsf(initParams->velocity.x) + fabsf(initParams->velocity.y)) * 100.0f) * (rnd_f(1.0f) + 0.5f);
 
     return 1;
 }
 
-void EffectSsIcePiece_Draw(PlayState* play, u32 index, EffectSs* this) {
+void Effect_SS_Ice_Piece_disp_mode(PlayState* play, u32 index, EffectSs* this) {
     GraphicsContext* gfxCtx = play->state.gfxCtx;
     s32 pad;
     f32 scale;
@@ -61,23 +61,23 @@ void EffectSsIcePiece_Draw(PlayState* play, u32 index, EffectSs* this) {
         alpha = 255.0f;
     }
 
-    Matrix_Translate(this->pos.x, this->pos.y, this->pos.z, MTXMODE_NEW);
-    Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
-    Matrix_RotateY(BINANG_TO_RAD(this->rYaw), MTXMODE_APPLY);
-    Matrix_RotateX(BINANG_TO_RAD(this->rPitch), MTXMODE_APPLY);
+    Matrix_translate(this->pos.x, this->pos.y, this->pos.z, MTXMODE_NEW);
+    Matrix_scale(scale, scale, scale, MTXMODE_APPLY);
+    Matrix_rotateY(BINANG_TO_RAD(this->rYaw), MTXMODE_APPLY);
+    Matrix_rotateX(BINANG_TO_RAD(this->rPitch), MTXMODE_APPLY);
     MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, gfxCtx, "../z_eff_ice_piece.c", 185);
-    Gfx_SetupDL_25Xlu(play->state.gfxCtx);
+    _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
     gDPSetEnvColor(POLY_XLU_DISP++, 0, 50, 100, (s32)alpha & 0xFF);
-    func_8003435C(&this->pos, play);
+    Setpos_HiliteReflect_xlu_init(&this->pos, play);
     gSPSegment(POLY_XLU_DISP++, 0x08,
-               Gfx_TwoTexScroll(play->state.gfxCtx, G_TX_RENDERTILE, 0, (1 * frames) % 256, 0x20, 0x10, 1, 0,
+               two_tex_scroll(play->state.gfxCtx, G_TX_RENDERTILE, 0, (1 * frames) % 256, 0x20, 0x10, 1, 0,
                                 (2 * frames) % 256, 0x40, 0x20));
     gSPDisplayList(POLY_XLU_DISP++, gEffIceFragment1DL);
 
     CLOSE_DISPS(gfxCtx, "../z_eff_ice_piece.c", 209);
 }
 
-void EffectSsIcePiece_Update(PlayState* play, u32 index, EffectSs* this) {
+static void Effect_SS_Ice_Piece_func_proc(PlayState* play, u32 index, EffectSs* this) {
     this->rPitch += this->rRotSpeed;
     this->velocity.x *= 0.85f;
     this->velocity.y *= 0.85f;

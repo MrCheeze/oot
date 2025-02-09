@@ -11,7 +11,7 @@ typedef struct EffectSsDeadSoundInitParams {
     /* 0x24 */ u16 sfxId;
     /* 0x26 */ s16 lowerPriority;
     /* 0x28 */ s16 repeatMode;
-    /* 0x26 */ s16 unused2;
+    /* 0x26 */ s16 env;
     /* 0x2C */ s32 life;
 } EffectSsDeadSoundInitParams; // size = 0x30
 

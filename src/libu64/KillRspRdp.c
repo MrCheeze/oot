@@ -16,7 +16,7 @@
     if (x & DPC_STATUS_##name) \
     RCP_UTILS_PRINTF(#name " ")
 
-void RcpUtils_PrintRegisterStatus(void) {
+void showRspRdp(void) {
     u32 spStatus = __osSpGetStatus();
     u32 dpStatus = osDpGetStatus();
 
@@ -53,11 +53,11 @@ void RcpUtils_PrintRegisterStatus(void) {
     RCP_UTILS_PRINTF("\n");
 }
 
-void RcpUtils_Reset(void) {
-    RcpUtils_PrintRegisterStatus();
+void KillRspRdp(void) {
+    showRspRdp();
     // Flush the RDP pipeline and freeze clock counter
     osDpSetStatus(DPC_SET_FREEZE | DPC_SET_FLUSH);
     // Halt the RSP, disable interrupt on break and set "task done" signal
     __osSpSetStatus(SP_SET_HALT | SP_SET_TASKDONE | SP_CLR_INTR_BREAK);
-    RcpUtils_PrintRegisterStatus();
+    showRspRdp();
 }

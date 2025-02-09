@@ -7,7 +7,7 @@
 
 #include "global.h"
 
-void AudioMgr_NotifyTaskDone(AudioMgr* audioMgr) {
+void amHandleDoneMsg(AudioMgr* audioMgr) {
     AudioTask* task = audioMgr->rspTask;
 
     // If the audio rsp task has a message queue to receive task done notifications, post a message to it.
@@ -20,7 +20,7 @@ void AudioMgr_NotifyTaskDone(AudioMgr* audioMgr) {
  * Handle retrace event.
  * Update the audio driver and schedule audio rsp tasks.
  */
-void AudioMgr_HandleRetrace(AudioMgr* audioMgr) {
+void amHandleFrameMsg(AudioMgr* audioMgr) {
     AudioTask* rspTask;
 
     if (R_AUDIOMGR_DEBUG_LEVEL > AUDIOMGR_DEBUG_LEVEL_NONE) {
@@ -40,27 +40,27 @@ void AudioMgr_HandleRetrace(AudioMgr* audioMgr) {
 
         audioMgr->audioTask.msg = NULL;
         osSendMesg(&audioMgr->sched->cmdQueue, (OSMesg)&audioMgr->audioTask, OS_MESG_BLOCK);
-        Sched_Notify(audioMgr->sched);
+        osScKickEntryMsg(audioMgr->sched);
     }
 
     // Update the audio driver
 
-    gAudioThreadUpdateTimeStart = osGetTime();
+    audio_cpu_start_time = osGetTime();
 
     if (R_AUDIOMGR_DEBUG_LEVEL >= AUDIOMGR_DEBUG_LEVEL_NO_UPDATE) {
         // Skip update, no rsp task produced
         rspTask = NULL;
     } else {
-        rspTask = AudioThread_Update();
+        rspTask = Nas_AudioMain();
     }
 
-    gAudioThreadUpdateTimeAcc += osGetTime() - gAudioThreadUpdateTimeStart;
-    gAudioThreadUpdateTimeStart = 0;
+    audio_cpu_sum_time += osGetTime() - audio_cpu_start_time;
+    audio_cpu_start_time = 0;
 
     if (audioMgr->rspTask != NULL) {
         // Wait for the audio rsp task scheduled on the previous retrace to complete. This looks like it should wait
         // for the task scheduled on the current retrace, earlier in this function, but since the queue is initially
-        // filled in AudioMgr_Init this osRecvMesg call doesn't wait for the task scheduler to post a message for the
+        // filled in amInit this osRecvMesg call doesn't wait for the task scheduler to post a message for the
         // most recent task as there is already a message waiting.
         osRecvMesg(&audioMgr->taskDoneQueue, NULL, OS_MESG_BLOCK);
         // Report task done
@@ -68,7 +68,7 @@ void AudioMgr_HandleRetrace(AudioMgr* audioMgr) {
         //! the task done notification is sent to the task done queue for the current task as soon as the previous task
         //! is completed, without waiting for the current task.
         //! In practice, task done notifications are not used by the audio driver so this is inconsequential.
-        AudioMgr_NotifyTaskDone(audioMgr);
+        amHandleDoneMsg(audioMgr);
     }
     // Update rsp task to be scheduled on next retrace
     audioMgr->rspTask = rspTask;
@@ -78,15 +78,15 @@ void AudioMgr_HandleRetrace(AudioMgr* audioMgr) {
  * Handle Pre-NMI event.
  * Implemented by the audio driver.
  *
- * @see Audio_PreNMI
+ * @see Na_ResetAudio
  */
-void AudioMgr_HandlePreNMI(AudioMgr* audioMgr) {
+void amHandlePreNMIMsg(AudioMgr* audioMgr) {
     PRINTF(
         T("オーディオマネージャが OS_SC_PRE_NMI_MSG を受け取りました\n", "Audio manager received OS_SC_PRE_NMI_MSG\n"));
-    Audio_PreNMI();
+    Na_ResetAudio();
 }
 
-void AudioMgr_ThreadEntry(void* arg) {
+void amMain(void* arg) {
     AudioMgr* audioMgr = (AudioMgr*)arg;
     IrqMgrClient irqClient;
     s16* msg = NULL;
@@ -94,14 +94,14 @@ void AudioMgr_ThreadEntry(void* arg) {
     PRINTF(T("オーディオマネージャスレッド実行開始\n", "Start running audio manager thread\n"));
 
     // Initialize audio driver
-    Audio_Init();
-    AudioLoad_SetDmaHandler(DmaMgr_AudioDmaHandler);
-    Audio_InitSound();
+    Na_AudioInit();
+    Nas_SetRomHandler(dmaSoundRomHandler);
+    Nai_InitInterface();
 
     // Fill init queue to signal that the audio driver is initialized
     osSendMesg(&audioMgr->initQueue, NULL, OS_MESG_BLOCK);
 
-    IrqMgr_AddClient(audioMgr->irqMgr, &irqClient, &audioMgr->interruptQueue);
+    irqmgr_AddClient(audioMgr->irqMgr, &irqClient, &audioMgr->interruptQueue);
 
     // Spin waiting for events
     for (;;) {
@@ -109,7 +109,7 @@ void AudioMgr_ThreadEntry(void* arg) {
 
         switch (*msg) {
             case OS_SC_RETRACE_MSG:
-                AudioMgr_HandleRetrace(audioMgr);
+                amHandleFrameMsg(audioMgr);
 
                 // Empty the interrupt queue
                 while (!MQ_IS_EMPTY(&audioMgr->interruptQueue)) {
@@ -122,14 +122,14 @@ void AudioMgr_ThreadEntry(void* arg) {
 
                         case OS_SC_PRE_NMI_MSG:
                             // Always handle Pre-NMI
-                            AudioMgr_HandlePreNMI(audioMgr);
+                            amHandlePreNMIMsg(audioMgr);
                             break;
                     }
                 }
                 break;
 
             case OS_SC_PRE_NMI_MSG:
-                AudioMgr_HandlePreNMI(audioMgr);
+                amHandlePreNMIMsg(audioMgr);
                 break;
         }
     }
@@ -142,11 +142,11 @@ void AudioMgr_ThreadEntry(void* arg) {
  * will have been removed, subsequent calls to this function will block indefinitely as the audio thread does not refill
  * the queue.
  */
-void AudioMgr_WaitForInit(AudioMgr* audioMgr) {
+void amInitSync(AudioMgr* audioMgr) {
     osRecvMesg(&audioMgr->initQueue, NULL, OS_MESG_BLOCK);
 }
 
-void AudioMgr_Init(AudioMgr* audioMgr, void* stack, OSPri pri, OSId id, Scheduler* sched, IrqMgr* irqMgr) {
+void amInit(AudioMgr* audioMgr, void* stack, OSPri pri, OSId id, Scheduler* sched, IrqMgr* irqMgr) {
     bzero(audioMgr, sizeof(AudioMgr));
 
     audioMgr->sched = sched;
@@ -164,6 +164,6 @@ void AudioMgr_Init(AudioMgr* audioMgr, void* stack, OSPri pri, OSId id, Schedule
     // Send a message to the task done queue so it is initially full
     osSendMesg(&audioMgr->taskDoneQueue, NULL, OS_MESG_BLOCK);
 
-    osCreateThread(&audioMgr->thread, id, AudioMgr_ThreadEntry, audioMgr, stack, pri);
+    osCreateThread(&audioMgr->thread, id, amMain, audioMgr, stack, pri);
     osStartThread(&audioMgr->thread);
 }

@@ -9,11 +9,11 @@
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY)
 
-void EnTana_Init(Actor* thisx, PlayState* play);
-void EnTana_Destroy(Actor* thisx, PlayState* play);
-void EnTana_Update(Actor* thisx, PlayState* play);
-void EnTana_DrawWoodenShelves(Actor* thisx, PlayState* play);
-void EnTana_DrawStoneShelves(Actor* thisx, PlayState* play);
+void En_Tana_actor_ct(Actor* thisx, PlayState* play);
+void En_Tana_actor_dt(Actor* thisx, PlayState* play);
+void En_Tana_actor_move(Actor* thisx, PlayState* play);
+void En_Tana_actor_draw(Actor* thisx, PlayState* play);
+void En_Tana_actor_draw2(Actor* thisx, PlayState* play);
 
 ActorProfile En_Tana_Profile = {
     /**/ ACTOR_EN_TANA,
@@ -21,9 +21,9 @@ ActorProfile En_Tana_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_SHOP_DUNGEN,
     /**/ sizeof(EnTana),
-    /**/ EnTana_Init,
-    /**/ EnTana_Destroy,
-    /**/ EnTana_Update,
+    /**/ En_Tana_actor_ct,
+    /**/ En_Tana_actor_dt,
+    /**/ En_Tana_actor_move,
     /**/ NULL,
 };
 
@@ -40,60 +40,60 @@ static const char* sShelfTypes[] = {
 };
 #endif
 
-static const ActorFunc sDrawFuncs[] = {
-    EnTana_DrawWoodenShelves,
-    EnTana_DrawStoneShelves,
-    EnTana_DrawStoneShelves,
+static const ActorFunc tana_draw[] = {
+    En_Tana_actor_draw,
+    En_Tana_actor_draw2,
+    En_Tana_actor_draw2,
 };
 
-static Gfx* sShelfDLists[] = {
+static Gfx* Tana_ShapeType[] = {
     gShopDungenWoodenShelvesDL,
     gShopDungenStoneShelvesDL,
     gShopDungenStoneShelvesDL,
 };
 
-static void* sStoneTextures[] = {
+static void* Tana_Text[] = {
     NULL,
     gShopDungenStone1Tex,
     gShopDungenStone2Tex,
 };
 
-void EnTana_Init(Actor* thisx, PlayState* play) {
+void En_Tana_actor_ct(Actor* thisx, PlayState* play) {
     EnTana* this = (EnTana*)thisx;
 
     PRINTF("☆☆☆ %s ☆☆☆\n", sShelfTypes[thisx->params]);
-    Actor_SetScale(thisx, 1.0f);
+    Actor_set_scale(thisx, 1.0f);
     thisx->flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
-    thisx->draw = sDrawFuncs[thisx->params];
+    thisx->draw = tana_draw[thisx->params];
 }
 
-void EnTana_Destroy(Actor* thisx, PlayState* play) {
+void En_Tana_actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void EnTana_Update(Actor* thisx, PlayState* play) {
+void En_Tana_actor_move(Actor* thisx, PlayState* play) {
 }
 
-void EnTana_DrawWoodenShelves(Actor* thisx, PlayState* play) {
+void En_Tana_actor_draw(Actor* thisx, PlayState* play) {
     EnTana* this = (EnTana*)thisx;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_tana.c", 148);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_en_tana.c", 152);
-    gSPDisplayList(POLY_OPA_DISP++, sShelfDLists[thisx->params]);
+    gSPDisplayList(POLY_OPA_DISP++, Tana_ShapeType[thisx->params]);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_tana.c", 157);
 }
 
-void EnTana_DrawStoneShelves(Actor* thisx, PlayState* play) {
+void En_Tana_actor_draw2(Actor* thisx, PlayState* play) {
     EnTana* this = (EnTana*)thisx;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_tana.c", 163);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
-    gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(sStoneTextures[thisx->params]));
+    _texture_z_light_fog_prim(play->state.gfxCtx);
+    gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(Tana_Text[thisx->params]));
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_en_tana.c", 169);
-    gSPDisplayList(POLY_OPA_DISP++, sShelfDLists[thisx->params]);
+    gSPDisplayList(POLY_OPA_DISP++, Tana_ShapeType[thisx->params]);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_tana.c", 174);
 }

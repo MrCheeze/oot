@@ -12,18 +12,18 @@
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE | ACTOR_FLAG_UPDATE_CULLING_DISABLED)
 
-void EnAnubice_Init(Actor* thisx, PlayState* play);
-void EnAnubice_Destroy(Actor* thisx, PlayState* play);
-void EnAnubice_Update(Actor* thisx, PlayState* play);
-void EnAnubice_Draw(Actor* thisx, PlayState* play);
+void En_Anubice_actor_ct(Actor* thisx, PlayState* play);
+void En_Anubice_actor_dt(Actor* thisx, PlayState* play);
+void En_Anubice_actor_move(Actor* thisx, PlayState* play);
+void En_Anubice_actor_draw(Actor* thisx, PlayState* play);
 
-void EnAnubice_FindFlameCircles(EnAnubice* this, PlayState* play);
-void EnAnubice_SetupIdle(EnAnubice* this, PlayState* play);
-void EnAnubice_Idle(EnAnubice* this, PlayState* play);
-void EnAnubice_GoToHome(EnAnubice* this, PlayState* play);
-void EnAnubice_SetupShootFireball(EnAnubice* this, PlayState* play);
-void EnAnubice_ShootFireball(EnAnubice* this, PlayState* play);
-void EnAnubice_Die(EnAnubice* this, PlayState* play);
+static void mode_wait(EnAnubice* this, PlayState* play);
+static void mode_stop_init(EnAnubice* this, PlayState* play);
+static void mode_stop(EnAnubice* this, PlayState* play);
+static void mode_return(EnAnubice* this, PlayState* play);
+static void mode_fire_init(EnAnubice* this, PlayState* play);
+static void mode_fire(EnAnubice* this, PlayState* play);
+static void mode_dead(EnAnubice* this, PlayState* play);
 
 ActorProfile En_Anubice_Profile = {
     /**/ ACTOR_EN_ANUBICE,
@@ -31,13 +31,13 @@ ActorProfile En_Anubice_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_ANUBICE,
     /**/ sizeof(EnAnubice),
-    /**/ EnAnubice_Init,
-    /**/ EnAnubice_Destroy,
-    /**/ EnAnubice_Update,
-    /**/ EnAnubice_Draw,
+    /**/ En_Anubice_actor_ct,
+    /**/ En_Anubice_actor_dt,
+    /**/ En_Anubice_actor_move,
+    /**/ En_Anubice_actor_draw,
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit OcInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -63,7 +63,7 @@ typedef enum AnubiceDamageEffect {
     /* 0xF */ ANUBICE_DMGEFF_0xF = 0xF // Treated the same as ANUBICE_DMGEFF_NONE in code
 } AnubiceDamageEffect;
 
-static DamageTable sDamageTable[] = {
+static DamageTable btl_data[] = {
     /* Deku nut      */ DMG_ENTRY(0, ANUBICE_DMGEFF_NONE),
     /* Deku stick    */ DMG_ENTRY(0, ANUBICE_DMGEFF_0xF),
     /* Slingshot     */ DMG_ENTRY(0, ANUBICE_DMGEFF_0xF),
@@ -98,17 +98,17 @@ static DamageTable sDamageTable[] = {
     /* Unknown 2     */ DMG_ENTRY(0, ANUBICE_DMGEFF_NONE),
 };
 
-void EnAnubice_Hover(EnAnubice* this, PlayState* play) {
+void huwahuwa_set(EnAnubice* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     this->hoverVelocityTimer += 1500.0f;
     this->targetHeight = player->actor.world.pos.y + this->playerHeightOffset;
-    Math_ApproachF(&this->actor.world.pos.y, this->targetHeight, 0.1f, 10.0f);
-    Math_ApproachF(&this->playerHeightOffset, 10.0f, 0.1f, 0.5f);
-    this->actor.velocity.y = Math_SinS(this->hoverVelocityTimer);
+    add_calc2(&this->actor.world.pos.y, this->targetHeight, 0.1f, 10.0f);
+    add_calc2(&this->playerHeightOffset, 10.0f, 0.1f, 0.5f);
+    this->actor.velocity.y = sin_s(this->hoverVelocityTimer);
 }
 
-void EnAnubice_AimFireball(EnAnubice* this, PlayState* play) {
+void player_head_angle_srch(EnAnubice* this, PlayState* play) {
     f32 xzDist;
     f32 x;
     f32 y;
@@ -120,15 +120,15 @@ void EnAnubice_AimFireball(EnAnubice* this, PlayState* play) {
     z = player->actor.world.pos.z - this->headPos.z;
     xzDist = sqrtf(SQ(x) + SQ(z));
 
-    this->fireballRot.x = -RAD_TO_BINANG(Math_FAtan2F(y, xzDist));
-    this->fireballRot.y = RAD_TO_BINANG(Math_FAtan2F(x, z));
+    this->fireballRot.x = -RAD_TO_BINANG(fatan2(y, xzDist));
+    this->fireballRot.y = RAD_TO_BINANG(fatan2(x, z));
 }
 
-void EnAnubice_Init(Actor* thisx, PlayState* play) {
+void En_Anubice_actor_ct(Actor* thisx, PlayState* play) {
     EnAnubice* this = (EnAnubice*)thisx;
 
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 20.0f);
-    SkelAnime_Init(play, &this->skelAnime, &gAnubiceSkel, &gAnubiceIdleAnim, this->jointTable, this->morphTable,
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 20.0f);
+    Skeleton_Info2_M_ct(play, &this->skelAnime, &gAnubiceSkel, &gAnubiceIdleAnim, this->jointTable, this->morphTable,
                    ANUBICE_LIMB_MAX);
 
     PRINTF("\n\n");
@@ -137,26 +137,26 @@ void EnAnubice_Init(Actor* thisx, PlayState* play) {
 
     this->actor.naviEnemyId = NAVI_ENEMY_ANUBIS;
 
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set5(play, &this->collider, &this->actor, &OcInfoData);
 
-    Actor_SetScale(&this->actor, 0.015f);
+    Actor_set_scale(&this->actor, 0.015f);
 
-    this->actor.colChkInfo.damageTable = sDamageTable;
+    this->actor.colChkInfo.damageTable = btl_data;
     this->actor.colChkInfo.mass = MASS_IMMOVABLE;
     this->actor.shape.yOffset = -4230.0f;
     this->focusHeightOffset = 0.0f;
     this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
     this->home = this->actor.world.pos;
     this->actor.attentionRangeType = ATTENTION_RANGE_3;
-    this->actionFunc = EnAnubice_FindFlameCircles;
+    this->actionFunc = mode_wait;
 }
 
-void EnAnubice_Destroy(Actor* thisx, PlayState* play) {
+void En_Anubice_actor_dt(Actor* thisx, PlayState* play) {
     EnAnubice* this = (EnAnubice*)thisx;
     EnAnubiceTag* tag;
 
-    Collider_DestroyCylinder(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider);
 
     if (this->actor.params != 0) {
         if (this->actor.parent) {}
@@ -168,7 +168,7 @@ void EnAnubice_Destroy(Actor* thisx, PlayState* play) {
     }
 }
 
-void EnAnubice_FindFlameCircles(EnAnubice* this, PlayState* play) {
+static void mode_wait(EnAnubice* this, PlayState* play) {
     Actor* currentProp;
     s32 flameCirclesFound;
 
@@ -194,56 +194,56 @@ void EnAnubice_FindFlameCircles(EnAnubice* this, PlayState* play) {
             this->hasSearchedForFlameCircles = true;
         }
         this->actor.flags |= ACTOR_FLAG_ATTENTION_ENABLED;
-        this->actionFunc = EnAnubice_SetupIdle;
+        this->actionFunc = mode_stop_init;
     }
 }
 
-void EnAnubice_SetupIdle(EnAnubice* this, PlayState* play) {
-    f32 lastFrame = Animation_GetLastFrame(&gAnubiceIdleAnim);
+static void mode_stop_init(EnAnubice* this, PlayState* play) {
+    f32 lastFrame = Si2_anime_end_frame(&gAnubiceIdleAnim);
 
-    Animation_Change(&this->skelAnime, &gAnubiceIdleAnim, 1.0f, 0.0f, (s16)lastFrame, ANIMMODE_LOOP, -10.0f);
+    Skeleton_Info2_init(&this->skelAnime, &gAnubiceIdleAnim, 1.0f, 0.0f, (s16)lastFrame, ANIMMODE_LOOP, -10.0f);
 
-    this->actionFunc = EnAnubice_Idle;
+    this->actionFunc = mode_stop;
     this->actor.velocity.x = this->actor.velocity.z = this->actor.gravity = 0.0f;
 }
 
-void EnAnubice_Idle(EnAnubice* this, PlayState* play) {
+static void mode_stop(EnAnubice* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    SkelAnime_Update(&this->skelAnime);
-    Math_ApproachZeroF(&this->actor.shape.yOffset, 0.5f, 300.0f);
-    Math_ApproachF(&this->focusHeightOffset, 70.0f, 0.5f, 5.0f);
+    Skeleton_Info2_anime_play(&this->skelAnime);
+    add_calc0(&this->actor.shape.yOffset, 0.5f, 300.0f);
+    add_calc2(&this->focusHeightOffset, 70.0f, 0.5f, 5.0f);
 
     if (!this->isKnockedback) {
-        Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 5, 3000, 0);
+        add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 5, 3000, 0);
     }
 
     if (this->actor.shape.yOffset > -2.0f) {
         this->actor.shape.yOffset = 0.0f;
 
         if (player->meleeWeaponState != 0) {
-            this->actionFunc = EnAnubice_SetupShootFireball;
+            this->actionFunc = mode_fire_init;
         } else if (this->isPlayerOutOfRange) {
             this->actor.velocity.y = 0.0f;
             this->actor.gravity = -1.0f;
-            this->actionFunc = EnAnubice_GoToHome;
+            this->actionFunc = mode_return;
         }
     }
 }
 
-void EnAnubice_GoToHome(EnAnubice* this, PlayState* play) {
+static void mode_return(EnAnubice* this, PlayState* play) {
     f32 xzDist;
     f32 normalizedX;
     f32 normalizedY;
     f32 x;
     f32 z;
 
-    SkelAnime_Update(&this->skelAnime);
-    Math_ApproachF(&this->actor.shape.yOffset, -4230.0f, 0.5f, 300.0f);
-    Math_ApproachZeroF(&this->focusHeightOffset, 0.5f, 5.0f);
+    Skeleton_Info2_anime_play(&this->skelAnime);
+    add_calc2(&this->actor.shape.yOffset, -4230.0f, 0.5f, 300.0f);
+    add_calc0(&this->focusHeightOffset, 0.5f, 5.0f);
 
     if (!this->isKnockedback) {
-        Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 5, 3000, 0);
+        add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 5, 3000, 0);
     }
 
     if ((fabsf(this->home.x - this->actor.world.pos.x) > 3.0f) &&
@@ -258,46 +258,46 @@ void EnAnubice_GoToHome(EnAnubice* this, PlayState* play) {
     } else if (this->actor.shape.yOffset < -4220.0f) {
         this->actor.shape.yOffset = -4230.0f;
         this->isMirroringPlayer = this->isPlayerOutOfRange = false;
-        this->actionFunc = EnAnubice_FindFlameCircles;
+        this->actionFunc = mode_wait;
         this->actor.gravity = 0.0f;
     }
 }
 
-void EnAnubice_SetupShootFireball(EnAnubice* this, PlayState* play) {
-    f32 lastFrame = Animation_GetLastFrame(&gAnubiceAttackingAnim);
+static void mode_fire_init(EnAnubice* this, PlayState* play) {
+    f32 lastFrame = Si2_anime_end_frame(&gAnubiceAttackingAnim);
 
     this->animLastFrame = lastFrame;
-    Animation_Change(&this->skelAnime, &gAnubiceAttackingAnim, 1.0f, 0.0f, lastFrame, ANIMMODE_ONCE, -10.0f);
-    this->actionFunc = EnAnubice_ShootFireball;
+    Skeleton_Info2_init(&this->skelAnime, &gAnubiceAttackingAnim, 1.0f, 0.0f, lastFrame, ANIMMODE_ONCE, -10.0f);
+    this->actionFunc = mode_fire;
     this->actor.velocity.x = this->actor.velocity.z = 0.0f;
 }
 
-void EnAnubice_ShootFireball(EnAnubice* this, PlayState* play) {
+static void mode_fire(EnAnubice* this, PlayState* play) {
     f32 curFrame = this->skelAnime.curFrame;
 
-    SkelAnime_Update(&this->skelAnime);
+    Skeleton_Info2_anime_play(&this->skelAnime);
 
     if (!this->isKnockedback) {
-        Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 5, 3000, 0);
+        add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 5, 3000, 0);
     }
 
-    EnAnubice_AimFireball(this, play);
+    player_head_angle_srch(this, play);
 
     if (curFrame == 12.0f) {
-        Actor_Spawn(&play->actorCtx, play, ACTOR_EN_ANUBICE_FIRE, this->headPos.x, this->headPos.y + 15.0f,
+        Actor_info_make_actor(&play->actorCtx, play, ACTOR_EN_ANUBICE_FIRE, this->headPos.x, this->headPos.y + 15.0f,
                     this->headPos.z, this->fireballRot.x, this->fireballRot.y, 0, 0);
     }
 
     if (this->animLastFrame <= curFrame) {
-        this->actionFunc = EnAnubice_SetupIdle;
+        this->actionFunc = mode_stop_init;
     }
 }
 
-void EnAnubice_SetupDie(EnAnubice* this, PlayState* play) {
-    f32 lastFrame = Animation_GetLastFrame(&gAnubiceFallDownAnim);
+static void mode_dead_init(EnAnubice* this, PlayState* play) {
+    f32 lastFrame = Si2_anime_end_frame(&gAnubiceFallDownAnim);
 
     this->animLastFrame = lastFrame;
-    Animation_Change(&this->skelAnime, &gAnubiceFallDownAnim, 1.0f, 0.0f, lastFrame, ANIMMODE_ONCE, -20.0f);
+    Skeleton_Info2_init(&this->skelAnime, &gAnubiceFallDownAnim, 1.0f, 0.0f, lastFrame, ANIMMODE_ONCE, -20.0f);
 
     this->isNearWall = false;
     this->fallTargetYaw = 0;
@@ -305,29 +305,29 @@ void EnAnubice_SetupDie(EnAnubice* this, PlayState* play) {
     this->actor.velocity.x = this->actor.velocity.z = 0.0f;
     this->actor.gravity = -1.0f;
 
-    if (BgCheck_SphVsFirstPoly(&play->colCtx, &this->headPos, 70.0f)) {
+    if (T_BGCheck_SimpleCheck(&play->colCtx, &this->headPos, 70.0f)) {
         this->isNearWall = true;
         this->fallTargetYaw = this->actor.shape.rot.x - 0x7F00;
     }
 
-    this->actionFunc = EnAnubice_Die;
+    this->actionFunc = mode_dead;
 }
 
-void EnAnubice_Die(EnAnubice* this, PlayState* play) {
+static void mode_dead(EnAnubice* this, PlayState* play) {
     f32 curFrame;
     f32 rotX;
     Vec3f baseFireEffectPos = { 0.0f, 0.0f, 0.0f };
     Vec3f rotatedFireEffectPos = { 0.0f, 0.0f, 0.0f };
     s32 pad;
 
-    SkelAnime_Update(&this->skelAnime);
-    Math_ApproachZeroF(&this->actor.shape.shadowScale, 0.4f, 0.25f);
+    Skeleton_Info2_anime_play(&this->skelAnime);
+    add_calc0(&this->actor.shape.shadowScale, 0.4f, 0.25f);
 
     // If near a wall, turn away from it while dying to avoid going through it.
     // The implementation of this is bugged in the sense that the target angle is hardcoded in practice. If the poly
     // already has an angle of -0x7F00, the expected behavior won't occur.
     if (this->isNearWall) {
-        Math_SmoothStepToS(&this->actor.shape.rot.y, this->fallTargetYaw, 1, 10000, 0);
+        add_calc_short_angle2(&this->actor.shape.rot.y, this->fallTargetYaw, 1, 10000, 0);
         if (fabsf(this->actor.shape.rot.y - this->fallTargetYaw) < 100.0f) {
             this->isNearWall = false;
         }
@@ -337,26 +337,26 @@ void EnAnubice_Die(EnAnubice* this, PlayState* play) {
     rotX = curFrame * -3000.0f;
     rotX = CLAMP_MIN(rotX, -11000.0f);
 
-    Matrix_RotateY(BINANG_TO_RAD_ALT(this->actor.shape.rot.y), MTXMODE_NEW);
-    Matrix_RotateX(BINANG_TO_RAD_ALT(rotX), MTXMODE_APPLY);
-    baseFireEffectPos.y = Rand_CenteredFloat(10.0f) + 30.0f;
-    Matrix_MultVec3f(&baseFireEffectPos, &rotatedFireEffectPos);
-    rotatedFireEffectPos.x += this->actor.world.pos.x + Rand_CenteredFloat(40.0f);
-    rotatedFireEffectPos.y += this->actor.world.pos.y + Rand_CenteredFloat(40.0f);
-    rotatedFireEffectPos.z += this->actor.world.pos.z + Rand_CenteredFloat(30.0f);
-    Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_RED, 128, COLORFILTER_BUFFLAG_OPA, 8);
-    EffectSsEnFire_SpawnVec3f(play, &this->actor, &rotatedFireEffectPos, 100, 0, 0, -1);
+    Matrix_rotateY(BINANG_TO_RAD_ALT(this->actor.shape.rot.y), MTXMODE_NEW);
+    Matrix_rotateX(BINANG_TO_RAD_ALT(rotX), MTXMODE_APPLY);
+    baseFireEffectPos.y = rnd_fx(10.0f) + 30.0f;
+    Matrix_Position(&baseFireEffectPos, &rotatedFireEffectPos);
+    rotatedFireEffectPos.x += this->actor.world.pos.x + rnd_fx(40.0f);
+    rotatedFireEffectPos.y += this->actor.world.pos.y + rnd_fx(40.0f);
+    rotatedFireEffectPos.z += this->actor.world.pos.z + rnd_fx(30.0f);
+    Set_Fog(&this->actor, COLORFILTER_COLORFLAG_RED, 128, COLORFILTER_BUFFLAG_OPA, 8);
+    Effect_En_Fire_ct(play, &this->actor, &rotatedFireEffectPos, 100, 0, 0, -1);
 
     if ((this->animLastFrame <= curFrame) && (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND)) {
-        Math_ApproachF(&this->actor.shape.yOffset, -4230.0f, 0.5f, 300.0f);
+        add_calc2(&this->actor.shape.yOffset, -4230.0f, 0.5f, 300.0f);
         if (this->actor.shape.yOffset < -2000.0f) {
-            Item_DropCollectibleRandom(play, &this->actor, &this->actor.world.pos, 0xC0);
-            Actor_Kill(&this->actor);
+            Item_Set_Std(play, &this->actor, &this->actor.world.pos, 0xC0);
+            Actor_delete(&this->actor);
         }
     }
 }
 
-void EnAnubice_Update(Actor* thisx, PlayState* play) {
+void En_Anubice_actor_move(Actor* thisx, PlayState* play) {
     f32 zero;
     BgHidanCurtain* flameCircle;
     s32 i;
@@ -364,20 +364,20 @@ void EnAnubice_Update(Actor* thisx, PlayState* play) {
     Vec3f rotatedKnockbackVelocity;
     EnAnubice* this = (EnAnubice*)thisx;
 
-    if ((this->actionFunc != EnAnubice_SetupDie) && (this->actionFunc != EnAnubice_Die) &&
+    if ((this->actionFunc != mode_dead_init) && (this->actionFunc != mode_dead) &&
         (this->actor.shape.yOffset == 0.0f)) {
-        EnAnubice_Hover(this, play);
+        huwahuwa_set(this, play);
         for (i = 0; i < ARRAY_COUNT(this->flameCircles); i++) {
             flameCircle = this->flameCircles[i];
 
             if ((flameCircle != NULL) && (fabsf(flameCircle->actor.world.pos.x - this->actor.world.pos.x) < 60.0f) &&
                 (fabsf(this->flameCircles[i]->actor.world.pos.z - this->actor.world.pos.z) < 60.0f) &&
                 (flameCircle->timer != 0)) {
-                Actor_ChangeCategory(play, &play->actorCtx, &this->actor, ACTORCAT_PROP);
+                Actor_info_part_chg(play, &play->actorCtx, &this->actor, ACTORCAT_PROP);
                 this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
-                Enemy_StartFinishingBlow(play, &this->actor);
-                Actor_PlaySfx(&this->actor, NA_SE_EN_ANUBIS_DEAD);
-                this->actionFunc = EnAnubice_SetupDie;
+                Actor_info_finish(play, &this->actor);
+                Actor_SE_set(&this->actor, NA_SE_EN_ANUBIS_DEAD);
+                this->actionFunc = mode_dead_init;
                 return;
             }
         }
@@ -385,11 +385,11 @@ void EnAnubice_Update(Actor* thisx, PlayState* play) {
         if (this->collider.base.acFlags & AC_HIT) {
             this->collider.base.acFlags &= ~AC_HIT;
             if (this->actor.colChkInfo.damageEffect == ANUBICE_DMGEFF_FIRE) {
-                Actor_ChangeCategory(play, &play->actorCtx, &this->actor, ACTORCAT_PROP);
+                Actor_info_part_chg(play, &play->actorCtx, &this->actor, ACTORCAT_PROP);
                 this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
-                Enemy_StartFinishingBlow(play, &this->actor);
-                Actor_PlaySfx(&this->actor, NA_SE_EN_ANUBIS_DEAD);
-                this->actionFunc = EnAnubice_SetupDie;
+                Actor_info_finish(play, &this->actor);
+                Actor_SE_set(&this->actor, NA_SE_EN_ANUBIS_DEAD);
+                this->actionFunc = mode_dead_init;
                 return;
             }
 
@@ -404,22 +404,22 @@ void EnAnubice_Update(Actor* thisx, PlayState* play) {
                 rotatedKnockbackVelocity.y = 0.0f;
                 rotatedKnockbackVelocity.z = 0.0f;
 
-                Matrix_RotateY(BINANG_TO_RAD_ALT(this->actor.shape.rot.y), MTXMODE_NEW);
-                Matrix_MultVec3f(&baseKnockbackVelocity, &rotatedKnockbackVelocity);
+                Matrix_rotateY(BINANG_TO_RAD_ALT(this->actor.shape.rot.y), MTXMODE_NEW);
+                Matrix_Position(&baseKnockbackVelocity, &rotatedKnockbackVelocity);
 
                 this->actor.velocity.x = rotatedKnockbackVelocity.x;
                 this->actor.velocity.z = rotatedKnockbackVelocity.z;
                 this->knockbackRecoveryVelocity.x = -rotatedKnockbackVelocity.x;
                 this->knockbackRecoveryVelocity.z = -rotatedKnockbackVelocity.z;
 
-                Actor_PlaySfx(&this->actor, NA_SE_EN_NUTS_CUTBODY);
+                Actor_SE_set(&this->actor, NA_SE_EN_NUTS_CUTBODY);
             }
         }
 
         if (this->isKnockedback) {
             this->actor.shape.rot.y += 6500;
-            Math_ApproachF(&this->actor.velocity.x, this->knockbackRecoveryVelocity.x, 0.3f, 1.0f);
-            Math_ApproachF(&this->actor.velocity.z, this->knockbackRecoveryVelocity.z, 0.3f, 1.0f);
+            add_calc2(&this->actor.velocity.x, this->knockbackRecoveryVelocity.x, 0.3f, 1.0f);
+            add_calc2(&this->actor.velocity.z, this->knockbackRecoveryVelocity.z, 0.3f, 1.0f);
 
             zero = 0.0f;
             if (zero) {}
@@ -445,29 +445,29 @@ void EnAnubice_Update(Actor* thisx, PlayState* play) {
     this->actionFunc(this, play);
 
     this->actor.velocity.y += this->actor.gravity;
-    Actor_UpdatePos(&this->actor);
+    Actor_position_move(&this->actor);
 
     if (!this->isPlayerOutOfRange) {
-        Actor_UpdateBgCheckInfo(play, &this->actor, 5.0f, 5.0f, 10.0f,
+        Actor_BGcheck2(play, &this->actor, 5.0f, 5.0f, 10.0f,
                                 UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2 | UPDBGCHECKINFO_FLAG_3 |
                                     UPDBGCHECKINFO_FLAG_4);
     } else {
-        Actor_UpdateBgCheckInfo(play, &this->actor, 5.0f, 5.0f, 10.0f,
+        Actor_BGcheck2(play, &this->actor, 5.0f, 5.0f, 10.0f,
                                 UPDBGCHECKINFO_FLAG_2 | UPDBGCHECKINFO_FLAG_3 | UPDBGCHECKINFO_FLAG_4);
     }
 
-    if ((this->actionFunc != EnAnubice_SetupDie) && (this->actionFunc != EnAnubice_Die)) {
-        Actor_SetFocus(&this->actor, this->focusHeightOffset);
-        Collider_UpdateCylinder(&this->actor, &this->collider);
-        CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
+    if ((this->actionFunc != mode_dead_init) && (this->actionFunc != mode_dead)) {
+        Actor_world_to_eye(&this->actor, this->focusHeightOffset);
+        CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
+        CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
 
         if (!this->isKnockedback && (this->actor.shape.yOffset == 0.0f)) {
-            CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
+            CollisionCheck_setAC(play, &play->colChkCtx, &this->collider.base);
         }
     }
 }
 
-s32 EnAnubice_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+s32 En_Anubice_draw_sub(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     EnAnubice* this = (EnAnubice*)thisx;
 
     if (limbIndex == ANUBICE_LIMB_HEAD) {
@@ -477,7 +477,7 @@ s32 EnAnubice_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3
     return false;
 }
 
-void EnAnubice_PostLimbDraw(struct PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
+void En_Anubice_draw_sub2(struct PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
     EnAnubice* this = (EnAnubice*)thisx;
     Vec3f pos = { 0.0f, 0.0f, 0.0f };
 
@@ -486,16 +486,16 @@ void EnAnubice_PostLimbDraw(struct PlayState* play, s32 limbIndex, Gfx** dList, 
 
         MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx, "../z_en_anubice.c", 856);
         gSPDisplayList(POLY_XLU_DISP++, gAnubiceEyesDL);
-        Matrix_MultVec3f(&pos, &this->headPos);
+        Matrix_Position(&pos, &this->headPos);
 
         CLOSE_DISPS(play->state.gfxCtx, "../z_en_anubice.c", 868);
     }
 }
 
-void EnAnubice_Draw(Actor* thisx, PlayState* play) {
+void En_Anubice_actor_draw(Actor* thisx, PlayState* play) {
     EnAnubice* this = (EnAnubice*)thisx;
 
-    Gfx_SetupDL_25Xlu(play->state.gfxCtx);
-    SkelAnime_DrawOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, EnAnubice_OverrideLimbDraw,
-                      EnAnubice_PostLimbDraw, this);
+    _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
+    Si2_draw(play, this->skelAnime.skeleton, this->skelAnime.jointTable, En_Anubice_draw_sub,
+                      En_Anubice_draw_sub2, this);
 }

@@ -9,15 +9,15 @@
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY)
 
-void EnMu_Init(Actor* thisx, PlayState* play);
-void EnMu_Destroy(Actor* thisx, PlayState* play);
-void EnMu_Update(Actor* thisx, PlayState* play);
-void EnMu_Draw(Actor* thisx, PlayState* play);
+void En_Mu_actor_ct(Actor* thisx, PlayState* play);
+void En_Mu_actor_dt(Actor* thisx, PlayState* play);
+void En_Mu_actor_move(Actor* thisx, PlayState* play);
+void En_Mu_actor_draw(Actor* thisx, PlayState* play);
 
-void EnMu_Pose(EnMu* this, PlayState* play);
-s16 EnMu_UpdateTalkState(PlayState* play, Actor* thisx);
+static void wait(EnMu* this, PlayState* play);
+s16 mu_end_message(PlayState* play, Actor* thisx);
 
-static ColliderCylinderInit D_80AB0BD0 = {
+static ColliderCylinderInit EnMuAtInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -37,7 +37,7 @@ static ColliderCylinderInit D_80AB0BD0 = {
     { 100, 70, 0, { 0, 0, 0 } },
 };
 
-static CollisionCheckInfoInit2 D_80AB0BFC = { 0, 0, 0, 0, MASS_IMMOVABLE };
+static CollisionCheckInfoInit2 MuStatusData = { 0, 0, 0, 0, MASS_IMMOVABLE };
 
 ActorProfile En_Mu_Profile = {
     /**/ ACTOR_EN_MU,
@@ -45,17 +45,17 @@ ActorProfile En_Mu_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_MU,
     /**/ sizeof(EnMu),
-    /**/ EnMu_Init,
-    /**/ EnMu_Destroy,
-    /**/ EnMu_Update,
-    /**/ EnMu_Draw,
+    /**/ En_Mu_actor_ct,
+    /**/ En_Mu_actor_dt,
+    /**/ En_Mu_actor_move,
+    /**/ En_Mu_actor_draw,
 };
 
-void EnMu_SetupAction(EnMu* this, EnMuActionFunc actionFunc) {
+void En_Mu_actor_set_process(EnMu* this, EnMuActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
 
-void EnMu_Interact(EnMu* this, PlayState* play) {
+void next_message(EnMu* this, PlayState* play) {
     u8 textIdOffset[] = { 0x42, 0x43, 0x3F, 0x41, 0x3E };
     u8 bitmask[] = {
         EVENTINF_MASK(EVENTINF_HAGGLING_TOWNSFOLK_MESG_0), EVENTINF_MASK(EVENTINF_HAGGLING_TOWNSFOLK_MESG_1),
@@ -68,7 +68,7 @@ void EnMu_Interact(EnMu* this, PlayState* play) {
 
     talkFlags = GET_EVENTINF_ENMU_TALK_FLAGS();
     RESET_EVENTINF_ENMU_TALK_FLAGS();
-    randomIndex = (play->state.frames + (s32)(Rand_ZeroOne() * 5.0f)) % 5;
+    randomIndex = (play->state.frames + (s32)(fqrand() * 5.0f)) % 5;
 
     // Starting at randomIndex, scan sequentially for the next unspoken message
     for (i = 0; i < 5; i++) {
@@ -98,9 +98,9 @@ void EnMu_Interact(EnMu* this, PlayState* play) {
     SET_EVENTINF_ENMU_TALK_FLAGS(talkFlags);
 }
 
-u16 EnMu_GetTextId(PlayState* play, Actor* thisx) {
+u16 mu_set_message(PlayState* play, Actor* thisx) {
     EnMu* this = (EnMu*)thisx;
-    u16 textId = MaskReaction_GetTextId(play, MASK_REACTION_SET_HAGGLING_TOWNSPEOPLE_1 + this->actor.params);
+    u16 textId = get_mask_message(play, MASK_REACTION_SET_HAGGLING_TOWNSPEOPLE_1 + this->actor.params);
 
     if (textId != 0) {
         return textId;
@@ -108,10 +108,10 @@ u16 EnMu_GetTextId(PlayState* play, Actor* thisx) {
     return this->defaultTextId;
 }
 
-s16 EnMu_UpdateTalkState(PlayState* play, Actor* thisx) {
+s16 mu_end_message(PlayState* play, Actor* thisx) {
     EnMu* this = (EnMu*)thisx;
 
-    switch (Message_GetState(&play->msgCtx)) {
+    switch (message_check(&play->msgCtx)) {
         case TEXT_STATE_NONE:
         case TEXT_STATE_DONE_HAS_NEXT:
         case TEXT_STATE_DONE_FADING:
@@ -123,39 +123,39 @@ s16 EnMu_UpdateTalkState(PlayState* play, Actor* thisx) {
         case TEXT_STATE_9:
             return NPC_TALK_STATE_TALKING;
         case TEXT_STATE_CLOSING:
-            EnMu_Interact(this, play);
+            next_message(this, play);
             return NPC_TALK_STATE_IDLE;
         default:
             return NPC_TALK_STATE_TALKING;
     }
 }
 
-void EnMu_Init(Actor* thisx, PlayState* play) {
+void En_Mu_actor_ct(Actor* thisx, PlayState* play) {
     EnMu* this = (EnMu*)thisx;
     s32 pad;
 
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 160.0f);
-    SkelAnime_InitFlex(play, &this->skelAnime, &object_mu_Skel_004F70, &object_mu_Anim_0003F4, NULL, NULL, 0);
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinder(play, &this->collider, &this->actor, &D_80AB0BD0);
-    CollisionCheck_SetInfo2(&this->actor.colChkInfo, NULL, &D_80AB0BFC);
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 160.0f);
+    Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &object_mu_Skel_004F70, &object_mu_Anim_0003F4, NULL, NULL, 0);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set5(play, &this->collider, &this->actor, &EnMuAtInfoData);
+    CollisionCheck_Status_set3(&this->actor.colChkInfo, NULL, &MuStatusData);
     this->actor.attentionRangeType = ATTENTION_RANGE_6;
-    Actor_SetScale(&this->actor, 0.01f);
-    EnMu_Interact(this, play);
-    EnMu_SetupAction(this, EnMu_Pose);
+    Actor_set_scale(&this->actor, 0.01f);
+    next_message(this, play);
+    En_Mu_actor_set_process(this, wait);
 }
 
-void EnMu_Destroy(Actor* thisx, PlayState* play) {
+void En_Mu_actor_dt(Actor* thisx, PlayState* play) {
     EnMu* this = (EnMu*)thisx;
 
-    SkelAnime_Free(&this->skelAnime, play);
+    Skeleton_Info_dt(&this->skelAnime, play);
 }
 
-void EnMu_Pose(EnMu* this, PlayState* play) {
-    Actor_UpdateFidgetTables(play, this->fidgetTableY, this->fidgetTableZ, 16);
+static void wait(EnMu* this, PlayState* play) {
+    program_wait(play, this->fidgetTableY, this->fidgetTableZ, 16);
 }
 
-void EnMu_Update(Actor* thisx, PlayState* play) {
+void En_Mu_actor_move(Actor* thisx, PlayState* play) {
     EnMu* this = (EnMu*)thisx;
     s32 pad;
     f32 talkDist;
@@ -167,32 +167,32 @@ void EnMu_Update(Actor* thisx, PlayState* play) {
 
     this->collider.dim.pos = pos;
 
-    CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
-    SkelAnime_Update(&this->skelAnime);
-    Actor_UpdateBgCheckInfo(play, &this->actor, 0.0f, 0.0f, 0.0f, UPDBGCHECKINFO_FLAG_2);
+    CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
+    Skeleton_Info2_anime_play(&this->skelAnime);
+    Actor_BGcheck2(play, &this->actor, 0.0f, 0.0f, 0.0f, UPDBGCHECKINFO_FLAG_2);
     this->actionFunc(this, play);
     talkDist = this->collider.dim.radius + 30.0f;
-    Npc_UpdateTalking(play, &this->actor, &this->npcInfo.talkState, talkDist, EnMu_GetTextId, EnMu_UpdateTalkState);
+    npc_talk(play, &this->actor, &this->npcInfo.talkState, talkDist, mu_set_message, mu_end_message);
 
     this->actor.focus.pos = this->actor.world.pos;
     this->actor.focus.pos.y += 60.0f;
 }
 
-s32 EnMu_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+static s32 draw_before(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     EnMu* this = (EnMu*)thisx;
 
     if ((limbIndex == 5) || (limbIndex == 6) || (limbIndex == 7) || (limbIndex == 11) || (limbIndex == 12) ||
         (limbIndex == 13) || (limbIndex == 14)) {
-        rot->y += Math_SinS(this->fidgetTableY[limbIndex]) * FIDGET_AMPLITUDE;
-        rot->z += Math_CosS(this->fidgetTableZ[limbIndex]) * FIDGET_AMPLITUDE;
+        rot->y += sin_s(this->fidgetTableY[limbIndex]) * FIDGET_AMPLITUDE;
+        rot->z += cos_s(this->fidgetTableZ[limbIndex]) * FIDGET_AMPLITUDE;
     }
     return false;
 }
 
-void EnMu_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
+static void draw_after(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
 }
 
-Gfx* EnMu_DisplayListSetColor(GraphicsContext* gfxCtx, u8 r, u8 g, u8 b, u8 a) {
+static Gfx* pa(GraphicsContext* gfxCtx, u8 r, u8 g, u8 b, u8 a) {
     Gfx* dlist;
 
     dlist = GRAPH_ALLOC(gfxCtx, 2 * sizeof(Gfx));
@@ -201,7 +201,7 @@ Gfx* EnMu_DisplayListSetColor(GraphicsContext* gfxCtx, u8 r, u8 g, u8 b, u8 a) {
     return dlist;
 }
 
-void EnMu_Draw(Actor* thisx, PlayState* play) {
+void En_Mu_actor_draw(Actor* thisx, PlayState* play) {
     EnMu* this = (EnMu*)thisx;
     Color_RGBA8 colors[2][5] = {
         { { 100, 130, 235, 0 }, { 160, 250, 60, 0 }, { 90, 60, 20, 0 }, { 30, 240, 200, 0 }, { 140, 70, 20, 0 } },
@@ -211,14 +211,14 @@ void EnMu_Draw(Actor* thisx, PlayState* play) {
     s32 i;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_mu.c", 514);
-    Matrix_Translate(-1200.0f, 0.0f, -1400.0f, MTXMODE_APPLY);
+    Matrix_translate(-1200.0f, 0.0f, -1400.0f, MTXMODE_APPLY);
     for (i = 0; i < 5; i++) {
         gSPSegment(POLY_OPA_DISP++, segmentId[i],
-                   EnMu_DisplayListSetColor(play->state.gfxCtx, colors[this->actor.params][i].r,
+                   pa(play->state.gfxCtx, colors[this->actor.params][i].r,
                                             colors[this->actor.params][i].g, colors[this->actor.params][i].b,
                                             colors[this->actor.params][i].a));
     }
-    SkelAnime_DrawFlexOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
-                          EnMu_OverrideLimbDraw, EnMu_PostLimbDraw, this);
+    Si2_draw_SV(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
+                          draw_before, draw_after, this);
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_mu.c", 534);
 }

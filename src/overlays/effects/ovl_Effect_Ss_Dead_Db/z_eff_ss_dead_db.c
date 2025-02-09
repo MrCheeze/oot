@@ -20,16 +20,16 @@
 #define rPlaySfx regs[10]
 #define rReg11 regs[11]
 
-u32 EffectSsDeadDb_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
-void EffectSsDeadDb_Draw(PlayState* play, u32 index, EffectSs* this);
-void EffectSsDeadDb_Update(PlayState* play, u32 index, EffectSs* this);
+u32 Effect_SS_Dead_Db_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
+void Effect_SS_Db_disp_mode(PlayState* play, u32 index, EffectSs* this);
+void Effect_SS_Db_func_proc(PlayState* play, u32 index, EffectSs* this);
 
 EffectSsProfile Effect_Ss_Dead_Db_Profile = {
     EFFECT_SS_DEAD_DB,
-    EffectSsDeadDb_Init,
+    Effect_SS_Dead_Db_ct,
 };
 
-u32 EffectSsDeadDb_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
+u32 Effect_SS_Dead_Db_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
     EffectSsDeadDbInitParams* initParams = (EffectSsDeadDbInitParams*)initParamsx;
 
     this->pos = initParams->pos;
@@ -40,8 +40,8 @@ u32 EffectSsDeadDb_Init(PlayState* play, u32 index, EffectSs* this, void* initPa
     this->flags = 4;
     this->rScaleStep = initParams->scaleStep;
     this->rReg11 = initParams->unk_34;
-    this->draw = EffectSsDeadDb_Draw;
-    this->update = EffectSsDeadDb_Update;
+    this->draw = Effect_SS_Db_disp_mode;
+    this->update = Effect_SS_Db_func_proc;
     this->rScale = initParams->scale;
     this->rTextIdx = 0;
     this->rPlaySfx = initParams->playSfx;
@@ -56,13 +56,13 @@ u32 EffectSsDeadDb_Init(PlayState* play, u32 index, EffectSs* this, void* initPa
     return 1;
 }
 
-static void* sTextures[] = {
+static void* db_txt[] = {
     gEffEnemyDeathFlame1Tex, gEffEnemyDeathFlame2Tex,  gEffEnemyDeathFlame3Tex, gEffEnemyDeathFlame4Tex,
     gEffEnemyDeathFlame5Tex, gEffEnemyDeathFlame6Tex,  gEffEnemyDeathFlame7Tex, gEffEnemyDeathFlame8Tex,
     gEffEnemyDeathFlame9Tex, gEffEnemyDeathFlame10Tex,
 };
 
-void EffectSsDeadDb_Draw(PlayState* play, u32 index, EffectSs* this) {
+void Effect_SS_Db_disp_mode(PlayState* play, u32 index, EffectSs* this) {
     GraphicsContext* gfxCtx = play->state.gfxCtx;
     MtxF mfTrans;
     MtxF mfScale;
@@ -74,26 +74,26 @@ void EffectSsDeadDb_Draw(PlayState* play, u32 index, EffectSs* this) {
 
     scale = this->rScale * 0.01f;
 
-    SkinMatrix_SetTranslate(&mfTrans, this->pos.x, this->pos.y, this->pos.z);
-    SkinMatrix_SetScale(&mfScale, scale, scale, scale);
-    SkinMatrix_MtxFMtxFMult(&mfTrans, &mfScale, &mfResult);
+    Skin_Matrix_SetTranslate(&mfTrans, this->pos.x, this->pos.y, this->pos.z);
+    Skin_Matrix_SetScale(&mfScale, scale, scale, scale);
+    Skin_Matrix_MulMatrix(&mfTrans, &mfScale, &mfResult);
 
-    mtx = SkinMatrix_MtxFToNewMtx(gfxCtx, &mfResult);
+    mtx = Skin_Matrix_to_Mtx_new(gfxCtx, &mfResult);
 
     if (mtx != NULL) {
         gSPMatrix(POLY_XLU_DISP++, mtx, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-        Gfx_SetupDL_60NoCDXlu(gfxCtx);
+        texture_z_cld_poly_xlu(gfxCtx);
         gDPSetEnvColor(POLY_XLU_DISP++, this->rEnvColorR, this->rEnvColorG, this->rEnvColorB, 0);
         gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, this->rPrimColorR, this->rPrimColorG, this->rPrimColorB,
                         this->rPrimColorA);
-        gSPSegment(POLY_XLU_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(sTextures[this->rTextIdx]));
+        gSPSegment(POLY_XLU_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(db_txt[this->rTextIdx]));
         gSPDisplayList(POLY_XLU_DISP++, this->gfx);
     }
 
     CLOSE_DISPS(gfxCtx, "../z_eff_ss_dead_db.c", 247);
 }
 
-void EffectSsDeadDb_Update(PlayState* play, u32 index, EffectSs* this) {
+void Effect_SS_Db_func_proc(PlayState* play, u32 index, EffectSs* this) {
     f32 w;
     f32 pad;
 
@@ -131,8 +131,8 @@ void EffectSsDeadDb_Update(PlayState* play, u32 index, EffectSs* this) {
     }
 
     if (this->rPlaySfx && (this->rTextIdx == 1)) {
-        SkinMatrix_Vec3fMtxFMultXYZW(&play->viewProjectionMtxF, &this->pos, &this->vec, &w);
-        Audio_PlaySfxGeneral(NA_SE_EN_EXTINCT, &this->vec, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultReverb);
+        Skin_Matrix_PrjMulVector(&play->viewProjectionMtxF, &this->pos, &this->vec, &w);
+        Nai_FxFlagEntry(NA_SE_EN_EXTINCT, &this->vec, 4, &_dummy_one, &_dummy_one,
+                             &_dummy_zero_s8);
     }
 }

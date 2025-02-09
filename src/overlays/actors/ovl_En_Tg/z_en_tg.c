@@ -9,14 +9,14 @@
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY)
 
-void EnTg_Init(Actor* thisx, PlayState* play);
-void EnTg_Destroy(Actor* thisx, PlayState* play);
-void EnTg_Update(Actor* thisx, PlayState* play);
-void EnTg_Draw(Actor* thisx, PlayState* play);
+void En_Tg_actor_ct(Actor* thisx, PlayState* play);
+void En_Tg_actor_dt(Actor* thisx, PlayState* play);
+void En_Tg_actor_move(Actor* thisx, PlayState* play);
+void En_Tg_actor_draw(Actor* thisx, PlayState* play);
 
-void EnTg_SpinIfNotTalking(EnTg* this, PlayState* play);
+static void wait(EnTg* this, PlayState* play);
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit EnTgAtInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -36,7 +36,7 @@ static ColliderCylinderInit sCylinderInit = {
     { 20, 64, 0, { 0, 0, 0 } },
 };
 
-static CollisionCheckInfoInit2 sColChkInfoInit = { 0, 0, 0, 0, MASS_IMMOVABLE };
+static CollisionCheckInfoInit2 TgStatusData = { 0, 0, 0, 0, MASS_IMMOVABLE };
 
 ActorProfile En_Tg_Profile = {
     /**/ ACTOR_EN_TG,
@@ -44,15 +44,15 @@ ActorProfile En_Tg_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_MU,
     /**/ sizeof(EnTg),
-    /**/ EnTg_Init,
-    /**/ EnTg_Destroy,
-    /**/ EnTg_Update,
-    /**/ EnTg_Draw,
+    /**/ En_Tg_actor_ct,
+    /**/ En_Tg_actor_dt,
+    /**/ En_Tg_actor_move,
+    /**/ En_Tg_actor_draw,
 };
 
-u16 EnTg_GetTextId(PlayState* play, Actor* thisx) {
+u16 tg_set_message(PlayState* play, Actor* thisx) {
     EnTg* this = (EnTg*)thisx;
-    u16 maskReactionTextId = MaskReaction_GetTextId(play, MASK_REACTION_SET_DANCING_COUPLE);
+    u16 maskReactionTextId = get_mask_message(play, MASK_REACTION_SET_DANCING_COUPLE);
     u32 textId;
 
     if (maskReactionTextId != 0) {
@@ -75,10 +75,10 @@ u16 EnTg_GetTextId(PlayState* play, Actor* thisx) {
     }
 }
 
-s16 EnTg_UpdateTalkState(PlayState* play, Actor* thisx) {
+s16 tg_end_message(PlayState* play, Actor* thisx) {
     EnTg* this = (EnTg*)thisx;
 
-    switch (Message_GetState(&play->msgCtx)) {
+    switch (message_check(&play->msgCtx)) {
         case TEXT_STATE_NONE:
         case TEXT_STATE_DONE_HAS_NEXT:
         case TEXT_STATE_DONE_FADING:
@@ -107,34 +107,34 @@ s16 EnTg_UpdateTalkState(PlayState* play, Actor* thisx) {
     }
 }
 
-void EnTg_Init(Actor* thisx, PlayState* play) {
+void En_Tg_actor_ct(Actor* thisx, PlayState* play) {
     EnTg* this = (EnTg*)thisx;
 
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 28.0f);
-    SkelAnime_InitFlex(play, &this->skelAnime, &gDancingCoupleSkel, &gDancingCoupleAnim, NULL, NULL, 0);
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
-    CollisionCheck_SetInfo2(&this->actor.colChkInfo, NULL, &sColChkInfoInit);
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 28.0f);
+    Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &gDancingCoupleSkel, &gDancingCoupleAnim, NULL, NULL, 0);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set5(play, &this->collider, &this->actor, &EnTgAtInfoData);
+    CollisionCheck_Status_set3(&this->actor.colChkInfo, NULL, &TgStatusData);
     this->actor.attentionRangeType = ATTENTION_RANGE_6;
-    Actor_SetScale(&this->actor, 0.01f);
+    Actor_set_scale(&this->actor, 0.01f);
     this->nextDialogue = play->state.frames % 2;
-    this->actionFunc = EnTg_SpinIfNotTalking;
+    this->actionFunc = wait;
 }
 
-void EnTg_Destroy(Actor* thisx, PlayState* play) {
+void En_Tg_actor_dt(Actor* thisx, PlayState* play) {
     EnTg* this = (EnTg*)thisx;
 
-    SkelAnime_Free(&this->skelAnime, play);
-    Collider_DestroyCylinder(play, &this->collider);
+    Skeleton_Info_dt(&this->skelAnime, play);
+    ClObjPipe_dt(play, &this->collider);
 }
 
-void EnTg_SpinIfNotTalking(EnTg* this, PlayState* play) {
+static void wait(EnTg* this, PlayState* play) {
     if (!this->interactInfo.talkState) {
         this->actor.shape.rot.y += 0x800;
     }
 }
 
-void EnTg_Update(Actor* thisx, PlayState* play) {
+void En_Tg_actor_move(Actor* thisx, PlayState* play) {
     EnTg* this = (EnTg*)thisx;
     s32 pad;
     f32 temp;
@@ -144,29 +144,29 @@ void EnTg_Update(Actor* thisx, PlayState* play) {
     sp2C.y = this->actor.world.pos.y;
     sp2C.z = (s16)this->actor.world.pos.z + 3;
     this->collider.dim.pos = sp2C;
-    CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
-    SkelAnime_Update(&this->skelAnime);
-    Actor_UpdateBgCheckInfo(play, &this->actor, 0.0f, 0.0f, 0.0f, UPDBGCHECKINFO_FLAG_2);
+    CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
+    Skeleton_Info2_anime_play(&this->skelAnime);
+    Actor_BGcheck2(play, &this->actor, 0.0f, 0.0f, 0.0f, UPDBGCHECKINFO_FLAG_2);
     this->actionFunc(this, play);
     temp = this->collider.dim.radius + 30.0f;
-    Npc_UpdateTalking(play, &this->actor, &this->interactInfo.talkState, temp, EnTg_GetTextId, EnTg_UpdateTalkState);
+    npc_talk(play, &this->actor, &this->interactInfo.talkState, temp, tg_set_message, tg_end_message);
 }
 
-s32 EnTg_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+static s32 draw_before(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     return false;
 }
 
-void EnTg_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
+static void draw_after(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
     EnTg* this = (EnTg*)thisx;
     Vec3f targetOffset = { 0.0f, 800.0f, 0.0f };
 
     if (limbIndex == 9) {
         // Place the target point at the guy's head instead of the center of the actor
-        Matrix_MultVec3f(&targetOffset, &this->actor.focus.pos);
+        Matrix_Position(&targetOffset, &this->actor.focus.pos);
     }
 }
 
-Gfx* EnTg_SetColor(GraphicsContext* gfxCtx, u8 r, u8 g, u8 b, u8 a) {
+static Gfx* pa(GraphicsContext* gfxCtx, u8 r, u8 g, u8 b, u8 a) {
     Gfx* displayList = GRAPH_ALLOC(gfxCtx, 2 * sizeof(Gfx));
 
     gDPSetEnvColor(displayList, r, g, b, a);
@@ -174,19 +174,19 @@ Gfx* EnTg_SetColor(GraphicsContext* gfxCtx, u8 r, u8 g, u8 b, u8 a) {
     return displayList;
 }
 
-void EnTg_Draw(Actor* thisx, PlayState* play) {
+void En_Tg_actor_draw(Actor* thisx, PlayState* play) {
     EnTg* this = (EnTg*)thisx;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_tg.c", 462);
-    Matrix_Translate(0.0f, 0.0f, -560.0f, MTXMODE_APPLY);
+    Matrix_translate(0.0f, 0.0f, -560.0f, MTXMODE_APPLY);
 
     // Set the guy's shoes and shirt to royal blue
-    gSPSegment(POLY_OPA_DISP++, 0x08, EnTg_SetColor(play->state.gfxCtx, 0, 50, 160, 0));
+    gSPSegment(POLY_OPA_DISP++, 0x08, pa(play->state.gfxCtx, 0, 50, 160, 0));
 
     // Set the girl's shirt to white
-    gSPSegment(POLY_OPA_DISP++, 0x09, EnTg_SetColor(play->state.gfxCtx, 255, 255, 255, 0));
+    gSPSegment(POLY_OPA_DISP++, 0x09, pa(play->state.gfxCtx, 255, 255, 255, 0));
 
-    SkelAnime_DrawFlexOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
-                          EnTg_OverrideLimbDraw, EnTg_PostLimbDraw, this);
+    Si2_draw_SV(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
+                          draw_before, draw_after, this);
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_tg.c", 480);
 }

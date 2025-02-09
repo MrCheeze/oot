@@ -9,19 +9,19 @@
 
 #define FLAGS 0
 
-void EnWonderItem_Init(Actor* thisx, PlayState* play);
-void EnWonderItem_Destroy(Actor* thisx, PlayState* play);
-void EnWonderItem_Update(Actor* thisx, PlayState* play);
+void En_Wonder_Item_actor_ct(Actor* thisx, PlayState* play);
+void En_Wonder_Item_actor_dt(Actor* thisx, PlayState* play);
+void En_Wonder_Item_actor_move(Actor* thisx, PlayState* play);
 
-void EnWonderItem_MultitagFree(EnWonderItem* this, PlayState* play);
-void EnWonderItem_ProximityDrop(EnWonderItem* this, PlayState* play);
-void EnWonderItem_InteractSwitch(EnWonderItem* this, PlayState* play);
-void EnWonderItem_ProximitySwitch(EnWonderItem* this, PlayState* play);
-void EnWonderItem_MultitagOrdered(EnWonderItem* this, PlayState* play);
-void EnWonderItem_BombSoldier(EnWonderItem* this, PlayState* play);
-void EnWonderItem_RollDrop(EnWonderItem* this, PlayState* play);
+void mode_jyozan(EnWonderItem* this, PlayState* play);
+void mode_get_item(EnWonderItem* this, PlayState* play);
+void mode_attack_item(EnWonderItem* this, PlayState* play);
+void mode_pass(EnWonderItem* this, PlayState* play);
+void mode_order_check(EnWonderItem* this, PlayState* play);
+void mode_ukkari(EnWonderItem* this, PlayState* play);
+void mode_rolling_get_item(EnWonderItem* this, PlayState* play);
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit OcInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -47,28 +47,28 @@ ActorProfile En_Wonder_Item_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(EnWonderItem),
-    /**/ EnWonderItem_Init,
-    /**/ EnWonderItem_Destroy,
-    /**/ EnWonderItem_Update,
+    /**/ En_Wonder_Item_actor_ct,
+    /**/ En_Wonder_Item_actor_dt,
+    /**/ En_Wonder_Item_actor_move,
     /**/ NULL,
 };
 
 #pragma increment_block_number "gc-eu:0 gc-eu-mq:0 gc-jp:0 gc-jp-ce:0 gc-jp-mq:0 gc-us:0 gc-us-mq:0 hiratsu3:0"
 
-static Vec3f sTagPointsFree[9];
-static Vec3f sTagPointsOrdered[9];
+static Vec3f point_pos[9];
+static Vec3f order_point_pos[9];
 
-void EnWonderItem_Destroy(Actor* thisx, PlayState* play) {
+void En_Wonder_Item_actor_dt(Actor* thisx, PlayState* play) {
     s32 pad;
     EnWonderItem* this = (EnWonderItem*)thisx;
 
     if ((this->collider.dim.radius != 0) || (this->collider.dim.height != 0)) {
-        Collider_DestroyCylinder(play, &this->collider);
+        ClObjPipe_dt(play, &this->collider);
     }
 }
 
-void EnWonderItem_DropCollectible(EnWonderItem* this, PlayState* play, s32 autoCollect) {
-    static s16 dropTable[] = {
+void item_get_check(EnWonderItem* this, PlayState* play, s32 autoCollect) {
+    static s16 Item_No_Data[] = {
         ITEM00_NUTS,           ITEM00_HEART_PIECE,  ITEM00_MAGIC_LARGE,   ITEM00_MAGIC_SMALL,
         ITEM00_RECOVERY_HEART, ITEM00_ARROWS_SMALL, ITEM00_ARROWS_MEDIUM, ITEM00_ARROWS_LARGE,
         ITEM00_RUPEE_GREEN,    ITEM00_RUPEE_BLUE,   ITEM00_RUPEE_RED,     ITEM00_FLEXIBLE,
@@ -76,7 +76,7 @@ void EnWonderItem_DropCollectible(EnWonderItem* this, PlayState* play, s32 autoC
     s32 i;
     s32 randomDrop;
 
-    Sfx_PlaySfxCentered(NA_SE_SY_GET_ITEM);
+    Na_StartSystemSe_F(NA_SE_SY_GET_ITEM);
 
     if (this->dropCount == 0) {
         this->dropCount++;
@@ -84,27 +84,27 @@ void EnWonderItem_DropCollectible(EnWonderItem* this, PlayState* play, s32 autoC
     for (i = this->dropCount; i > 0; i--) {
         if (this->itemDrop < WONDERITEM_DROP_RANDOM) {
             if ((this->itemDrop == WONDERITEM_DROP_FLEXIBLE) || !autoCollect) {
-                Item_DropCollectible(play, &this->actor.world.pos, dropTable[this->itemDrop]);
+                Item_set0(play, &this->actor.world.pos, Item_No_Data[this->itemDrop]);
             } else {
-                Item_DropCollectible(play, &this->actor.world.pos, dropTable[this->itemDrop] | 0x8000);
+                Item_set0(play, &this->actor.world.pos, Item_No_Data[this->itemDrop] | 0x8000);
             }
         } else {
             randomDrop = this->itemDrop - WONDERITEM_DROP_RANDOM;
             if (!autoCollect) {
-                Item_DropCollectibleRandom(play, NULL, &this->actor.world.pos, randomDrop);
+                Item_Set_Std(play, NULL, &this->actor.world.pos, randomDrop);
             } else {
-                Item_DropCollectibleRandom(play, NULL, &this->actor.world.pos, randomDrop | 0x8000);
+                Item_Set_Std(play, NULL, &this->actor.world.pos, randomDrop | 0x8000);
             }
         }
     }
     if (this->switchFlag >= 0) {
-        Flags_SetSwitch(play, this->switchFlag);
+        Actor_Environment_sw_On(play, this->switchFlag);
     }
-    Actor_Kill(&this->actor);
+    Actor_delete(&this->actor);
 }
 
-void EnWonderItem_Init(Actor* thisx, PlayState* play) {
-    static u32 damageFlags[] = {
+void En_Wonder_Item_actor_ct(Actor* thisx, PlayState* play) {
+    static u32 Attack_Weapon_Data[] = {
         DMG_SLASH | DMG_DEKU_STICK,
         DMG_ARROW,
         DMG_HAMMER_SWING,
@@ -132,9 +132,9 @@ void EnWonderItem_Init(Actor* thisx, PlayState* play) {
         this->switchFlag = -1;
     }
     this->actor.attentionRangeType = ATTENTION_RANGE_1;
-    if ((this->switchFlag >= 0) && Flags_GetSwitch(play, this->switchFlag)) {
+    if ((this->switchFlag >= 0) && Actor_Environment_sw_Check(play, this->switchFlag)) {
         PRINTF(VT_FGCOL(GREEN) "☆☆☆☆☆ Ｙｏｕ ａｒｅ Ｓｈｏｃｋ！  ☆☆☆☆☆ %d\n" VT_RST, this->switchFlag);
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
         return;
     }
     switch (this->wonderMode) {
@@ -147,25 +147,25 @@ void EnWonderItem_Init(Actor* thisx, PlayState* play) {
             }
             this->numTagPoints = this->actor.world.rot.z - rotZover10 * 10;
             // i.e timerMod = rot.z / 10 seconds, numTagPoints = rot.z % 10
-            this->updateFunc = EnWonderItem_MultitagFree;
+            this->updateFunc = mode_jyozan;
             break;
         case WONDERITEM_TAG_POINT_FREE:
             tagIndex = this->actor.world.rot.z & 0xFF;
-            sTagPointsFree[tagIndex] = this->actor.world.pos;
-            Actor_Kill(&this->actor);
+            point_pos[tagIndex] = this->actor.world.pos;
+            Actor_delete(&this->actor);
             break;
         case WONDERITEM_PROXIMITY_DROP:
             this->dropCount = this->actor.world.rot.z & 0xFF;
-            this->updateFunc = EnWonderItem_ProximityDrop;
+            this->updateFunc = mode_get_item;
             break;
         case WONDERITEM_INTERACT_SWITCH:
             colTypeIndex = this->actor.world.rot.z & 0xFF;
-            Collider_InitCylinder(play, &this->collider);
-            Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
-            this->collider.elem.acDmgInfo.dmgFlags = damageFlags[colTypeIndex];
+            ClObjPipe_ct(play, &this->collider);
+            ClObjPipe_set5(play, &this->collider, &this->actor, &OcInfoData);
+            this->collider.elem.acDmgInfo.dmgFlags = Attack_Weapon_Data[colTypeIndex];
             this->collider.dim.radius = 20;
             this->collider.dim.height = 30;
-            this->updateFunc = EnWonderItem_InteractSwitch;
+            this->updateFunc = mode_attack_item;
             break;
         case WONDERITEM_UNUSED:
             break;
@@ -178,36 +178,36 @@ void EnWonderItem_Init(Actor* thisx, PlayState* play) {
             }
             this->numTagPoints = this->actor.world.rot.z - rotZover10 * 10;
             // i.e timerMod = rot.z / 10 seconds, numTagPoints = rot.z % 10
-            this->updateFunc = EnWonderItem_MultitagOrdered;
+            this->updateFunc = mode_order_check;
             break;
         case WONDERITEM_TAG_POINT_ORDERED:
             tagIndex = this->actor.world.rot.z & 0xFF;
-            sTagPointsOrdered[tagIndex] = this->actor.world.pos;
-            Actor_Kill(&this->actor);
+            order_point_pos[tagIndex] = this->actor.world.pos;
+            Actor_delete(&this->actor);
             break;
         case WONDERITEM_PROXIMITY_SWITCH:
-            this->updateFunc = EnWonderItem_ProximitySwitch;
+            this->updateFunc = mode_pass;
             break;
         case WONDERITEM_BOMB_SOLDIER:
-            Collider_InitCylinder(play, &this->collider);
-            Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
+            ClObjPipe_ct(play, &this->collider);
+            ClObjPipe_set5(play, &this->collider, &this->actor, &OcInfoData);
             this->collider.elem.acDmgInfo.dmgFlags = DMG_SLINGSHOT;
             this->unkPos = this->actor.world.pos;
             this->collider.dim.radius = 35;
             this->collider.dim.height = 75;
-            this->updateFunc = EnWonderItem_BombSoldier;
+            this->updateFunc = mode_ukkari;
             break;
         case WONDERITEM_ROLL_DROP:
             this->dropCount = this->actor.world.rot.z & 0xFF;
-            this->updateFunc = EnWonderItem_RollDrop;
+            this->updateFunc = mode_rolling_get_item;
             break;
         default:
-            Actor_Kill(&this->actor);
+            Actor_delete(&this->actor);
             break;
     }
 }
 
-void EnWonderItem_MultitagFree(EnWonderItem* this, PlayState* play) {
+void mode_jyozan(EnWonderItem* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     s16 prevTagFlags = this->tagFlags;
     s32 i;
@@ -218,9 +218,9 @@ void EnWonderItem_MultitagFree(EnWonderItem* this, PlayState* play) {
 
     for (i = 0, mask = 1; i < this->numTagPoints; i++, mask <<= 1) {
         if (!(prevTagFlags & mask)) {
-            dx = player->actor.world.pos.x - sTagPointsFree[i].x;
-            dy = player->actor.world.pos.y - sTagPointsFree[i].y;
-            dz = player->actor.world.pos.z - sTagPointsFree[i].z;
+            dx = player->actor.world.pos.x - point_pos[i].x;
+            dy = player->actor.world.pos.y - point_pos[i].y;
+            dz = player->actor.world.pos.z - point_pos[i].z;
 
             if (sqrtf(SQ(dx) + SQ(dy) + SQ(dz)) < 50.0f) {
                 this->tagFlags |= mask;
@@ -231,7 +231,7 @@ void EnWonderItem_MultitagFree(EnWonderItem* this, PlayState* play) {
 
 #if DEBUG_FEATURES
             if (BREG(0) != 0) {
-                DebugDisplay_AddObject(sTagPointsFree[i].x, sTagPointsFree[i].y, sTagPointsFree[i].z,
+                Debug_Display_new(point_pos[i].x, point_pos[i].y, point_pos[i].z,
                                        this->actor.world.rot.x, this->actor.world.rot.y, this->actor.world.rot.z, 1.0f,
                                        1.0f, 1.0f, 0, 255, 0, 255, 4, play->state.gfxCtx);
             }
@@ -239,44 +239,44 @@ void EnWonderItem_MultitagFree(EnWonderItem* this, PlayState* play) {
         }
     }
     if (this->timer == 1) {
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
         return;
     }
     if (this->tagCount == this->numTagPoints) {
         if (this->switchFlag >= 0) {
-            Flags_SetSwitch(play, this->switchFlag);
+            Actor_Environment_sw_On(play, this->switchFlag);
         }
-        EnWonderItem_DropCollectible(this, play, true);
+        item_get_check(this, play, true);
     }
 }
 
-void EnWonderItem_ProximityDrop(EnWonderItem* this, PlayState* play) {
+void mode_get_item(EnWonderItem* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     if ((this->actor.xzDistToPlayer < 50.0f) && (fabsf(this->actor.world.pos.y - player->actor.world.pos.y) < 30.0f)) {
-        EnWonderItem_DropCollectible(this, play, true);
+        item_get_check(this, play, true);
     }
 }
 
-void EnWonderItem_InteractSwitch(EnWonderItem* this, PlayState* play) {
+void mode_attack_item(EnWonderItem* this, PlayState* play) {
     if (this->collider.base.acFlags & AC_HIT) {
         this->collider.base.acFlags &= ~AC_HIT;
-        EnWonderItem_DropCollectible(this, play, false);
+        item_get_check(this, play, false);
     }
 }
 
-void EnWonderItem_ProximitySwitch(EnWonderItem* this, PlayState* play) {
+void mode_pass(EnWonderItem* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     if ((this->actor.xzDistToPlayer < 50.0f) && (fabsf(this->actor.world.pos.y - player->actor.world.pos.y) < 30.0f)) {
         if (this->switchFlag >= 0) {
-            Flags_SetSwitch(play, this->switchFlag);
+            Actor_Environment_sw_On(play, this->switchFlag);
         }
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     }
 }
 
-void EnWonderItem_MultitagOrdered(EnWonderItem* this, PlayState* play) {
+void mode_order_check(EnWonderItem* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     s16 prevTagFlags = this->tagFlags;
     s32 i;
@@ -287,9 +287,9 @@ void EnWonderItem_MultitagOrdered(EnWonderItem* this, PlayState* play) {
 
     for (i = 0, mask = 1; i < this->numTagPoints; i++, mask <<= 1) {
         if (!(prevTagFlags & mask)) {
-            dx = player->actor.world.pos.x - sTagPointsOrdered[i].x;
-            dy = player->actor.world.pos.y - sTagPointsOrdered[i].y;
-            dz = player->actor.world.pos.z - sTagPointsOrdered[i].z;
+            dx = player->actor.world.pos.x - order_point_pos[i].x;
+            dy = player->actor.world.pos.y - order_point_pos[i].y;
+            dz = player->actor.world.pos.z - order_point_pos[i].z;
 
             if (sqrtf(SQ(dx) + SQ(dy) + SQ(dz)) < 50.0f) {
                 if (prevTagFlags & mask) {
@@ -301,14 +301,14 @@ void EnWonderItem_MultitagOrdered(EnWonderItem* this, PlayState* play) {
                     this->timer = this->timerMod + 81;
                     return;
                 } else {
-                    Actor_Kill(&this->actor);
+                    Actor_delete(&this->actor);
                     return;
                 }
             }
 
 #if DEBUG_FEATURES
             if (BREG(0) != 0) {
-                DebugDisplay_AddObject(sTagPointsOrdered[i].x, sTagPointsOrdered[i].y, sTagPointsOrdered[i].z,
+                Debug_Display_new(order_point_pos[i].x, order_point_pos[i].y, order_point_pos[i].z,
                                        this->actor.world.rot.x, this->actor.world.rot.y, this->actor.world.rot.z, 1.0f,
                                        1.0f, 1.0f, 0, 0, 255, 255, 4, play->state.gfxCtx);
             }
@@ -316,40 +316,40 @@ void EnWonderItem_MultitagOrdered(EnWonderItem* this, PlayState* play) {
         }
     }
     if (this->timer == 1) {
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
         return;
     }
     if (this->tagCount == this->numTagPoints) {
-        EnWonderItem_DropCollectible(this, play, true);
+        item_get_check(this, play, true);
     }
 }
 
-void EnWonderItem_BombSoldier(EnWonderItem* this, PlayState* play) {
+void mode_ukkari(EnWonderItem* this, PlayState* play) {
     if (this->collider.base.acFlags & AC_HIT) {
         this->collider.base.acFlags &= ~AC_HIT;
-        if (Actor_Spawn(&play->actorCtx, play, ACTOR_EN_HEISHI2, this->actor.world.pos.x, this->actor.world.pos.y,
+        if (Actor_info_make_actor(&play->actorCtx, play, ACTOR_EN_HEISHI2, this->actor.world.pos.x, this->actor.world.pos.y,
                         this->actor.world.pos.z, 0, this->actor.yawTowardsPlayer, 0, 9) != NULL) {
             PRINTF(VT_FGCOL(YELLOW) T("☆☆☆☆☆ うっかり兵セット完了 ☆☆☆☆☆ \n", "☆☆☆☆☆ Careless soldier spawned ☆☆☆☆☆ \n")
                        VT_RST);
         }
         if (this->switchFlag >= 0) {
-            Flags_SetSwitch(play, this->switchFlag);
+            Actor_Environment_sw_On(play, this->switchFlag);
         }
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
     }
 }
 
-void EnWonderItem_RollDrop(EnWonderItem* this, PlayState* play) {
+void mode_rolling_get_item(EnWonderItem* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     if ((this->actor.xzDistToPlayer < 50.0f) && (player->invincibilityTimer < 0) &&
         (fabsf(this->actor.world.pos.y - player->actor.world.pos.y) < 30.0f)) {
-        EnWonderItem_DropCollectible(this, play, true);
+        item_get_check(this, play, true);
     }
 }
 
-void EnWonderItem_Update(Actor* thisx, PlayState* play) {
-    static s16 debugArrowColors[] = {
+void En_Wonder_Item_actor_move(Actor* thisx, PlayState* play) {
+    static s16 color_data[] = {
         255, 255, 0,   255, 0,   255, 0,   255, 255, 255, 0,   0, 0, 255, 0,   0, 0, 255, 128, 128,
         128, 128, 128, 0,   128, 0,   128, 0,   128, 0,   128, 0, 0, 0,   128, 0, 0, 0,   128,
     }; // These seem to be mistyped. Logically they should be s16[13][3] and be indexed as [colorIndex][i]
@@ -363,11 +363,11 @@ void EnWonderItem_Update(Actor* thisx, PlayState* play) {
     this->updateFunc(this, play);
 
     if (this->wonderMode == WONDERITEM_UNUSED) {
-        Actor_SetFocus(&this->actor, this->unkHeight);
+        Actor_world_to_eye(&this->actor, this->unkHeight);
     }
     if ((this->wonderMode == WONDERITEM_INTERACT_SWITCH) || (this->wonderMode == WONDERITEM_BOMB_SOLDIER)) {
-        Collider_UpdateCylinder(&this->actor, &this->collider);
-        CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
+        CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
+        CollisionCheck_setAC(play, &play->colChkCtx, &this->collider.base);
     }
 
     colorIndex = this->wonderMode;
@@ -376,9 +376,9 @@ void EnWonderItem_Update(Actor* thisx, PlayState* play) {
     }
 
     if (DEBUG_FEATURES && BREG(0) != 0) {
-        DebugDisplay_AddObject(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
+        Debug_Display_new(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
                                this->actor.world.rot.x, this->actor.world.rot.y, this->actor.world.rot.z, 1.0f, 1.0f,
-                               1.0f, debugArrowColors[colorIndex], debugArrowColors[colorIndex + 1],
-                               debugArrowColors[colorIndex + 2], 255, 4, play->state.gfxCtx);
+                               1.0f, color_data[colorIndex], color_data[colorIndex + 1],
+                               color_data[colorIndex + 2], 255, 4, play->state.gfxCtx);
     }
 }

@@ -5,162 +5,162 @@
 
 #if !PLATFORM_N64
 
-DATA(gPositiveInfinity)
+DATA(float_positive_infinity)
     .word 0x7F800000
-ENDDATA(gPositiveInfinity)
+ENDDATA(float_positive_infinity)
 
-DATA(gNegativeInfinity)
+DATA(float_negative_infinity)
     .word 0xFF800000
-ENDDATA(gNegativeInfinity)
+ENDDATA(float_negative_infinity)
 
-DATA(gPositiveZero)
+DATA(float_positive_zero)
     .word 0x00000000
-ENDDATA(gPositiveZero)
+ENDDATA(float_positive_zero)
 
-DATA(gNegativeZero)
+DATA(float_negative_zero)
     .word 0x80000000
-ENDDATA(gNegativeZero)
+ENDDATA(float_negative_zero)
 
-DATA(qNaN0x3FFFFF)
+DATA(float_quiet_nan)
     .word 0x7FBFFFFF
-ENDDATA(qNaN0x3FFFFF)
+ENDDATA(float_quiet_nan)
 
-DATA(qNaN0x10000)
+DATA(float_quiet_nan_set)
     .word 0x7F810000
-ENDDATA(qNaN0x10000)
+ENDDATA(float_quiet_nan_set)
 
-DATA(sNaN0x3FFFFF)
+DATA(float_signaling_nan)
     .word 0x7FFFFFFF
-ENDDATA(sNaN0x3FFFFF)
+ENDDATA(float_signaling_nan)
 
 #endif
 
 .text
 
-LEAF(floorf)
+LEAF(__ffloor)
     floor.w.s   fa0, fa0
     cvt.s.w     fv0, fa0
     jr          ra
-END(floorf)
+END(__ffloor)
 
-LEAF(floor)
+LEAF(__floor)
     floor.w.d   fa0, fa0
     cvt.d.w     fv0, fa0
     jr          ra
-END(floor)
+END(__floor)
 
-LEAF(lfloorf)
+LEAF(__iffloor)
     floor.w.s   ft0, fa0
     mfc1        v0, ft0
     jr          ra
-END(lfloorf)
+END(__iffloor)
 
-LEAF(lfloor)
+LEAF(__ifloor)
     floor.w.d   ft0, fa0
     mfc1        v0, ft0
     jr          ra
-END(lfloor)
+END(__ifloor)
 
-LEAF(ceilf)
+LEAF(__fceil)
     ceil.w.s    fa0, fa0
     cvt.s.w     fv0, fa0
     jr          ra
-END(ceilf)
+END(__fceil)
 
-LEAF(ceil)
+LEAF(__ceil)
     ceil.w.d    fa0, fa0
     cvt.d.w     fv0, fa0
     jr          ra
-END(ceil)
+END(__ceil)
 
-LEAF(lceilf)
+LEAF(__ifceil)
     ceil.w.s    ft0, fa0
     mfc1        v0, ft0
     jr          ra
-END(lceilf)
+END(__ifceil)
 
-LEAF(lceil)
+LEAF(__iceil)
     ceil.w.d    ft0, fa0
     mfc1        v0, ft0
     jr          ra
-END(lceil)
+END(__iceil)
 
-LEAF(truncf)
+LEAF(__ftrunc)
     trunc.w.s   fa0, fa0
     cvt.s.w     fv0, fa0
     jr          ra
-END(truncf)
+END(__ftrunc)
 
-LEAF(trunc)
+LEAF(__trunc)
     trunc.w.d   fa0, fa0
     cvt.d.w     fv0, fa0
     jr          ra
-END(trunc)
+END(__trunc)
 
-LEAF(ltruncf)
+LEAF(__iftrunc)
     trunc.w.s   ft0, fa0
     mfc1        v0, ft0
     jr          ra
-END(ltruncf)
+END(__iftrunc)
 
-LEAF(ltrunc)
+LEAF(__itrunc)
     trunc.w.d   ft0, fa0
     mfc1        v0, ft0
     jr          ra
-END(ltrunc)
+END(__itrunc)
 
-LEAF(nearbyintf)
+LEAF(__fround)
     round.w.s   fa0, fa0
     cvt.s.w     fv0, fa0
     jr          ra
-END(nearbyintf)
+END(__fround)
 
-LEAF(nearbyint)
+LEAF(__round)
     round.w.d   fa0, fa0
     cvt.d.w     fv0, fa0
     jr          ra
-END(nearbyint)
+END(__round)
 
-LEAF(lnearbyintf)
+LEAF(__ifround)
     round.w.s   ft0, fa0
     mfc1        v0, ft0
     jr          ra
-END(lnearbyintf)
+END(__ifround)
 
-LEAF(lnearbyint)
+LEAF(__iround)
     round.w.d   ft0, fa0
     mfc1        v0, ft0
     jr          ra
-END(lnearbyint)
+END(__iround)
 
-LEAF(roundf)
+LEAF(__frint)
     li.s        ft0, 0.5
     add.s       fv0, fa0, ft0
     floor.w.s   fv0, fv0
     cvt.s.w     fv0, fv0
     jr          ra
-END(roundf)
+END(__frint)
 
-LEAF(round)
+LEAF(__rint)
     li.d        ft0, 0.5
     add.d       fv0, fa0, ft0
     floor.w.d   fv0, fv0
     cvt.d.w     fv0, fv0
     jr          ra
-END(round)
+END(__rint)
 
-LEAF(lroundf)
+LEAF(__ifrint)
     li.s        ft0, 0.5
     add.s       fv0, fa0, ft0
     floor.w.s   fv0, fv0
     mfc1        v0, fv0
     jr          ra
-END(lroundf)
+END(__ifrint)
 
-LEAF(lround)
+LEAF(__irint)
     li.d        ft0, 0.5
     add.d       fv0, fa0, ft0
     floor.w.d   fv0, fv0
     mfc1        v0, fv0
     jr          ra
-END(lround)
+END(__irint)

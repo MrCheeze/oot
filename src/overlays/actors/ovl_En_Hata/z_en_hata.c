@@ -9,10 +9,10 @@
 
 #define FLAGS 0
 
-void EnHata_Init(Actor* thisx, PlayState* play);
-void EnHata_Destroy(Actor* thisx, PlayState* play);
-void EnHata_Update(Actor* thisx, PlayState* play2);
-void EnHata_Draw(Actor* thisx, PlayState* play);
+void En_Hata_Actor_ct(Actor* thisx, PlayState* play);
+void En_Hata_Actor_dt(Actor* thisx, PlayState* play);
+void En_Hata_Actor_move(Actor* thisx, PlayState* play2);
+void En_Hata_Actor_draw(Actor* thisx, PlayState* play);
 
 ActorProfile En_Hata_Profile = {
     /**/ ACTOR_EN_HATA,
@@ -20,14 +20,14 @@ ActorProfile En_Hata_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_HATA,
     /**/ sizeof(EnHata),
-    /**/ EnHata_Init,
-    /**/ EnHata_Destroy,
-    /**/ EnHata_Update,
-    /**/ EnHata_Draw,
+    /**/ En_Hata_Actor_ct,
+    /**/ En_Hata_Actor_dt,
+    /**/ En_Hata_Actor_move,
+    /**/ En_Hata_Actor_draw,
 };
 
 // Unused Collider and CollisionCheck data
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit HataPipeInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -47,37 +47,37 @@ static ColliderCylinderInit sCylinderInit = {
     { 16, 246, 0, { 0, 0, 0 } },
 };
 
-static CollisionCheckInfoInit2 sColChkInfoInit = { 0, 0, 0, 0, MASS_IMMOVABLE };
+static CollisionCheckInfoInit2 HataStatusData = { 0, 0, 0, 0, MASS_IMMOVABLE };
 
-void EnHata_Init(Actor* thisx, PlayState* play) {
+void En_Hata_Actor_ct(Actor* thisx, PlayState* play) {
     EnHata* this = (EnHata*)thisx;
     s32 pad;
     CollisionHeader* colHeader = NULL;
-    f32 frameCount = Animation_GetLastFrame(&gFlagpoleFlapAnim);
+    f32 frameCount = Si2_anime_end_frame(&gFlagpoleFlapAnim);
 
-    Actor_SetScale(&this->dyna.actor, 1.0f / 75.0f);
-    SkelAnime_Init(play, &this->skelAnime, &gFlagpoleSkel, &gFlagpoleFlapAnim, NULL, NULL, 0);
-    Animation_Change(&this->skelAnime, &gFlagpoleFlapAnim, 1.0f, 0.0f, frameCount, ANIMMODE_LOOP, 0.0f);
-    DynaPolyActor_Init(&this->dyna, 0);
-    CollisionHeader_GetVirtual(&gFlagpoleCol, &colHeader);
-    this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
+    Actor_set_scale(&this->dyna.actor, 1.0f / 75.0f);
+    Skeleton_Info2_M_ct(play, &this->skelAnime, &gFlagpoleSkel, &gFlagpoleFlapAnim, NULL, NULL, 0);
+    Skeleton_Info2_init(&this->skelAnime, &gFlagpoleFlapAnim, 1.0f, 0.0f, frameCount, ANIMMODE_LOOP, 0.0f);
+    MoveBG_ct(&this->dyna, 0);
+    DynaPolyUty_bgdi_SG2KSG(&gFlagpoleCol, &colHeader);
+    this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
     this->dyna.actor.cullingVolumeScale = 500.0f;
     this->dyna.actor.cullingVolumeDownward = 550.0f;
     this->dyna.actor.cullingVolumeDistance = 2200.0f;
     this->invScale = 6;
     this->maxStep = 1000;
     this->minStep = 1;
-    this->unk_278 = Rand_ZeroOne() * 0xFFFF;
+    this->unk_278 = fqrand() * 0xFFFF;
 }
 
-void EnHata_Destroy(Actor* thisx, PlayState* play) {
+void En_Hata_Actor_dt(Actor* thisx, PlayState* play) {
     EnHata* this = (EnHata*)thisx;
 
-    SkelAnime_Free(&this->skelAnime, play);
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+    Skeleton_Info_dt(&this->skelAnime, play);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
 }
 
-void EnHata_Update(Actor* thisx, PlayState* play2) {
+void En_Hata_Actor_move(Actor* thisx, PlayState* play2) {
     PlayState* play = play2;
     EnHata* this = (EnHata*)thisx;
     s32 pitch;
@@ -85,7 +85,7 @@ void EnHata_Update(Actor* thisx, PlayState* play2) {
     Vec3f windVec;
     f32 sin;
 
-    SkelAnime_Update(&this->skelAnime);
+    Skeleton_Info2_anime_play(&this->skelAnime);
     // Rotate to hang down by default
     this->limbs[FLAGPOLE_LIMB_FLAG_1_BASE].y = this->limbs[FLAGPOLE_LIMB_FLAG_2_BASE].y = -0x4000;
     windVec.x = play->envCtx.windDirection.x;
@@ -100,25 +100,25 @@ void EnHata_Update(Actor* thisx, PlayState* play2) {
         play->envCtx.windSpeed = 0.0f;
     }
 
-    if (Rand_ZeroOne() > 0.5f) {
+    if (fqrand() > 0.5f) {
         this->unk_278 += 6000;
     } else {
         this->unk_278 += 3000;
     }
 
     // Mimic varying wind gusts
-    sin = Math_SinS(this->unk_278) * 80.0f;
-    pitch = -Math_Vec3f_Pitch(&zeroVec, &windVec);
+    sin = sin_s(this->unk_278) * 80.0f;
+    pitch = -search_position_angleX(&zeroVec, &windVec);
     pitch = ((s32)((15000 - pitch) * (1.0f - (play->envCtx.windSpeed / (255.0f - sin))))) + pitch;
-    Math_SmoothStepToS(&this->limbs[FLAGPOLE_LIMB_FLAG_1_HOIST_END_BASE].y, pitch, this->invScale, this->maxStep,
+    add_calc_short_angle2(&this->limbs[FLAGPOLE_LIMB_FLAG_1_HOIST_END_BASE].y, pitch, this->invScale, this->maxStep,
                        this->minStep);
     this->limbs[FLAGPOLE_LIMB_FLAG_2_HOIST_END_BASE].y = this->limbs[FLAGPOLE_LIMB_FLAG_1_HOIST_END_BASE].y;
-    this->limbs[FLAGPOLE_LIMB_FLAG_1_HOIST_END_BASE].z = -Math_Vec3f_Yaw(&zeroVec, &windVec);
+    this->limbs[FLAGPOLE_LIMB_FLAG_1_HOIST_END_BASE].z = -search_position_angleY(&zeroVec, &windVec);
     this->limbs[FLAGPOLE_LIMB_FLAG_2_HOIST_END_BASE].z = this->limbs[FLAGPOLE_LIMB_FLAG_1_HOIST_END_BASE].z;
-    this->skelAnime.playSpeed = (Rand_ZeroFloat(1.25f) + 2.75f) * (play->envCtx.windSpeed / 255.0f);
+    this->skelAnime.playSpeed = (rnd_f(1.25f) + 2.75f) * (play->envCtx.windSpeed / 255.0f);
 }
 
-s32 EnHata_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+s32 En_Hata_before_display(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     EnHata* this = (EnHata*)thisx;
     Vec3s* limbs;
 
@@ -132,14 +132,14 @@ s32 EnHata_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* 
     return false;
 }
 
-void EnHata_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
+void En_Hata_after_display(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
 }
 
-void EnHata_Draw(Actor* thisx, PlayState* play) {
+void En_Hata_Actor_draw(Actor* thisx, PlayState* play) {
     EnHata* this = (EnHata*)thisx;
 
-    Gfx_SetupDL_37Opa(play->state.gfxCtx);
-    Matrix_Scale(1.0f, 1.1f, 1.0f, MTXMODE_APPLY);
-    SkelAnime_DrawOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, EnHata_OverrideLimbDraw,
-                      EnHata_PostLimbDraw, this);
+    _polygon_z_light_fog_prim(play->state.gfxCtx);
+    Matrix_scale(1.0f, 1.1f, 1.0f, MTXMODE_APPLY);
+    Si2_draw(play, this->skelAnime.skeleton, this->skelAnime.jointTable, En_Hata_before_display,
+                      En_Hata_after_display, this);
 }

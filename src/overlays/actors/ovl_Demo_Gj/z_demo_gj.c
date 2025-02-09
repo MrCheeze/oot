@@ -25,12 +25,12 @@
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED)
 
-void DemoGj_Init(Actor* thisx, PlayState* play);
-void DemoGj_Destroy(Actor* thisx, PlayState* play);
-void DemoGj_Update(Actor* thisx, PlayState* play);
-void DemoGj_Draw(Actor* thisx, PlayState* play);
+void Demo_Gj_Actor_ct(Actor* thisx, PlayState* play);
+void Demo_Gj_Actor_dt(Actor* thisx, PlayState* play);
+void Demo_Gj_main(Actor* thisx, PlayState* play);
+void Demo_Gj_draw(Actor* thisx, PlayState* play);
 
-static ColliderCylinderInitType1 sCylinderInit1 = {
+static ColliderCylinderInitType1 Demo_Gj_after1_OcInfoData_forStand = {
     {
         COL_MATERIAL_HIT0,
         AT_NONE,
@@ -49,7 +49,7 @@ static ColliderCylinderInitType1 sCylinderInit1 = {
     { 30, 100, 0, { 0, 0, 0 } },
 };
 
-static ColliderCylinderInitType1 sCylinderInit2 = {
+static ColliderCylinderInitType1 Demo_Gj_after2_OcInfoData_forStand = {
     {
         COL_MATERIAL_HIT0,
         AT_NONE,
@@ -68,7 +68,7 @@ static ColliderCylinderInitType1 sCylinderInit2 = {
     { 25, 110, 0, { 0, 0, 0 } },
 };
 
-static ColliderCylinderInitType1 sCylinderInit3 = {
+static ColliderCylinderInitType1 Demo_Gj_after7_OcInfoData_forStand = {
     {
         COL_MATERIAL_HIT0,
         AT_NONE,
@@ -91,114 +91,114 @@ typedef void (*DemoGjUpdateFunc)(DemoGj*, PlayState*);
 typedef void (*DemoGjDrawFunc)(DemoGj*, PlayState*);
 
 // bits 11-15
-s32 DemoGj_GetCollectibleType(DemoGj* this) {
+s32 Demo_Gj_GetUpper_arg_data(DemoGj* this) {
     s32 type = PARAMS_GET_U(this->dyna.actor.params, 11, 5);
 
     return type;
 }
 
 // bits 8-10
-s32 DemoGj_GetCollectibleAmount(DemoGj* this) {
+s32 Demo_Gj_GetMidder_arg_data(DemoGj* this) {
     s32 amount = PARAMS_GET_U(this->dyna.actor.params, 8, 3);
 
     return amount;
 }
 
 // bits 0-7
-s32 DemoGj_GetType(DemoGj* this) {
+s32 Demo_Gj_GetLower_arg_data(DemoGj* this) {
     s32 type = PARAMS_GET_U(this->dyna.actor.params, 0, 8);
 
     return type;
 }
 
-void DemoGj_InitCylinder(DemoGj* this, PlayState* play, ColliderCylinder* cylinder,
+void Demo_Gj_ct_forCorect(DemoGj* this, PlayState* play, ColliderCylinder* cylinder,
                          ColliderCylinderInitType1* cylinderInit) {
-    Collider_InitCylinder(play, cylinder);
-    Collider_SetCylinderType1(play, cylinder, &this->dyna.actor, cylinderInit);
+    ClObjPipe_ct(play, cylinder);
+    ClObjPipe_set3(play, cylinder, &this->dyna.actor, cylinderInit);
 }
 
-s32 DemoGj_HitByExplosion(DemoGj* this, PlayState* play, ColliderCylinder* cylinder) {
-    if (Actor_GetCollidedExplosive(play, &cylinder->base) != NULL) {
+s32 Demo_Gj_Check_Break_forStand(DemoGj* this, PlayState* play, ColliderCylinder* cylinder) {
+    if (BlastVsMyCheck(play, &cylinder->base) != NULL) {
         return true;
     }
     return false;
 }
 
-void DemoGj_DestroyCylinder(DemoGj* this, PlayState* play) {
-    switch (DemoGj_GetType(this)) {
+void Demo_Gj_dt_forCorect(DemoGj* this, PlayState* play) {
+    switch (Demo_Gj_GetLower_arg_data(this)) {
         case DEMOGJ_TYPE_DESTRUCTABLE_RUBBLE_1:
-            Collider_DestroyCylinder(play, &this->cylinders[0]);
-            Collider_DestroyCylinder(play, &this->cylinders[1]);
-            Collider_DestroyCylinder(play, &this->cylinders[2]);
+            ClObjPipe_dt(play, &this->cylinders[0]);
+            ClObjPipe_dt(play, &this->cylinders[1]);
+            ClObjPipe_dt(play, &this->cylinders[2]);
             break;
 
         case DEMOGJ_TYPE_DESTRUCTABLE_RUBBLE_2:
-            Collider_DestroyCylinder(play, &this->cylinders[0]);
-            Collider_DestroyCylinder(play, &this->cylinders[1]);
-            Collider_DestroyCylinder(play, &this->cylinders[2]);
+            ClObjPipe_dt(play, &this->cylinders[0]);
+            ClObjPipe_dt(play, &this->cylinders[1]);
+            ClObjPipe_dt(play, &this->cylinders[2]);
             break;
 
         case DEMOGJ_TYPE_DESTRUCTABLE_RUBBLE_TALL:
-            Collider_DestroyCylinder(play, &this->cylinders[0]);
+            ClObjPipe_dt(play, &this->cylinders[0]);
             break;
     }
 }
 
-void DemoGj_Destroy(Actor* thisx, PlayState* play) {
+void Demo_Gj_Actor_dt(Actor* thisx, PlayState* play) {
     DemoGj* this = (DemoGj*)thisx;
 
-    DemoGj_DestroyCylinder(this, play);
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+    Demo_Gj_dt_forCorect(this, play);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
 }
 
-void DemoGj_PlayExplosionSfx(DemoGj* this, PlayState* play) {
-    SfxSource_PlaySfxAtFixedWorldPos(play, &this->dyna.actor.world.pos, 50, NA_SE_EV_GRAVE_EXPLOSION);
+void Demo_Gj_Set_BreakSound(DemoGj* this, PlayState* play) {
+    Effect_SE_Info_new(play, &this->dyna.actor.world.pos, 50, NA_SE_EV_GRAVE_EXPLOSION);
 }
 
-void DemoGj_SpawnSmoke(PlayState* play, Vec3f* pos, f32 arg2) {
-    static Vec3f velocity = { 0.0f, 6.0f, 0.0f };
-    static Vec3f accel = { 0.0f, 0.0f, 0.0f };
-    static Color_RGBA8 primColor = { 0, 0, 0, 0 };
-    static Color_RGBA8 envColor = { 0, 0, 0, 0 };
+void Birth1_Dust_In_Demo_Gj(PlayState* play, Vec3f* pos, f32 arg2) {
+    static Vec3f vec = { 0.0f, 6.0f, 0.0f };
+    static Vec3f acc = { 0.0f, 0.0f, 0.0f };
+    static Color_RGBA8 prim = { 0, 0, 0, 0 };
+    static Color_RGBA8 env = { 0, 0, 0, 0 };
     f32 temp = arg2 * 0.2f;
 
     if (1) {}
-    func_800283D4(play, pos, &velocity, &accel, &primColor, &envColor, temp * Rand_ZeroOne() + arg2, 15, 90);
+    Effect_SS_Dust_sc_cl_co_li_ct(play, pos, &vec, &acc, &prim, &env, temp * fqrand() + arg2, 15, 90);
 }
 
-void DemoGj_DropCollectible(DemoGj* this, PlayState* play) {
+void Birth_Item_In_Demo_Gj(DemoGj* this, PlayState* play) {
     Vec3f* pos = &this->dyna.actor.world.pos;
-    s16 collectible = DemoGj_GetCollectibleType(this);
-    s32 amount = DemoGj_GetCollectibleAmount(this);
+    s16 collectible = Demo_Gj_GetUpper_arg_data(this);
+    s32 amount = Demo_Gj_GetMidder_arg_data(this);
     s32 i;
 
     for (i = 0; i < amount; i++) {
-        Item_DropCollectible(play, pos, collectible);
+        Item_set0(play, pos, collectible);
     }
 }
 
-void DemoGj_Explode(DemoGj* this, PlayState* play, Vec3f* initialPos, Vec3f* direction) {
+void Birth_Effect_Piece_In_Demo_Gj(DemoGj* this, PlayState* play, Vec3f* initialPos, Vec3f* direction) {
     Vec3f explosionPos;
-    Vec3f velocity;
+    Vec3f vec;
     s32 phi_s0;
     f32 aux;
     s16 theta = 0;
     s32 i;
 
     for (i = 0; i < 6; i++) {
-        explosionPos.x = Math_SinS(theta) * 16.0f;
-        explosionPos.y = (Rand_ZeroOne() * 5.0f) + 2.0f;
-        explosionPos.z = Math_CosS(theta) * 16.0f;
+        explosionPos.x = sin_s(theta) * 16.0f;
+        explosionPos.y = (fqrand() * 5.0f) + 2.0f;
+        explosionPos.z = cos_s(theta) * 16.0f;
 
-        velocity.x = (explosionPos.x * 0.6f) + (12.0f * direction->x);
-        velocity.y = (Rand_ZeroOne() * 36.0f) + 6.0f;
-        velocity.z = (explosionPos.z * 0.6f) + (12.0f * direction->z);
+        vec.x = (explosionPos.x * 0.6f) + (12.0f * direction->x);
+        vec.y = (fqrand() * 36.0f) + 6.0f;
+        vec.z = (explosionPos.z * 0.6f) + (12.0f * direction->z);
 
         explosionPos.x += initialPos->x;
         explosionPos.y += initialPos->y;
         explosionPos.z += initialPos->z;
 
-        aux = Rand_ZeroOne();
+        aux = fqrand();
         if (aux < 0.1f) {
             phi_s0 = 0x61;
         } else if (aux < 0.7f) {
@@ -207,24 +207,24 @@ void DemoGj_Explode(DemoGj* this, PlayState* play, Vec3f* initialPos, Vec3f* dir
             phi_s0 = 0x21;
         }
 
-        EffectSsKakera_Spawn(play, &explosionPos, &velocity, initialPos, -200, phi_s0, 10, 10, 0,
-                             Rand_ZeroOne() * 20.0f + 20.0f, 20, 300, (s32)(Rand_ZeroOne() * 30.0f) + 30, -1,
+        Effect_Kakera_ct2(play, &explosionPos, &vec, initialPos, -200, phi_s0, 10, 10, 0,
+                             fqrand() * 20.0f + 20.0f, 20, 300, (s32)(fqrand() * 30.0f) + 30, -1,
                              OBJECT_GEFF, &gGanonsCastleRubbleAroundArenaDL[28]);
 
         theta += 0x2AAA;
     }
 
-    DemoGj_PlayExplosionSfx(this, play);
+    Demo_Gj_Set_BreakSound(this, play);
 }
 
-s32 DemoGj_IsCutsceneLayer(void) {
+s32 Demo_Gj_Check_DemoScene(void) {
     if (!IS_CUTSCENE_LAYER) {
         return false;
     }
     return true;
 }
 
-s32 DemoGj_FindGanon(DemoGj* this, PlayState* play) {
+s32 Demo_Gj_Search_Boss_Ganon(DemoGj* this, PlayState* play) {
     Actor* actor;
 
     if (this->ganon == NULL) {
@@ -249,42 +249,42 @@ s32 DemoGj_FindGanon(DemoGj* this, PlayState* play) {
     //! so it doesn't matter.
 }
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_STOP),
 };
 
-void DemoGj_InitCommon(DemoGj* this, PlayState* play, CollisionHeader* header) {
+void Demo_Gj_Actor_init_BGdata_common(DemoGj* this, PlayState* play, CollisionHeader* header) {
     s32 pad[3];
     CollisionHeader* newHeader;
 
     if (header != NULL) {
-        Actor_ProcessInitChain(&this->dyna.actor, sInitChain);
-        DynaPolyActor_Init(&this->dyna, 0);
+        ValueSet_process(&this->dyna.actor, value_init);
+        MoveBG_ct(&this->dyna, 0);
         newHeader = NULL;
-        CollisionHeader_GetVirtual(header, &newHeader);
-        this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, &this->dyna.actor, newHeader);
+        DynaPolyUty_bgdi_SG2KSG(header, &newHeader);
+        this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, &this->dyna.actor, newHeader);
     }
 }
 
 // TODO: find a better name
-s32 DemoGj_InitSetIndices(DemoGj* this, PlayState* play, s32 updateMode, s32 drawConfig, CollisionHeader* header) {
-    if (!DemoGj_IsCutsceneLayer()) {
+s32 Demo_Gj_Actor_init_battle_common(DemoGj* this, PlayState* play, s32 updateMode, s32 drawConfig, CollisionHeader* header) {
+    if (!Demo_Gj_Check_DemoScene()) {
         this->updateMode = updateMode;
         this->drawConfig = drawConfig;
-        DemoGj_InitCommon(this, play, header);
+        Demo_Gj_Actor_init_BGdata_common(this, play, header);
         return true;
     }
-    Actor_Kill(&this->dyna.actor);
+    Actor_delete(&this->dyna.actor);
     return false;
 }
 
-void DemoGj_DrawCommon(DemoGj* this, PlayState* play, Gfx* displayList) {
+void Demo_Gj_draw_normal_common(DemoGj* this, PlayState* play, Gfx* displayList) {
     if (!DEBUG_FEATURES || kREG(0) == 0) {
         GraphicsContext* gfxCtx = play->state.gfxCtx;
 
         OPEN_DISPS(gfxCtx, "../z_demo_gj.c", 1163);
 
-        Gfx_SetupDL_25Opa(gfxCtx);
+        _texture_z_light_fog_prim(gfxCtx);
 
         gSPMatrix(POLY_OPA_DISP++, MATRIX_FINALIZE(gfxCtx, "../z_demo_gj.c", 1165),
                   G_MTX_PUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
@@ -296,7 +296,7 @@ void DemoGj_DrawCommon(DemoGj* this, PlayState* play, Gfx* displayList) {
     }
 }
 
-void DemoGj_DrawRotated(DemoGj* this, PlayState* play, Gfx* displayList) {
+void Demo_Gj_draw_move_common(DemoGj* this, PlayState* play, Gfx* displayList) {
     s32 pad;
     GraphicsContext* gfxCtx;
     s16 x = this->rotationVec.x;
@@ -310,12 +310,12 @@ void DemoGj_DrawRotated(DemoGj* this, PlayState* play, Gfx* displayList) {
 
     OPEN_DISPS(gfxCtx, "../z_demo_gj.c", 1187);
 
-    Matrix_Push();
-    Matrix_RotateZYX(x, y, z, MTXMODE_APPLY);
+    Matrix_push();
+    Matrix_rotateXYZ(x, y, z, MTXMODE_APPLY);
     MATRIX_TO_MTX(matrix, "../z_demo_gj.c", 1193);
-    Matrix_Pop();
+    Matrix_pull();
 
-    Gfx_SetupDL_25Opa(gfxCtx);
+    _texture_z_light_fog_prim(gfxCtx);
 
     gSPMatrix(POLY_OPA_DISP++, matrix, G_MTX_PUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
     gSPDisplayList(POLY_OPA_DISP++, displayList);
@@ -324,7 +324,7 @@ void DemoGj_DrawRotated(DemoGj* this, PlayState* play, Gfx* displayList) {
     CLOSE_DISPS(gfxCtx, "../z_demo_gj.c", 1201);
 }
 
-void DemoGj_SetupRotation(DemoGj* this, PlayState* play) {
+void Demo_Gj_common_Reflect(DemoGj* this, PlayState* play) {
     f32 yPosition = this->dyna.actor.world.pos.y;
     f32* yVelocity = &this->dyna.actor.velocity.y;
     f32* speedXZ = &this->dyna.actor.speed;
@@ -334,7 +334,7 @@ void DemoGj_SetupRotation(DemoGj* this, PlayState* play) {
     f32 verticalFactor;
     f32 xzPlaneFactor;
 
-    switch (DemoGj_GetType(this)) {
+    switch (Demo_Gj_GetLower_arg_data(this)) {
         case DEMOGJ_TYPE_RUBBLE_PILE_1:
             verticalTranslation = kREG(23);
             vec.x = kREG(24) * 0.01f + 1.0f;
@@ -434,7 +434,7 @@ void DemoGj_SetupRotation(DemoGj* this, PlayState* play) {
  * `ganon->unk_314` can have the following values:
  *  0: Before the battle has started.
  *  1: When is set: Ganondorf starts rising from the rubble.
- *     What is happening: Ganondorf is moving vertically and has vertical velocity.
+ *     What is happening: Ganondorf is moving vertically and has vertical vec.
  *     Proposed name: BOSSGANON2_MODE_GANONDORF_RISING
  *  2: When is set: Ganondorf has stopped rising in air.
  *     What is happening: The camera is in front of him, focusing the clouds and going down to focus him.
@@ -450,7 +450,7 @@ void DemoGj_SetupRotation(DemoGj* this, PlayState* play) {
  * Those values should probably be defined as macros or enums in `ovl_Boss_Ganon2/z_boss_ganon2.h`.
  * Proposed name for the function: `s32 DemoGj_CheckGanonMode(DemoGj* this, u8 mode)`
  */
-s32 func_809797E4(DemoGj* this, u8 arg1) {
+s32 Demo_Gj_Check_demo_info(DemoGj* this, u8 arg1) {
     BossGanon2* ganon = this->ganon;
 
     if ((ganon != NULL) && (ganon->unk_314 == arg1)) {
@@ -459,16 +459,16 @@ s32 func_809797E4(DemoGj* this, u8 arg1) {
     return false;
 }
 
-s32 DemoGj_IsGanondorfRisingFromRubble(DemoGj* this, PlayState* play) {
-    return func_809797E4(this, 1);
+s32 Demo_Gj_Check_StandToMove_common(DemoGj* this, PlayState* play) {
+    return Demo_Gj_Check_demo_info(this, 1);
 }
 
 // Ganondorf has stopped rising into the air and is just floating. Just before he transforms.
-s32 DemoGj_IsGanondorfFloatingInAir(DemoGj* this, PlayState* play) {
-    return func_809797E4(this, 2);
+s32 Demo_Gj_Check_MoveToStop_common(DemoGj* this, PlayState* play) {
+    return Demo_Gj_Check_demo_info(this, 2);
 }
 
-void DemoGj_SetupMovement(DemoGj* this, PlayState* play) {
+void Demo_Gj_Setup_Move_common(DemoGj* this, PlayState* play) {
     Actor* actor = &this->dyna.actor;
     s32 pad;
     Vec3f* pos = &actor->world.pos;
@@ -481,7 +481,7 @@ void DemoGj_SetupMovement(DemoGj* this, PlayState* play) {
         zDistance = actor->world.pos.z - this->ganon->actor.world.pos.z;
         unk_172 = &this->unk_172;
 
-        switch (DemoGj_GetType(this)) {
+        switch (Demo_Gj_GetLower_arg_data(this)) {
             case DEMOGJ_TYPE_RUBBLE_PILE_1:
                 actor->speed = kREG(16) + 10.0f;
                 actor->velocity.y = kREG(17) + 40.0f;
@@ -566,16 +566,16 @@ void DemoGj_SetupMovement(DemoGj* this, PlayState* play) {
             zDistance = player->actor.world.pos.z - pos->z;
 
             if (xDistance != 0.0f || zDistance != 0.0f) {
-                actor->world.rot.y = RAD_TO_BINANG(Math_FAtan2F(xDistance, zDistance));
+                actor->world.rot.y = RAD_TO_BINANG(fatan2(xDistance, zDistance));
             }
         } else {
-            actor->world.rot.y = RAD_TO_BINANG(Math_FAtan2F(xDistance, zDistance));
+            actor->world.rot.y = RAD_TO_BINANG(fatan2(xDistance, zDistance));
         }
     }
 }
 
-void DemoGj_CheckIfTransformedIntoGanon(DemoGj* this) {
-    if (func_809797E4(this, 3)) {
+void Demo_Gj_Check_StopDust_common(DemoGj* this) {
+    if (Demo_Gj_Check_demo_info(this, 3)) {
         this->isTransformedIntoGanon = true;
     }
 }
@@ -602,133 +602,133 @@ void DemoGj_CheckIfTransformedIntoGanon(DemoGj* this) {
 
 #include "z_demo_gj_after7.inc.c"
 
-static DemoGjUpdateFunc sUpdateFuncs[] = {
-    DemoGj_UpdateRubbleAroundArena,
-    DemoGj_Update01,
-    DemoGj_Update02,
-    DemoGj_Update03,
-    DemoGj_Update04,
-    DemoGj_Update05,
-    DemoGj_Update06,
-    DemoGj_Update07,
-    DemoGj_Update08,
-    DemoGj_Update09,
-    DemoGj_Update10,
-    DemoGj_Update11,
-    DemoGj_Update12,
-    DemoGj_Update13,
-    DemoGj_Update14,
-    DemoGj_Update15,
-    DemoGj_Update16,
-    DemoGj_Update17,
-    DemoGj_Update18,
-    DemoGj_Update19,
-    DemoGj_Update20,
-};
+void Demo_Gj_main(Actor* thisx, PlayState* play) {
+    static DemoGjUpdateFunc proc[] = {
+        Demo_Gj_main_Stand_battle1,
+        Demo_Gj_main_Stand_battle2_1,
+        Demo_Gj_main_Stand_battle2_2,
+        Demo_Gj_main_Stand_battle2_3,
+        Demo_Gj_main_Stand_battle2_4,
+        Demo_Gj_main_Stand_battle2_5,
+        Demo_Gj_main_Stand_battle2_6,
+        Demo_Gj_main_Stand_battle2_7,
+        Demo_Gj_main_Move_battle2_1,
+        Demo_Gj_main_Move_battle2_2,
+        Demo_Gj_main_Move_battle2_3,
+        Demo_Gj_main_Move_battle2_4,
+        Demo_Gj_main_Move_battle2_5,
+        Demo_Gj_main_Move_battle2_6,
+        Demo_Gj_main_Move_battle2_7,
+        Demo_Gj_main_Wait_after1,
+        Demo_Gj_main_Wait_after2,
+        Demo_Gj_main_Wait_after7,
+        Demo_Gj_main_Battle_after1,
+        Demo_Gj_main_Battle_after2,
+        Demo_Gj_main_Battle_after7,
+    };
 
-void DemoGj_Update(Actor* thisx, PlayState* play) {
     DemoGj* this = (DemoGj*)thisx;
 
-    if (this->updateMode < 0 || this->updateMode >= ARRAY_COUNT(sUpdateFuncs) ||
-        sUpdateFuncs[this->updateMode] == NULL) {
+    if (this->updateMode < 0 || this->updateMode >= ARRAY_COUNT(proc) ||
+        proc[this->updateMode] == NULL) {
         // "The main mode is abnormal!!!!!!!!!!!!!!!!!!!!!!!!!"
         PRINTF(VT_FGCOL(RED) "メインモードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
         return;
     }
 
-    sUpdateFuncs[this->updateMode](this, play);
+    proc[this->updateMode](this, play);
 }
 
-void DemoGj_Init(Actor* thisx, PlayState* play) {
+void Demo_Gj_Actor_ct(Actor* thisx, PlayState* play) {
     DemoGj* this = (DemoGj*)thisx;
 
-    switch (DemoGj_GetType(this)) {
+    switch (Demo_Gj_GetLower_arg_data(this)) {
         case DEMOGJ_TYPE_AROUNDARENA:
-            DemoGj_InitRubbleAroundArena(this, play);
+            Demo_Gj_Actor_init_battle1(this, play);
             break;
 
         case DEMOGJ_TYPE_RUBBLE_PILE_1:
-            DemoGj_InitRubblePile1(this, play);
+            Demo_Gj_Actor_init_battle2_1(this, play);
             break;
 
         case DEMOGJ_TYPE_RUBBLE_PILE_2:
-            DemoGj_InitRubblePile2(this, play);
+            Demo_Gj_Actor_init_battle2_2(this, play);
             break;
 
         case DEMOGJ_TYPE_RUBBLE_PILE_3:
-            DemoGj_InitRubblePile3(this, play);
+            Demo_Gj_Actor_init_battle2_3(this, play);
             break;
 
         case DEMOGJ_TYPE_RUBBLE_PILE_4:
-            DemoGj_InitRubblePile4(this, play);
+            Demo_Gj_Actor_init_battle2_4(this, play);
             break;
 
         case DEMOGJ_TYPE_RUBBLE_PILE_5:
-            DemoGj_InitRubblePile5(this, play);
+            Demo_Gj_Actor_init_battle2_5(this, play);
             break;
 
         case DEMOGJ_TYPE_RUBBLE_PILE_6:
-            DemoGj_InitRubblePile6(this, play);
+            Demo_Gj_Actor_init_battle2_6(this, play);
             break;
 
         case DEMOGJ_TYPE_RUBBLE_PILE_7:
-            DemoGj_InitRubblePile7(this, play);
+            Demo_Gj_Actor_init_battle2_7(this, play);
             break;
 
         case DEMOGJ_TYPE_DESTRUCTABLE_RUBBLE_1:
-            DemoGj_InitDestructableRubble1(this, play);
+            Demo_Gj_Actor_init_after1(this, play);
             break;
 
         case DEMOGJ_TYPE_DESTRUCTABLE_RUBBLE_2:
-            DemoGj_InitDestructableRubble2(this, play);
+            Demo_Gj_Actor_init_after2(this, play);
             break;
 
         case DEMOGJ_TYPE_DESTRUCTABLE_RUBBLE_TALL:
-            DemoGj_InitDestructableRubbleTall(this, play);
+            Demo_Gj_Actor_init_after7(this, play);
             break;
 
         default:
             // "Demo_Gj_Actor_ct There is no such argument!!!!!!!!!!!!!!!!!!!!!!"
             PRINTF(VT_FGCOL(RED) "Demo_Gj_Actor_ct そんな引数は無い!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
-            Actor_Kill(&this->dyna.actor);
+            Actor_delete(&this->dyna.actor);
     }
 }
 
-void DemoGj_DrawNothing(DemoGj* this, PlayState* play) {
+void Demo_Gj_draw_none(DemoGj* this, PlayState* play) {
 }
 
-static DemoGjDrawFunc sDrawFuncs[] = {
-    DemoGj_DrawNothing,
-    DemoGj_DrawRubbleAroundArena,
-    DemoGj_DrawRubble2,
-    DemoGj_DrawRubble3,
-    DemoGj_DrawRubble4,
-    DemoGj_DrawRubble5,
-    DemoGj_DrawRubble6,
-    DemoGj_DrawRubble7,
-    DemoGj_DrawRubbleTall,
-    DemoGj_DrawRotatedRubble2,
-    DemoGj_DrawRotatedRubble3,
-    DemoGj_DrawRotatedRubble4,
-    DemoGj_DrawRotatedRubble5,
-    DemoGj_DrawRotatedRubble6,
-    DemoGj_DrawRotatedRubble7,
-    DemoGj_DrawRotatedRubbleTall,
-    DemoGj_DrawDestructableRubble1,
-    DemoGj_DemoGj_InitDestructableRubble2,
-    DemoGj_DemoGj_InitDestructableRubbleTall,
-};
+void Demo_Gj_draw(Actor* thisx, PlayState* play) {
+    static DemoGjDrawFunc proc[] = {
+        Demo_Gj_draw_none,
+        Demo_Gj_draw_normal_battle1,
+        Demo_Gj_draw_normal_battle2_1,
+        Demo_Gj_draw_normal_battle2_2,
+        Demo_Gj_draw_normal_battle2_3,
+        Demo_Gj_draw_normal_battle2_4,
+        Demo_Gj_draw_normal_battle2_5,
+        Demo_Gj_draw_normal_battle2_6,
+        Demo_Gj_draw_normal_battle2_7,
+        Demo_Gj_draw_move_battle2_1,
+        Demo_Gj_draw_move_battle2_2,
+        Demo_Gj_draw_move_battle2_3,
+        Demo_Gj_draw_move_battle2_4,
+        Demo_Gj_draw_move_battle2_5,
+        Demo_Gj_draw_move_battle2_6,
+        Demo_Gj_draw_move_battle2_7,
+        Demo_Gj_draw_normal_after1,
+        Demo_Gj_draw_normal_after2,
+        Demo_Gj_draw_normal_after7,
+    };
 
-void DemoGj_Draw(Actor* thisx, PlayState* play) {
     DemoGj* this = (DemoGj*)thisx;
 
-    if (this->drawConfig < 0 || this->drawConfig >= ARRAY_COUNT(sDrawFuncs) || sDrawFuncs[this->drawConfig] == NULL) {
+    if (this->drawConfig < 0 || this->drawConfig >= ARRAY_COUNT(proc) || proc[this->drawConfig] == NULL) {
         // "The drawing mode is abnormal!!!!!!!!!!!!!!!!!!!!!!!!!"
         PRINTF(VT_FGCOL(RED) "描画モードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
         return;
     }
 
-    sDrawFuncs[this->drawConfig](this, play);
+    proc[this->drawConfig](this, play);
 }
 
 ActorProfile Demo_Gj_Profile = {
@@ -737,8 +737,8 @@ ActorProfile Demo_Gj_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GJ,
     /**/ sizeof(DemoGj),
-    /**/ DemoGj_Init,
-    /**/ DemoGj_Destroy,
-    /**/ DemoGj_Update,
-    /**/ DemoGj_Draw,
+    /**/ Demo_Gj_Actor_ct,
+    /**/ Demo_Gj_Actor_dt,
+    /**/ Demo_Gj_main,
+    /**/ Demo_Gj_draw,
 };

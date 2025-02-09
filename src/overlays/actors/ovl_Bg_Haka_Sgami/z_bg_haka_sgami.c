@@ -26,13 +26,13 @@ typedef enum SpinningScytheTrapMode {
 
 #define SCYTHE_SPIN_TIME 32
 
-void BgHakaSgami_Init(Actor* thisx, PlayState* play);
-void BgHakaSgami_Destroy(Actor* thisx, PlayState* play);
-void BgHakaSgami_Update(Actor* thisx, PlayState* play);
-void BgHakaSgami_Draw(Actor* thisx, PlayState* play);
+void Bg_Haka_Sgami_actor_ct(Actor* thisx, PlayState* play);
+void Bg_Haka_Sgami_actor_dt(Actor* thisx, PlayState* play);
+void Bg_Haka_Sgami_actor_move(Actor* thisx, PlayState* play);
+void Bg_Haka_Sgami_actor_draw(Actor* thisx, PlayState* play);
 
-void BgHakaSgami_SetupSpin(BgHakaSgami* this, PlayState* play);
-void BgHakaSgami_Spin(BgHakaSgami* this, PlayState* play);
+static void mode_dma_wait(BgHakaSgami* this, PlayState* play);
+static void mode_rotate(BgHakaSgami* this, PlayState* play);
 
 ActorProfile Bg_Haka_Sgami_Profile = {
     /**/ ACTOR_BG_HAKA_SGAMI,
@@ -40,13 +40,13 @@ ActorProfile Bg_Haka_Sgami_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(BgHakaSgami),
-    /**/ BgHakaSgami_Init,
-    /**/ BgHakaSgami_Destroy,
-    /**/ BgHakaSgami_Update,
+    /**/ Bg_Haka_Sgami_actor_ct,
+    /**/ Bg_Haka_Sgami_actor_dt,
+    /**/ Bg_Haka_Sgami_actor_move,
     /**/ NULL,
 };
 
-static ColliderTrisElementInit sTrisElementsInit[4] = {
+static ColliderTrisElementInit HakaSgamiAtTrisElemData[4] = {
     {
         {
             ELEM_MATERIAL_UNK2,
@@ -93,7 +93,7 @@ static ColliderTrisElementInit sTrisElementsInit[4] = {
     },
 };
 
-static ColliderTrisInit sTrisInit = {
+static ColliderTrisInit HakaSgamiAtTrisData = {
     {
         COL_MATERIAL_NONE,
         AT_ON | AT_TYPE_ENEMY,
@@ -103,10 +103,10 @@ static ColliderTrisInit sTrisInit = {
         COLSHAPE_TRIS,
     },
     4,
-    sTrisElementsInit,
+    HakaSgamiAtTrisElemData,
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit HakaSgamiOcPipeData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -126,25 +126,25 @@ static ColliderCylinderInit sCylinderInit = {
     { 80, 130, 0, { 0, 0, 0 } },
 };
 
-static CollisionCheckInfoInit sColChkInfoInit = { 0, 80, 130, MASS_IMMOVABLE };
+static CollisionCheckInfoInit HakaSgamiStatusData = { 0, 80, 130, MASS_IMMOVABLE };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_F32(cullingVolumeScale, 1000, ICHAIN_CONTINUE),
     ICHAIN_U8(attentionRangeType, ATTENTION_RANGE_4, ICHAIN_CONTINUE),
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_STOP),
 };
 
-void BgHakaSgami_Init(Actor* thisx, PlayState* play) {
-    static u8 sP1StartColor[] = { 250, 250, 250, 200 };
-    static u8 sP2StartColor[] = { 200, 200, 200, 130 };
-    static u8 sP1EndColor[] = { 200, 200, 200, 60 };
-    static u8 sP2EndColor[] = { 150, 150, 150, 20 };
+void Bg_Haka_Sgami_actor_ct(Actor* thisx, PlayState* play) {
+    static u8 start_top[] = { 250, 250, 250, 200 };
+    static u8 start_root[] = { 200, 200, 200, 130 };
+    static u8 end_top[] = { 200, 200, 200, 60 };
+    static u8 end_root[] = { 150, 150, 150, 20 };
     BgHakaSgami* this = (BgHakaSgami*)thisx;
     EffectBlureInit1 blureInit;
     s32 i;
     ColliderTris* colliderScythe = &this->colliderScythe;
 
-    Actor_ProcessInitChain(thisx, sInitChain);
+    ValueSet_process(thisx, value_init);
 
     this->unk_151 = PARAMS_GET_U(thisx->params, 0, 8);
     thisx->params = PARAMS_GET_U(thisx->params, 8, 8);
@@ -153,72 +153,72 @@ void BgHakaSgami_Init(Actor* thisx, PlayState* play) {
         thisx->flags |= ACTOR_FLAG_REACT_TO_LENS;
     }
 
-    Collider_InitTris(play, colliderScythe);
-    Collider_SetTris(play, colliderScythe, thisx, &sTrisInit, this->colliderScytheItems);
-    Collider_InitCylinder(play, &this->colliderScytheCenter);
-    Collider_SetCylinder(play, &this->colliderScytheCenter, thisx, &sCylinderInit);
+    ClObjTris_ct(play, colliderScythe);
+    ClObjTris_set5_nzm(play, colliderScythe, thisx, &HakaSgamiAtTrisData, this->colliderScytheItems);
+    ClObjPipe_ct(play, &this->colliderScytheCenter);
+    ClObjPipe_set5(play, &this->colliderScytheCenter, thisx, &HakaSgamiOcPipeData);
 
     this->colliderScytheCenter.dim.pos.x = thisx->world.pos.x;
     this->colliderScytheCenter.dim.pos.y = thisx->world.pos.y;
     this->colliderScytheCenter.dim.pos.z = thisx->world.pos.z;
 
-    CollisionCheck_SetInfo(&thisx->colChkInfo, NULL, &sColChkInfoInit);
+    CollisionCheck_Status_set2(&thisx->colChkInfo, NULL, &HakaSgamiStatusData);
 
     for (i = 0; i < 4; i++) {
-        blureInit.p1StartColor[i] = sP1StartColor[i];
-        blureInit.p2StartColor[i] = sP2StartColor[i];
-        blureInit.p1EndColor[i] = sP1EndColor[i];
-        blureInit.p2EndColor[i] = sP2EndColor[i];
+        blureInit.p1StartColor[i] = start_top[i];
+        blureInit.p2StartColor[i] = start_root[i];
+        blureInit.p1EndColor[i] = end_top[i];
+        blureInit.p2EndColor[i] = end_root[i];
     }
     blureInit.elemDuration = 10;
     blureInit.unkFlag = false;
     blureInit.calcMode = 2;
-    Effect_Add(play, &this->blureEffectIndex[0], EFFECT_BLURE1, 0, 0, &blureInit);
-    Effect_Add(play, &this->blureEffectIndex[1], EFFECT_BLURE1, 0, 0, &blureInit);
+    EffectAdd(play, &this->blureEffectIndex[0], EFFECT_BLURE1, 0, 0, &blureInit);
+    EffectAdd(play, &this->blureEffectIndex[1], EFFECT_BLURE1, 0, 0, &blureInit);
 
     if (thisx->params == SCYTHE_TRAP_SHADOW_TEMPLE) {
-        this->requiredObjectSlot = Object_GetSlot(&play->objectCtx, OBJECT_HAKA_OBJECTS);
+        this->requiredObjectSlot = Object_Exchange_bank_check(&play->objectCtx, OBJECT_HAKA_OBJECTS);
         thisx->flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
     } else {
-        this->requiredObjectSlot = Object_GetSlot(&play->objectCtx, OBJECT_ICE_OBJECTS);
+        this->requiredObjectSlot = Object_Exchange_bank_check(&play->objectCtx, OBJECT_ICE_OBJECTS);
         this->colliderScytheCenter.dim.radius = 30;
         this->colliderScytheCenter.dim.height = 70;
-        Actor_SetFocus(thisx, 40.0f);
+        Actor_world_to_eye(thisx, 40.0f);
     }
 
     if (this->requiredObjectSlot < 0) {
-        Actor_Kill(thisx);
+        Actor_delete(thisx);
         return;
     }
 
-    this->actionFunc = BgHakaSgami_SetupSpin;
+    this->actionFunc = mode_dma_wait;
 }
 
-void BgHakaSgami_Destroy(Actor* thisx, PlayState* play) {
+void Bg_Haka_Sgami_actor_dt(Actor* thisx, PlayState* play) {
     BgHakaSgami* this = (BgHakaSgami*)thisx;
 
-    Effect_Delete(play, this->blureEffectIndex[0]);
-    Effect_Delete(play, this->blureEffectIndex[1]);
-    Collider_DestroyTris(play, &this->colliderScythe);
-    Collider_DestroyCylinder(play, &this->colliderScytheCenter);
+    EffectFreeIndex(play, this->blureEffectIndex[0]);
+    EffectFreeIndex(play, this->blureEffectIndex[1]);
+    ClObjTris_dt_nzf(play, &this->colliderScythe);
+    ClObjPipe_dt(play, &this->colliderScytheCenter);
 }
 
-void BgHakaSgami_SetupSpin(BgHakaSgami* this, PlayState* play) {
-    if (Object_IsLoaded(&play->objectCtx, this->requiredObjectSlot)) {
+static void mode_dma_wait(BgHakaSgami* this, PlayState* play) {
+    if (Object_Exchange_bank_dma_check(&play->objectCtx, this->requiredObjectSlot)) {
         this->actor.objectSlot = this->requiredObjectSlot;
-        this->actor.draw = BgHakaSgami_Draw;
+        this->actor.draw = Bg_Haka_Sgami_actor_draw;
         this->timer = SCYTHE_SPIN_TIME;
         this->actor.flags &= ~ACTOR_FLAG_UPDATE_CULLING_DISABLED;
-        this->actionFunc = BgHakaSgami_Spin;
+        this->actionFunc = mode_rotate;
     }
 }
 
-void BgHakaSgami_Spin(BgHakaSgami* this, PlayState* play) {
-    static Vec3f blureEffectVertices2[] = {
+static void mode_rotate(BgHakaSgami* this, PlayState* play) {
+    static Vec3f blure_root[] = {
         { -20.0f, 50.0f, 130.0f },
         { -50.0f, 33.0f, 20.0f },
     };
-    static Vec3f blureEffectVertices1[] = {
+    static Vec3f blure_top[] = {
         { 380.0f, 50.0f, 50.0f },
         { 310.0f, 33.0f, 0.0f },
     };
@@ -240,13 +240,13 @@ void BgHakaSgami_Spin(BgHakaSgami* this, PlayState* play) {
         this->timer = SCYTHE_SPIN_TIME;
     }
 
-    actorRotYSin = Math_SinS(this->actor.shape.rot.y);
-    actorRotYCos = Math_CosS(this->actor.shape.rot.y);
+    actorRotYSin = sin_s(this->actor.shape.rot.y);
+    actorRotYCos = cos_s(this->actor.shape.rot.y);
 
     iterateCount = (this->actor.params != 0) ? 4 : 2;
 
     for (i = iterateCount - 2; i < iterateCount; i++) {
-        elementInit = &sTrisInit.elements[i];
+        elementInit = &HakaSgamiAtTrisData.elements[i];
 
         for (j = 0; j < 3; j++) {
             scytheVertices[j].x = this->actor.world.pos.x + elementInit->dim.vtx[j].z * actorRotYSin +
@@ -256,61 +256,61 @@ void BgHakaSgami_Spin(BgHakaSgami* this, PlayState* play) {
                                   elementInit->dim.vtx[j].x * actorRotYSin;
         }
 
-        Collider_SetTrisVertices(&this->colliderScythe, i, &scytheVertices[0], &scytheVertices[1], &scytheVertices[2]);
+        CollisionCheck_Uty_setTrisPos(&this->colliderScythe, i, &scytheVertices[0], &scytheVertices[1], &scytheVertices[2]);
 
         for (j = 0; j < 3; j++) {
             scytheVertices[j].x = (2 * this->actor.world.pos.x) - scytheVertices[j].x;
             scytheVertices[j].z = (2 * this->actor.world.pos.z) - scytheVertices[j].z;
         }
 
-        Collider_SetTrisVertices(&this->colliderScythe, (i + 2) % 4, &scytheVertices[0], &scytheVertices[1],
+        CollisionCheck_Uty_setTrisPos(&this->colliderScythe, (i + 2) % 4, &scytheVertices[0], &scytheVertices[1],
                                  &scytheVertices[2]);
     }
 
     if ((this->unk_151 == 0) || play->actorCtx.lensActive) {
-        scytheVertices[0].x = this->actor.world.pos.x + blureEffectVertices1[this->actor.params].z * actorRotYSin +
-                              blureEffectVertices1[this->actor.params].x * actorRotYCos;
-        scytheVertices[0].y = this->actor.world.pos.y + blureEffectVertices1[this->actor.params].y;
-        scytheVertices[0].z = this->actor.world.pos.z + blureEffectVertices1[this->actor.params].z * actorRotYCos -
-                              blureEffectVertices1[this->actor.params].x * actorRotYSin;
-        scytheVertices[1].x = this->actor.world.pos.x + blureEffectVertices2[this->actor.params].z * actorRotYSin +
-                              blureEffectVertices2[this->actor.params].x * actorRotYCos;
-        scytheVertices[1].y = this->actor.world.pos.y + blureEffectVertices2[this->actor.params].y;
-        scytheVertices[1].z = this->actor.world.pos.z + blureEffectVertices2[this->actor.params].z * actorRotYCos -
-                              blureEffectVertices2[this->actor.params].x * actorRotYSin;
-        EffectBlure_AddVertex(Effect_GetByIndex(this->blureEffectIndex[0]), &scytheVertices[0], &scytheVertices[1]);
+        scytheVertices[0].x = this->actor.world.pos.x + blure_top[this->actor.params].z * actorRotYSin +
+                              blure_top[this->actor.params].x * actorRotYCos;
+        scytheVertices[0].y = this->actor.world.pos.y + blure_top[this->actor.params].y;
+        scytheVertices[0].z = this->actor.world.pos.z + blure_top[this->actor.params].z * actorRotYCos -
+                              blure_top[this->actor.params].x * actorRotYSin;
+        scytheVertices[1].x = this->actor.world.pos.x + blure_root[this->actor.params].z * actorRotYSin +
+                              blure_root[this->actor.params].x * actorRotYCos;
+        scytheVertices[1].y = this->actor.world.pos.y + blure_root[this->actor.params].y;
+        scytheVertices[1].z = this->actor.world.pos.z + blure_root[this->actor.params].z * actorRotYCos -
+                              blure_root[this->actor.params].x * actorRotYSin;
+        EffectBlure_edge_add(Effect_GetEffectMemoryPointer(this->blureEffectIndex[0]), &scytheVertices[0], &scytheVertices[1]);
 
         for (j = 0; j < 2; j++) {
             scytheVertices[j].x = (2 * this->actor.world.pos.x) - scytheVertices[j].x;
             scytheVertices[j].z = (2 * this->actor.world.pos.z) - scytheVertices[j].z;
         }
 
-        EffectBlure_AddVertex(Effect_GetByIndex(this->blureEffectIndex[1]), &scytheVertices[0], &scytheVertices[1]);
+        EffectBlure_edge_add(Effect_GetEffectMemoryPointer(this->blureEffectIndex[1]), &scytheVertices[0], &scytheVertices[1]);
     }
 
-    CollisionCheck_SetAT(play, &play->colChkCtx, &this->colliderScythe.base);
-    CollisionCheck_SetOC(play, &play->colChkCtx, &this->colliderScytheCenter.base);
-    Actor_PlaySfx_Flagged(&this->actor, NA_SE_EV_ROLLCUTTER_MOTOR - SFX_FLAG);
+    CollisionCheck_setAT(play, &play->colChkCtx, &this->colliderScythe.base);
+    CollisionCheck_setOC(play, &play->colChkCtx, &this->colliderScytheCenter.base);
+    Actor_level_SE_set(&this->actor, NA_SE_EV_ROLLCUTTER_MOTOR - SFX_FLAG);
 }
 
-void BgHakaSgami_Update(Actor* thisx, PlayState* play) {
+void Bg_Haka_Sgami_actor_move(Actor* thisx, PlayState* play) {
     BgHakaSgami* this = (BgHakaSgami*)thisx;
     Player* player = GET_PLAYER(play);
 
     if (!(player->stateFlags1 & (PLAYER_STATE1_TALKING | PLAYER_STATE1_DEAD | PLAYER_STATE1_28 | PLAYER_STATE1_29)) ||
-        (this->actionFunc == BgHakaSgami_SetupSpin)) {
+        (this->actionFunc == mode_dma_wait)) {
         this->actionFunc(this, play);
     }
 }
 
-void BgHakaSgami_Draw(Actor* thisx, PlayState* play) {
+void Bg_Haka_Sgami_actor_draw(Actor* thisx, PlayState* play) {
     BgHakaSgami* this = (BgHakaSgami*)thisx;
 
     if (this->unk_151 != 0) {
-        Gfx_DrawDListXlu(play, object_haka_objects_DL_00BF20);
+        Cheap_gfx_display_xlu(play, object_haka_objects_DL_00BF20);
     } else if (this->actor.params == SCYTHE_TRAP_SHADOW_TEMPLE) {
-        Gfx_DrawDListOpa(play, object_haka_objects_DL_00BF20);
+        Cheap_gfx_display(play, object_haka_objects_DL_00BF20);
     } else {
-        Gfx_DrawDListOpa(play, object_ice_objects_DL_0021F0);
+        Cheap_gfx_display(play, object_ice_objects_DL_0021F0);
     }
 }

@@ -39,86 +39,86 @@ typedef enum EnIkDamageEffect {
     /* 0xF */ EN_IK_DMGEFF_DAMAGE
 } EnIkDamageEffect;
 
-void EnIk_UpdateEnemy(Actor* thisx, PlayState* play);
-void EnIk_DrawEnemy(Actor* thisx, PlayState* play);
+void En_Ik_move(Actor* thisx, PlayState* play);
+void En_Ik_display(Actor* thisx, PlayState* play);
 
-void EnIk_SetupStandUp(EnIk* this);
-void EnIk_StandUp(EnIk* this, PlayState* play);
-void EnIk_Idle(EnIk* this, PlayState* play);
-void EnIk_SetupWalkOrRun(EnIk* this);
-void EnIk_WalkOrRun(EnIk* this, PlayState* play);
-void EnIk_SetupVerticalAttack(EnIk* this);
-void EnIk_VerticalAttack(EnIk* this, PlayState* play);
-void EnIk_SetupPullOutAxe(EnIk* this);
-void EnIk_PullOutAxe(EnIk* this, PlayState* play);
-void EnIk_SetupDoubleHorizontalAttack(EnIk* this);
-void EnIk_DoubleHorizontalAttack(EnIk* this, PlayState* play);
-void EnIk_SetupRecoverFromHorizontalAttack(EnIk* this);
-void EnIk_RecoverFromHorizontalAttack(EnIk* this, PlayState* play);
-void EnIk_SetupSingleHorizontalAttack(EnIk* this);
-void EnIk_SingleHorizontalAttack(EnIk* this, PlayState* play);
-void EnIk_SetupStopAndBlock(EnIk* this);
-void EnIk_StopAndBlock(EnIk* this, PlayState* play);
-void EnIk_ReactToAttack(EnIk* this, PlayState* play);
-void EnIk_Die(EnIk* this, PlayState* play);
+static void mode_wait_init(EnIk* this);
+static void mode_wait(EnIk* this, PlayState* play);
+static void mode_wait2(EnIk* this, PlayState* play);
+static void mode_walk_init(EnIk* this);
+static void mode_walk(EnIk* this, PlayState* play);
+static void mode_attack_init(EnIk* this);
+static void mode_attack(EnIk* this, PlayState* play);
+void mode_attack_end_init(EnIk* this);
+void mode_attack_end(EnIk* this, PlayState* play);
+static void mode_attack2_init(EnIk* this);
+static void mode_attack2(EnIk* this, PlayState* play);
+void mode_attack2_end_init(EnIk* this);
+void mode_attack2_end(EnIk* this, PlayState* play);
+void mode_attack3_init(EnIk* this);
+static void mode_attack3(EnIk* this, PlayState* play);
+static void mode_defense_init(EnIk* this);
+static void mode_defense(EnIk* this, PlayState* play);
+static void mode_dam(EnIk* this, PlayState* play);
+static void mode_down(EnIk* this, PlayState* play);
 
-void EnIk_HandleCsCues(EnIk* this, PlayState* play);
-void EnIk_ChangeToEnemy(EnIk* this, PlayState* play);
-void EnIk_StartDefeatCutscene(Actor* thisx, PlayState* play);
+void En_Ik_inConfrontion_Check_DemoMode(EnIk* this, PlayState* play);
+void En_Ik_Chenge_DemoToFight(EnIk* this, PlayState* play);
+void En_Ik_Chenge_FightToDemo(Actor* thisx, PlayState* play);
 
-void EnIk_Destroy(Actor* thisx, PlayState* play) {
+void En_Ik_Actor_dt(Actor* thisx, PlayState* play) {
     EnIk* this = (EnIk*)thisx;
 
-    if (Actor_FindNearby(play, &this->actor, ACTOR_EN_IK, ACTORCAT_ENEMY, 8000.0f) == NULL) {
-        func_800F5B58();
+    if (ActorSearch(play, &this->actor, ACTOR_EN_IK, ACTORCAT_ENEMY, 8000.0f) == NULL) {
+        Na_StopMiddleBossBgm();
     }
 
-    Collider_DestroyTris(play, &this->shieldCollider);
-    Collider_DestroyCylinder(play, &this->bodyCollider);
-    Collider_DestroyQuad(play, &this->axeCollider);
+    ClObjTris_dt_nzf(play, &this->shieldCollider);
+    ClObjPipe_dt(play, &this->bodyCollider);
+    ClObjSwrd_dt(play, &this->axeCollider);
 }
 
 #include "z_en_ik_inFight.inc.c"
 
 #include "z_en_ik_inConfrontion.inc.c"
 
-void EnIk_ChangeToEnemy(EnIk* this, PlayState* play) {
-    this->actor.update = EnIk_UpdateEnemy;
-    this->actor.draw = EnIk_DrawEnemy;
+void En_Ik_Chenge_DemoToFight(EnIk* this, PlayState* play) {
+    this->actor.update = En_Ik_move;
+    this->actor.draw = En_Ik_display;
     this->actor.flags |= ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE;
     SET_EVENTCHKINF(EVENTCHKINF_3B);
-    Actor_SetScale(&this->actor, 0.012f);
-    EnIk_SetupIdle(this);
+    Actor_set_scale(&this->actor, 0.012f);
+    mode_wait2_init(this);
 }
 
-void EnIk_StartDefeatCutscene(Actor* thisx, PlayState* play) {
+void En_Ik_Chenge_FightToDemo(Actor* thisx, PlayState* play) {
     EnIk* this = (EnIk*)thisx;
 
-    if (!Play_InCsMode(play)) {
-        this->actor.update = EnIk_UpdateCutscene;
-        this->actor.draw = EnIk_DrawCutscene;
-        Cutscene_SetScript(play, gSpiritBossNabooruKnuckleDefeatCs);
-        gSaveContext.cutsceneTrigger = 1;
-        Actor_SetScale(&this->actor, 0.01f);
+    if (!Game_play_demo_mode_check(play)) {
+        this->actor.update = En_Ik_inConfrontion_main;
+        this->actor.draw = En_Ik_inConfrontion_draw;
+        set_showdata(play, gSpiritBossNabooruKnuckleDefeatCs);
+        z_common_data.cutsceneTrigger = 1;
+        Actor_set_scale(&this->actor, 0.01f);
         SET_EVENTCHKINF(EVENTCHKINF_DEFEATED_NABOORU_KNUCKLE);
-        EnIk_SetupCsAction3(this, play);
+        En_Ik_inConfrontion_setup_Awake(this, play);
     }
 }
 
-void EnIk_Init(Actor* thisx, PlayState* play) {
+void En_Ik_Actor_ct(Actor* thisx, PlayState* play) {
     EnIk* this = (EnIk*)thisx;
     s32 upperParams = IK_GET_UPPER_PARAMS(&this->actor);
 
     if (((IK_GET_ARMOR_TYPE(&this->actor) == IK_TYPE_NABOORU) &&
          GET_EVENTCHKINF(EVENTCHKINF_DEFEATED_NABOORU_KNUCKLE)) ||
-        (upperParams != 0 && Flags_GetSwitch(play, upperParams >> 8))) {
-        Actor_Kill(&this->actor);
+        (upperParams != 0 && Actor_Environment_sw_Check(play, upperParams >> 8))) {
+        Actor_delete(&this->actor);
     } else {
-        ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 30.0f);
-        SkelAnime_InitFlex(play, &this->skelAnime, &gIronKnuckleSkel, &gIronKnuckleNabooruSummonAxeAnim,
+        Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 30.0f);
+        Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &gIronKnuckleSkel, &gIronKnuckleNabooruSummonAxeAnim,
                            this->jointTable, this->morphTable, IRON_KNUCKLE_LIMB_MAX);
-        EnIk_InitImpl(&this->actor, play);
-        EnIk_CsInit(this, play);
+        En_Ik_inFight_Init(&this->actor, play);
+        En_Ik_inConfrontion_Init(this, play);
     }
 }
 
@@ -128,8 +128,8 @@ ActorProfile En_Ik_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_IK,
     /**/ sizeof(EnIk),
-    /**/ EnIk_Init,
-    /**/ EnIk_Destroy,
-    /**/ EnIk_UpdateCutscene,
-    /**/ EnIk_DrawCutscene,
+    /**/ En_Ik_Actor_ct,
+    /**/ En_Ik_Actor_dt,
+    /**/ En_Ik_inConfrontion_main,
+    /**/ En_Ik_inConfrontion_draw,
 };

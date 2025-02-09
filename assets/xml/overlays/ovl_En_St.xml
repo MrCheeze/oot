@@ -1,8 +1,8 @@
 <Root>
     <File Name="ovl_En_St" OutName="z_en_st_shape">
-        <Array Name="sSkulltulaUnusedVtx" Count="4" Offset="0x0">
+        <Array Name="f_line_v" Count="4" Offset="0x0">
             <Vtx/>
         </Array>
-        <DList Name="sSkulltulaUnusedDL" Offset="0x40"/>
+        <DList Name="staru_line_model" Offset="0x40"/>
     </File>
 </Root>

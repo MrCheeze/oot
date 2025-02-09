@@ -22,8 +22,8 @@ typedef struct GameOverContext {
     /* 0x00 */ u16 state;
 } GameOverContext; // size = 0x2
 
-void GameOver_Init(struct PlayState* play);
-void GameOver_FadeInLights(struct PlayState* play);
-void GameOver_Update(struct PlayState* play);
+void gameover_ct(struct PlayState* play);
+void gameover_draw(struct PlayState* play);
+void gameover_move(struct PlayState* play);
 
 #endif

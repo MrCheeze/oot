@@ -67,9 +67,9 @@ typedef struct Scheduler {
     /* 0x0250 */ IrqMgrClient irqClient;
 } Scheduler; // size = 0x258
 
-void Sched_Notify(Scheduler* sc);
-void Sched_Init(Scheduler* sc, void* stack, OSPri priority, u8 viModeType, UNK_TYPE arg4, IrqMgr* irqMgr);
+void osScKickEntryMsg(Scheduler* sc);
+void osCreateScheduler(Scheduler* sc, void* stack, OSPri priority, u8 viModeType, UNK_TYPE arg4, IrqMgr* irqMgr);
 
-extern Scheduler gScheduler;
+extern Scheduler _sched;
 
 #endif

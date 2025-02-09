@@ -9,12 +9,12 @@
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY)
 
-void ItemInbox_Init(Actor* thisx, PlayState* play);
-void ItemInbox_Destroy(Actor* thisx, PlayState* play);
-void ItemInbox_Update(Actor* thisx, PlayState* play);
-void ItemInbox_Draw(Actor* thisx, PlayState* play);
+void Item_Inbox_Actor_ct(Actor* thisx, PlayState* play);
+void Item_Inbox_Actor_dt(Actor* thisx, PlayState* play);
+void Item_Inbox_Actor_move(Actor* thisx, PlayState* play);
+void Item_Inbox_Actor_draw(Actor* thisx, PlayState* play);
 
-void ItemInbox_Wait(ItemInbox* this, PlayState* play);
+static void move_wait(ItemInbox* this, PlayState* play);
 
 ActorProfile Item_Inbox_Profile = {
     /**/ ACTOR_ITEM_INBOX,
@@ -22,38 +22,38 @@ ActorProfile Item_Inbox_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(ItemInbox),
-    /**/ ItemInbox_Init,
-    /**/ ItemInbox_Destroy,
-    /**/ ItemInbox_Update,
-    /**/ ItemInbox_Draw,
+    /**/ Item_Inbox_Actor_ct,
+    /**/ Item_Inbox_Actor_dt,
+    /**/ Item_Inbox_Actor_move,
+    /**/ Item_Inbox_Actor_draw,
 };
 
-void ItemInbox_Init(Actor* thisx, PlayState* play) {
+void Item_Inbox_Actor_ct(Actor* thisx, PlayState* play) {
     ItemInbox* this = (ItemInbox*)thisx;
 
-    this->actionFunc = ItemInbox_Wait;
-    Actor_SetScale(&this->actor, 0.2);
+    this->actionFunc = move_wait;
+    Actor_set_scale(&this->actor, 0.2);
 }
 
-void ItemInbox_Destroy(Actor* thisx, PlayState* play) {
+void Item_Inbox_Actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void ItemInbox_Wait(ItemInbox* this, PlayState* play) {
-    if (Flags_GetTreasure(play, PARAMS_GET_U(this->actor.params, 8, 5))) {
-        Actor_Kill(&this->actor);
+static void move_wait(ItemInbox* this, PlayState* play) {
+    if (Actor_Environment_Tbox_Check(play, PARAMS_GET_U(this->actor.params, 8, 5))) {
+        Actor_delete(&this->actor);
     }
 }
 
-void ItemInbox_Update(Actor* thisx, PlayState* play) {
+void Item_Inbox_Actor_move(Actor* thisx, PlayState* play) {
     ItemInbox* this = (ItemInbox*)thisx;
 
     this->actionFunc(this, play);
 }
 
-void ItemInbox_Draw(Actor* thisx, PlayState* play) {
+void Item_Inbox_Actor_draw(Actor* thisx, PlayState* play) {
     ItemInbox* this = (ItemInbox*)thisx;
 
-    func_8002EBCC(&this->actor, play, 0);
-    func_8002ED80(&this->actor, play, 0);
-    GetItem_Draw(play, PARAMS_GET_U(this->actor.params, 0, 8));
+    Actor_HiliteReflect_set_init(&this->actor, play, 0);
+    Actor_HiliteReflect_xlu_set_init(&this->actor, play, 0);
+    Draw_GetItemType(play, PARAMS_GET_U(this->actor.params, 0, 8));
 }

@@ -1,16 +1,16 @@
 #include "global.h"
 #include "terminal.h"
 
-StackEntry* sStackInfoListStart = NULL;
-StackEntry* sStackInfoListEnd = NULL;
+StackEntry* root = NULL;
+StackEntry* last = NULL;
 
-void StackCheck_Init(StackEntry* entry, void* stackBottom, void* stackTop, u32 initValue, s32 minSpace,
+void stackcheck_init(StackEntry* entry, void* stackBottom, void* stackTop, u32 initValue, s32 minSpace,
                      const char* name) {
     StackEntry* iter;
     u32* addr;
 
     if (entry == NULL) {
-        sStackInfoListStart = NULL;
+        root = NULL;
     } else {
         entry->head = stackBottom;
         entry->tail = stackTop;
@@ -19,7 +19,7 @@ void StackCheck_Init(StackEntry* entry, void* stackBottom, void* stackTop, u32 i
         entry->name = name;
 
 #if !PLATFORM_N64
-        iter = sStackInfoListStart;
+        iter = root;
         while (iter) {
             if (iter == entry) {
                 PRINTF(VT_COL(RED, WHITE) T("stackcheck_init: %08x は既にリスト中にある\n",
@@ -31,16 +31,16 @@ void StackCheck_Init(StackEntry* entry, void* stackBottom, void* stackTop, u32 i
         }
 #endif
 
-        entry->prev = sStackInfoListEnd;
+        entry->prev = last;
         entry->next = NULL;
 
-        if (sStackInfoListEnd) {
-            sStackInfoListEnd->next = entry;
+        if (last) {
+            last->next = entry;
         }
 
-        sStackInfoListEnd = entry;
-        if (!sStackInfoListStart) {
-            sStackInfoListStart = entry;
+        last = entry;
+        if (!root) {
+            root = entry;
         }
 
         if (entry->minSpace != -1) {
@@ -52,23 +52,23 @@ void StackCheck_Init(StackEntry* entry, void* stackBottom, void* stackTop, u32 i
     }
 }
 
-void StackCheck_Cleanup(StackEntry* entry) {
+void stackcheck_cleanup(StackEntry* entry) {
 #if PLATFORM_N64
     if (!entry->prev) {
-        sStackInfoListStart = entry->next;
+        root = entry->next;
     } else {
         entry->prev->next = entry->next;
     }
 
     if (!entry->next) {
-        sStackInfoListEnd = entry->prev;
+        last = entry->prev;
     }
 #else
     u32 inconsistency = false;
 
     if (!entry->prev) {
-        if (entry == sStackInfoListStart) {
-            sStackInfoListStart = entry->next;
+        if (entry == root) {
+            root = entry->next;
         } else {
             inconsistency = true;
         }
@@ -77,8 +77,8 @@ void StackCheck_Cleanup(StackEntry* entry) {
     }
 
     if (!entry->next) {
-        if (entry == sStackInfoListEnd) {
-            sStackInfoListEnd = entry->prev;
+        if (entry == last) {
+            last = entry->prev;
         } else {
             inconsistency = true;
         }
@@ -94,13 +94,13 @@ void StackCheck_Cleanup(StackEntry* entry) {
 
 #if PLATFORM_N64
 
-u32 StackCheck_Check(StackEntry* entry) {
+u32 stackcheck_check_stack(StackEntry* entry) {
     if (entry == NULL) {
         u32 ret = 0;
-        StackEntry* iter = sStackInfoListStart;
+        StackEntry* iter = root;
 
         while (iter) {
-            u32 state = StackCheck_Check(iter);
+            u32 state = stackcheck_check_stack(iter);
 
             if (state != STACK_STATUS_OK) {
                 ret = 1;
@@ -141,7 +141,7 @@ u32 StackCheck_Check(StackEntry* entry) {
 
 #else
 
-u32 StackCheck_GetState(StackEntry* entry) {
+u32 stackcheck_check_stack1(StackEntry* entry) {
     u32* last;
     UNUSED_NDEBUG u32 used;
     u32 free;
@@ -185,12 +185,12 @@ u32 StackCheck_GetState(StackEntry* entry) {
     return ret;
 }
 
-u32 StackCheck_CheckAll(void) {
+u32 stackcheck_check_stack0(void) {
     u32 ret = 0;
-    StackEntry* iter = sStackInfoListStart;
+    StackEntry* iter = root;
 
     while (iter) {
-        u32 state = StackCheck_GetState(iter);
+        u32 state = stackcheck_check_stack1(iter);
 
         if (state != STACK_STATUS_OK) {
             ret = 1;
@@ -201,11 +201,11 @@ u32 StackCheck_CheckAll(void) {
     return ret;
 }
 
-u32 StackCheck_Check(StackEntry* entry) {
+u32 stackcheck_check_stack(StackEntry* entry) {
     if (entry == NULL) {
-        return StackCheck_CheckAll();
+        return stackcheck_check_stack0();
     } else {
-        return StackCheck_GetState(entry);
+        return stackcheck_check_stack1(entry);
     }
 }
 

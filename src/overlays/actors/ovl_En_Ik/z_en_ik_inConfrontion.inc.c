@@ -1,38 +1,38 @@
-void EnIk_StartMinibossBgm(void) {
-    func_800F5ACC(NA_BGM_MINI_BOSS);
+void En_Ik_inConfrontion_SetSound_BGM(void) {
+    Na_StartMiddleBossBgm(NA_BGM_MINI_BOSS);
 }
 
 // Cutscene: Nabooru Knuckle Wakes up
-void EnIk_UpdateAction2Sfx(EnIk* this) {
-    if (Animation_OnFrame(&this->skelAnime, 1.0f)) {
-        Audio_PlaySfxGeneral(NA_SE_EN_IRONNACK_WAKEUP, &this->actor.projectedPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
-    } else if (Animation_OnFrame(&this->skelAnime, 33.0f)) {
-        Audio_PlaySfxGeneral(NA_SE_EN_IRONNACK_WALK, &this->actor.projectedPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
-    } else if (Animation_OnFrame(&this->skelAnime, 68.0f) || Animation_OnFrame(&this->skelAnime, 80.0f)) {
-        Audio_PlaySfxGeneral(NA_SE_EN_IRONNACK_ARMOR_DEMO, &this->actor.projectedPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
-    } else if (Animation_OnFrame(&this->skelAnime, 107.0f)) {
-        Audio_PlaySfxGeneral(NA_SE_EN_IRONNACK_FINGER_DEMO, &this->actor.projectedPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
-    } else if (Animation_OnFrame(&this->skelAnime, 156.0f)) {
-        Audio_PlaySfxGeneral(NA_SE_EN_IRONNACK_ARMOR_DEMO, &this->actor.projectedPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
-    } else if (Animation_OnFrame(&this->skelAnime, 188.0f)) {
-        Audio_PlaySfxGeneral(NA_SE_EN_IRONNACK_WAVE_DEMO, &this->actor.projectedPos, 4, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+void En_Ik_inConfrontion_SetSound_Standup(EnIk* this) {
+    if (Skeleton_Info_frame_check(&this->skelAnime, 1.0f)) {
+        Nai_FxFlagEntry(NA_SE_EN_IRONNACK_WAKEUP, &this->actor.projectedPos, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
+    } else if (Skeleton_Info_frame_check(&this->skelAnime, 33.0f)) {
+        Nai_FxFlagEntry(NA_SE_EN_IRONNACK_WALK, &this->actor.projectedPos, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
+    } else if (Skeleton_Info_frame_check(&this->skelAnime, 68.0f) || Skeleton_Info_frame_check(&this->skelAnime, 80.0f)) {
+        Nai_FxFlagEntry(NA_SE_EN_IRONNACK_ARMOR_DEMO, &this->actor.projectedPos, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
+    } else if (Skeleton_Info_frame_check(&this->skelAnime, 107.0f)) {
+        Nai_FxFlagEntry(NA_SE_EN_IRONNACK_FINGER_DEMO, &this->actor.projectedPos, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
+    } else if (Skeleton_Info_frame_check(&this->skelAnime, 156.0f)) {
+        Nai_FxFlagEntry(NA_SE_EN_IRONNACK_ARMOR_DEMO, &this->actor.projectedPos, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
+    } else if (Skeleton_Info_frame_check(&this->skelAnime, 188.0f)) {
+        Nai_FxFlagEntry(NA_SE_EN_IRONNACK_WAVE_DEMO, &this->actor.projectedPos, 4, &_dummy_one,
+                             &_dummy_one, &_dummy_zero_s8);
     }
 }
 
 // Cutscene: Summons Axe for Nabooru Knuckle
-void EnIk_PlayAxeSpawnSfx(EnIk* this, PlayState* play, Vec3f* pos) {
-    Audio_PlaySfxGeneral(NA_SE_EN_TWINROBA_TRANSFORM, &this->actor.projectedPos, 4, &gSfxDefaultFreqAndVolScale,
-                         &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+void En_Ik_inConfrontion_SetSound_Axe(EnIk* this, PlayState* play, Vec3f* pos) {
+    Nai_FxFlagEntry(NA_SE_EN_TWINROBA_TRANSFORM, &this->actor.projectedPos, 4, &_dummy_one,
+                         &_dummy_one, &_dummy_zero_s8);
 }
 
-void EnIk_SpawnAxeSmoke(EnIk* this, PlayState* play, Vec3f* pos) {
-    static Vec3f sAxeSmokeEffectData[] = {
+void Birth_Effect_In_En_Ik_inConfrontion(EnIk* this, PlayState* play, Vec3f* pos) {
+    static Vec3f array_offset[] = {
         { 1000.0, -1000.0, 1000.0 },  { 0.0, -1000.0, 0.0 },        { -1000.0, -5000.0, -4000.0 },
         { 1000.0, -5000.0, -3000.0 }, { -1000.0, 1000.0, -6000.0 }, { -1000.0, 3000.0, -5000.0 },
         { -800.0, 1000.0, -3000.0 },  { 0.0, -4000.0, -2000.0 },    { -1000.0, -2000.0, -6000.0 },
@@ -48,14 +48,14 @@ void EnIk_SpawnAxeSmoke(EnIk* this, PlayState* play, Vec3f* pos) {
         Vec3f effectAccel = { 0.0f, 0.3f, 0.0f };
         s32 i;
 
-        for (i = ARRAY_COUNT(sAxeSmokeEffectData) - 1; i >= 0; i--) {
+        for (i = ARRAY_COUNT(array_offset) - 1; i >= 0; i--) {
             Color_RGBA8 primColor = { 200, 200, 200, 255 };
             Color_RGBA8 envColor = { 150, 150, 150, 0 };
             s32 randColorOffset;
             Vec3f effectPos;
 
-            Matrix_MultVec3f(&sAxeSmokeEffectData[i], &effectPos);
-            randColorOffset = (Rand_ZeroOne() * 20.0f) - 10.0f;
+            Matrix_Position(&array_offset[i], &effectPos);
+            randColorOffset = (fqrand() * 20.0f) - 10.0f;
 
             primColor.r += randColorOffset;
             primColor.g += randColorOffset;
@@ -65,24 +65,24 @@ void EnIk_SpawnAxeSmoke(EnIk* this, PlayState* play, Vec3f* pos) {
             envColor.g += randColorOffset;
             envColor.b += randColorOffset;
 
-            func_8002829C(play, &effectPos, &effectVelocity, &effectAccel, &primColor, &envColor,
-                          (Rand_ZeroOne() * 60.0f) + 300.0f, 0);
+            Effect_SS_Dust_sc_cl_ct(play, &effectPos, &effectVelocity, &effectAccel, &primColor, &envColor,
+                          (fqrand() * 60.0f) + 300.0f, 0);
         }
 
         this->isAxeSummoned = true;
-        EnIk_PlayAxeSpawnSfx(this, play, pos);
+        En_Ik_inConfrontion_SetSound_Axe(this, play, pos);
     }
 }
 
-void EnIk_UpdateBgCheckInfo(EnIk* this, PlayState* play) {
-    Actor_UpdateBgCheckInfo(play, &this->actor, 75.0f, 30.0f, 30.0f, UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
+void En_Ik_inConfrontion_BGcheck(EnIk* this, PlayState* play) {
+    Actor_BGcheck2(play, &this->actor, 75.0f, 30.0f, 30.0f, UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
 }
 
-s32 EnIk_UpdateSkelAnime(EnIk* this) {
-    return SkelAnime_Update(&this->skelAnime);
+s32 En_Ik_inConfrontion_Animation_Base(EnIk* this) {
+    return Skeleton_Info2_anime_play(&this->skelAnime);
 }
 
-CsCmdActorCue* EnIk_GetCue(PlayState* play, s32 cueChannel) {
+CsCmdActorCue* En_Ik_inConfrontion_Get_npcdemopnt(PlayState* play, s32 cueChannel) {
     if (play->csCtx.state != CS_STATE_IDLE) {
         CsCmdActorCue* cue = play->csCtx.actorCues[cueChannel];
 
@@ -92,8 +92,8 @@ CsCmdActorCue* EnIk_GetCue(PlayState* play, s32 cueChannel) {
     return NULL;
 }
 
-void EnIk_SetStartPosRotFromCue(EnIk* this, PlayState* play, s32 cueChannel) {
-    CsCmdActorCue* cue = EnIk_GetCue(play, cueChannel);
+void En_Ik_inConfrontion_Set_DemoStartPosAngle(EnIk* this, PlayState* play, s32 cueChannel) {
+    CsCmdActorCue* cue = En_Ik_inConfrontion_Get_npcdemopnt(play, cueChannel);
 
     if (cue != NULL) {
         this->actor.world.pos.x = cue->startPos.x;
@@ -104,49 +104,49 @@ void EnIk_SetStartPosRotFromCue(EnIk* this, PlayState* play, s32 cueChannel) {
     }
 }
 
-f32 EnIk_GetAnimCurFrame(Actor* thisx) {
+f32 En_Ik_inConfrontion_Get_anime_frame(Actor* thisx) {
     EnIk* this = (EnIk*)thisx;
 
     return this->skelAnime.curFrame;
 }
 
 // unused
-void EnIk_SetupCsAction0(EnIk* this) {
+void En_Ik_inConfrontion_setup_Wait(EnIk* this) {
     this->csAction = IK_CS_ACTION_0;
     this->csDrawMode = IK_CS_DRAW_NOTHING;
     this->actor.shape.shadowAlpha = 0;
 }
 
 // Cutscene: Nabooru sitting and Kotake and Koume looking at her
-void EnIk_SetupCsAction1(EnIk* this, PlayState* play) {
-    Animation_Change(&this->skelAnime, &gIronKnuckleNabooruSummonAxeAnim, 1.0f, 0.0f,
-                     Animation_GetLastFrame(&gIronKnuckleNabooruSummonAxeAnim), ANIMMODE_ONCE, 0.0f);
-    EnIk_SetStartPosRotFromCue(this, play, 4);
+void En_Ik_inConfrontion_setup_Sitdown(EnIk* this, PlayState* play) {
+    Skeleton_Info2_init(&this->skelAnime, &gIronKnuckleNabooruSummonAxeAnim, 1.0f, 0.0f,
+                     Si2_anime_end_frame(&gIronKnuckleNabooruSummonAxeAnim), ANIMMODE_ONCE, 0.0f);
+    En_Ik_inConfrontion_Set_DemoStartPosAngle(this, play, 4);
     this->csAction = IK_CS_ACTION_1;
     this->csDrawMode = IK_CS_DRAW_INTRO;
     this->actor.shape.shadowAlpha = 255;
 }
 
 // Cutscene: Nabooru Knuckle starts to stand up
-void EnIk_SetupCsAction2(EnIk* this) {
-    Animation_Change(&this->skelAnime, &gIronKnuckleNabooruSummonAxeAnim, 1.0f, 0.0f,
-                     Animation_GetLastFrame(&gIronKnuckleNabooruSummonAxeAnim), ANIMMODE_ONCE, 0.0f);
+void En_Ik_inConfrontion_setup_Standup(EnIk* this) {
+    Skeleton_Info2_init(&this->skelAnime, &gIronKnuckleNabooruSummonAxeAnim, 1.0f, 0.0f,
+                     Si2_anime_end_frame(&gIronKnuckleNabooruSummonAxeAnim), ANIMMODE_ONCE, 0.0f);
     this->csAction = IK_CS_ACTION_2;
     this->csDrawMode = IK_CS_DRAW_INTRO;
     this->isAxeSummoned = false;
     this->actor.shape.shadowAlpha = 255;
 }
 
-void EnIk_HandleEnemyChange(EnIk* this, PlayState* play, s32 animFinished) {
-    if (animFinished && (EnIk_GetCue(play, 4) != NULL)) {
-        EnIk_ChangeToEnemy(this, play);
+void En_Ik_inConfrontion_setup_Fight(EnIk* this, PlayState* play, s32 animFinished) {
+    if (animFinished && (En_Ik_inConfrontion_Get_npcdemopnt(play, 4) != NULL)) {
+        En_Ik_Chenge_DemoToFight(this, play);
     }
 }
 
 #include "z_en_ik_inAwake.inc.c"
 
-void EnIk_HandleCsCues(EnIk* this, PlayState* play) {
-    CsCmdActorCue* cue = EnIk_GetCue(play, 4);
+void En_Ik_inConfrontion_Check_DemoMode(EnIk* this, PlayState* play) {
+    CsCmdActorCue* cue = En_Ik_inConfrontion_Get_npcdemopnt(play, 4);
     u32 nextCueId;
     u32 currentCueId;
 
@@ -157,31 +157,31 @@ void EnIk_HandleCsCues(EnIk* this, PlayState* play) {
         if (nextCueId != currentCueId) {
             switch (nextCueId) {
                 case 1:
-                    EnIk_SetupCsAction0(this);
+                    En_Ik_inConfrontion_setup_Wait(this);
                     break;
 
                 case 2:
-                    EnIk_SetupCsAction1(this, play);
+                    En_Ik_inConfrontion_setup_Sitdown(this, play);
                     break;
 
                 case 3:
-                    EnIk_SetupCsAction2(this);
+                    En_Ik_inConfrontion_setup_Standup(this);
                     break;
 
                 case 4:
-                    EnIk_ChangeToEnemy(this, play);
+                    En_Ik_Chenge_DemoToFight(this, play);
                     break;
 
                 case 5:
-                    EnIk_SetupCsAction3(this, play);
+                    En_Ik_inConfrontion_setup_Awake(this, play);
                     break;
 
                 case 6:
-                    EnIk_SetupCsAction4(this, play);
+                    En_Ik_inConfrontion_setup_Remove(this, play);
                     break;
 
                 case 7:
-                    EnIk_SetupCsAction5(this, play);
+                    En_Ik_inConfrontion_setup_Disappear(this, play);
                     break;
 
                 default:
@@ -193,41 +193,41 @@ void EnIk_HandleCsCues(EnIk* this, PlayState* play) {
     }
 }
 
-void EnIk_CsAction0(EnIk* this, PlayState* play) {
-    EnIk_HandleCsCues(this, play);
+void En_Ik_inConfrontion_main_wait(EnIk* this, PlayState* play) {
+    En_Ik_inConfrontion_Check_DemoMode(this, play);
 }
 
-void EnIk_CsAction1(EnIk* this, PlayState* play) {
-    EnIk_UpdateBgCheckInfo(this, play);
-    EnIk_HandleCsCues(this, play);
+void En_Ik_inConfrontion_main_sitdown(EnIk* this, PlayState* play) {
+    En_Ik_inConfrontion_BGcheck(this, play);
+    En_Ik_inConfrontion_Check_DemoMode(this, play);
 }
 
-void EnIk_CsAction2(EnIk* this, PlayState* play) {
+void En_Ik_inConfrontion_main_standup(EnIk* this, PlayState* play) {
     s32 animFinished;
 
-    animFinished = EnIk_UpdateSkelAnime(this);
-    EnIk_UpdateAction2Sfx(this);
-    EnIk_UpdateBgCheckInfo(this, play);
-    EnIk_HandleCsCues(this, play);
-    EnIk_HandleEnemyChange(this, play, animFinished);
+    animFinished = En_Ik_inConfrontion_Animation_Base(this);
+    En_Ik_inConfrontion_SetSound_Standup(this);
+    En_Ik_inConfrontion_BGcheck(this, play);
+    En_Ik_inConfrontion_Check_DemoMode(this, play);
+    En_Ik_inConfrontion_setup_Fight(this, play, animFinished);
 }
 
-static EnIkActionFunc sCsActionFuncs[] = {
-    EnIk_CsAction0, EnIk_CsAction1, EnIk_CsAction2, EnIk_CsAction3, EnIk_CsAction4, EnIk_CsAction5,
-};
+void En_Ik_inConfrontion_main(Actor* thisx, PlayState* play) {
+    static EnIkActionFunc proc[] = {
+        En_Ik_inConfrontion_main_wait, En_Ik_inConfrontion_main_sitdown, En_Ik_inConfrontion_main_standup, En_Ik_inConfrontion_main_awake, En_Ik_inConfrontion_main_remove, En_Ik_inConfrontion_main_disappear,
+    };
 
-void EnIk_UpdateCutscene(Actor* thisx, PlayState* play) {
     EnIk* this = (EnIk*)thisx;
 
-    if (this->csAction < 0 || this->csAction >= ARRAY_COUNT(sCsActionFuncs) || sCsActionFuncs[this->csAction] == NULL) {
+    if (this->csAction < 0 || this->csAction >= ARRAY_COUNT(proc) || proc[this->csAction] == NULL) {
         PRINTF(VT_FGCOL(RED) "メインモードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
         return;
     }
 
-    sCsActionFuncs[this->csAction](this, play);
+    proc[this->csAction](this, play);
 }
 
-s32 EnIk_OverrideLimbDrawIntro(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+s32 En_Ik_inConfrontion_ChangeDraw_axe(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     EnIk* this = (EnIk*)thisx;
     f32 curFrame;
 
@@ -237,7 +237,7 @@ s32 EnIk_OverrideLimbDrawIntro(PlayState* play, s32 limbIndex, Gfx** dList, Vec3
             if (curFrame < 120.0f) {
                 *dList = NULL;
             } else {
-                EnIk_SpawnAxeSmoke(this, play, pos);
+                Birth_Effect_In_En_Ik_inConfrontion(this, play, pos);
             }
             break;
 
@@ -250,7 +250,7 @@ s32 EnIk_OverrideLimbDrawIntro(PlayState* play, s32 limbIndex, Gfx** dList, Vec3
     return false;
 }
 
-void EnIk_PostLimbDrawIntro(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
+void En_Ik_inConfrontion_AddDraw_armer(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
     GraphicsContext* gfxCtx = play->state.gfxCtx;
 
     OPEN_DISPS(gfxCtx, "../z_en_ik_inConfrontion.c", 571);
@@ -285,51 +285,51 @@ void EnIk_PostLimbDrawIntro(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* 
     CLOSE_DISPS(gfxCtx, "../z_en_ik_inConfrontion.c", 604);
 }
 
-void EnIk_CsDrawNothing(EnIk* this, PlayState* play) {
+void En_Ik_inConfrontion_draw_none(EnIk* this, PlayState* play) {
 }
 
-void EnIk_CsDrawIntro(EnIk* this, PlayState* play) {
+void En_Ik_inConfrontion_draw_normal(EnIk* this, PlayState* play) {
     GraphicsContext* gfxCtx = play->state.gfxCtx;
     SkelAnime* skelAnime = &this->skelAnime;
     s32 pad[2];
 
     OPEN_DISPS(gfxCtx, "../z_en_ik_inConfrontion.c", 630);
 
-    func_8002EBCC(&this->actor, play, 0);
-    Gfx_SetupDL_25Opa(gfxCtx);
-    Gfx_SetupDL_25Xlu(gfxCtx);
-    gSPSegment(POLY_OPA_DISP++, 0x08, EnIk_SetPrimEnvColors(gfxCtx, 245, 225, 155, 30, 30, 0));
-    gSPSegment(POLY_OPA_DISP++, 0x09, EnIk_SetPrimEnvColors(gfxCtx, 255, 40, 0, 40, 0, 0));
-    gSPSegment(POLY_OPA_DISP++, 0x0A, EnIk_SetPrimEnvColors(gfxCtx, 255, 255, 255, 20, 40, 30));
-    SkelAnime_DrawFlexOpa(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount,
-                          EnIk_OverrideLimbDrawIntro, EnIk_PostLimbDrawIntro, this);
+    Actor_HiliteReflect_set_init(&this->actor, play, 0);
+    _texture_z_light_fog_prim(gfxCtx);
+    _texture_z_light_fog_prim_xlu(gfxCtx);
+    gSPSegment(POLY_OPA_DISP++, 0x08, set_col(gfxCtx, 245, 225, 155, 30, 30, 0));
+    gSPSegment(POLY_OPA_DISP++, 0x09, set_col(gfxCtx, 255, 40, 0, 40, 0, 0));
+    gSPSegment(POLY_OPA_DISP++, 0x0A, set_col(gfxCtx, 255, 255, 255, 20, 40, 30));
+    Si2_draw_SV(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount,
+                          En_Ik_inConfrontion_ChangeDraw_axe, En_Ik_inConfrontion_AddDraw_armer, this);
 
     CLOSE_DISPS(gfxCtx, "../z_en_ik_inConfrontion.c", 653);
 }
 
-static EnIkDrawFunc sCsDrawFuncs[] = { EnIk_CsDrawNothing, EnIk_CsDrawIntro, EnIk_CsDrawDefeat };
+void En_Ik_inConfrontion_draw(Actor* thisx, PlayState* play) {
+    static EnIkDrawFunc proc[] = { En_Ik_inConfrontion_draw_none, En_Ik_inConfrontion_draw_normal, En_Ik_inConfrontion_draw_change_head };
 
-void EnIk_DrawCutscene(Actor* thisx, PlayState* play) {
     EnIk* this = (EnIk*)thisx;
 
-    if (this->csDrawMode < 0 || this->csDrawMode >= ARRAY_COUNT(sCsDrawFuncs) ||
-        sCsDrawFuncs[this->csDrawMode] == NULL) {
+    if (this->csDrawMode < 0 || this->csDrawMode >= ARRAY_COUNT(proc) ||
+        proc[this->csDrawMode] == NULL) {
         PRINTF(VT_FGCOL(RED) "描画モードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
         return;
     }
 
-    sCsDrawFuncs[this->csDrawMode](this, play);
+    proc[this->csDrawMode](this, play);
 }
 
-void EnIk_CsInit(EnIk* this, PlayState* play) {
+void En_Ik_inConfrontion_Init(EnIk* this, PlayState* play) {
     if (this->actor.params == IK_TYPE_NABOORU) {
         if (!GET_EVENTCHKINF(EVENTCHKINF_3B)) {
-            this->actor.update = EnIk_UpdateCutscene;
-            this->actor.draw = EnIk_DrawCutscene;
-            Actor_SetScale(&this->actor, 0.01f);
+            this->actor.update = En_Ik_inConfrontion_main;
+            this->actor.draw = En_Ik_inConfrontion_draw;
+            Actor_set_scale(&this->actor, 0.01f);
         } else {
-            EnIk_ChangeToEnemy(this, play);
-            EnIk_StartMinibossBgm();
+            En_Ik_Chenge_DemoToFight(this, play);
+            En_Ik_inConfrontion_SetSound_BGM();
         }
     }
 

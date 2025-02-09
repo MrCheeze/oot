@@ -9,12 +9,12 @@
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED)
 
-void BgSpot03Taki_Init(Actor* thisx, PlayState* play);
-void BgSpot03Taki_Destroy(Actor* thisx, PlayState* play);
-void BgSpot03Taki_Update(Actor* thisx, PlayState* play);
-void BgSpot03Taki_Draw(Actor* thisx, PlayState* play);
+void Bg_Spot03_Taki_actor_ct(Actor* thisx, PlayState* play);
+void Bg_Spot03_Taki_actor_dt(Actor* thisx, PlayState* play);
+void Bg_Spot03_Taki_actor_move(Actor* thisx, PlayState* play);
+void Bg_Spot03_Taki_actor_draw(Actor* thisx, PlayState* play);
 
-void BgSpot03Taki_HandleWaterfallState(BgSpot03Taki* this, PlayState* play);
+static void mode_wait(BgSpot03Taki* this, PlayState* play);
 
 ActorProfile Bg_Spot03_Taki_Profile = {
     /**/ ACTOR_BG_SPOT03_TAKI,
@@ -22,17 +22,17 @@ ActorProfile Bg_Spot03_Taki_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_SPOT03_OBJECT,
     /**/ sizeof(BgSpot03Taki),
-    /**/ BgSpot03Taki_Init,
-    /**/ BgSpot03Taki_Destroy,
-    /**/ BgSpot03Taki_Update,
-    /**/ BgSpot03Taki_Draw,
+    /**/ Bg_Spot03_Taki_actor_ct,
+    /**/ Bg_Spot03_Taki_actor_dt,
+    /**/ Bg_Spot03_Taki_actor_move,
+    /**/ Bg_Spot03_Taki_actor_draw,
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_STOP),
 };
 
-void BgSpot03Taki_ApplyOpeningAlpha(BgSpot03Taki* this, s32 bufferIndex) {
+void func_taki_vtx_chg_w(BgSpot03Taki* this, s32 bufferIndex) {
     s32 i;
     Vtx* vtx = (bufferIndex == 0) ? SEGMENTED_TO_VIRTUAL(object_spot03_object_Vtx_000800)
                                   : SEGMENTED_TO_VIRTUAL(object_spot03_object_Vtx_000990);
@@ -42,35 +42,35 @@ void BgSpot03Taki_ApplyOpeningAlpha(BgSpot03Taki* this, s32 bufferIndex) {
     }
 }
 
-void BgSpot03Taki_Init(Actor* thisx, PlayState* play) {
+void Bg_Spot03_Taki_actor_ct(Actor* thisx, PlayState* play) {
     BgSpot03Taki* this = (BgSpot03Taki*)thisx;
     s16 pad;
     CollisionHeader* colHeader = NULL;
 
     this->switchFlag = PARAMS_GET_U(this->dyna.actor.params, 0, 6);
-    DynaPolyActor_Init(&this->dyna, 0);
-    CollisionHeader_GetVirtual(&object_spot03_object_Col_000C98, &colHeader);
-    this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
-    Actor_ProcessInitChain(&this->dyna.actor, sInitChain);
+    MoveBG_ct(&this->dyna, 0);
+    DynaPolyUty_bgdi_SG2KSG(&object_spot03_object_Col_000C98, &colHeader);
+    this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
+    ValueSet_process(&this->dyna.actor, value_init);
     this->bufferIndex = 0;
     this->openingAlpha = 255.0f;
-    BgSpot03Taki_ApplyOpeningAlpha(this, 0);
-    BgSpot03Taki_ApplyOpeningAlpha(this, 1);
-    this->actionFunc = BgSpot03Taki_HandleWaterfallState;
+    func_taki_vtx_chg_w(this, 0);
+    func_taki_vtx_chg_w(this, 1);
+    this->actionFunc = mode_wait;
 }
 
-void BgSpot03Taki_Destroy(Actor* thisx, PlayState* play) {
+void Bg_Spot03_Taki_actor_dt(Actor* thisx, PlayState* play) {
     BgSpot03Taki* this = (BgSpot03Taki*)thisx;
 
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
 }
 
-void BgSpot03Taki_HandleWaterfallState(BgSpot03Taki* this, PlayState* play) {
+static void mode_wait(BgSpot03Taki* this, PlayState* play) {
     if (this->state == WATERFALL_CLOSED) {
-        if (Flags_GetSwitch(play, this->switchFlag)) {
+        if (Actor_Environment_sw_Check(play, this->switchFlag)) {
             this->state = WATERFALL_OPENING_ANIMATED;
             this->timer = 40;
-            OnePointCutscene_Init(play, 4100, -99, NULL, CAM_ID_MAIN);
+            makeOnepointDemo(play, 4100, -99, NULL, CAM_ID_MAIN);
         }
     } else if (this->state == WATERFALL_OPENING_IDLE) {
         this->timer--;
@@ -81,7 +81,7 @@ void BgSpot03Taki_HandleWaterfallState(BgSpot03Taki* this, PlayState* play) {
         if (this->openingAlpha > 0) {
             this->openingAlpha -= 5;
             if (this->openingAlpha <= 0.0f) {
-                DynaPoly_DisableCollision(play, &play->colCtx.dyna, this->dyna.bgId);
+                DynaPolygonInfo_setThrough(play, &play->colCtx.dyna, this->dyna.bgId);
                 this->timer = 400;
                 this->state = WATERFALL_OPENED;
                 this->openingAlpha = 0;
@@ -96,24 +96,24 @@ void BgSpot03Taki_HandleWaterfallState(BgSpot03Taki* this, PlayState* play) {
         if (this->openingAlpha < 255.0f) {
             this->openingAlpha += 5.0f;
             if (this->openingAlpha >= 255.0f) {
-                DynaPoly_EnableCollision(play, &play->colCtx.dyna, this->dyna.bgId);
+                DynaPolygonInfo_clearThrough(play, &play->colCtx.dyna, this->dyna.bgId);
                 this->state = WATERFALL_CLOSED;
                 this->openingAlpha = 255.0f;
-                Flags_UnsetSwitch(play, this->switchFlag);
+                Actor_Environment_sw_Off(play, this->switchFlag);
             }
         }
     }
 
-    BgSpot03Taki_ApplyOpeningAlpha(this, this->bufferIndex);
+    func_taki_vtx_chg_w(this, this->bufferIndex);
 }
 
-void BgSpot03Taki_Update(Actor* thisx, PlayState* play) {
+void Bg_Spot03_Taki_actor_move(Actor* thisx, PlayState* play) {
     BgSpot03Taki* this = (BgSpot03Taki*)thisx;
 
     this->actionFunc(this, play);
 }
 
-void BgSpot03Taki_Draw(Actor* thisx, PlayState* play) {
+void Bg_Spot03_Taki_actor_draw(Actor* thisx, PlayState* play) {
     BgSpot03Taki* this = (BgSpot03Taki*)thisx;
     s32 pad;
     u32 gameplayFrames;
@@ -124,10 +124,10 @@ void BgSpot03Taki_Draw(Actor* thisx, PlayState* play) {
 
     MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx, "../z_bg_spot03_taki.c", 325);
 
-    Gfx_SetupDL_25Xlu(play->state.gfxCtx);
+    _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
 
     gSPSegment(POLY_XLU_DISP++, 0x08,
-               Gfx_TwoTexScroll(play->state.gfxCtx, G_TX_RENDERTILE, 0, gameplayFrames * 5, 64, 64, 1, 0,
+               two_tex_scroll(play->state.gfxCtx, G_TX_RENDERTILE, 0, gameplayFrames * 5, 64, 64, 1, 0,
                                 gameplayFrames * 5, 64, 64));
 
     gSPDisplayList(POLY_XLU_DISP++, object_spot03_object_DL_000B20);
@@ -141,7 +141,7 @@ void BgSpot03Taki_Draw(Actor* thisx, PlayState* play) {
     gSPDisplayList(POLY_XLU_DISP++, object_spot03_object_DL_000BC0);
 
     gSPSegment(POLY_XLU_DISP++, 0x08,
-               Gfx_TwoTexScroll(play->state.gfxCtx, G_TX_RENDERTILE, gameplayFrames * 1, gameplayFrames * 3, 64, 64, 1,
+               two_tex_scroll(play->state.gfxCtx, G_TX_RENDERTILE, gameplayFrames * 1, gameplayFrames * 3, 64, 64, 1,
                                 -gameplayFrames, gameplayFrames * 3, 64, 64));
 
     gSPDisplayList(POLY_XLU_DISP++, object_spot03_object_DL_001580);
@@ -151,8 +151,8 @@ void BgSpot03Taki_Draw(Actor* thisx, PlayState* play) {
     this->bufferIndex = this->bufferIndex == 0;
 
     if (this->state >= WATERFALL_OPENING_IDLE && this->state <= WATERFALL_OPENED) {
-        Audio_PlaySfxWaterfall(&this->dyna.actor.projectedPos, 0.5f);
+        Na_SetWaterfallSe(&this->dyna.actor.projectedPos, 0.5f);
     } else {
-        Audio_PlaySfxWaterfall(&this->dyna.actor.projectedPos, 1.0f);
+        Na_SetWaterfallSe(&this->dyna.actor.projectedPos, 1.0f);
     }
 }

@@ -20,16 +20,16 @@
 #define rScaleStep regs[10]
 #define rScaleStepDecay regs[11]
 
-u32 EffectSsBlast_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
-void EffectSsBlast_Update(PlayState* play, u32 index, EffectSs* this);
-void EffectSsBlast_Draw(PlayState* play, u32 index, EffectSs* this);
+u32 Effect_SS_Blast_ct_ovl(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
+void Effect_SS_Blast_func_proc(PlayState* play, u32 index, EffectSs* this);
+void Effect_SS_Blast_disp_mode(PlayState* play, u32 index, EffectSs* this);
 
 EffectSsProfile Effect_Ss_Blast_Profile = {
     EFFECT_SS_BLAST,
-    EffectSsBlast_Init,
+    Effect_SS_Blast_ct_ovl,
 };
 
-u32 EffectSsBlast_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
+u32 Effect_SS_Blast_ct_ovl(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
     EffectSsBlastParams* initParams = (EffectSsBlastParams*)initParamsx;
 
     this->pos = initParams->pos;
@@ -38,8 +38,8 @@ u32 EffectSsBlast_Init(PlayState* play, u32 index, EffectSs* this, void* initPar
     this->accel = initParams->accel;
     this->gfx = SEGMENTED_TO_VIRTUAL(gEffShockwaveDL);
     this->life = initParams->life;
-    this->draw = EffectSsBlast_Draw;
-    this->update = EffectSsBlast_Update;
+    this->draw = Effect_SS_Blast_disp_mode;
+    this->update = Effect_SS_Blast_func_proc;
     this->rInnerColorR = initParams->innerColor.r;
     this->rInnerColorG = initParams->innerColor.g;
     this->rInnerColorB = initParams->innerColor.b;
@@ -55,7 +55,7 @@ u32 EffectSsBlast_Init(PlayState* play, u32 index, EffectSs* this, void* initPar
     return 1;
 }
 
-void EffectSsBlast_Draw(PlayState* play, u32 index, EffectSs* this) {
+void Effect_SS_Blast_disp_mode(PlayState* play, u32 index, EffectSs* this) {
     GraphicsContext* gfxCtx = play->state.gfxCtx;
     MtxF mf;
     s32 pad;
@@ -65,21 +65,21 @@ void EffectSsBlast_Draw(PlayState* play, u32 index, EffectSs* this) {
 
     scale = this->rScale * (1 / 400.0f);
 
-    Gfx_SetupDL_25Xlu(play->state.gfxCtx);
+    _texture_z_light_fog_prim_xlu(play->state.gfxCtx);
     gDPSetEnvColor(POLY_XLU_DISP++, this->rOuterColorR, this->rOuterColorG, this->rOuterColorB, this->rOuterColorA);
-    func_800BFCB8(play, &mf, &this->pos);
+    Game_play_ground_matrix(play, &mf, &this->pos);
     gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, this->rInnerColorR, this->rInnerColorG, this->rInnerColorB,
                     this->rInnerColorA);
-    Matrix_Put(&mf);
-    Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
+    Matrix_put(&mf);
+    Matrix_scale(scale, scale, scale, MTXMODE_APPLY);
     MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, gfxCtx, "../z_eff_ss_blast.c", 199);
     gSPDisplayList(POLY_XLU_DISP++, this->gfx);
 
     CLOSE_DISPS(gfxCtx, "../z_eff_ss_blast.c", 204);
 }
 
-void EffectSsBlast_Update(PlayState* play, u32 index, EffectSs* this) {
-    Math_StepToS(&this->rInnerColorA, 0, this->rAlphaStep);
+void Effect_SS_Blast_func_proc(PlayState* play, u32 index, EffectSs* this) {
+    chase_s(&this->rInnerColorA, 0, this->rAlphaStep);
 
     this->rScale += this->rScaleStep;
     if (this->rScaleStep != 0) {

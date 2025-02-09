@@ -1,3 +1,3 @@
 #include "global.h"
 
-s32 gOverlayLogSeverity = 2;
+s32 loadfragment_verbose = 2;

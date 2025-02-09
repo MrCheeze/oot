@@ -7,20 +7,20 @@
 #pragma increment_block_number "gc-eu:128 gc-eu-mq:128 gc-jp:128 gc-jp-ce:128 gc-jp-mq:128 gc-us:128 gc-us-mq:128" \
                                "ntsc-1.2:128 pal-1.1:128 hiratsu3:128"
 
-void (*sPlayerCallInitFunc)(Actor* thisx, PlayState* play);
-void (*sPlayerCallDestroyFunc)(Actor* thisx, PlayState* play);
-void (*sPlayerCallUpdateFunc)(Actor* thisx, PlayState* play);
-void (*sPlayerCallDrawFunc)(Actor* thisx, PlayState* play);
+void (*Player_actor_ct_func)(Actor* thisx, PlayState* play);
+void (*Player_actor_dt_func)(Actor* thisx, PlayState* play);
+void (*Player_actor_move_func)(Actor* thisx, PlayState* play);
+void (*Player_actor_draw_func)(Actor* thisx, PlayState* play);
 
-void PlayerCall_Init(Actor* thisx, PlayState* play);
-void PlayerCall_Destroy(Actor* thisx, PlayState* play);
-void PlayerCall_Update(Actor* thisx, PlayState* play);
-void PlayerCall_Draw(Actor* thisx, PlayState* play);
+void Player_actor_ct_call(Actor* thisx, PlayState* play);
+void Player_actor_dt_call(Actor* thisx, PlayState* play);
+void Player_actor_move_call(Actor* thisx, PlayState* play);
+void Player_actor_draw_call(Actor* thisx, PlayState* play);
 
-void Player_Init(Actor* thisx, PlayState* play);
-void Player_Destroy(Actor* thisx, PlayState* play);
-void Player_Update(Actor* thisx, PlayState* play);
-void Player_Draw(Actor* thisx, PlayState* play);
+void Player_actor_ct(Actor* thisx, PlayState* play);
+void Player_actor_dt(Actor* thisx, PlayState* play);
+void Player_actor_move(Actor* thisx, PlayState* play);
+void Player_actor_draw(Actor* thisx, PlayState* play);
 
 ActorProfile Player_Profile = {
     /**/ ACTOR_PLAYER,
@@ -28,36 +28,36 @@ ActorProfile Player_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(Player),
-    /**/ PlayerCall_Init,
-    /**/ PlayerCall_Destroy,
-    /**/ PlayerCall_Update,
-    /**/ PlayerCall_Draw,
+    /**/ Player_actor_ct_call,
+    /**/ Player_actor_dt_call,
+    /**/ Player_actor_move_call,
+    /**/ Player_actor_draw_call,
 };
 
-void PlayerCall_InitFuncPtrs(void) {
-    sPlayerCallInitFunc = KaleidoManager_GetRamAddr(Player_Init);
-    sPlayerCallDestroyFunc = KaleidoManager_GetRamAddr(Player_Destroy);
-    sPlayerCallUpdateFunc = KaleidoManager_GetRamAddr(Player_Update);
-    sPlayerCallDrawFunc = KaleidoManager_GetRamAddr(Player_Draw);
+void initfunc(void) {
+    Player_actor_ct_func = KaleidoArea_dllcnv(Player_actor_ct);
+    Player_actor_dt_func = KaleidoArea_dllcnv(Player_actor_dt);
+    Player_actor_move_func = KaleidoArea_dllcnv(Player_actor_move);
+    Player_actor_draw_func = KaleidoArea_dllcnv(Player_actor_draw);
 }
 
-void PlayerCall_Init(Actor* thisx, PlayState* play) {
-    KaleidoScopeCall_LoadPlayer();
-    PlayerCall_InitFuncPtrs();
-    sPlayerCallInitFunc(thisx, play);
+void Player_actor_ct_call(Actor* thisx, PlayState* play) {
+    load_player();
+    initfunc();
+    Player_actor_ct_func(thisx, play);
 }
 
-void PlayerCall_Destroy(Actor* thisx, PlayState* play) {
-    KaleidoScopeCall_LoadPlayer();
-    sPlayerCallDestroyFunc(thisx, play);
+void Player_actor_dt_call(Actor* thisx, PlayState* play) {
+    load_player();
+    Player_actor_dt_func(thisx, play);
 }
 
-void PlayerCall_Update(Actor* thisx, PlayState* play) {
-    KaleidoScopeCall_LoadPlayer();
-    sPlayerCallUpdateFunc(thisx, play);
+void Player_actor_move_call(Actor* thisx, PlayState* play) {
+    load_player();
+    Player_actor_move_func(thisx, play);
 }
 
-void PlayerCall_Draw(Actor* thisx, PlayState* play) {
-    KaleidoScopeCall_LoadPlayer();
-    sPlayerCallDrawFunc(thisx, play);
+void Player_actor_draw_call(Actor* thisx, PlayState* play) {
+    load_player();
+    Player_actor_draw_func(thisx, play);
 }

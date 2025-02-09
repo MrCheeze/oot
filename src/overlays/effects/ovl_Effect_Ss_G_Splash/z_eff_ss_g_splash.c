@@ -7,27 +7,27 @@
 #include "z_eff_ss_g_splash.h"
 #include "assets/objects/gameplay_keep/gameplay_keep.h"
 
-//! @bug the reuse of regs[11] means that EffectSs_DrawGEffect will treat the type as an object slot (`rgObjectSlot`)
+//! @bug the reuse of regs[11] means that effect_disp_mode_sub will treat the type as an object slot (`rgObjectSlot`)
 // this ends up having no effect because the texture provided does not use segment 6
 #define rType regs[11]
 
-u32 EffectSsGSplash_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
-void EffectSsGSplash_Draw(PlayState* play, u32 index, EffectSs* this);
-void EffectSsGSplash_Update(PlayState* play, u32 index, EffectSs* this);
+u32 Effect_SS2_G_Splash_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
+void Effect_SS_G_Splash_disp_mode(PlayState* play, u32 index, EffectSs* this);
+void Effect_SS_G_Splash_func_proc(PlayState* play, u32 index, EffectSs* this);
 
 EffectSsProfile Effect_Ss_G_Splash_Profile = {
     EFFECT_SS_G_SPLASH,
-    EffectSsGSplash_Init,
+    Effect_SS2_G_Splash_ct,
 };
 
-u32 EffectSsGSplash_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
+u32 Effect_SS2_G_Splash_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
     EffectSsGSplashInitParams* initParams = (EffectSsGSplashInitParams*)initParamsx;
     Vec3f zeroVec = { 0.0f, 0.0f, 0.0f };
 
     this->velocity = this->accel = zeroVec;
     this->pos = initParams->pos;
-    this->draw = EffectSsGSplash_Draw;
-    this->update = EffectSsGSplash_Update;
+    this->draw = Effect_SS_G_Splash_disp_mode;
+    this->update = Effect_SS_G_Splash_func_proc;
 
     if (initParams->scale == 0) {
         initParams->scale = 600;
@@ -89,8 +89,8 @@ u32 EffectSsGSplash_Init(PlayState* play, u32 index, EffectSs* this, void* initP
     return 1;
 }
 
-void EffectSsGSplash_Draw(PlayState* play, u32 index, EffectSs* this) {
-    static void* waterSplashTextures[] = {
+void Effect_SS_G_Splash_disp_mode(PlayState* play, u32 index, EffectSs* this) {
+    static void* splash2_txt[] = {
         gEffWaterSplash1Tex, gEffWaterSplash2Tex, gEffWaterSplash3Tex, gEffWaterSplash4Tex,
         gEffWaterSplash5Tex, gEffWaterSplash6Tex, gEffWaterSplash7Tex, gEffWaterSplash8Tex,
     };
@@ -102,7 +102,7 @@ void EffectSsGSplash_Draw(PlayState* play, u32 index, EffectSs* this) {
             if (texIdx > 7) {
                 texIdx = 7;
             }
-            EffectSs_DrawGEffect(play, this, waterSplashTextures[texIdx]);
+            effect_disp_mode_sub(play, this, splash2_txt[texIdx]);
             break;
 
         case 1:
@@ -110,7 +110,7 @@ void EffectSsGSplash_Draw(PlayState* play, u32 index, EffectSs* this) {
             if (texIdx > 7) {
                 texIdx = 7;
             }
-            EffectSs_DrawGEffect(play, this, waterSplashTextures[texIdx]);
+            effect_disp_mode_sub(play, this, splash2_txt[texIdx]);
             break;
 
         case 2:
@@ -118,7 +118,7 @@ void EffectSsGSplash_Draw(PlayState* play, u32 index, EffectSs* this) {
             if (texIdx > 7) {
                 texIdx = 7;
             }
-            EffectSs_DrawGEffect(play, this, waterSplashTextures[texIdx]);
+            effect_disp_mode_sub(play, this, splash2_txt[texIdx]);
             break;
 
         default:
@@ -126,13 +126,13 @@ void EffectSsGSplash_Draw(PlayState* play, u32 index, EffectSs* this) {
     }
 }
 
-void EffectSsGSplash_Update(PlayState* play, u32 index, EffectSs* this) {
+void Effect_SS_G_Splash_func_proc(PlayState* play, u32 index, EffectSs* this) {
     Vec3f newSplashPos;
 
     if ((this->rType == 1) && (this->life == 5)) {
         newSplashPos = this->pos;
         newSplashPos.y += ((this->rgScale * 20) * 0.002f);
-        EffectSsGSplash_Spawn(play, &newSplashPos, NULL, NULL, 2, this->rgScale / 2);
+        Effect_SS_G_Splash_sc_cl_ct(play, &newSplashPos, NULL, NULL, 2, this->rgScale / 2);
     }
 
     this->rgTexIdx += this->rgTexIdxStep;

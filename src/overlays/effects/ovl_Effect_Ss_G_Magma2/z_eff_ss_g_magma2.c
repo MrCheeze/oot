@@ -20,11 +20,11 @@
 #define rObjectSlot regs[10]
 #define rScale regs[11]
 
-u32 EffectSsGMagma2_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
-void EffectSsGMagma2_Draw(PlayState* play, u32 index, EffectSs* this);
-void EffectSsGMagma2_Update(PlayState* play, u32 index, EffectSs* this);
+u32 Effect_SS2_G_Magma2_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
+void Effect_SS_G_Magma2_disp(PlayState* play, u32 index, EffectSs* this);
+void Effect_SS_G_Magma2_move(PlayState* play, u32 index, EffectSs* this);
 
-static void* sTextures[] = {
+static void* g_magma2_txt_data[] = {
     object_kingdodongo_Tex_02E4E0, object_kingdodongo_Tex_02E8E0, object_kingdodongo_Tex_02ECE0,
     object_kingdodongo_Tex_02F0E0, object_kingdodongo_Tex_02F4E0, object_kingdodongo_Tex_02F8E0,
     object_kingdodongo_Tex_02FCE0, object_kingdodongo_Tex_0300E0, object_kingdodongo_Tex_0304E0,
@@ -34,25 +34,25 @@ static void* sTextures[] = {
 
 EffectSsProfile Effect_Ss_G_Magma2_Profile = {
     EFFECT_SS_G_MAGMA2,
-    EffectSsGMagma2_Init,
+    Effect_SS2_G_Magma2_ct,
 };
 
-u32 EffectSsGMagma2_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
-    s32 objectSlot = Object_GetSlot(&play->objectCtx, OBJECT_KINGDODONGO);
+u32 Effect_SS2_G_Magma2_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
+    s32 objectSlot = Object_Exchange_bank_check(&play->objectCtx, OBJECT_KINGDODONGO);
     s32 pad;
 
-    if ((objectSlot >= 0) && Object_IsLoaded(&play->objectCtx, objectSlot)) {
+    if ((objectSlot >= 0) && Object_Exchange_bank_dma_check(&play->objectCtx, objectSlot)) {
         Vec3f zeroVec = { 0.0f, 0.0f, 0.0f };
         EffectSsGMagma2InitParams* initParams = (EffectSsGMagma2InitParams*)initParamsx;
 
-        gSegments[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[objectSlot].segment);
+        SegmentBaseAddress[6] = VIRTUAL_TO_PHYSICAL(play->objectCtx.slots[objectSlot].segment);
         this->rObjectSlot = objectSlot;
         this->pos = initParams->pos;
         this->velocity = zeroVec;
         this->accel = zeroVec;
         this->life = 100;
-        this->draw = EffectSsGMagma2_Draw;
-        this->update = EffectSsGMagma2_Update;
+        this->draw = Effect_SS_G_Magma2_disp;
+        this->update = Effect_SS_G_Magma2_move;
         this->gfx = SEGMENTED_TO_VIRTUAL(object_kingdodongo_DL_025A90);
         this->rTexIndex = 0;
         this->rDrawMode = initParams->drawMode;
@@ -71,7 +71,7 @@ u32 EffectSsGMagma2_Init(PlayState* play, u32 index, EffectSs* this, void* initP
     return 0;
 }
 
-void EffectSsGMagma2_Draw(PlayState* play, u32 index, EffectSs* this) {
+void Effect_SS_G_Magma2_disp(PlayState* play, u32 index, EffectSs* this) {
     GraphicsContext* gfxCtx = play->state.gfxCtx;
     s32 pad;
     f32 scale;
@@ -82,27 +82,27 @@ void EffectSsGMagma2_Draw(PlayState* play, u32 index, EffectSs* this) {
 
     OPEN_DISPS(gfxCtx, "../z_eff_ss_g_magma2.c", 261);
 
-    Matrix_Translate(this->pos.x, this->pos.y, this->pos.z, MTXMODE_NEW);
-    Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
-    gSegments[6] = VIRTUAL_TO_PHYSICAL(objectPtr);
+    Matrix_translate(this->pos.x, this->pos.y, this->pos.z, MTXMODE_NEW);
+    Matrix_scale(scale, scale, scale, MTXMODE_APPLY);
+    SegmentBaseAddress[6] = VIRTUAL_TO_PHYSICAL(objectPtr);
     gSPSegment(POLY_XLU_DISP++, 0x06, objectPtr);
     MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, gfxCtx, "../z_eff_ss_g_magma2.c", 282);
 
     if (this->rDrawMode == 0) {
-        POLY_XLU_DISP = Gfx_SetupDL(POLY_XLU_DISP, SETUPDL_61);
+        POLY_XLU_DISP = rcp_mode_set(POLY_XLU_DISP, SETUPDL_61);
     } else {
-        POLY_XLU_DISP = Gfx_SetupDL(POLY_XLU_DISP, SETUPDL_0);
+        POLY_XLU_DISP = rcp_mode_set(POLY_XLU_DISP, SETUPDL_0);
     }
 
     gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, this->rPrimColorR, this->rPrimColorG, 0, this->rPrimColorA);
     gDPSetEnvColor(POLY_XLU_DISP++, this->rEnvColorR, this->rEnvColorG, 0, this->rEnvColorA);
-    gSPSegment(POLY_XLU_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(sTextures[this->rTexIndex]));
+    gSPSegment(POLY_XLU_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(g_magma2_txt_data[this->rTexIndex]));
     gSPDisplayList(POLY_XLU_DISP++, this->gfx);
 
     CLOSE_DISPS(gfxCtx, "../z_eff_ss_g_magma2.c", 311);
 }
 
-void EffectSsGMagma2_Update(PlayState* play, u32 index, EffectSs* this) {
+void Effect_SS_G_Magma2_move(PlayState* play, u32 index, EffectSs* this) {
     this->rTimer += this->rUpdateRate;
 
     if (this->rTimer >= 10) {

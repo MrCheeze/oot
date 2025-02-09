@@ -24,10 +24,10 @@ typedef struct AudioMgr {
     /* 0x00E8 */ OSThread thread;
 } AudioMgr; // size = 0x298
 
-void AudioMgr_Init(AudioMgr* audioMgr, void* stack, OSPri pri, OSId id, Scheduler* sched, IrqMgr* irqMgr);
+void amInit(AudioMgr* audioMgr, void* stack, OSPri pri, OSId id, Scheduler* sched, IrqMgr* irqMgr);
 
-void AudioMgr_WaitForInit(AudioMgr* audioMgr);
+void amInitSync(AudioMgr* audioMgr);
 
-void AudioMgr_StopAllSfx(void);
+void audio_StopAllSoundEffect(void);
 
 #endif

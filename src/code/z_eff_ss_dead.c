@@ -1,6 +1,6 @@
 #include "global.h"
 
-void func_80026230(PlayState* play, Color_RGBA8* color, s16 arg2, s16 arg3) {
+void Eff_Set_Fog2(PlayState* play, Color_RGBA8* color, s16 arg2, s16 arg3) {
     f32 cos;
     Gfx* displayListHead;
     f32 absCos;
@@ -8,7 +8,7 @@ void func_80026230(PlayState* play, Color_RGBA8* color, s16 arg2, s16 arg3) {
     OPEN_DISPS(play->state.gfxCtx, "../z_eff_ss_dead.c", 113);
 
     displayListHead = POLY_OPA_DISP;
-    cos = Math_CosS((0x8000 / arg3) * arg2);
+    cos = cos_s((0x8000 / arg3) * arg2);
     absCos = ABS(cos);
 
     gDPPipeSync(displayListHead++);
@@ -26,7 +26,7 @@ void func_80026230(PlayState* play, Color_RGBA8* color, s16 arg2, s16 arg3) {
     CLOSE_DISPS(play->state.gfxCtx, "../z_eff_ss_dead.c", 129);
 }
 
-void func_80026400(PlayState* play, Color_RGBA8* color, s16 arg2, s16 arg3) {
+void Eff_Set_Fog3(PlayState* play, Color_RGBA8* color, s16 arg2, s16 arg3) {
     Gfx* displayListHead;
     f32 cos;
 
@@ -38,7 +38,7 @@ void func_80026400(PlayState* play, Color_RGBA8* color, s16 arg2, s16 arg3) {
 
     OPEN_DISPS(play->state.gfxCtx, "../z_eff_ss_dead.c", 141);
 
-    cos = Math_CosS((0x4000 / arg3) * arg2);
+    cos = cos_s((0x4000 / arg3) * arg2);
     displayListHead = POLY_OPA_DISP;
 
     gDPPipeSync(displayListHead++);
@@ -50,18 +50,18 @@ void func_80026400(PlayState* play, Color_RGBA8* color, s16 arg2, s16 arg3) {
     CLOSE_DISPS(play->state.gfxCtx, "../z_eff_ss_dead.c", 153);
 }
 
-void func_80026608(PlayState* play) {
+void Eff_Off_Fog(PlayState* play) {
     s32 pad;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_eff_ss_dead.c", 159);
 
     gDPPipeSync(POLY_OPA_DISP++);
-    POLY_OPA_DISP = Play_SetFog(play, POLY_OPA_DISP);
+    POLY_OPA_DISP = game_play_set_fog(play, POLY_OPA_DISP);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_eff_ss_dead.c", 164);
 }
 
-void func_80026690(PlayState* play, Color_RGBA8* color, s16 arg2, s16 arg3) {
+void Eff_Set_Fog2_xlu(PlayState* play, Color_RGBA8* color, s16 arg2, s16 arg3) {
     f32 cos;
     Gfx* displayListHead;
     f32 absCos;
@@ -69,7 +69,7 @@ void func_80026690(PlayState* play, Color_RGBA8* color, s16 arg2, s16 arg3) {
     OPEN_DISPS(play->state.gfxCtx, "../z_eff_ss_dead.c", 178);
 
     displayListHead = POLY_XLU_DISP;
-    cos = Math_CosS((0x8000 / arg3) * arg2);
+    cos = cos_s((0x8000 / arg3) * arg2);
     absCos = ABS(cos);
 
     gDPPipeSync(displayListHead++);
@@ -87,14 +87,14 @@ void func_80026690(PlayState* play, Color_RGBA8* color, s16 arg2, s16 arg3) {
     CLOSE_DISPS(play->state.gfxCtx, "../z_eff_ss_dead.c", 194);
 }
 
-void func_80026860(PlayState* play, Color_RGBA8* color, s16 arg2, s16 arg3) {
+void Eff_Set_Fog3_xlu(PlayState* play, Color_RGBA8* color, s16 arg2, s16 arg3) {
     f32 cos;
     Gfx* displayListHead;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_eff_ss_dead.c", 201);
 
     displayListHead = POLY_XLU_DISP;
-    cos = Math_CosS((0x4000 / arg3) * arg2);
+    cos = cos_s((0x4000 / arg3) * arg2);
 
     gDPPipeSync(displayListHead++);
     gDPSetFogColor(displayListHead++, color->r, color->g, color->b, color->a);
@@ -105,13 +105,13 @@ void func_80026860(PlayState* play, Color_RGBA8* color, s16 arg2, s16 arg3) {
     CLOSE_DISPS(play->state.gfxCtx, "../z_eff_ss_dead.c", 212);
 }
 
-void func_80026A6C(PlayState* play) {
+void Eff_Off_Fog_xlu(PlayState* play) {
     s32 pad;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_eff_ss_dead.c", 217);
 
     gDPPipeSync(POLY_XLU_DISP++);
-    POLY_XLU_DISP = Play_SetFog(play, POLY_XLU_DISP);
+    POLY_XLU_DISP = game_play_set_fog(play, POLY_XLU_DISP);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_eff_ss_dead.c", 222);
 }

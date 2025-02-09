@@ -6,31 +6,31 @@
 #include "assets/objects/gameplay_keep/gameplay_keep.h"
 
 // unused
-Gfx sTransCircleEmptyDL[] = {
+static Gfx aligner[] = {
     gsSPEndDisplayList(),
 };
 
-u64 sTransCircleNormalTex[] = {
-#include "assets/code/fbdemo_circle/trans_circle_normal.i8.inc.c"
+static u64 g_wipe0_txt[] = {
+#include "assets/code/fbdemo_circle/g_wipe0_txt.i8.inc.c"
 };
 
-u64 sTransCircleWaveTex[] = {
-#include "assets/code/fbdemo_circle/trans_circle_wave.i8.inc.c"
+static u64 g_wipe1_txt[] = {
+#include "assets/code/fbdemo_circle/g_wipe1_txt.i8.inc.c"
 };
 
-u64 sTransCircleRippleTex[] = {
-#include "assets/code/fbdemo_circle/trans_circle_ripple.i8.inc.c"
+static u64 g_wipe2_txt[] = {
+#include "assets/code/fbdemo_circle/g_wipe2_txt.i8.inc.c"
 };
 
-u64 sTransCircleStarburstTex[] = {
-#include "assets/code/fbdemo_circle/trans_circle_starburst.i8.inc.c"
+static u64 g_wipe3_txt[] = {
+#include "assets/code/fbdemo_circle/g_wipe3_txt.i8.inc.c"
 };
 
-Vtx sTransCircleVtx[] = {
-#include "assets/code/fbdemo_circle/sTransCircleVtx.vtx.inc"
+static Vtx wipe_new_v[] = {
+#include "assets/code/fbdemo_circle/wipe_new_v.vtx.inc"
 };
 
-Gfx sTransCircleDL[] = {
+static Gfx wipe_new_modelT[] = {
     gsDPPipeSync(),
     gsSPClearGeometryMode(G_ZBUFFER | G_SHADE | G_CULL_BOTH | G_FOG | G_LIGHTING | G_TEXTURE_GEN |
                           G_TEXTURE_GEN_LINEAR | G_LOD | G_SHADING_SMOOTH),
@@ -43,7 +43,7 @@ Gfx sTransCircleDL[] = {
     gsDPLoadTextureBlock(0x08000000, G_IM_FMT_I, G_IM_SIZ_8b, 16, 64, 0, G_TX_NOMIRROR | G_TX_WRAP,
                          G_TX_NOMIRROR | G_TX_CLAMP, 4, 6, G_TX_NOLOD, G_TX_NOLOD),
     gsSPDisplayList(0x09000000),
-    gsSPVertex(sTransCircleVtx, 32, 0),
+    gsSPVertex(wipe_new_v, 32, 0),
     gsSP2Triangles(0, 1, 2, 0, 1, 3, 4, 0),
     gsSP2Triangles(3, 5, 6, 0, 5, 7, 8, 0),
     gsSP2Triangles(7, 9, 10, 0, 9, 11, 12, 0),
@@ -52,7 +52,7 @@ Gfx sTransCircleDL[] = {
     gsSP2Triangles(19, 21, 22, 0, 21, 23, 24, 0),
     gsSP2Triangles(23, 25, 26, 0, 25, 27, 28, 0),
     gsSP1Triangle(27, 29, 30, 0),
-    gsSPVertex(&sTransCircleVtx[31], 3, 0),
+    gsSPVertex(&wipe_new_v[31], 3, 0),
     gsSP1Triangle(0, 1, 2, 0),
     gsSPEndDisplayList(),
 };

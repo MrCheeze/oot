@@ -11,18 +11,18 @@ typedef struct TwoHeadArena {
     /* 0x0C */ void* tail;
 } TwoHeadArena; // size = 0x10
 
-void* THA_GetHead(TwoHeadArena* tha);
-void THA_SetHead(TwoHeadArena* tha, void* newHead);
-void* THA_GetTail(TwoHeadArena* tha);
-void* THA_AllocHead(TwoHeadArena* tha, size_t size);
-void* THA_AllocHeadByte(TwoHeadArena* tha);
-void* THA_AllocTail(TwoHeadArena* tha, size_t size);
-void* THA_AllocTailAlign16(TwoHeadArena* tha, size_t size);
-void* THA_AllocTailAlign(TwoHeadArena* tha, size_t size, uintptr_t mask);
-s32 THA_GetRemaining(TwoHeadArena* tha);
-u32 THA_IsCrash(TwoHeadArena* tha);
-void THA_Reset(TwoHeadArena* tha);
-void THA_Init(TwoHeadArena* tha, void* start, size_t size);
-void THA_Destroy(TwoHeadArena* tha);
+void* THA_getHeadPtr(TwoHeadArena* tha);
+void THA_setHeadPtr(TwoHeadArena* tha, void* newHead);
+void* THA_getTailPtr(TwoHeadArena* tha);
+void* THA_nextPtrN(TwoHeadArena* tha, size_t size);
+void* THA_nextPtr1(TwoHeadArena* tha);
+void* THA_alloc(TwoHeadArena* tha, size_t size);
+void* THA_alloc16(TwoHeadArena* tha, size_t size);
+void* THA_allocAlign(TwoHeadArena* tha, size_t size, uintptr_t mask);
+s32 THA_getFreeBytes(TwoHeadArena* tha);
+u32 THA_isCrash(TwoHeadArena* tha);
+void THA_init(TwoHeadArena* tha);
+void THA_ct(TwoHeadArena* tha, void* start, size_t size);
+void THA_dt(TwoHeadArena* tha);
 
 #endif

@@ -10,20 +10,20 @@
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
-void EnBomBowlPit_Init(Actor* thisx, PlayState* play);
-void EnBomBowlPit_Destroy(Actor* thisx, PlayState* play);
-void EnBomBowlPit_Update(Actor* thisx, PlayState* play);
+void En_Bom_Bowl_Pit_actor_ct(Actor* thisx, PlayState* play);
+void En_Bom_Bowl_Pit_actor_dt(Actor* thisx, PlayState* play);
+void En_Bom_Bowl_Pit_actor_move(Actor* thisx, PlayState* play);
 
-void EnBomBowlPit_SetupDetectHit(EnBomBowlPit* this, PlayState* play);
-void EnBomBowlPit_DetectHit(EnBomBowlPit* this, PlayState* play);
-void EnBomBowlPit_CameraDollyIn(EnBomBowlPit* this, PlayState* play);
-void EnBomBowlPit_SpawnPrize(EnBomBowlPit* this, PlayState* play);
-void EnBomBowlPit_SetupGivePrize(EnBomBowlPit* this, PlayState* play);
-void EnBomBowlPit_GivePrize(EnBomBowlPit* this, PlayState* play);
-void EnBomBowlPit_WaitTillPrizeGiven(EnBomBowlPit* this, PlayState* play);
-void EnBomBowlPit_Reset(EnBomBowlPit* this, PlayState* play);
+static void mode_wait(EnBomBowlPit* this, PlayState* play);
+static void mode_hit_check(EnBomBowlPit* this, PlayState* play);
+void mode_big_hit_move(EnBomBowlPit* this, PlayState* play);
+void mode_item_get_wait(EnBomBowlPit* this, PlayState* play);
+void mode_item_get_demo(EnBomBowlPit* this, PlayState* play);
+void mode_item_get_init(EnBomBowlPit* this, PlayState* play);
+static void mode_player_item_request(EnBomBowlPit* this, PlayState* play);
+static void mode_player_item_up(EnBomBowlPit* this, PlayState* play);
 
-static s32 sGetItemIds[] = { GI_BOMB_BAG_30, GI_HEART_PIECE, GI_BOMBCHUS_10, GI_BOMBS_1, GI_RUPEE_PURPLE };
+static s32 Bowl_Item_No_Data[] = { GI_BOMB_BAG_30, GI_HEART_PIECE, GI_BOMBCHUS_10, GI_BOMBS_1, GI_RUPEE_PURPLE };
 
 ActorProfile En_Bom_Bowl_Pit_Profile = {
     /**/ ACTOR_EN_BOM_BOWL_PIT,
@@ -31,29 +31,29 @@ ActorProfile En_Bom_Bowl_Pit_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(EnBomBowlPit),
-    /**/ EnBomBowlPit_Init,
-    /**/ EnBomBowlPit_Destroy,
-    /**/ EnBomBowlPit_Update,
+    /**/ En_Bom_Bowl_Pit_actor_ct,
+    /**/ En_Bom_Bowl_Pit_actor_dt,
+    /**/ En_Bom_Bowl_Pit_actor_move,
     /**/ NULL,
 };
 
-void EnBomBowlPit_Init(Actor* thisx, PlayState* play) {
+void En_Bom_Bowl_Pit_actor_ct(Actor* thisx, PlayState* play) {
     EnBomBowlPit* this = (EnBomBowlPit*)thisx;
 
-    this->actionFunc = EnBomBowlPit_SetupDetectHit;
+    this->actionFunc = mode_wait;
 }
 
-void EnBomBowlPit_Destroy(Actor* thisx, PlayState* play) {
+void En_Bom_Bowl_Pit_actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void EnBomBowlPit_SetupDetectHit(EnBomBowlPit* this, PlayState* play) {
+static void mode_wait(EnBomBowlPit* this, PlayState* play) {
     if (this->start != 0) {
         this->start = this->status = 0;
-        this->actionFunc = EnBomBowlPit_DetectHit;
+        this->actionFunc = mode_hit_check;
     }
 }
 
-void EnBomBowlPit_DetectHit(EnBomBowlPit* this, PlayState* play) {
+static void mode_hit_check(EnBomBowlPit* this, PlayState* play) {
     EnBomChu* chu;
     Vec3f chuPosDiff;
 
@@ -72,12 +72,12 @@ void EnBomBowlPit_DetectHit(EnBomBowlPit* this, PlayState* play) {
 
             if (((fabsf(chuPosDiff.x) < 40.0f) || (BREG(2))) && ((fabsf(chuPosDiff.y) < 40.0f) || (BREG(2))) &&
                 ((fabsf(chuPosDiff.z) < 40.0f) || (BREG(2)))) {
-                Player_SetCsActionWithHaltedActors(play, NULL, PLAYER_CSACTION_8);
+                player_demo_mode_set(play, NULL, PLAYER_CSACTION_8);
                 chu->timer = 1;
 
-                this->subCamId = Play_CreateSubCamera(play);
-                Play_ChangeCameraStatus(play, CAM_ID_MAIN, CAM_STAT_WAIT);
-                Play_ChangeCameraStatus(play, this->subCamId, CAM_STAT_ACTIVE);
+                this->subCamId = Gama_play_make_camera(play);
+                Gama_play_set_camera_status(play, CAM_ID_MAIN, CAM_STAT_WAIT);
+                Gama_play_set_camera_status(play, this->subCamId, CAM_STAT_ACTIVE);
 
                 this->subCamAtMaxVelFrac.x = this->subCamAtMaxVelFrac.y = this->subCamAtMaxVelFrac.z = 0.1f;
                 this->subCamEyeMaxVelFrac.x = this->subCamEyeMaxVelFrac.y = this->subCamEyeMaxVelFrac.z = 0.1f;
@@ -106,14 +106,14 @@ void EnBomBowlPit_DetectHit(EnBomBowlPit* this, PlayState* play) {
                 this->subCamAtVel.y = fabsf(this->subCamAt.y - this->subCamAtNext.y) * 0.02f;
                 this->subCamAtVel.z = fabsf(this->subCamAt.z - this->subCamAtNext.z) * 0.02f;
 
-                Play_SetCameraAtEye(play, this->subCamId, &this->subCamAt, &this->subCamEye);
+                Gama_play_camera_setting(play, this->subCamId, &this->subCamAt, &this->subCamEye);
                 this->actor.textId = 0xF;
-                Message_StartTextbox(play, this->actor.textId, NULL);
+                message_set(play, this->actor.textId, NULL);
                 this->unk_154 = TEXT_STATE_EVENT;
-                Sfx_PlaySfxCentered(NA_SE_EV_HIT_SOUND);
-                Player_SetCsActionWithHaltedActors(play, NULL, PLAYER_CSACTION_8);
+                Na_StartSystemSe_F(NA_SE_EV_HIT_SOUND);
+                player_demo_mode_set(play, NULL, PLAYER_CSACTION_8);
                 this->status = 1;
-                this->actionFunc = EnBomBowlPit_CameraDollyIn;
+                this->actionFunc = mode_big_hit_move;
                 break;
             } else {
                 chu = (EnBomChu*)chu->actor.next;
@@ -122,20 +122,20 @@ void EnBomBowlPit_DetectHit(EnBomBowlPit* this, PlayState* play) {
     }
 }
 
-void EnBomBowlPit_CameraDollyIn(EnBomBowlPit* this, PlayState* play) {
+void mode_big_hit_move(EnBomBowlPit* this, PlayState* play) {
     if (this->subCamId != SUB_CAM_ID_DONE) {
-        Math_ApproachF(&this->subCamAt.x, this->subCamAtNext.x, this->subCamAtMaxVelFrac.x, this->subCamAtVel.x);
-        Math_ApproachF(&this->subCamAt.y, this->subCamAtNext.y, this->subCamAtMaxVelFrac.y, this->subCamAtVel.y);
-        Math_ApproachF(&this->subCamAt.z, this->subCamAtNext.z, this->subCamAtMaxVelFrac.z, this->subCamAtVel.z);
-        Math_ApproachF(&this->subCamEye.x, this->subCamEyeNext.x, this->subCamEyeMaxVelFrac.x, this->subCamEyeVel.x);
-        Math_ApproachF(&this->subCamEye.y, this->subCamEyeNext.y, this->subCamEyeMaxVelFrac.y, this->subCamEyeVel.y);
-        Math_ApproachF(&this->subCamEye.z, this->subCamEyeNext.z, this->subCamEyeMaxVelFrac.z, this->subCamEyeVel.z);
+        add_calc2(&this->subCamAt.x, this->subCamAtNext.x, this->subCamAtMaxVelFrac.x, this->subCamAtVel.x);
+        add_calc2(&this->subCamAt.y, this->subCamAtNext.y, this->subCamAtMaxVelFrac.y, this->subCamAtVel.y);
+        add_calc2(&this->subCamAt.z, this->subCamAtNext.z, this->subCamAtMaxVelFrac.z, this->subCamAtVel.z);
+        add_calc2(&this->subCamEye.x, this->subCamEyeNext.x, this->subCamEyeMaxVelFrac.x, this->subCamEyeVel.x);
+        add_calc2(&this->subCamEye.y, this->subCamEyeNext.y, this->subCamEyeMaxVelFrac.y, this->subCamEyeVel.y);
+        add_calc2(&this->subCamEye.z, this->subCamEyeNext.z, this->subCamEyeMaxVelFrac.z, this->subCamEyeVel.z);
     }
 
-    Play_SetCameraAtEye(play, this->subCamId, &this->subCamAt, &this->subCamEye);
+    Gama_play_camera_setting(play, this->subCamId, &this->subCamAt, &this->subCamEye);
 
-    if ((this->unk_154 == Message_GetState(&play->msgCtx)) && Message_ShouldAdvance(play)) {
-        Message_CloseTextbox(play);
+    if ((this->unk_154 == message_check(&play->msgCtx)) && pad_on_check(play)) {
+        message_close(play);
     }
 
     if ((fabsf(this->subCamEye.x - this->subCamEyeNext.x) < 5.0f) &&
@@ -144,24 +144,24 @@ void EnBomBowlPit_CameraDollyIn(EnBomBowlPit* this, PlayState* play) {
         (fabsf(this->subCamAt.x - this->subCamAtNext.x) < 5.0f) &&
         (fabsf(this->subCamAt.y - this->subCamAtNext.y) < 5.0f) &&
         (fabsf(this->subCamAt.z - this->subCamAtNext.z) < 5.0f)) {
-        Message_CloseTextbox(play);
+        message_close(play);
         this->timer = 30;
-        this->actionFunc = EnBomBowlPit_SpawnPrize;
+        this->actionFunc = mode_item_get_wait;
     }
 }
 
-void EnBomBowlPit_SpawnPrize(EnBomBowlPit* this, PlayState* play) {
+void mode_item_get_wait(EnBomBowlPit* this, PlayState* play) {
     if (this->timer == 0) {
-        this->exItem = (EnExItem*)Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_EN_EX_ITEM,
+        this->exItem = (EnExItem*)Actor_info_make_child_actor(&play->actorCtx, &this->actor, play, ACTOR_EN_EX_ITEM,
                                                      this->actor.world.pos.x, this->actor.world.pos.y,
                                                      this->actor.world.pos.z - 70.0f, 0, 0, 0, this->prizeIndex);
         if (this->exItem != NULL) {
-            this->actionFunc = EnBomBowlPit_SetupGivePrize;
+            this->actionFunc = mode_item_get_demo;
         }
     }
 }
 
-void EnBomBowlPit_SetupGivePrize(EnBomBowlPit* this, PlayState* play) {
+void mode_item_get_demo(EnBomBowlPit* this, PlayState* play) {
     if (this->exItemDone != 0) {
         switch (this->prizeIndex) {
             case EXITEM_BOMB_BAG_BOWLING:
@@ -172,18 +172,18 @@ void EnBomBowlPit_SetupGivePrize(EnBomBowlPit* this, PlayState* play) {
                 break;
         }
 
-        Play_ClearCamera(play, this->subCamId);
-        Play_ChangeCameraStatus(play, CAM_ID_MAIN, CAM_STAT_ACTIVE);
-        Player_SetCsActionWithHaltedActors(play, NULL, PLAYER_CSACTION_8);
-        this->actionFunc = EnBomBowlPit_GivePrize;
+        Gama_play_clear_camera(play, this->subCamId);
+        Gama_play_set_camera_status(play, CAM_ID_MAIN, CAM_STAT_ACTIVE);
+        player_demo_mode_set(play, NULL, PLAYER_CSACTION_8);
+        this->actionFunc = mode_item_get_init;
     }
 }
 
-void EnBomBowlPit_GivePrize(EnBomBowlPit* this, PlayState* play) {
+void mode_item_get_init(EnBomBowlPit* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    Player_SetCsActionWithHaltedActors(play, NULL, PLAYER_CSACTION_7);
-    this->getItemId = sGetItemIds[this->prizeIndex];
+    player_demo_mode_set(play, NULL, PLAYER_CSACTION_7);
+    this->getItemId = Bowl_Item_No_Data[this->prizeIndex];
 
     if ((this->getItemId == GI_BOMB_BAG_30) && (CUR_CAPACITY(UPG_BOMB_BAG) == 30)) {
         this->getItemId = GI_BOMB_BAG_40;
@@ -191,35 +191,35 @@ void EnBomBowlPit_GivePrize(EnBomBowlPit* this, PlayState* play) {
 
     player->stateFlags1 &= ~PLAYER_STATE1_29;
     this->actor.parent = NULL;
-    Actor_OfferGetItem(&this->actor, play, this->getItemId, 2000.0f, 1000.0f);
+    Actor_carry_request_set2(&this->actor, play, this->getItemId, 2000.0f, 1000.0f);
     player->stateFlags1 |= PLAYER_STATE1_29;
-    this->actionFunc = EnBomBowlPit_WaitTillPrizeGiven;
+    this->actionFunc = mode_player_item_request;
 }
 
-void EnBomBowlPit_WaitTillPrizeGiven(EnBomBowlPit* this, PlayState* play) {
-    if (Actor_HasParent(&this->actor, play)) {
-        this->actionFunc = EnBomBowlPit_Reset;
+static void mode_player_item_request(EnBomBowlPit* this, PlayState* play) {
+    if (Actor_carry_check(&this->actor, play)) {
+        this->actionFunc = mode_player_item_up;
     } else {
-        Actor_OfferGetItem(&this->actor, play, this->getItemId, 2000.0f, 1000.0f);
+        Actor_carry_request_set2(&this->actor, play, this->getItemId, 2000.0f, 1000.0f);
     }
 }
 
-void EnBomBowlPit_Reset(EnBomBowlPit* this, PlayState* play) {
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_DONE) && Message_ShouldAdvance(play)) {
+static void mode_player_item_up(EnBomBowlPit* this, PlayState* play) {
+    if ((message_check(&play->msgCtx) == TEXT_STATE_DONE) && pad_on_check(play)) {
         // "Normal termination"/"completion"
         PRINTF(VT_FGCOL(GREEN) "☆☆☆☆☆ 正常終了 ☆☆☆☆☆ \n" VT_RST);
         if (this->getItemId == GI_HEART_PIECE) {
-            gSaveContext.healthAccumulator = 0x140;
+            z_common_data.healthAccumulator = 0x140;
             // "Ah recovery!" (?)
             PRINTF(VT_FGCOL(GREEN) "☆☆☆☆☆ あぁ回復！ ☆☆☆☆☆ \n" VT_RST);
         }
         this->exItemDone = 0;
         this->status = 2;
-        this->actionFunc = EnBomBowlPit_SetupDetectHit;
+        this->actionFunc = mode_wait;
     }
 }
 
-void EnBomBowlPit_Update(Actor* thisx, PlayState* play) {
+void En_Bom_Bowl_Pit_actor_move(Actor* thisx, PlayState* play) {
     EnBomBowlPit* this = (EnBomBowlPit*)thisx;
 
     this->actionFunc(this, play);

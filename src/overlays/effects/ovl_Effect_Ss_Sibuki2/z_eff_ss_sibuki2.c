@@ -18,24 +18,24 @@
 #define rTexIndex regs[8]
 #define rScale regs[9]
 
-u32 EffectSsSibuki2_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
-void EffectSsSibuki2_Draw(PlayState* play, u32 index, EffectSs* this);
-void EffectSsSibuki2_Update(PlayState* play, u32 index, EffectSs* this);
+u32 Effect_Ss2_Sibuki2_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
+void Effect_SS_Sibuki2_disp(PlayState* play, u32 index, EffectSs* this);
+void Effect_SS_Sibuki2_move(PlayState* play, u32 index, EffectSs* this);
 
 EffectSsProfile Effect_Ss_Sibuki2_Profile = {
     EFFECT_SS_SIBUKI2,
-    EffectSsSibuki2_Init,
+    Effect_Ss2_Sibuki2_ct,
 };
 
-u32 EffectSsSibuki2_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
+u32 Effect_Ss2_Sibuki2_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
     EffectSsSibuki2InitParams* initParams = (EffectSsSibuki2InitParams*)initParamsx;
 
     this->pos = initParams->pos;
     this->velocity = initParams->velocity;
     this->accel = initParams->accel;
     this->life = 10;
-    this->draw = EffectSsSibuki2_Draw;
-    this->update = EffectSsSibuki2_Update;
+    this->draw = Effect_SS_Sibuki2_disp;
+    this->update = Effect_SS_Sibuki2_move;
     this->rScale = initParams->scale;
     this->rPrimColorR = 255;
     this->rPrimColorG = 255;
@@ -50,8 +50,8 @@ u32 EffectSsSibuki2_Init(PlayState* play, u32 index, EffectSs* this, void* initP
     return 1;
 }
 
-void EffectSsSibuki2_Draw(PlayState* play, u32 index, EffectSs* this) {
-    static void* bubbleTextures[] = {
+void Effect_SS_Sibuki2_disp(PlayState* play, u32 index, EffectSs* this) {
+    static void* sibuki2_txt[] = {
         gEffUnusedBubbles1Tex, gEffUnusedBubbles1Tex, gEffUnusedBubbles2Tex,
         gEffUnusedBubbles3Tex, gEffUnusedBubbles4Tex, gEffUnusedBubbles5Tex,
         gEffUnusedBubbles6Tex, gEffUnusedBubbles7Tex, gEffUnusedBubbles8Tex,
@@ -61,19 +61,19 @@ void EffectSsSibuki2_Draw(PlayState* play, u32 index, EffectSs* this) {
 
     OPEN_DISPS(gfxCtx, "../z_eff_ss_sibuki2.c", 158);
 
-    Matrix_Translate(this->pos.x, this->pos.y, this->pos.z, MTXMODE_NEW);
-    Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
+    Matrix_translate(this->pos.x, this->pos.y, this->pos.z, MTXMODE_NEW);
+    Matrix_scale(scale, scale, scale, MTXMODE_APPLY);
     MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, gfxCtx, "../z_eff_ss_sibuki2.c", 171);
-    Gfx_SetupDL_25Opa(gfxCtx);
+    _texture_z_light_fog_prim(gfxCtx);
     gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, this->rPrimColorR, this->rPrimColorG, this->rPrimColorB, this->rPrimColorA);
     gDPSetEnvColor(POLY_XLU_DISP++, this->rEnvColorR, this->rEnvColorG, this->rEnvColorB, this->rEnvColorA);
-    gSPSegment(POLY_XLU_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(bubbleTextures[this->rTexIndex]));
+    gSPSegment(POLY_XLU_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(sibuki2_txt[this->rTexIndex]));
     gSPDisplayList(POLY_XLU_DISP++, SEGMENTED_TO_VIRTUAL(gEffUnusedBubblesDL));
 
     CLOSE_DISPS(gfxCtx, "../z_eff_ss_sibuki2.c", 198);
 }
 
-void EffectSsSibuki2_Update(PlayState* play, u32 index, EffectSs* this) {
+void Effect_SS_Sibuki2_move(PlayState* play, u32 index, EffectSs* this) {
     if (this->rTexIndex < 8) {
         this->rTexIndex++;
     }

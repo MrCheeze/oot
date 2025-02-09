@@ -9,15 +9,15 @@
 typedef void (*DemoDuActionFunc)(DemoDu*, PlayState*);
 typedef void (*DemoDuDrawFunc)(Actor*, PlayState*);
 
-void DemoDu_Init(Actor* thisx, PlayState* play);
-void DemoDu_Destroy(Actor* thisx, PlayState* play);
-void DemoDu_Update(Actor* thisx, PlayState* play);
-void DemoDu_Draw(Actor* thisx, PlayState* play);
+void Demo_Du_Actor_ct(Actor* thisx, PlayState* play);
+void Demo_Du_Actor_dt(Actor* thisx, PlayState* play);
+void Demo_Du_Actor_main(Actor* thisx, PlayState* play);
+void Demo_Du_Actor_draw(Actor* thisx, PlayState* play);
 
 #include "Demodt_Kenjyanoma.inc.c"
 
-static void* sEyeTextures[] = { gDaruniaEyeOpenTex, gDaruniaEyeOpeningTex, gDaruniaEyeShutTex, gDaruniaEyeClosingTex };
-static void* sMouthTextures[] = { gDaruniaMouthSeriousTex, gDaruniaMouthGrinningTex, gDaruniaMouthOpenTex,
+static void* demo_du_eye[] = { gDaruniaEyeOpenTex, gDaruniaEyeOpeningTex, gDaruniaEyeShutTex, gDaruniaEyeClosingTex };
+static void* demo_du_mouth[] = { gDaruniaMouthSeriousTex, gDaruniaMouthGrinningTex, gDaruniaMouthOpenTex,
                                   gDaruniaMouthHappyTex };
 
 /**
@@ -30,25 +30,25 @@ static void* sMouthTextures[] = { gDaruniaMouthSeriousTex, gDaruniaMouthGrinning
  *
  */
 
-// Each macro maps its argument to an index of sUpdateFuncs.
+// Each macro maps its argument to an index of proc.
 #define CS_FIREMEDALLION_SUBSCENE(x) (0 + (x))      // DEMO_DU_CS_FIREMEDALLION
 #define CS_GORONSRUBY_SUBSCENE(x) (7 + (x))         // DEMO_DU_CS_GORONS_RUBY
 #define CS_CHAMBERAFTERGANON_SUBSCENE(x) (21 + (x)) // DEMO_DU_CS_CHAMBER_AFTER_GANON
 #define CS_CREDITS_SUBSCENE(x) (24 + (x))           // DEMO_DU_CS_CREDITS
 
-void DemoDu_Destroy(Actor* thisx, PlayState* play) {
+void Demo_Du_Actor_dt(Actor* thisx, PlayState* play) {
     DemoDu* this = (DemoDu*)thisx;
 
-    SkelAnime_Free(&this->skelAnime, play);
+    Skeleton_Info_dt(&this->skelAnime, play);
 }
 
-void DemoDu_UpdateEyes(DemoDu* this) {
+void Demo_Du_set_eye_pattern(DemoDu* this) {
     s16* blinkTimer = &this->blinkTimer;
     s16* eyeTexIndex = &this->eyeTexIndex;
     s32 pad[3];
 
     if (DECR(*blinkTimer) == 0) {
-        *blinkTimer = Rand_S16Offset(60, 60);
+        *blinkTimer = get_random_timer(60, 60);
     }
 
     *eyeTexIndex = *blinkTimer;
@@ -57,11 +57,11 @@ void DemoDu_UpdateEyes(DemoDu* this) {
     }
 }
 
-void DemoDu_SetEyeTexIndex(DemoDu* this, s16 eyeTexIndex) {
+void Demo_Du_set_eye_Num(DemoDu* this, s16 eyeTexIndex) {
     this->eyeTexIndex = eyeTexIndex;
 }
 
-void DemoDu_SetMouthTexIndex(DemoDu* this, s16 mouthTexIndex) {
+void Demo_Du_set_mouth_Num(DemoDu* this, s16 mouthTexIndex) {
     this->mouthTexIndex = mouthTexIndex;
 }
 
@@ -92,15 +92,15 @@ void DemoDu_CsAfterGanon_CheckIfShouldReset(DemoDu* this, PlayState* play) {
 }
 #endif
 
-s32 DemoDu_UpdateSkelAnime(DemoDu* this) {
-    return SkelAnime_Update(&this->skelAnime);
+s32 Demo_Du_Animation_Base(DemoDu* this) {
+    return Skeleton_Info2_anime_play(&this->skelAnime);
 }
 
-void DemoDu_UpdateBgCheckInfo(DemoDu* this, PlayState* play) {
-    Actor_UpdateBgCheckInfo(play, &this->actor, 75.0f, 30.0f, 30.0f, UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
+void Demo_Du_BGcheck(DemoDu* this, PlayState* play) {
+    Actor_BGcheck2(play, &this->actor, 75.0f, 30.0f, 30.0f, UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
 }
 
-CsCmdActorCue* DemoDu_GetCue(PlayState* play, s32 cueChannel) {
+CsCmdActorCue* Demo_Du_Get_npcdemopnt(PlayState* play, s32 cueChannel) {
     if (play->csCtx.state != CS_STATE_IDLE) {
         CsCmdActorCue* cue = play->csCtx.actorCues[cueChannel];
 
@@ -110,8 +110,8 @@ CsCmdActorCue* DemoDu_GetCue(PlayState* play, s32 cueChannel) {
     return NULL;
 }
 
-s32 DemoDu_CheckForCue(DemoDu* this, PlayState* play, u16 cueId, s32 cueChannel) {
-    CsCmdActorCue* cue = DemoDu_GetCue(play, cueChannel);
+s32 Demo_Du_Check_npcdemopnt(DemoDu* this, PlayState* play, u16 cueId, s32 cueChannel) {
+    CsCmdActorCue* cue = Demo_Du_Get_npcdemopnt(play, cueChannel);
 
     if ((cue != NULL) && (cue->id == cueId)) {
         return true;
@@ -119,8 +119,8 @@ s32 DemoDu_CheckForCue(DemoDu* this, PlayState* play, u16 cueId, s32 cueChannel)
     return false;
 }
 
-s32 DemoDu_CheckForNoCue(DemoDu* this, PlayState* play, u16 cueId, s32 cueChannel) {
-    CsCmdActorCue* cue = DemoDu_GetCue(play, cueChannel);
+s32 Demo_Du_Check2_npcdemopnt(DemoDu* this, PlayState* play, u16 cueId, s32 cueChannel) {
+    CsCmdActorCue* cue = Demo_Du_Get_npcdemopnt(play, cueChannel);
 
     if ((cue != NULL) && (cue->id != cueId)) {
         return true;
@@ -128,8 +128,8 @@ s32 DemoDu_CheckForNoCue(DemoDu* this, PlayState* play, u16 cueId, s32 cueChanne
     return false;
 }
 
-void DemoDu_SetStartPosRotFromCue(DemoDu* this, PlayState* play, s32 cueChannel) {
-    CsCmdActorCue* cue = DemoDu_GetCue(play, cueChannel);
+void Demo_Du_Set_StartPos_npcdemopnt(DemoDu* this, PlayState* play, s32 cueChannel) {
+    CsCmdActorCue* cue = Demo_Du_Get_npcdemopnt(play, cueChannel);
     s32 pad;
 
     if (cue != NULL) {
@@ -141,9 +141,9 @@ void DemoDu_SetStartPosRotFromCue(DemoDu* this, PlayState* play, s32 cueChannel)
     }
 }
 
-void func_80969DDC(DemoDu* this, AnimationHeader* animation, u8 mode, f32 morphFrames, s32 arg4) {
+void Demo_Du_Change_Anime(DemoDu* this, AnimationHeader* animation, u8 mode, f32 morphFrames, s32 arg4) {
     f32 startFrame;
-    s16 lastFrame = Animation_GetLastFrame(animation);
+    s16 lastFrame = Si2_anime_end_frame(animation);
     f32 endFrame;
     f32 playSpeed;
 
@@ -156,7 +156,7 @@ void func_80969DDC(DemoDu* this, AnimationHeader* animation, u8 mode, f32 morphF
         playSpeed = -1.0f;
         startFrame = lastFrame;
     }
-    Animation_Change(&this->skelAnime, animation, playSpeed, startFrame, endFrame, mode, morphFrames);
+    Skeleton_Info2_init(&this->skelAnime, animation, playSpeed, startFrame, endFrame, mode, morphFrames);
 }
 
 #include "z_demo_du_inKenjyanoma.inc.c"
@@ -167,66 +167,66 @@ void func_80969DDC(DemoDu* this, AnimationHeader* animation, u8 mode, f32 morphF
 
 #include "z_demo_du_inEnding.inc.c"
 
-static DemoDuActionFunc sUpdateFuncs[] = {
-    DemoDu_UpdateCs_FM_00, DemoDu_UpdateCs_FM_01, DemoDu_UpdateCs_FM_02, DemoDu_UpdateCs_FM_03, DemoDu_UpdateCs_FM_04,
-    DemoDu_UpdateCs_FM_05, DemoDu_UpdateCs_FM_06, DemoDu_UpdateCs_GR_00, DemoDu_UpdateCs_GR_01, DemoDu_UpdateCs_GR_02,
-    DemoDu_UpdateCs_GR_03, DemoDu_UpdateCs_GR_04, DemoDu_UpdateCs_GR_05, DemoDu_UpdateCs_GR_06, DemoDu_UpdateCs_GR_07,
-    DemoDu_UpdateCs_GR_08, DemoDu_UpdateCs_GR_09, DemoDu_UpdateCs_GR_10, DemoDu_UpdateCs_GR_11, DemoDu_UpdateCs_GR_12,
-    DemoDu_UpdateCs_GR_13, DemoDu_UpdateCs_AG_00, DemoDu_UpdateCs_AG_01, DemoDu_UpdateCs_AG_02, DemoDu_UpdateCs_CR_00,
-    DemoDu_UpdateCs_CR_01, DemoDu_UpdateCs_CR_02, DemoDu_UpdateCs_CR_03, DemoDu_UpdateCs_CR_04,
-};
+void Demo_Du_Actor_main(Actor* thisx, PlayState* play) {
+    static DemoDuActionFunc proc[] = {
+        Demo_Du_Actor_main_wait, Demo_Du_Actor_main_hide, Demo_Du_Actor_main_up, Demo_Du_Actor_main_greet, Demo_Du_Actor_main_handup,
+        Demo_Du_Actor_main_cheer, Demo_Du_Actor_main_stop, Demo_Du_Actor_main_cryst_wait, Demo_Du_Actor_main_cryst_hide, Demo_Du_Actor_main_cryst_down,
+        Demo_Du_Actor_main_cryst_land, Demo_Du_Actor_main_cryst_standup, Demo_Du_Actor_main_cryst_greet, Demo_Du_Actor_main_cryst_impress, Demo_Du_Actor_main_cryst_thanks,
+        Demo_Du_Actor_main_cryst_hit, Demo_Du_Actor_main_cryst_impress2, Demo_Du_Actor_main_cryst_ready, Demo_Du_Actor_main_cryst_handup, Demo_Du_Actor_main_cryst_recall,
+        Demo_Du_Actor_main_cryst_stop, Demo_Du_Seal_Actor_main_hide, Demo_Du_Seal_Actor_main_fade, Demo_Du_Seal_Actor_main_pray, Demo_Du_inEnding_main_wait,
+        Demo_Du_inEnding_main_alpha, Demo_Du_inEnding_main_stand, Demo_Du_inEnding_main_lookup, Demo_Du_inEnding_main_lookdown,
+    };
 
-void DemoDu_Update(Actor* thisx, PlayState* play) {
     DemoDu* this = (DemoDu*)thisx;
 
-    if (this->updateIndex < 0 || this->updateIndex >= 29 || sUpdateFuncs[this->updateIndex] == NULL) {
+    if (this->updateIndex < 0 || this->updateIndex >= 29 || proc[this->updateIndex] == NULL) {
         // "The main mode is abnormal!!!!!!!!!!!!!!!!!!!!!!!!!"
         PRINTF(VT_FGCOL(RED) "メインモードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
         return;
     }
-    sUpdateFuncs[this->updateIndex](this, play);
+    proc[this->updateIndex](this, play);
 }
 
-void DemoDu_Init(Actor* thisx, PlayState* play) {
+void Demo_Du_Actor_ct(Actor* thisx, PlayState* play) {
     DemoDu* this = (DemoDu*)thisx;
 
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 30.0f);
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 30.0f);
     switch (this->actor.params) {
         case DEMO_DU_CS_GORONS_RUBY:
-            DemoDu_InitCs_GoronsRuby(this, play);
+            Demo_Du_Actor_Cryst_Init(this, play);
             break;
 
         case DEMO_DU_CS_CHAMBER_AFTER_GANON:
-            DemoDu_InitCs_AfterGanon(this, play);
+            Demo_Du_KenjyanomaDemo02_Init(this, play);
             break;
 
         case DEMO_DU_CS_CREDITS:
-            DemoDu_InitCs_Credits(this, play);
+            Demo_Du_Ending_Init(this, play);
             break;
 
         default:
-            DemoDu_InitCs_FireMedallion(this, play);
+            Demo_Du_Actor_Kenjyanoma_Init(this, play);
             break;
     }
 }
 
-void DemoDu_Draw_NoDraw(Actor* thisx, PlayState* play2) {
+void Demo_Du_Actor_draw_none(Actor* thisx, PlayState* play2) {
 }
 
-// Similar to DemoDu_Draw_02, but this uses POLY_OPA_DISP. Sets the env color to 255.
-void DemoDu_Draw_01(Actor* thisx, PlayState* play2) {
+// Similar to Demo_Du_Actor_draw_alpha, but this uses POLY_OPA_DISP. Sets the env color to 255.
+void Demo_Du_Actor_draw_normal(Actor* thisx, PlayState* play2) {
     PlayState* play = play2;
     DemoDu* this = (DemoDu*)thisx;
     s16 eyeTexIndex = this->eyeTexIndex;
-    void* eyeTexture = sEyeTextures[eyeTexIndex];
+    void* eyeTexture = demo_du_eye[eyeTexIndex];
     s32 pad;
     s16 mouthTexIndex = this->mouthTexIndex;
-    void* mouthTexture = sMouthTextures[mouthTexIndex];
+    void* mouthTexture = demo_du_mouth[mouthTexIndex];
     SkelAnime* skelAnime = &this->skelAnime;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_demo_du.c", 615);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
 
     gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(eyeTexture));
     gSPSegment(POLY_OPA_DISP++, 0x09, SEGMENTED_TO_VIRTUAL(mouthTexture));
@@ -234,28 +234,28 @@ void DemoDu_Draw_01(Actor* thisx, PlayState* play2) {
 
     gDPSetEnvColor(POLY_OPA_DISP++, 0, 0, 0, 255);
 
-    gSPSegment(POLY_OPA_DISP++, 0x0C, &D_80116280[2]);
+    gSPSegment(POLY_OPA_DISP++, 0x0C, &Actor_change_render_mode[2]);
 
-    SkelAnime_DrawFlexOpa(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount, NULL, NULL, this);
+    Si2_draw_SV(play, skelAnime->skeleton, skelAnime->jointTable, skelAnime->dListCount, NULL, NULL, this);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_demo_du.c", 638);
 }
 
-static DemoDuDrawFunc sDrawFuncs[] = {
-    DemoDu_Draw_NoDraw,
-    DemoDu_Draw_01,
-    DemoDu_Draw_02,
-};
+void Demo_Du_Actor_draw(Actor* thisx, PlayState* play) {
+    static DemoDuDrawFunc proc[] = {
+        Demo_Du_Actor_draw_none,
+        Demo_Du_Actor_draw_normal,
+        Demo_Du_Actor_draw_alpha,
+    };
 
-void DemoDu_Draw(Actor* thisx, PlayState* play) {
     DemoDu* this = (DemoDu*)thisx;
 
-    if (this->drawIndex < 0 || this->drawIndex >= 3 || sDrawFuncs[this->drawIndex] == NULL) {
+    if (this->drawIndex < 0 || this->drawIndex >= 3 || proc[this->drawIndex] == NULL) {
         // "The drawing mode is abnormal!!!!!!!!!!!!!!!!!!!!!!!!!"
         PRINTF(VT_FGCOL(RED) "描画モードがおかしい!!!!!!!!!!!!!!!!!!!!!!!!!\n" VT_RST);
         return;
     }
-    sDrawFuncs[this->drawIndex](thisx, play);
+    proc[this->drawIndex](thisx, play);
 }
 
 ActorProfile Demo_Du_Profile = {
@@ -264,8 +264,8 @@ ActorProfile Demo_Du_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_DU,
     /**/ sizeof(DemoDu),
-    /**/ DemoDu_Init,
-    /**/ DemoDu_Destroy,
-    /**/ DemoDu_Update,
-    /**/ DemoDu_Draw,
+    /**/ Demo_Du_Actor_ct,
+    /**/ Demo_Du_Actor_dt,
+    /**/ Demo_Du_Actor_main,
+    /**/ Demo_Du_Actor_draw,
 };

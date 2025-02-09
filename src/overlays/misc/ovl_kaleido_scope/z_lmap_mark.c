@@ -28,37 +28,37 @@ typedef struct PauseMapMarkInfo {
 
 // The Following arrays must be defined as const in z_lmap_mark.c to appear in rodata
 
-static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 sLoadTextureBlock_siz[] = {
+static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 custom_SIZ[] = {
     G_IM_SIZ_4b,
     G_IM_SIZ_8b,
     G_IM_SIZ_16b,
     G_IM_SIZ_32b,
 };
-static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 sLoadTextureBlock_siz_LOAD_BLOCK[] = {
+static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 custom_LOAD_BLOCK[] = {
     G_IM_SIZ_4b_LOAD_BLOCK,
     G_IM_SIZ_8b_LOAD_BLOCK,
     G_IM_SIZ_16b_LOAD_BLOCK,
     G_IM_SIZ_32b_LOAD_BLOCK,
 };
-static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 sLoadTextureBlock_siz_INCR[] = {
+static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 custom_INCR[] = {
     G_IM_SIZ_4b_INCR,
     G_IM_SIZ_8b_INCR,
     G_IM_SIZ_16b_INCR,
     G_IM_SIZ_32b_INCR,
 };
-static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 sLoadTextureBlock_siz_SHIFT[] = {
+static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 custom_SHIFT[] = {
     G_IM_SIZ_4b_SHIFT,
     G_IM_SIZ_8b_SHIFT,
     G_IM_SIZ_16b_SHIFT,
     G_IM_SIZ_32b_SHIFT,
 };
-static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 sLoadTextureBlock_siz_BYTES[] = {
+static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 custom_BYTES[] = {
     G_IM_SIZ_4b_BYTES,
     G_IM_SIZ_8b_BYTES,
     G_IM_SIZ_16b_BYTES,
     G_IM_SIZ_32b_BYTES,
 };
-static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 sLoadTextureBlock_siz_LINE_BYTES[] = {
+static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 custom_LINE_BYTES[] = {
     G_IM_SIZ_4b_LINE_BYTES,
     G_IM_SIZ_8b_LINE_BYTES,
     G_IM_SIZ_16b_LINE_BYTES,
@@ -71,56 +71,56 @@ static GDP_LOADTEXTUREBLOCK_RUNTIME_QUALIFIERS u32 sLoadTextureBlock_siz_LINE_BY
  */
 #define gDPLoadTextureBlock_Runtime(pkt, timg, fmt, siz, width, height, pal, cms, cmt, masks, maskt, shifts, shiftt)   \
     _DW({                                                                                                              \
-        gDPSetTextureImage(pkt, fmt, sLoadTextureBlock_siz_LOAD_BLOCK[siz], 1, timg);                                  \
-        gDPSetTile(pkt, fmt, sLoadTextureBlock_siz_LOAD_BLOCK[siz], 0, 0, G_TX_LOADTILE, 0, cmt, maskt, shiftt, cms,   \
+        gDPSetTextureImage(pkt, fmt, custom_LOAD_BLOCK[siz], 1, timg);                                  \
+        gDPSetTile(pkt, fmt, custom_LOAD_BLOCK[siz], 0, 0, G_TX_LOADTILE, 0, cmt, maskt, shiftt, cms,   \
                    masks, shifts);                                                                                     \
         gDPLoadSync(pkt);                                                                                              \
         gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0,                                                                         \
-                     (((width) * (height) + sLoadTextureBlock_siz_INCR[siz]) >> sLoadTextureBlock_siz_SHIFT[siz]) - 1, \
-                     CALC_DXT(width, sLoadTextureBlock_siz_BYTES[siz]));                                               \
+                     (((width) * (height) + custom_INCR[siz]) >> custom_SHIFT[siz]) - 1, \
+                     CALC_DXT(width, custom_BYTES[siz]));                                               \
         gDPPipeSync(pkt);                                                                                              \
-        gDPSetTile(pkt, fmt, sLoadTextureBlock_siz[siz], (((width)*sLoadTextureBlock_siz_LINE_BYTES[siz]) + 7) >> 3,   \
+        gDPSetTile(pkt, fmt, custom_SIZ[siz], (((width)*custom_LINE_BYTES[siz]) + 7) >> 3,   \
                    0, G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks, shifts);                                   \
         gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0, ((width)-1) << G_TEXTURE_IMAGE_FRAC,                                \
                        ((height)-1) << G_TEXTURE_IMAGE_FRAC);                                                          \
     })
 #endif
 
-static PauseMapMarkInfo sMapMarkInfoTable[] = {
+static PauseMapMarkInfo MarkData[] = {
     { gMapChestIconTex, G_IM_FMT_RGBA, G_IM_SIZ_16b, 8, 8, 32, 32, 1 << 10, 1 << 10 },
     { gMapBossIconTex, G_IM_FMT_IA, G_IM_SIZ_8b, 8, 8, 32, 32, 1 << 10, 1 << 10 },
 };
 
-extern PauseMapMarksData gPauseMapMarkDataTable[];
+extern PauseMapMarksData LargeMarkPos[];
 
-void PauseMapMark_Init(PlayState* play) {
-    gBossMarkState = 0;
-    gBossMarkScale = 1.0f;
-    gLoadedPauseMarkDataTable = gPauseMapMarkDataTable;
+void LargeMapMarkInit(PlayState* play) {
+    LargeMapMark_MarkScaleMode = 0;
+    LargeMapMark_MarkScale = 1.0f;
+    LargeMapMark_lmarkpos_p = LargeMarkPos;
 #if PLATFORM_N64
     if ((B_80121220 != NULL) && (B_80121220->unk_34 != NULL)) {
-        B_80121220->unk_34(&gLoadedPauseMarkDataTable);
+        B_80121220->unk_34(&LargeMapMark_lmarkpos_p);
     }
 #endif
 }
 
-void PauseMapMark_Clear(PlayState* play) {
+void LargeMapMarkCleanup(PlayState* play) {
 #if PLATFORM_N64
     if ((B_80121220 != NULL) && (B_80121220->unk_38 != NULL)) {
-        B_80121220->unk_38(&gLoadedPauseMarkDataTable);
+        B_80121220->unk_38(&LargeMapMark_lmarkpos_p);
     }
 #endif
-    gLoadedPauseMarkDataTable = NULL;
+    LargeMapMark_lmarkpos_p = NULL;
 }
 
-void PauseMapMark_DrawForDungeon(PlayState* play) {
+void LargeMapMarkDraw(PlayState* play) {
     PauseMapMarkData* mapMarkData;
     PauseMapMarkPoint* markPoint;
     PauseMapMarkInfo* markInfo;
     f32 scale;
     s32 i = 0;
 
-    mapMarkData = &gLoadedPauseMarkDataTable[R_MAP_TEX_INDEX >> 1][i];
+    mapMarkData = &LargeMapMark_lmarkpos_p[R_MAP_TEX_INDEX >> 1][i];
 
     OPEN_DISPS(play->state.gfxCtx, "../z_lmap_mark.c", 182);
 
@@ -131,28 +131,28 @@ void PauseMapMark_DrawForDungeon(PlayState* play) {
 
         if ((mapMarkData->markType == PAUSE_MAP_MARK_BOSS) && (play->sceneId >= SCENE_DEKU_TREE_BOSS) &&
             (play->sceneId <= SCENE_GANONS_TOWER_COLLAPSE_EXTERIOR)) {
-            if (gBossMarkState == 0) {
-                Math_ApproachF(&gBossMarkScale, 1.5f, 1.0f, 0.041f);
-                if (gBossMarkScale == 1.5f) {
-                    gBossMarkState = 1;
+            if (LargeMapMark_MarkScaleMode == 0) {
+                add_calc2(&LargeMapMark_MarkScale, 1.5f, 1.0f, 0.041f);
+                if (LargeMapMark_MarkScale == 1.5f) {
+                    LargeMapMark_MarkScaleMode = 1;
                 }
             } else {
-                Math_ApproachF(&gBossMarkScale, 1.0f, 1.0f, 0.041f);
-                if (gBossMarkScale == 1.0f) {
-                    gBossMarkState = 0;
+                add_calc2(&LargeMapMark_MarkScale, 1.0f, 1.0f, 0.041f);
+                if (LargeMapMark_MarkScale == 1.0f) {
+                    LargeMapMark_MarkScaleMode = 0;
                 }
             }
-            scale = gBossMarkScale;
+            scale = LargeMapMark_MarkScale;
         } else {
             scale = 1.0f;
         }
 
-        Matrix_Push();
+        Matrix_push();
 
         if ((play->pauseCtx.state == PAUSE_STATE_OPENING_1) || (play->pauseCtx.state >= PAUSE_STATE_CLOSING)) {
-            Matrix_Translate(-36.0f, 101.0f, 0.0f, MTXMODE_APPLY);
+            Matrix_translate(-36.0f, 101.0f, 0.0f, MTXMODE_APPLY);
         } else {
-            Matrix_Translate(-36.0f, 21.0f, 0.0f, MTXMODE_APPLY);
+            Matrix_translate(-36.0f, 21.0f, 0.0f, MTXMODE_APPLY);
         }
 
         gDPPipeSync(POLY_OPA_DISP++);
@@ -164,7 +164,7 @@ void PauseMapMark_DrawForDungeon(PlayState* play) {
             s32 display;
 
             if (mapMarkData->markType == PAUSE_MAP_MARK_CHEST) {
-                if (Flags_GetTreasure(play, markPoint->chestFlag)) {
+                if (Actor_Environment_Tbox_Check(play, markPoint->chestFlag)) {
                     display = false;
                 } else {
                     switch (play->sceneId) {
@@ -188,7 +188,7 @@ void PauseMapMark_DrawForDungeon(PlayState* play) {
             }
 
             if (display) {
-                markInfo = &sMapMarkInfoTable[mapMarkData->markType];
+                markInfo = &MarkData[mapMarkData->markType];
 
                 gDPPipeSync(POLY_OPA_DISP++);
                 gDPLoadTextureBlock_Runtime(POLY_OPA_DISP++, markInfo->texture, markInfo->imageFormat,
@@ -196,17 +196,17 @@ void PauseMapMark_DrawForDungeon(PlayState* play) {
                                             G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK,
                                             G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
 
-                Matrix_Push();
+                Matrix_push();
 
 #if DEBUG_FEATURES
-                Matrix_Translate(markPoint->x + GREG(92), markPoint->y + GREG(93), 0.0f, MTXMODE_APPLY);
+                Matrix_translate(markPoint->x + GREG(92), markPoint->y + GREG(93), 0.0f, MTXMODE_APPLY);
 #else
-                Matrix_Translate(markPoint->x, markPoint->y, 0.0f, MTXMODE_APPLY);
+                Matrix_translate(markPoint->x, markPoint->y, 0.0f, MTXMODE_APPLY);
 #endif
 
-                Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
+                Matrix_scale(scale, scale, scale, MTXMODE_APPLY);
                 MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_lmap_mark.c", 272);
-                Matrix_Pop();
+                Matrix_pull();
 
                 gSPVertex(POLY_OPA_DISP++, mapMarkData->vtx, mapMarkData->vtxCount, 0);
                 gSP1Quadrangle(POLY_OPA_DISP++, 1, 3, 2, 0, 0);
@@ -216,14 +216,14 @@ void PauseMapMark_DrawForDungeon(PlayState* play) {
         }
 
         mapMarkData++;
-        Matrix_Pop();
+        Matrix_pull();
     }
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_lmap_mark.c", 286);
 }
 
-void PauseMapMark_Draw(PlayState* play) {
-    PauseMapMark_Init(play);
+void LargeMapMarkDisplay(PlayState* play) {
+    LargeMapMarkInit(play);
 
     switch (play->sceneId) {
         case SCENE_DEKU_TREE:
@@ -236,9 +236,9 @@ void PauseMapMark_Draw(PlayState* play) {
         case SCENE_SHADOW_TEMPLE:
         case SCENE_BOTTOM_OF_THE_WELL:
         case SCENE_ICE_CAVERN:
-            PauseMapMark_DrawForDungeon(play);
+            LargeMapMarkDraw(play);
             break;
     }
 
-    PauseMapMark_Clear(play);
+    LargeMapMarkCleanup(play);
 }

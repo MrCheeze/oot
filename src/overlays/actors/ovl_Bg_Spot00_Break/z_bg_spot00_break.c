@@ -9,10 +9,10 @@
 
 #define FLAGS 0
 
-void BgSpot00Break_Init(Actor* thisx, PlayState* play);
-void BgSpot00Break_Destroy(Actor* thisx, PlayState* play);
-void BgSpot00Break_Update(Actor* thisx, PlayState* play);
-void BgSpot00Break_Draw(Actor* thisx, PlayState* play);
+void Bg_Spot00_Break_actor_ct(Actor* thisx, PlayState* play);
+void Bg_Spot00_Break_actor_dt(Actor* thisx, PlayState* play);
+void Bg_Spot00_Break_actor_move(Actor* thisx, PlayState* play);
+void Bg_Spot00_Break_actor_draw(Actor* thisx, PlayState* play);
 
 ActorProfile Bg_Spot00_Break_Profile = {
     /**/ ACTOR_BG_SPOT00_BREAK,
@@ -20,55 +20,55 @@ ActorProfile Bg_Spot00_Break_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_SPOT00_BREAK,
     /**/ sizeof(BgSpot00Break),
-    /**/ BgSpot00Break_Init,
-    /**/ BgSpot00Break_Destroy,
-    /**/ BgSpot00Break_Update,
-    /**/ BgSpot00Break_Draw,
+    /**/ Bg_Spot00_Break_actor_ct,
+    /**/ Bg_Spot00_Break_actor_dt,
+    /**/ Bg_Spot00_Break_actor_move,
+    /**/ Bg_Spot00_Break_actor_draw,
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_F32(cullingVolumeScale, 1200, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDownward, 1200, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDistance, 2000, ICHAIN_CONTINUE),
     ICHAIN_VEC3F_DIV1000(scale, 1000, ICHAIN_STOP),
 };
 
-void BgSpot00Break_Init(Actor* thisx, PlayState* play) {
+void Bg_Spot00_Break_actor_ct(Actor* thisx, PlayState* play) {
     BgSpot00Break* this = (BgSpot00Break*)thisx;
     s32 pad;
     CollisionHeader* colHeader = NULL;
 
-    Actor_ProcessInitChain(&this->dyna.actor, sInitChain);
-    DynaPolyActor_Init(&this->dyna, 0);
+    ValueSet_process(&this->dyna.actor, value_init);
+    MoveBG_ct(&this->dyna, 0);
 
     if (this->dyna.actor.params == 1) {
-        CollisionHeader_GetVirtual(&gBarbedWireFenceCol, &colHeader);
+        DynaPolyUty_bgdi_SG2KSG(&gBarbedWireFenceCol, &colHeader);
     } else {
-        CollisionHeader_GetVirtual(&gBrokenDrawbridgeCol, &colHeader);
+        DynaPolyUty_bgdi_SG2KSG(&gBrokenDrawbridgeCol, &colHeader);
     }
 
-    this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
+    this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
 
     if (!LINK_IS_ADULT) {
-        Actor_Kill(&this->dyna.actor);
+        Actor_delete(&this->dyna.actor);
     }
 }
 
-void BgSpot00Break_Destroy(Actor* thisx, PlayState* play) {
+void Bg_Spot00_Break_actor_dt(Actor* thisx, PlayState* play) {
     BgSpot00Break* this = (BgSpot00Break*)thisx;
 
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
 }
 
-void BgSpot00Break_Update(Actor* thisx, PlayState* play) {
+void Bg_Spot00_Break_actor_move(Actor* thisx, PlayState* play) {
 }
 
-void BgSpot00Break_Draw(Actor* thisx, PlayState* play) {
+void Bg_Spot00_Break_actor_draw(Actor* thisx, PlayState* play) {
     BgSpot00Break* this = (BgSpot00Break*)thisx;
 
     if (this->dyna.actor.params == 1) {
-        Gfx_DrawDListOpa(play, gBarbedWireFenceDL);
+        Cheap_gfx_display(play, gBarbedWireFenceDL);
     } else {
-        Gfx_DrawDListOpa(play, gBrokenDrawbridgeDL);
+        Cheap_gfx_display(play, gBrokenDrawbridgeDL);
     }
 }

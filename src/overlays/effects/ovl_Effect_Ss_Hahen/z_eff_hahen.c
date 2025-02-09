@@ -25,25 +25,25 @@
 #define rObjectSlot regs[5]
 #define rMinLife regs[6]
 
-u32 EffectSsHahen_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
-void EffectSsHahen_DrawGray(PlayState* play, u32 index, EffectSs* this);
-void EffectSsHahen_Draw(PlayState* play, u32 index, EffectSs* this);
-void EffectSsHahen_Update(PlayState* play, u32 index, EffectSs* this);
+u32 Effect_Ss_Hahen_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx);
+void Effect_Haka_Tubo_Hahen_disp(PlayState* play, u32 index, EffectSs* this);
+void Effect_Hahen_disp(PlayState* play, u32 index, EffectSs* this);
+void Effect_Hahen_move(PlayState* play, u32 index, EffectSs* this);
 
 EffectSsProfile Effect_Ss_Hahen_Profile = {
     EFFECT_SS_HAHEN,
-    EffectSsHahen_Init,
+    Effect_Ss_Hahen_ct,
 };
 
-void EffectSsHahen_CheckForObject(EffectSs* this, PlayState* play) {
-    if (((this->rObjectSlot = Object_GetSlot(&play->objectCtx, this->rObjId)) < 0) ||
-        !Object_IsLoaded(&play->objectCtx, this->rObjectSlot)) {
+static void check_shape_bank(EffectSs* this, PlayState* play) {
+    if (((this->rObjectSlot = Object_Exchange_bank_check(&play->objectCtx, this->rObjId)) < 0) ||
+        !Object_Exchange_bank_dma_check(&play->objectCtx, this->rObjectSlot)) {
         this->life = -1;
         this->draw = NULL;
     }
 }
 
-u32 EffectSsHahen_Init(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
+u32 Effect_Ss_Hahen_ct(PlayState* play, u32 index, EffectSs* this, void* initParamsx) {
     EffectSsHahenInitParams* initParams = (EffectSsHahenInitParams*)initParamsx;
 
     this->pos = initParams->pos;
@@ -54,29 +54,29 @@ u32 EffectSsHahen_Init(PlayState* play, u32 index, EffectSs* this, void* initPar
     if (initParams->dList != NULL) {
         this->gfx = initParams->dList;
         this->rObjId = initParams->objId;
-        EffectSsHahen_CheckForObject(this, play);
+        check_shape_bank(this, play);
     } else {
         this->gfx = SEGMENTED_TO_VIRTUAL(gEffFragments1DL);
         this->rObjId = -1;
     }
 
     if ((this->rObjId == OBJECT_HAKA_OBJECTS) && (this->gfx == gEffFragments2DL)) {
-        this->draw = EffectSsHahen_DrawGray;
+        this->draw = Effect_Haka_Tubo_Hahen_disp;
     } else {
-        this->draw = EffectSsHahen_Draw;
+        this->draw = Effect_Hahen_disp;
     }
 
-    this->update = EffectSsHahen_Update;
+    this->update = Effect_Hahen_move;
     this->rUnused = initParams->unused;
     this->rScale = initParams->scale;
-    this->rPitch = Rand_ZeroOne() * 314.0f;
-    this->rYaw = Rand_ZeroOne() * 314.0f;
+    this->rPitch = fqrand() * 314.0f;
+    this->rYaw = fqrand() * 314.0f;
     this->rMinLife = 200 - initParams->life;
 
     return 1;
 }
 
-void EffectSsHahen_Draw(PlayState* play, u32 index, EffectSs* this) {
+void Effect_Hahen_disp(PlayState* play, u32 index, EffectSs* this) {
     GraphicsContext* gfxCtx = play->state.gfxCtx;
     s32 pad;
     f32 scale = this->rScale * 0.001f;
@@ -87,19 +87,19 @@ void EffectSsHahen_Draw(PlayState* play, u32 index, EffectSs* this) {
         gSPSegment(POLY_OPA_DISP++, 0x06, play->objectCtx.slots[this->rObjectSlot].segment);
     }
 
-    Matrix_Translate(this->pos.x, this->pos.y, this->pos.z, MTXMODE_NEW);
-    Matrix_RotateY(this->rYaw * 0.01f, MTXMODE_APPLY);
-    Matrix_RotateX(this->rPitch * 0.01f, MTXMODE_APPLY);
-    Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
+    Matrix_translate(this->pos.x, this->pos.y, this->pos.z, MTXMODE_NEW);
+    Matrix_rotateY(this->rYaw * 0.01f, MTXMODE_APPLY);
+    Matrix_rotateX(this->rPitch * 0.01f, MTXMODE_APPLY);
+    Matrix_scale(scale, scale, scale, MTXMODE_APPLY);
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, gfxCtx, "../z_eff_hahen.c", 228);
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
     gSPDisplayList(POLY_OPA_DISP++, this->gfx);
 
     CLOSE_DISPS(gfxCtx, "../z_eff_hahen.c", 236);
 }
 
 // in the original game this function is hardcoded to be used only by the skull pots in Shadow Temple
-void EffectSsHahen_DrawGray(PlayState* play, u32 index, EffectSs* this) {
+void Effect_Haka_Tubo_Hahen_disp(PlayState* play, u32 index, EffectSs* this) {
     GraphicsContext* gfxCtx = play->state.gfxCtx;
     s32 pad;
     f32 scale = this->rScale * 0.001f;
@@ -110,12 +110,12 @@ void EffectSsHahen_DrawGray(PlayState* play, u32 index, EffectSs* this) {
         gSPSegment(POLY_OPA_DISP++, 0x06, play->objectCtx.slots[this->rObjectSlot].segment);
     }
 
-    Matrix_Translate(this->pos.x, this->pos.y, this->pos.z, MTXMODE_NEW);
-    Matrix_RotateY(this->rYaw * 0.01f, MTXMODE_APPLY);
-    Matrix_RotateX(this->rPitch * 0.01f, MTXMODE_APPLY);
-    Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
+    Matrix_translate(this->pos.x, this->pos.y, this->pos.z, MTXMODE_NEW);
+    Matrix_rotateY(this->rYaw * 0.01f, MTXMODE_APPLY);
+    Matrix_rotateX(this->rPitch * 0.01f, MTXMODE_APPLY);
+    Matrix_scale(scale, scale, scale, MTXMODE_APPLY);
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, gfxCtx, "../z_eff_hahen.c", 271);
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
     gDPSetCombineLERP(POLY_OPA_DISP++, SHADE, 0, PRIMITIVE, 0, SHADE, 0, PRIMITIVE, 0, SHADE, 0, PRIMITIVE, 0, SHADE, 0,
                       PRIMITIVE, 0);
     gDPSetPrimColor(POLY_OPA_DISP++, 0x0, 0x01, 100, 100, 120, 255);
@@ -124,7 +124,7 @@ void EffectSsHahen_DrawGray(PlayState* play, u32 index, EffectSs* this) {
     CLOSE_DISPS(gfxCtx, "../z_eff_hahen.c", 288);
 }
 
-void EffectSsHahen_Update(PlayState* play, u32 index, EffectSs* this) {
+void Effect_Hahen_move(PlayState* play, u32 index, EffectSs* this) {
     Player* player = GET_PLAYER(play);
 
     this->rPitch += 55;
@@ -135,6 +135,6 @@ void EffectSsHahen_Update(PlayState* play, u32 index, EffectSs* this) {
     }
 
     if (this->rObjId != -1) {
-        EffectSsHahen_CheckForObject(this, play);
+        check_shape_bank(this, play);
     }
 }

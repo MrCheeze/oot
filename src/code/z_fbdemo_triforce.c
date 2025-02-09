@@ -2,7 +2,7 @@
 
 #include "assets/code/fbdemo_triforce/z_fbdemo_triforce.c"
 
-void TransitionTriforce_Start(void* thisx) {
+void fbdemo_triforce_startup(void* thisx) {
     TransitionTriforce* this = (TransitionTriforce*)thisx;
 
     switch (this->state) {
@@ -17,7 +17,7 @@ void TransitionTriforce_Start(void* thisx) {
     }
 }
 
-void* TransitionTriforce_Init(void* thisx) {
+void* fbdemo_triforce_init(void* thisx) {
     TransitionTriforce* this = (TransitionTriforce*)thisx;
 
     bzero(this, sizeof(TransitionTriforce));
@@ -30,10 +30,10 @@ void* TransitionTriforce_Init(void* thisx) {
     return this;
 }
 
-void TransitionTriforce_Destroy(void* thisx) {
+void fbdemo_triforce_cleanup(void* thisx) {
 }
 
-void TransitionTriforce_Update(void* thisx, s32 updateRate) {
+void fbdemo_triforce_move(void* thisx, s32 updateRate) {
     TransitionTriforce* this = (TransitionTriforce*)thisx;
     s32 i;
 
@@ -50,26 +50,26 @@ void TransitionTriforce_Update(void* thisx, s32 updateRate) {
     }
 }
 
-void TransitionTriforce_SetColor(void* thisx, u32 color) {
+void fbdemo_triforce_setcolor_rgba8888(void* thisx, u32 color) {
     TransitionTriforce* this = (TransitionTriforce*)thisx;
 
     this->color.rgba = color;
 }
 
-void TransitionTriforce_SetType(void* thisx, s32 type) {
+void fbdemo_triforce_settype(void* thisx, s32 type) {
     TransitionTriforce* this = (TransitionTriforce*)thisx;
 
     this->type = type;
 }
 
 // unused
-void TransitionTriforce_SetState(void* thisx, s32 state) {
+void fbdemo_triforce_setscaletype(void* thisx, s32 state) {
     TransitionTriforce* this = (TransitionTriforce*)thisx;
 
     this->state = state;
 }
 
-void TransitionTriforce_Draw(void* thisx, Gfx** gfxP) {
+void fbdemo_triforce_draw(void* thisx, Gfx** gfxP) {
     Gfx* gfx = *gfxP;
     Mtx* modelView;
     f32 scale;
@@ -85,16 +85,16 @@ void TransitionTriforce_Draw(void* thisx, Gfx** gfxP) {
     guRotate(&modelView[1], rotation, 0.0f, 0.0f, 1.0f);
     guTranslate(&modelView[2], 0.0f, 0.0f, 0.0f);
     gDPPipeSync(gfx++);
-    gSPDisplayList(gfx++, sTransTriforceDL);
+    gSPDisplayList(gfx++, fbdemo_triforce_gfx_init);
     gDPSetColor(gfx++, G_SETPRIMCOLOR, this->color.rgba);
     gDPSetCombineMode(gfx++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
     gSPMatrix(gfx++, &this->projection, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_PROJECTION);
     gSPMatrix(gfx++, &modelView[0], G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
     gSPMatrix(gfx++, &modelView[1], G_MTX_NOPUSH | G_MTX_MUL | G_MTX_MODELVIEW);
     gSPMatrix(gfx++, &modelView[2], G_MTX_NOPUSH | G_MTX_MUL | G_MTX_MODELVIEW);
-    gSPVertex(gfx++, sTransTriforceVtx, 10, 0);
+    gSPVertex(gfx++, triangle_vtx, 10, 0);
 
-    if (!TransitionTriforce_IsDone(this)) {
+    if (!fbdemo_triforce_is_finish(this)) {
         switch (this->type) {
             case TRANS_INSTANCE_TYPE_FILL_OUT:
                 gSP2Triangles(gfx++, 0, 4, 5, 0, 4, 1, 3, 0);
@@ -122,7 +122,7 @@ void TransitionTriforce_Draw(void* thisx, Gfx** gfxP) {
     *gfxP = gfx;
 }
 
-s32 TransitionTriforce_IsDone(void* thisx) {
+s32 fbdemo_triforce_is_finish(void* thisx) {
     TransitionTriforce* this = (TransitionTriforce*)thisx;
 
     if (this->state == 1 || this->state == 2) {

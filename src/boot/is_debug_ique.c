@@ -1,4 +1,4 @@
-void osSyncPrintfUnused() {
+void fakePrintf() {
 }
 
 void osSyncPrintf() {

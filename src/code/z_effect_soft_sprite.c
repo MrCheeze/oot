@@ -3,57 +3,57 @@
 
 #include "z64frame_advance.h"
 
-EffectSsInfo sEffectSsInfo = { 0 }; // "EffectSS2Info"
+EffectSsInfo EffectSS2Info = { 0 }; // "EffectSS2Info"
 
-void EffectSs_InitInfo(PlayState* play, s32 tableSize) {
+void EffectSoftSprite_ct(PlayState* play, s32 tableSize) {
     u32 i;
     EffectSs* effectSs;
     EffectSsOverlay* overlay;
 
 #if DEBUG_FEATURES
-    for (i = 0; i < ARRAY_COUNT(gEffectSsOverlayTable); i++) {
-        overlay = &gEffectSsOverlayTable[i];
+    for (i = 0; i < ARRAY_COUNT(effect_ss2_dlftbls); i++) {
+        overlay = &effect_ss2_dlftbls[i];
         PRINTF("effect index %3d:size=%6dbyte romsize=%6dbyte\n", i,
                (uintptr_t)overlay->vramEnd - (uintptr_t)overlay->vramStart,
                overlay->file.vromEnd - overlay->file.vromStart);
     }
 #endif
 
-    sEffectSsInfo.table =
+    EffectSS2Info.table =
         GAME_STATE_ALLOC(&play->state, tableSize * sizeof(EffectSs), "../z_effect_soft_sprite.c", 289);
-    ASSERT(sEffectSsInfo.table != NULL, "EffectSS2Info.data_table != NULL", "../z_effect_soft_sprite.c", 290);
+    ASSERT(EffectSS2Info.table != NULL, "EffectSS2Info.data_table != NULL", "../z_effect_soft_sprite.c", 290);
 
-    sEffectSsInfo.searchStartIndex = 0;
-    sEffectSsInfo.tableSize = tableSize;
+    EffectSS2Info.searchStartIndex = 0;
+    EffectSS2Info.tableSize = tableSize;
 
-    for (effectSs = &sEffectSsInfo.table[0]; effectSs < &sEffectSsInfo.table[sEffectSsInfo.tableSize]; effectSs++) {
-        EffectSs_Reset(effectSs);
+    for (effectSs = &EffectSS2Info.table[0]; effectSs < &EffectSS2Info.table[EffectSS2Info.tableSize]; effectSs++) {
+        EffectSoftSprite2_ElementClear(effectSs);
     }
 
-    overlay = &gEffectSsOverlayTable[0];
-    for (i = 0; i < ARRAY_COUNT(gEffectSsOverlayTable); i++) {
+    overlay = &effect_ss2_dlftbls[0];
+    for (i = 0; i < ARRAY_COUNT(effect_ss2_dlftbls); i++) {
         overlay->loadedRamAddr = NULL;
         overlay++;
     }
 }
 
-void EffectSs_ClearAll(PlayState* play) {
+void EffectSoftSprite_dt(PlayState* play) {
     u32 i;
     EffectSs* effectSs;
     EffectSsOverlay* overlay;
     void* addr;
 
-    sEffectSsInfo.table = NULL;
-    sEffectSsInfo.searchStartIndex = 0;
-    sEffectSsInfo.tableSize = 0;
+    EffectSS2Info.table = NULL;
+    EffectSS2Info.searchStartIndex = 0;
+    EffectSS2Info.tableSize = 0;
 
     // This code doesn't actually work, since table was just set to NULL and tableSize to 0
-    for (effectSs = &sEffectSsInfo.table[0]; effectSs < &sEffectSsInfo.table[sEffectSsInfo.tableSize]; effectSs++) {
-        EffectSs_Delete(effectSs);
+    for (effectSs = &EffectSS2Info.table[0]; effectSs < &EffectSS2Info.table[EffectSS2Info.tableSize]; effectSs++) {
+        EffectSoftSprite2_ElementDestructClear(effectSs);
     }
 
-    overlay = &gEffectSsOverlayTable[0];
-    for (i = 0; i < ARRAY_COUNT(gEffectSsOverlayTable); i++) {
+    overlay = &effect_ss2_dlftbls[0];
+    for (i = 0; i < ARRAY_COUNT(effect_ss2_dlftbls); i++) {
         addr = overlay->loadedRamAddr;
 
         if (addr != NULL) {
@@ -65,19 +65,19 @@ void EffectSs_ClearAll(PlayState* play) {
     }
 }
 
-void EffectSs_Delete(EffectSs* effectSs) {
+void EffectSoftSprite2_ElementDestructClear(EffectSs* effectSs) {
     if (effectSs->flags & 2) {
-        Audio_StopSfxByPos(&effectSs->pos);
+        Nai_StopAllObjFx(&effectSs->pos);
     }
 
     if (effectSs->flags & 4) {
-        Audio_StopSfxByPos(&effectSs->vec);
+        Nai_StopAllObjFx(&effectSs->vec);
     }
 
-    EffectSs_Reset(effectSs);
+    EffectSoftSprite2_ElementClear(effectSs);
 }
 
-void EffectSs_Reset(EffectSs* effectSs) {
+void EffectSoftSprite2_ElementClear(EffectSs* effectSs) {
     u32 i;
 
     effectSs->type = EFFECT_SS_TYPE_MAX;
@@ -98,31 +98,31 @@ void EffectSs_Reset(EffectSs* effectSs) {
     }
 }
 
-s32 EffectSs_FindSlot(s32 priority, s32* pIndex) {
+s32 EffectSoftSprite2_SearchEmptyIndex(s32 priority, s32* pIndex) {
     s32 foundFree;
     s32 i;
 
-    if (sEffectSsInfo.searchStartIndex >= sEffectSsInfo.tableSize) {
-        sEffectSsInfo.searchStartIndex = 0;
+    if (EffectSS2Info.searchStartIndex >= EffectSS2Info.tableSize) {
+        EffectSS2Info.searchStartIndex = 0;
     }
 
     // Search for a free slot
-    i = sEffectSsInfo.searchStartIndex;
+    i = EffectSS2Info.searchStartIndex;
     foundFree = false;
     while (true) {
-        if (sEffectSsInfo.table[i].life == -1) {
+        if (EffectSS2Info.table[i].life == -1) {
             foundFree = true;
             break;
         }
 
         i++;
 
-        if (i >= sEffectSsInfo.tableSize) {
+        if (i >= EffectSS2Info.tableSize) {
             i = 0; // Loop around the whole table
         }
 
         // After a full loop, break out
-        if (i == sEffectSsInfo.searchStartIndex) {
+        if (i == EffectSS2Info.searchStartIndex) {
             break;
         }
     }
@@ -134,22 +134,22 @@ s32 EffectSs_FindSlot(s32 priority, s32* pIndex) {
 
     // If all slots are in use, search for a slot with a lower priority
     // Note that a lower priority is representend by a higher value
-    i = sEffectSsInfo.searchStartIndex;
+    i = EffectSS2Info.searchStartIndex;
     while (true) {
         // Equal priority should only be considered "lower" if flag 0 is set
-        if ((priority <= sEffectSsInfo.table[i].priority) &&
-            !((priority == sEffectSsInfo.table[i].priority) && (sEffectSsInfo.table[i].flags & 1))) {
+        if ((priority <= EffectSS2Info.table[i].priority) &&
+            !((priority == EffectSS2Info.table[i].priority) && (EffectSS2Info.table[i].flags & 1))) {
             break;
         }
 
         i++;
 
-        if (i >= sEffectSsInfo.tableSize) {
+        if (i >= EffectSS2Info.tableSize) {
             i = 0; // Loop around the whole table
         }
 
         // After a full loop, return 1 to indicate that we failed to find a suitable slot
-        if (i == sEffectSsInfo.searchStartIndex) {
+        if (i == EffectSS2Info.searchStartIndex) {
             return 1;
         }
     }
@@ -158,34 +158,34 @@ s32 EffectSs_FindSlot(s32 priority, s32* pIndex) {
     return 0;
 }
 
-void EffectSs_Insert(PlayState* play, EffectSs* effectSs) {
+void EffectSoftSprite2_add(PlayState* play, EffectSs* effectSs) {
     s32 index;
 
-    if (FrameAdvance_IsEnabled(play) != true) {
-        if (EffectSs_FindSlot(effectSs->priority, &index) == 0) {
-            sEffectSsInfo.searchStartIndex = index + 1;
-            sEffectSsInfo.table[index] = *effectSs;
+    if (_Game_play_isPause(play) != true) {
+        if (EffectSoftSprite2_SearchEmptyIndex(effectSs->priority, &index) == 0) {
+            EffectSS2Info.searchStartIndex = index + 1;
+            EffectSS2Info.table[index] = *effectSs;
         }
     }
 }
 
 // original name: "EffectSoftSprite2_makeEffect"
-void EffectSs_Spawn(PlayState* play, s32 type, s32 priority, void* initParams) {
+void EffectSoftSprite2_makeEffect(PlayState* play, s32 type, s32 priority, void* initParams) {
     s32 index;
     u32 overlaySize;
     EffectSsOverlay* overlayEntry;
     EffectSsProfile* profile;
 
-    overlayEntry = &gEffectSsOverlayTable[type];
+    overlayEntry = &effect_ss2_dlftbls[type];
 
     ASSERT(type < EFFECT_SS_TYPE_MAX, "type < EFFECT_SS2_TYPE_LAST_LABEL", "../z_effect_soft_sprite.c", 556);
 
-    if (EffectSs_FindSlot(priority, &index) != 0) {
+    if (EffectSoftSprite2_SearchEmptyIndex(priority, &index) != 0) {
         // Abort because we couldn't find a suitable slot to add this effect in
         return;
     }
 
-    sEffectSsInfo.searchStartIndex = index + 1;
+    EffectSS2Info.searchStartIndex = index + 1;
     overlaySize = (uintptr_t)overlayEntry->vramEnd - (uintptr_t)overlayEntry->vramStart;
 
     if (overlayEntry->vramStart == NULL) {
@@ -211,7 +211,7 @@ void EffectSs_Spawn(PlayState* play, s32 type, s32 priority, void* initParams) {
                 return;
             }
 
-            Overlay_Load(overlayEntry->file.vromStart, overlayEntry->file.vromEnd, overlayEntry->vramStart,
+            LoadFragmentFix2(overlayEntry->file.vromStart, overlayEntry->file.vromEnd, overlayEntry->vramStart,
                          overlayEntry->vramEnd, overlayEntry->loadedRamAddr);
 
             PRINTF_COLOR_GREEN();
@@ -240,12 +240,12 @@ void EffectSs_Spawn(PlayState* play, s32 type, s32 priority, void* initParams) {
     }
 
     // Delete the previous effect in the slot, in case the slot wasn't free
-    EffectSs_Delete(&sEffectSsInfo.table[index]);
+    EffectSoftSprite2_ElementDestructClear(&EffectSS2Info.table[index]);
 
-    sEffectSsInfo.table[index].type = type;
-    sEffectSsInfo.table[index].priority = priority;
+    EffectSS2Info.table[index].type = type;
+    EffectSS2Info.table[index].priority = priority;
 
-    if (profile->init(play, index, &sEffectSsInfo.table[index], initParams) == 0) {
+    if (profile->init(play, index, &EffectSS2Info.table[index], initParams) == 0) {
         PRINTF_COLOR_GREEN();
         PRINTF(T("EffectSoftSprite2_makeEffect():"
                  "何らかの理由でコンストラクト失敗。コンストラクターがエラーを返しました。"
@@ -254,12 +254,12 @@ void EffectSs_Spawn(PlayState* play, s32 type, s32 priority, void* initParams) {
                  "Construction failed for some reason. The constructor returned an error. "
                  "Ceasing effect addition.\n"));
         PRINTF_RST();
-        EffectSs_Reset(&sEffectSsInfo.table[index]);
+        EffectSoftSprite2_ElementClear(&EffectSS2Info.table[index]);
     }
 }
 
-void EffectSs_Update(PlayState* play, s32 index) {
-    EffectSs* effectSs = &sEffectSsInfo.table[index];
+void EffectSoftSprite2_proc_calc(PlayState* play, s32 index) {
+    EffectSs* effectSs = &EffectSS2Info.table[index];
 
     if (effectSs->update != NULL) {
         effectSs->velocity.x += effectSs->accel.x;
@@ -274,26 +274,26 @@ void EffectSs_Update(PlayState* play, s32 index) {
     }
 }
 
-void EffectSs_UpdateAll(PlayState* play) {
+void EffectSoftSprite_proc(PlayState* play) {
     s32 i;
 
-    for (i = 0; i < sEffectSsInfo.tableSize; i++) {
-        if (sEffectSsInfo.table[i].life > -1) {
-            sEffectSsInfo.table[i].life--;
+    for (i = 0; i < EffectSS2Info.tableSize; i++) {
+        if (EffectSS2Info.table[i].life > -1) {
+            EffectSS2Info.table[i].life--;
 
-            if (sEffectSsInfo.table[i].life < 0) {
-                EffectSs_Delete(&sEffectSsInfo.table[i]);
+            if (EffectSS2Info.table[i].life < 0) {
+                EffectSoftSprite2_ElementDestructClear(&EffectSS2Info.table[i]);
             }
         }
 
-        if (sEffectSsInfo.table[i].life > -1) {
-            EffectSs_Update(play, i);
+        if (EffectSS2Info.table[i].life > -1) {
+            EffectSoftSprite2_proc_calc(play, i);
         }
     }
 }
 
-void EffectSs_Draw(PlayState* play, s32 index) {
-    EffectSs* effectSs = &sEffectSsInfo.table[index];
+void EffectSoftSprite2_ElementDisp(PlayState* play, s32 index) {
+    EffectSs* effectSs = &EffectSS2Info.table[index];
 
     if (effectSs->draw != NULL) {
         effectSs->draw(play, index, effectSs);
@@ -301,18 +301,18 @@ void EffectSs_Draw(PlayState* play, s32 index) {
 }
 
 // original name: "EffectSoftSprite2_disp"
-void EffectSs_DrawAll(PlayState* play) {
-    Lights* lights = LightContext_NewLights(&play->lightCtx, play->state.gfxCtx);
+void EffectSoftSprite_disp(PlayState* play) {
+    Lights* lights = Global_light_read(&play->lightCtx, play->state.gfxCtx);
     s32 i;
 
-    Lights_BindAll(lights, play->lightCtx.listHead, NULL);
-    Lights_Draw(lights, play->state.gfxCtx);
+    LightsN_list_check(lights, play->lightCtx.listHead, NULL);
+    LightsN_disp(lights, play->state.gfxCtx);
 
-    for (i = 0; i < sEffectSsInfo.tableSize; i++) {
-        if (sEffectSsInfo.table[i].life > -1) {
-            if ((sEffectSsInfo.table[i].pos.x > 32000.0f) || (sEffectSsInfo.table[i].pos.x < -32000.0f) ||
-                (sEffectSsInfo.table[i].pos.y > 32000.0f) || (sEffectSsInfo.table[i].pos.y < -32000.0f) ||
-                (sEffectSsInfo.table[i].pos.z > 32000.0f) || (sEffectSsInfo.table[i].pos.z < -32000.0f)) {
+    for (i = 0; i < EffectSS2Info.tableSize; i++) {
+        if (EffectSS2Info.table[i].life > -1) {
+            if ((EffectSS2Info.table[i].pos.x > 32000.0f) || (EffectSS2Info.table[i].pos.x < -32000.0f) ||
+                (EffectSS2Info.table[i].pos.y > 32000.0f) || (EffectSS2Info.table[i].pos.y < -32000.0f) ||
+                (EffectSS2Info.table[i].pos.z > 32000.0f) || (EffectSS2Info.table[i].pos.z < -32000.0f)) {
                 PRINTF_COLOR_RED();
                 PRINTF(T("EffectSoftSprite2_disp():位置が領域外のため "
                          "削除します。エフェクトラベルNo.%d:プログラムの方で対応をお願いします。ここです ==> "
@@ -320,16 +320,16 @@ void EffectSs_DrawAll(PlayState* play) {
                          "EffectSoftSprite2_disp(): Since the position is outside the area, "
                          "delete it. Effect label No. %d: Please respond by the program. Here is ==> "
                          "pos(%f, %f, %f) and the label is in z_effect_soft_sprite_dlftbls.decl.\n"),
-                       sEffectSsInfo.table[i].type, sEffectSsInfo.table[i].pos.x, sEffectSsInfo.table[i].pos.y,
-                       sEffectSsInfo.table[i].pos.z);
+                       EffectSS2Info.table[i].type, EffectSS2Info.table[i].pos.x, EffectSS2Info.table[i].pos.y,
+                       EffectSS2Info.table[i].pos.z);
                 PRINTF_COLOR_GREEN();
                 PRINTF(T("もし、posを別のことに使っている場合相談に応じます。\n",
                          "If you are using pos for something else, consult me.\n"));
                 PRINTF_RST();
 
-                EffectSs_Delete(&sEffectSsInfo.table[i]);
+                EffectSoftSprite2_ElementDestructClear(&EffectSS2Info.table[i]);
             } else {
-                EffectSs_Draw(play, i);
+                EffectSoftSprite2_ElementDisp(play, i);
             }
         }
     }
@@ -338,7 +338,7 @@ void EffectSs_DrawAll(PlayState* play) {
 /**
  * Lerp from `a` (weightInv == inf) to `b` (weightInv == 1 or 0).
  */
-s16 EffectSs_LerpInv(s16 a, s16 b, s32 weightInv) {
+s16 Effect_SS_Uty_short_interpolation(s16 a, s16 b, s32 weightInv) {
     s16 ret = (weightInv == 0) ? b : (a + (s32)((b - a) / (f32)weightInv));
 
     return ret;
@@ -347,13 +347,13 @@ s16 EffectSs_LerpInv(s16 a, s16 b, s32 weightInv) {
 /**
  * Lerp from `a` (weight == 0) to `b` (weight == 1).
  */
-s16 EffectSs_LerpS16(s16 a, s16 b, f32 weight) {
+s16 Effect_SS_Uty_short_interpolation_t01(s16 a, s16 b, f32 weight) {
     return (b - a) * weight + a;
 }
 
 /**
  * Lerp from `a` (weight == 0) to `b` (weight == 1).
  */
-u8 EffectSs_LerpU8(u8 a, u8 b, f32 weight) {
+u8 Effect_SS_Uty_uc_interpolation_t01(u8 a, u8 b, f32 weight) {
     return weight * ((f32)b - (f32)a) + a;
 }

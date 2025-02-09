@@ -1,10 +1,10 @@
 <Root>
     <File Name="ovl_Oceff_Spot" OutName="z_oceff_spot">
-        <Texture Name="sTex" OutName="sun_song_effect" Format="i8" Width="32" Height="32" Offset="0x0"/>
-        <Array Name="sCylinderVtx" Count="27" Offset="0x400">
+        <Texture Name="g_mable_s1_txt" OutName="sun_song_effect" Format="i8" Width="32" Height="32" Offset="0x0"/>
+        <Array Name="efc_ocarina_1_v" Count="27" Offset="0x400">
             <Vtx/>
         </Array>
-        <DList Name="sCylinderMaterialDL" Offset="0x5B0"/>
-        <DList Name="sCylinderModelDL" Offset="0x648"/>
+        <DList Name="efc_ocarina_1_modelT" Offset="0x5B0"/>
+        <DList Name="efc_ocarina_1_modelT2" Offset="0x648"/>
     </File>
 </Root>

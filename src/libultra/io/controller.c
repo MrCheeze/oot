@@ -7,10 +7,10 @@ u8 __osMaxControllers; // always 4
 #ifndef BBPLAYER
 OSTimer __osEepromTimer;
 #endif
-OSMesgQueue __osEepromTimerMsgQueue;
+OSMesgQueue __osEepromTimerQ;
 OSMesg __osEepromTimerMsg;
 
-u32 __osContInitialized = false;
+u32 __osContinitialized = false;
 
 #define HALF_SECOND OS_USEC_TO_CYCLES(500000)
 
@@ -21,10 +21,10 @@ s32 osContInit(OSMesgQueue* mq, u8* ctlBitfield, OSContStatus* status) {
     OSTimer timer;
     OSMesgQueue timerMesgQueue;
 
-    if (__osContInitialized) {
+    if (__osContinitialized) {
         return 0;
     }
-    __osContInitialized = true;
+    __osContinitialized = true;
 
     currentTime = osGetTime();
     if (currentTime < HALF_SECOND) {
@@ -49,7 +49,7 @@ s32 osContInit(OSMesgQueue* mq, u8* ctlBitfield, OSContStatus* status) {
     __osContLastCmd = CONT_CMD_REQUEST_STATUS;
 #endif
     __osSiCreateAccessQueue();
-    osCreateMesgQueue(&__osEepromTimerMsgQueue, &__osEepromTimerMsg, 1);
+    osCreateMesgQueue(&__osEepromTimerQ, &__osEepromTimerMsg, 1);
 
     return ret;
 }

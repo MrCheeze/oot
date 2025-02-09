@@ -1,4 +1,4 @@
-static GetItemEntry sGetItemTable[] = {
+static GetItemEntry get_item_status[] = {
     // GI_BOMBS_5
     GET_ITEM(ITEM_BOMBS_5, OBJECT_GI_BOMB_1, GID_BOMB, 0x32, 0x59, CHEST_ANIM_SHORT),
     // GI_DEKU_NUTS_5

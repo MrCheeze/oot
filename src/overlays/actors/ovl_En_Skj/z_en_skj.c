@@ -6,93 +6,93 @@
     (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE | ACTOR_FLAG_UPDATE_CULLING_DISABLED | \
      ACTOR_FLAG_UPDATE_DURING_OCARINA)
 
-void EnSkj_Init(Actor* thisx, PlayState* play2);
-void EnSkj_Destroy(Actor* thisx, PlayState* play);
-void EnSkj_Update(Actor* thisx, PlayState* play);
-void EnSkj_Draw(Actor* thisx, PlayState* play);
+void En_Skj_actor_ct(Actor* thisx, PlayState* play2);
+void En_Skj_actor_dt(Actor* thisx, PlayState* play);
+void En_Skj_actor_move(Actor* thisx, PlayState* play);
+void En_Skj_actor_draw(Actor* thisx, PlayState* play);
 
-void EnSkj_SariasSongShortStumpUpdate(Actor* thisx, PlayState* play);
-void EnSkj_OcarinaMinigameShortStumpUpdate(Actor* thisx, PlayState* play);
+void En_Skj_Ocarina_actor_move(Actor* thisx, PlayState* play);
+void En_Skj_OcarinaT_actor_move(Actor* thisx, PlayState* play);
 
-void func_80AFF2A0(EnSkj* this);
-void func_80AFF334(EnSkj* this);
+void Change_Skj_Landing(EnSkj* this);
+void Change_Skj_Serch(EnSkj* this);
 
-void EnSkj_CalculateCenter(EnSkj* this);
-void EnSkj_OcarinaGameSetupWaitForPlayer(EnSkj* this);
-void EnSkj_SetupResetFight(EnSkj* this);
-void EnSkj_SetupLeaveOcarinaGame(EnSkj* this);
-void EnSkj_SetupPlayOcarinaGame(EnSkj* this);
-void EnSkj_Backflip(EnSkj* this);
-void EnSkj_SetupNeedleRecover(EnSkj* this);
-void EnSkj_SetupSpawnDeathEffect(EnSkj* this);
-void EnSkj_SetupStand(EnSkj* this);
-void EnSkj_SetupWaitForSong(EnSkj* this);
-void EnSkj_SetupTalk(EnSkj* this);
-void EnSkj_SetupMaskTrade(EnSkj* this);
-void EnSkj_SetupWrongSong(EnSkj* this);
-void EnSkj_SetupAfterSong(EnSkj* this);
-void func_80AFFE24(EnSkj* this);
-void EnSkj_SetupPostSariasSong(EnSkj* this);
-void EnSkj_JumpFromStump(EnSkj* this);
-void EnSkj_SetupWaitForLandAnimFinish(EnSkj* this);
-void EnSkj_SetupWalkToPlayer(EnSkj* this);
-void EnSkj_SetupWaitForMaskTextClear(EnSkj* this);
-void EnSkj_SetupWaitForTextClear(EnSkj* this);
-void EnSkj_SetupDie(EnSkj* this);
-void func_80AFF1F0(EnSkj* this);
-void EnSkj_OfferNextRound(EnSkj* this, PlayState* play);
-void EnSkj_SetupAskForMask(EnSkj* this, PlayState* play);
-f32 EnSkj_GetItemXzRange(EnSkj* this);
-s32 EnSkj_CollisionCheck(EnSkj* this, PlayState* play);
-void EnSkj_SetupTakeMask(EnSkj* this, PlayState* play);
-void EnSkj_TurnPlayer(EnSkj* this, Player* player);
+void Skj_CenterPositionSet(EnSkj* this);
+void Change_Skj_Trio_Wait(EnSkj* this);
+void Change_Skj_Dance(EnSkj* this);
+void Change_Skj_Trio_Ocarina_Escape(EnSkj* this);
+void Change_Skj_Trio_Ocarina_Dance(EnSkj* this);
+void Change_Skj_Back_Jump(EnSkj* this);
+void Change_Skj_Attack_Reverse(EnSkj* this);
+void Change_Skj_Burn(EnSkj* this);
+void Change_Skj_Side_Walk(EnSkj* this);
+void Change_Skj_Ocarina_Duo(EnSkj* this);
+void Change_Skj_Duo_MsgWait(EnSkj* this);
+void Change_Skj_Duo_BuyMaskTalk(EnSkj* this);
+void Change_Skj_Duo_FailureTalkWait(EnSkj* this);
+void Change_Skj_Duo_Talk(EnSkj* this);
+void Change_Skj_Duo_CarryStart(EnSkj* this);
+void Change_Skj_Duo_CarryFinish(EnSkj* this);
+void Change_Skj_Duo_BuyMaskJump(EnSkj* this);
+void Change_Skj_Duo_BuyMaskLanding(EnSkj* this);
+void Change_Skj_Duo_BuyMaskWalk(EnSkj* this);
+void Change_Skj_Duo_BuyMaskEscape(EnSkj* this);
+void Change_Skj_Duo_FailureTalk(EnSkj* this);
+void Change_Skj_Down(EnSkj* this);
+void Change_Skj_Hit(EnSkj* this);
+void Change_Skj_OcarinaT_FailureTalkEnd(EnSkj* this, PlayState* play);
+void Change_Skj_Duo_BuyMask(EnSkj* this, PlayState* play);
+f32 Skj_TalkDistance(EnSkj* this);
+s32 Skj_Cross(EnSkj* this, PlayState* play);
+void Change_Skj_Duo_BuyMaskFinish(EnSkj* this, PlayState* play);
+void Skj_OcarinaT_PlayerAngleSet(EnSkj* this, Player* player);
 
-void EnSkj_SetupWaitForOcarina(EnSkj* this, PlayState* play);
-void EnSkj_StartOcarinaMinigame(EnSkj* this, PlayState* play);
-void EnSkj_WaitForOcarina(EnSkj* this, PlayState* play);
-void EnSkj_WaitForPlayback(EnSkj* this, PlayState* play);
-void EnSkj_FailedMiniGame(EnSkj* this, PlayState* play);
-void EnSkj_WonOcarinaMiniGame(EnSkj* this, PlayState* play);
-void EnSkj_WaitToGiveReward(EnSkj* this, PlayState* play);
-void EnSkj_GiveOcarinaGameReward(EnSkj* this, PlayState* play);
-void EnSkj_FinishOcarinaGameRound(EnSkj* this, PlayState* play);
-void EnSkj_WaitForNextRound(EnSkj* this, PlayState* play);
-void EnSkj_WaitForOfferResponse(EnSkj* this, PlayState* play);
-void EnSkj_CleanupOcarinaGame(EnSkj* this, PlayState* play);
+void Skj_OcarinaT_TalkWait(EnSkj* this, PlayState* play);
+void Skj_OcarinaT_Talk(EnSkj* this, PlayState* play);
+void Skj_OcarinaT_TalkWait2(EnSkj* this, PlayState* play);
+void Skj_OcarinaT_Play_1(EnSkj* this, PlayState* play);
+void Skj_OcarinaT_Failure(EnSkj* this, PlayState* play);
+void Skj_OcarinaT_Success(EnSkj* this, PlayState* play);
+void Skj_OcarinaT_SuccessTalkWait(EnSkj* this, PlayState* play);
+void Skj_OcarinaT_SuccessCarryWait(EnSkj* this, PlayState* play);
+void Skj_OcarinaT_SuccessCarryFinish(EnSkj* this, PlayState* play);
+void Skj_OcarinaT_FailureTalkWait(EnSkj* this, PlayState* play);
+void Skj_OcarinaT_FailureTalkEnd(EnSkj* this, PlayState* play);
+void Skj_OcarinaT_Finish(EnSkj* this, PlayState* play);
 
-void EnSkj_Fade(EnSkj* this, PlayState* play);
-void EnSkj_WaitToShootNeedle(EnSkj* this, PlayState* play);
-void EnSkj_SariasSongKidIdle(EnSkj* this, PlayState* play);
-void EnSkj_WaitForDeathAnim(EnSkj* this, PlayState* play);
-void EnSkj_PickNextFightAction(EnSkj* this, PlayState* play);
-void EnSkj_WaitForLandAnim(EnSkj* this, PlayState* play);
-void EnSkj_ResetFight(EnSkj* this, PlayState* play);
-void EnSkj_Fight(EnSkj* this, PlayState* play);
-void EnSkj_NeedleRecover(EnSkj* this, PlayState* play);
-void EnSkj_SpawnDeathEffect(EnSkj* this, PlayState* play);
-void EnSkj_WaitInRange(EnSkj* this, PlayState* play);
-void EnSkj_WaitForSong(EnSkj* this, PlayState* play);
-void EnSkj_AfterSong(EnSkj* this, PlayState* play);
-void EnSkj_SariaSongTalk(EnSkj* this, PlayState* play);
-void func_80AFFE44(EnSkj* this, PlayState* play);
-void EnSkj_ChangeModeAfterSong(EnSkj* this, PlayState* play);
-void EnSkj_StartMaskTrade(EnSkj* this, PlayState* play);
-void EnSkj_WaitForLanding(EnSkj* this, PlayState* play);
-void EnSkj_WaitForLandAnimFinish(EnSkj* this, PlayState* play);
-void EnSkj_WalkToPlayer(EnSkj* this, PlayState* play);
-void EnSkj_AskForMask(EnSkj* this, PlayState* play);
-void EnSkj_TakeMask(EnSkj* this, PlayState* play);
-void EnSkj_WaitForMaskTextClear(EnSkj* this, PlayState* play);
-void EnSkj_WrongSong(EnSkj* this, PlayState* play);
-void EnSkj_SariasSongWaitForTextClear(EnSkj* this, PlayState* play);
-void EnSkj_OcarinaGameWaitForPlayer(EnSkj* this, PlayState* play);
-void EnSkj_OcarinaGameIdle(EnSkj* this, PlayState* play);
-void EnSkj_PlayOcarinaGame(EnSkj* this, PlayState* play);
-void EnSkj_LeaveOcarinaGame(EnSkj* this, PlayState* play);
+void Skj_Back_Jump(EnSkj* this, PlayState* play);
+void Skj_Attack(EnSkj* this, PlayState* play);
+void Skj_Dance(EnSkj* this, PlayState* play);
+void Skj_Down(EnSkj* this, PlayState* play);
+void Skj_Hit(EnSkj* this, PlayState* play);
+void Skj_Landing(EnSkj* this, PlayState* play);
+void Skj_Serch(EnSkj* this, PlayState* play);
+void Skj_Side_Walk(EnSkj* this, PlayState* play);
+void Skj_Attack_Reverse(EnSkj* this, PlayState* play);
+void Skj_Burn(EnSkj* this, PlayState* play);
+void Skj_Talk_Wait(EnSkj* this, PlayState* play);
+void Skj_Ocarina_Duo(EnSkj* this, PlayState* play);
+void Skj_Duo_Talk(EnSkj* this, PlayState* play);
+void Skj_Duo_MsgWait(EnSkj* this, PlayState* play);
+void Skj_Duo_CarryStart(EnSkj* this, PlayState* play);
+void Skj_Duo_CarryFinish(EnSkj* this, PlayState* play);
+void Skj_Duo_BuyMaskTalk(EnSkj* this, PlayState* play);
+void Skj_Duo_BuyMaskJump(EnSkj* this, PlayState* play);
+void Skj_Duo_BuyMaskLanding(EnSkj* this, PlayState* play);
+void Skj_Duo_BuyMaskWalk(EnSkj* this, PlayState* play);
+void Skj_Duo_BuyMask(EnSkj* this, PlayState* play);
+void Skj_Duo_BuyMaskFinish(EnSkj* this, PlayState* play);
+void Skj_Duo_BuyMaskEscape(EnSkj* this, PlayState* play);
+void Skj_Duo_FailureTalkWait(EnSkj* this, PlayState* play);
+void Skj_Duo_FailureTalk(EnSkj* this, PlayState* play);
+void Skj_Trio_Wait(EnSkj* this, PlayState* play);
+void Skj_Trio_Ocarina_Wait(EnSkj* this, PlayState* play);
+void Skj_Trio_Ocarina_Dance(EnSkj* this, PlayState* play);
+void Skj_Trio_Ocarina_Escape(EnSkj* this, PlayState* play);
 
-void EnSkj_SpawnBlood(PlayState* play, Vec3f* pos);
+void Skj_Set_BlueBlood(PlayState* play, Vec3f* pos);
 
-void EnSkj_SetupWaitInRange(EnSkj* this);
+void Change_Skj_Talk_Wait(EnSkj* this);
 
 #define songFailTimer multiuseTimer
 #define battleExitTimer multiuseTimer
@@ -158,8 +158,8 @@ typedef struct EnSkjUnkStruct {
     EnSkj* skullkid;
 } EnSkjUnkStruct;
 
-static EnSkjUnkStruct sSmallStumpSkullKid = { 0, NULL };
-static EnSkjUnkStruct sOcarinaMinigameSkullKids[] = { { 0, NULL }, { 0, NULL } };
+static EnSkjUnkStruct ocarina = { 0, NULL };
+static EnSkjUnkStruct ocarinaT[] = { { 0, NULL }, { 0, NULL } };
 
 ActorProfile En_Skj_Profile = {
     /**/ ACTOR_EN_SKJ,
@@ -167,13 +167,13 @@ ActorProfile En_Skj_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_SKJ,
     /**/ sizeof(EnSkj),
-    /**/ EnSkj_Init,
-    /**/ EnSkj_Destroy,
-    /**/ EnSkj_Update,
-    /**/ EnSkj_Draw,
+    /**/ En_Skj_actor_ct,
+    /**/ En_Skj_actor_dt,
+    /**/ En_Skj_actor_move,
+    /**/ En_Skj_actor_draw,
 };
 
-static ColliderCylinderInitType1 D_80B01678 = {
+static ColliderCylinderInitType1 EnSkjOcInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_ON | AT_TYPE_ENEMY,
@@ -192,7 +192,7 @@ static ColliderCylinderInitType1 D_80B01678 = {
     { 8, 48, 0, { 0, 0, 0 } },
 };
 
-static DamageTable sDamageTable = {
+static DamageTable btl_data = {
     /* Deku nut      */ DMG_ENTRY(0, 0x0),
     /* Deku stick    */ DMG_ENTRY(0, 0x0),
     /* Slingshot     */ DMG_ENTRY(0, 0x0),
@@ -227,14 +227,14 @@ static DamageTable sDamageTable = {
     /* Unknown 2     */ DMG_ENTRY(0, 0x0),
 };
 
-static s32 sOcarinaGameRewards[] = {
+static s32 Trio_PresentItem[] = {
     GI_RUPEE_GREEN,
     GI_RUPEE_BLUE,
     GI_HEART_PIECE,
     GI_RUPEE_RED,
 };
 
-static AnimationMinimalInfo sAnimationInfo[] = {
+static AnimationMinimalInfo animData[] = {
     { &gSkullKidBackflipAnim, ANIMMODE_ONCE, 0.0f },
     { &gSkullKidShootNeedleAnim, ANIMMODE_ONCE, 0.0f },
     { &gSkullKidPlayFluteAnim, ANIMMODE_LOOP, 0.0f },
@@ -247,56 +247,56 @@ static AnimationMinimalInfo sAnimationInfo[] = {
     { &gSkullKidWaitAnim, ANIMMODE_LOOP, 0.0f },
 };
 
-static EnSkjActionFunc sActionFuncs[] = {
-    EnSkj_Fade,
-    EnSkj_WaitToShootNeedle,
-    EnSkj_SariasSongKidIdle,
-    EnSkj_WaitForDeathAnim,
-    EnSkj_PickNextFightAction,
-    EnSkj_WaitForLandAnim,
-    EnSkj_ResetFight,
-    EnSkj_Fight,
-    EnSkj_NeedleRecover,
-    EnSkj_SpawnDeathEffect,
-    EnSkj_WaitInRange,
-    EnSkj_WaitForSong,
-    EnSkj_AfterSong,
-    EnSkj_SariaSongTalk,
-    func_80AFFE44,
-    EnSkj_ChangeModeAfterSong,
-    EnSkj_StartMaskTrade,
-    EnSkj_WaitForLanding,
-    EnSkj_WaitForLandAnimFinish,
-    EnSkj_WalkToPlayer,
-    EnSkj_AskForMask,
-    EnSkj_TakeMask,
-    EnSkj_WaitForMaskTextClear,
-    EnSkj_WrongSong,
-    EnSkj_SariasSongWaitForTextClear,
-    EnSkj_OcarinaGameWaitForPlayer,
-    EnSkj_OcarinaGameIdle,
-    EnSkj_PlayOcarinaGame,
-    EnSkj_LeaveOcarinaGame,
+static EnSkjActionFunc SkjProcData[] = {
+    Skj_Back_Jump,
+    Skj_Attack,
+    Skj_Dance,
+    Skj_Down,
+    Skj_Hit,
+    Skj_Landing,
+    Skj_Serch,
+    Skj_Side_Walk,
+    Skj_Attack_Reverse,
+    Skj_Burn,
+    Skj_Talk_Wait,
+    Skj_Ocarina_Duo,
+    Skj_Duo_Talk,
+    Skj_Duo_MsgWait,
+    Skj_Duo_CarryStart,
+    Skj_Duo_CarryFinish,
+    Skj_Duo_BuyMaskTalk,
+    Skj_Duo_BuyMaskJump,
+    Skj_Duo_BuyMaskLanding,
+    Skj_Duo_BuyMaskWalk,
+    Skj_Duo_BuyMask,
+    Skj_Duo_BuyMaskFinish,
+    Skj_Duo_BuyMaskEscape,
+    Skj_Duo_FailureTalkWait,
+    Skj_Duo_FailureTalk,
+    Skj_Trio_Wait,
+    Skj_Trio_Ocarina_Wait,
+    Skj_Trio_Ocarina_Dance,
+    Skj_Trio_Ocarina_Escape,
 };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_U8(attentionRangeType, ATTENTION_RANGE_2, ICHAIN_CONTINUE),
     ICHAIN_F32(lockOnArrowOffset, 30, ICHAIN_STOP),
 };
 
-static s32 D_80B01EA0; // gets set if ACTOR_FLAG_TALK is set
+static s32 skj_talk_flag; // gets set if ACTOR_FLAG_TALK is set
 
-void EnSkj_ChangeAnim(EnSkj* this, u8 index) {
-    f32 endFrame = Animation_GetLastFrame(sAnimationInfo[index].animation);
+void CHG_Skj_Animation(EnSkj* this, u8 index) {
+    f32 endFrame = Si2_anime_end_frame(animData[index].animation);
 
     this->animIndex = index;
-    Animation_Change(&this->skelAnime, sAnimationInfo[index].animation, 1.0f, 0.0f, endFrame,
-                     sAnimationInfo[index].mode, sAnimationInfo[index].morphFrames);
+    Skeleton_Info2_init(&this->skelAnime, animData[index].animation, 1.0f, 0.0f, endFrame,
+                     animData[index].mode, animData[index].morphFrames);
 }
 
-void EnSkj_SetupAction(EnSkj* this, u8 action) {
+void CHG_Skj_Mode(EnSkj* this, u8 action) {
     this->action = action;
-    this->actionFunc = sActionFuncs[action];
+    this->actionFunc = SkjProcData[action];
 
     switch (action) {
         case SKJ_ACTION_FADE:
@@ -324,21 +324,21 @@ void EnSkj_SetupAction(EnSkj* this, u8 action) {
     }
 }
 
-void EnSkj_CalculateCenter(EnSkj* this) {
+void Skj_CenterPositionSet(EnSkj* this) {
     Vec3f mult;
 
     mult.x = 0.0f;
     mult.y = 0.0f;
     mult.z = 120.0f;
 
-    Matrix_RotateY(BINANG_TO_RAD_ALT(this->actor.shape.rot.y), MTXMODE_NEW);
-    Matrix_MultVec3f(&mult, &this->center);
+    Matrix_rotateY(BINANG_TO_RAD_ALT(this->actor.shape.rot.y), MTXMODE_NEW);
+    Matrix_Position(&mult, &this->center);
 
     this->center.x += this->actor.world.pos.x;
     this->center.z += this->actor.world.pos.z;
 }
 
-void EnSkj_SetNaviId(EnSkj* this) {
+void Skj_profile_message_set(EnSkj* this) {
     switch (this->actor.params) {
         case 0:
             if (GET_ITEMGETINF(ITEMGETINF_39)) {
@@ -361,56 +361,56 @@ void EnSkj_SetNaviId(EnSkj* this) {
     }
 }
 
-void EnSkj_Init(Actor* thisx, PlayState* play2) {
+void En_Skj_actor_ct(Actor* thisx, PlayState* play2) {
     s16 type = PARAMS_GET_U(thisx->params, 10, 6);
     EnSkj* this = (EnSkj*)thisx;
     PlayState* play = play2;
     s32 pad;
 
-    Actor_ProcessInitChain(thisx, sInitChain);
+    ValueSet_process(thisx, value_init);
     switch (type) {
         case 5: // Invisible on the small stump (sarias song))
-            sSmallStumpSkullKid.unk_0 = 1;
-            sSmallStumpSkullKid.skullkid = (EnSkj*)thisx;
+            ocarina.unk_0 = 1;
+            ocarina.skullkid = (EnSkj*)thisx;
             this->actor.destroy = NULL;
             this->actor.draw = NULL;
-            this->actor.update = EnSkj_SariasSongShortStumpUpdate;
+            this->actor.update = En_Skj_Ocarina_actor_move;
             this->actor.flags &= ~(ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE);
             this->actor.flags |= 0;
-            Actor_ChangeCategory(play, &play->actorCtx, thisx, ACTORCAT_PROP);
+            Actor_info_part_chg(play, &play->actorCtx, thisx, ACTORCAT_PROP);
             break;
 
         case 6: // Invisible on the short stump (ocarina game)
-            sSmallStumpSkullKid.unk_0 = 1;
-            sSmallStumpSkullKid.skullkid = (EnSkj*)thisx;
+            ocarina.unk_0 = 1;
+            ocarina.skullkid = (EnSkj*)thisx;
             this->actor.destroy = NULL;
             this->actor.draw = NULL;
-            this->actor.update = EnSkj_OcarinaMinigameShortStumpUpdate;
+            this->actor.update = En_Skj_OcarinaT_actor_move;
             this->actor.flags &= ~(ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE);
             this->actor.flags |= 0;
-            Actor_ChangeCategory(play, &play->actorCtx, thisx, ACTORCAT_PROP);
+            Actor_info_part_chg(play, &play->actorCtx, thisx, ACTORCAT_PROP);
             this->actor.focus.pos.x = 1230.0f;
             this->actor.focus.pos.y = -90.0f;
             this->actor.focus.pos.z = 450.0f;
-            this->actionFunc = EnSkj_SetupWaitForOcarina;
+            this->actionFunc = Skj_OcarinaT_TalkWait;
             break;
 
         default:
             this->actor.params = type;
             if (((this->actor.params != 0) && (this->actor.params != 1)) && (this->actor.params != 2)) {
                 if (INV_CONTENT(ITEM_TRADE_ADULT) < ITEM_POACHERS_SAW) {
-                    Actor_Kill(&this->actor);
+                    Actor_delete(&this->actor);
                     return;
                 }
             }
 
-            EnSkj_SetNaviId(this);
-            SkelAnime_InitFlex(play, &this->skelAnime, &gSkullKidSkel, &gSkullKidPlayFluteAnim, this->jointTable,
+            Skj_profile_message_set(this);
+            Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &gSkullKidSkel, &gSkullKidPlayFluteAnim, this->jointTable,
                                this->morphTable, 19);
             if ((type >= 0) && (type < 3)) {
                 this->actor.flags &= ~(ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE);
                 this->actor.flags |= ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY;
-                Actor_ChangeCategory(play, &play->actorCtx, &this->actor, ACTORCAT_NPC);
+                Actor_info_part_chg(play, &play->actorCtx, &this->actor, ACTORCAT_NPC);
             }
 
             if ((type < 0) || (type >= 7)) {
@@ -420,22 +420,22 @@ void EnSkj_Init(Actor* thisx, PlayState* play2) {
             if ((type > 0) && (type < 3)) {
                 this->actor.attentionRangeType = ATTENTION_RANGE_7;
                 this->posCopy = this->actor.world.pos;
-                sOcarinaMinigameSkullKids[type - 1].unk_0 = 1;
-                sOcarinaMinigameSkullKids[type - 1].skullkid = this;
+                ocarinaT[type - 1].unk_0 = 1;
+                ocarinaT[type - 1].skullkid = this;
                 this->minigameState = 0;
                 this->alpha = 0;
-                EnSkj_OcarinaGameSetupWaitForPlayer(this);
+                Change_Skj_Trio_Wait(this);
             } else {
                 this->alpha = 255;
-                EnSkj_SetupResetFight(this);
+                Change_Skj_Dance(this);
             }
 
-            this->actor.colChkInfo.damageTable = &sDamageTable;
+            this->actor.colChkInfo.damageTable = &btl_data;
             this->actor.colChkInfo.health = 10;
-            Collider_InitCylinder(play, &this->collider);
-            Collider_SetCylinderType1(play, &this->collider, &this->actor, &D_80B01678);
-            ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 40.0f);
-            Actor_SetScale(thisx, 0.01f);
+            ClObjPipe_ct(play, &this->collider);
+            ClObjPipe_set3(play, &this->collider, &this->actor, &EnSkjOcInfoData);
+            Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 40.0f);
+            Actor_set_scale(thisx, 0.01f);
             this->actor.textId = this->textId = 0;
             this->multiuseTimer = 0;
             this->backflipFlag = 0;
@@ -444,7 +444,7 @@ void EnSkj_Init(Actor* thisx, PlayState* play2) {
             this->actor.speed = 0.0f;
             this->actor.velocity.y = 0.0f;
             this->actor.gravity = -1.0f;
-            EnSkj_CalculateCenter(this);
+            Skj_CenterPositionSet(this);
 
 #if DEBUG_FEATURES
             {
@@ -463,14 +463,14 @@ void EnSkj_Init(Actor* thisx, PlayState* play2) {
     }
 }
 
-void EnSkj_Destroy(Actor* thisx, PlayState* play) {
+void En_Skj_actor_dt(Actor* thisx, PlayState* play) {
     s32 pad;
     EnSkj* this = (EnSkj*)thisx;
 
-    Collider_DestroyCylinder(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider);
 }
 
-int EnSkj_RangeCheck(Player* player, EnSkj* this) {
+int CHK_Skj_Ocarina_Player_Distance(Player* player, EnSkj* this) {
     f32 xDiff = player->actor.world.pos.x - this->actor.world.pos.x;
     f32 zDiff = player->actor.world.pos.z - this->actor.world.pos.z;
     f32 yDiff = player->actor.world.pos.y - this->actor.world.pos.y;
@@ -478,22 +478,22 @@ int EnSkj_RangeCheck(Player* player, EnSkj* this) {
     return (SQ(xDiff) + SQ(zDiff) <= 676.0f) && (yDiff >= 0.0f);
 }
 
-f32 EnSkj_GetItemXzRange(EnSkj* this) {
+f32 Skj_TalkDistance(EnSkj* this) {
     EnSkj* temp_v0;
     f32 zDiff;
     f32 xDiff;
 
-    temp_v0 = sSmallStumpSkullKid.skullkid;
+    temp_v0 = ocarina.skullkid;
     xDiff = temp_v0->actor.world.pos.x - this->actor.world.pos.x;
     zDiff = temp_v0->actor.world.pos.z - this->actor.world.pos.z;
     return sqrtf(SQ(xDiff) + SQ(zDiff)) + 26.0f;
 }
 
-f32 EnSkj_GetItemYRange(EnSkj* this) {
-    return fabsf(sSmallStumpSkullKid.skullkid->actor.world.pos.y - this->actor.world.pos.y) + 10.0f;
+f32 Skj_TalkHight(EnSkj* this) {
+    return fabsf(ocarina.skullkid->actor.world.pos.y - this->actor.world.pos.y) + 10.0f;
 }
 
-s32 EnSkj_ShootNeedle(EnSkj* this, PlayState* play) {
+s32 Skj_SetNeedle(EnSkj* this, PlayState* play) {
     s32 pad;
     Vec3f pos;
     Vec3f pos2;
@@ -503,14 +503,14 @@ s32 EnSkj_ShootNeedle(EnSkj* this, PlayState* play) {
     pos.y = 0.0f;
     pos.z = 40.0f;
 
-    Matrix_RotateY(BINANG_TO_RAD_ALT(this->actor.shape.rot.y), MTXMODE_NEW);
-    Matrix_MultVec3f(&pos, &pos2);
+    Matrix_rotateY(BINANG_TO_RAD_ALT(this->actor.shape.rot.y), MTXMODE_NEW);
+    Matrix_Position(&pos, &pos2);
 
     pos2.x += this->actor.world.pos.x;
     pos2.z += this->actor.world.pos.z;
     pos2.y = this->actor.world.pos.y + 27.0f;
 
-    needle = (EnSkjneedle*)Actor_Spawn(&play->actorCtx, play, ACTOR_EN_SKJNEEDLE, pos2.x, pos2.y, pos2.z,
+    needle = (EnSkjneedle*)Actor_info_make_actor(&play->actorCtx, play, ACTOR_EN_SKJNEEDLE, pos2.x, pos2.y, pos2.z,
                                        this->actor.shape.rot.x, this->actor.shape.rot.y, this->actor.shape.rot.z, 0);
     if (needle != NULL) {
         needle->killTimer = 100;
@@ -520,7 +520,7 @@ s32 EnSkj_ShootNeedle(EnSkj* this, PlayState* play) {
     return 0;
 }
 
-void EnSkj_SpawnBlood(PlayState* play, Vec3f* pos) {
+void Skj_Set_BlueBlood(PlayState* play, Vec3f* pos) {
     EffectSparkInit effect;
     s32 sp20;
 
@@ -576,14 +576,14 @@ void EnSkj_SpawnBlood(PlayState* play, Vec3f* pos) {
     effect.timer = 0;
     effect.duration = 8;
 
-    Effect_Add(play, &sp20, EFFECT_SPARK, 0, 1, &effect);
+    EffectAdd(play, &sp20, EFFECT_SPARK, 0, 1, &effect);
 }
 
-s32 EnSkj_CollisionCheck(EnSkj* this, PlayState* play) {
+s32 Skj_Cross(EnSkj* this, PlayState* play) {
     s16 yawDiff;
     Vec3f effectPos;
 
-    if (!((this->unk_2D3 == 0) || (D_80B01EA0 != 0) || !(this->collider.base.acFlags & AC_HIT))) {
+    if (!((this->unk_2D3 == 0) || (skj_talk_flag != 0) || !(this->collider.base.acFlags & AC_HIT))) {
         this->collider.base.acFlags &= ~AC_HIT;
         switch (this->actor.colChkInfo.damageEffect) {
             case 0xF:
@@ -591,20 +591,20 @@ s32 EnSkj_CollisionCheck(EnSkj* this, PlayState* play) {
                 effectPos.y = this->collider.elem.acDmgInfo.hitPos.y;
                 effectPos.z = this->collider.elem.acDmgInfo.hitPos.z;
 
-                EnSkj_SpawnBlood(play, &effectPos);
-                EffectSsHitMark_SpawnFixedScale(play, 1, &effectPos);
+                Skj_Set_BlueBlood(play, &effectPos);
+                Effect_SS_HitMark_ct(play, 1, &effectPos);
 
                 yawDiff = this->actor.yawTowardsPlayer - this->actor.world.rot.y;
                 if ((this->action == 2) || (this->action == 6)) {
                     if ((yawDiff > 0x6000) || (yawDiff < -0x6000)) {
-                        Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_OPA, 8);
-                        EnSkj_SetupDie(this);
+                        Set_Fog(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_OPA, 8);
+                        Change_Skj_Down(this);
                         return 1;
                     }
                 }
 
-                Actor_ApplyDamage(&this->actor);
-                Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_OPA, 8);
+                hp_down(&this->actor);
+                Set_Fog(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_OPA, 8);
 
                 if (this->actor.colChkInfo.health != 0) {
                     if (this->hitsUntilDodge != 0) {
@@ -613,15 +613,15 @@ s32 EnSkj_CollisionCheck(EnSkj* this, PlayState* play) {
                     if (this->dodgeResetTimer == 0) {
                         this->dodgeResetTimer = 60;
                     }
-                    func_80AFF1F0(this);
+                    Change_Skj_Hit(this);
                     return 1;
                 }
-                EnSkj_SetupDie(this);
+                Change_Skj_Down(this);
                 return 1;
 
             case 0:
                 this->backflipFlag = 1;
-                EnSkj_Backflip(this);
+                Change_Skj_Back_Jump(this);
                 return 1;
 
             default:
@@ -631,11 +631,11 @@ s32 EnSkj_CollisionCheck(EnSkj* this, PlayState* play) {
     return 0;
 }
 
-s32 func_80AFEDF8(EnSkj* this, PlayState* play) {
+s32 Skj_Search_Player(EnSkj* this, PlayState* play) {
     s16 yawDiff;
 
     if (this->actor.xzDistToPlayer < this->unk_2EC) {
-        if (func_8002DDE4(play) != 0) {
+        if (player_big_SE_action_check(play) != 0) {
             return 1;
         }
     }
@@ -649,15 +649,15 @@ s32 func_80AFEDF8(EnSkj* this, PlayState* play) {
     return 0;
 }
 
-void EnSkj_Backflip(EnSkj* this) {
+void Change_Skj_Back_Jump(EnSkj* this) {
     this->actor.velocity.y = 8.0f;
     this->actor.speed = -8.0f;
 
-    EnSkj_ChangeAnim(this, SKJ_ANIM_BACKFLIP);
-    EnSkj_SetupAction(this, SKJ_ACTION_FADE);
+    CHG_Skj_Animation(this, SKJ_ANIM_BACKFLIP);
+    CHG_Skj_Mode(this, SKJ_ACTION_FADE);
 }
 
-void EnSkj_Fade(EnSkj* this, PlayState* play) {
+void Skj_Back_Jump(EnSkj* this, PlayState* play) {
     u32 alpha = this->alpha;
 
     if (this->unk_2D6 == 2) {
@@ -679,136 +679,136 @@ void EnSkj_Fade(EnSkj* this, PlayState* play) {
     if (this->actor.velocity.y <= 0.0f) {
         if (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND_TOUCH) {
             this->actor.bgCheckFlags &= ~BGCHECKFLAG_GROUND_TOUCH;
-            func_80AFF2A0(this);
+            Change_Skj_Landing(this);
         }
     }
 }
 
-void EnSkj_SetupWaitToShootNeedle(EnSkj* this) {
+void Change_Skj_Attack(EnSkj* this) {
     this->needlesToShoot = 3;
     this->needleShootTimer = 0;
-    EnSkj_ChangeAnim(this, SKJ_ANIM_SHOOT_NEEDLE);
-    EnSkj_SetupAction(this, SKJ_ACTION_WAIT_TO_SHOOT_NEEDLE);
+    CHG_Skj_Animation(this, SKJ_ANIM_SHOOT_NEEDLE);
+    CHG_Skj_Mode(this, SKJ_ACTION_WAIT_TO_SHOOT_NEEDLE);
 }
 
-void EnSkj_WaitToShootNeedle(EnSkj* this, PlayState* play) {
+void Skj_Attack(EnSkj* this, PlayState* play) {
     u8 val;
-    s16 lastFrame = Animation_GetLastFrame(&gSkullKidShootNeedleAnim);
+    s16 lastFrame = Si2_anime_end_frame(&gSkullKidShootNeedleAnim);
 
     if ((this->skelAnime.curFrame == lastFrame) && (this->needleShootTimer == 0)) {
         val = this->needlesToShoot;
         if (this->needlesToShoot != 0) {
-            EnSkj_ShootNeedle(this, play);
+            Skj_SetNeedle(this, play);
             this->needleShootTimer = 4;
             val--;
             this->needlesToShoot = val;
 
         } else {
-            EnSkj_SetupNeedleRecover(this);
+            Change_Skj_Attack_Reverse(this);
         }
     }
 }
 
-void EnSkj_SetupResetFight(EnSkj* this) {
+void Change_Skj_Dance(EnSkj* this) {
     this->unk_2C8 = 0xAAA;
     this->unk_2EC = 200.0f;
-    EnSkj_ChangeAnim(this, SKJ_ANIM_PLAY_FLUTE);
-    EnSkj_SetupAction(this, SKJ_ACTION_SARIA_SONG_IDLE);
+    CHG_Skj_Animation(this, SKJ_ANIM_PLAY_FLUTE);
+    CHG_Skj_Mode(this, SKJ_ACTION_SARIA_SONG_IDLE);
 }
 
-void EnSkj_SariasSongKidIdle(EnSkj* this, PlayState* play) {
+void Skj_Dance(EnSkj* this, PlayState* play) {
     if (this->actor.params == 0) {
         if (!GET_ITEMGETINF(ITEMGETINF_16) && (this->actor.xzDistToPlayer < 200.0f)) {
             this->backflipFlag = 1;
-            EnSkj_Backflip(this);
-        } else if (sSmallStumpSkullKid.unk_0 != 0) {
+            Change_Skj_Back_Jump(this);
+        } else if (ocarina.unk_0 != 0) {
             Player* player = GET_PLAYER(play);
-            if (EnSkj_RangeCheck(player, sSmallStumpSkullKid.skullkid)) {
-                EnSkj_SetupWaitInRange(this);
+            if (CHK_Skj_Ocarina_Player_Distance(player, ocarina.skullkid)) {
+                Change_Skj_Talk_Wait(this);
                 player->stateFlags2 |= PLAYER_STATE2_23;
-                player->unk_6A8 = &sSmallStumpSkullKid.skullkid->actor;
+                player->unk_6A8 = &ocarina.skullkid->actor;
             }
         }
     } else {
-        if (func_80AFEDF8(this, play) != 0) {
-            func_80AFF334(this);
+        if (Skj_Search_Player(this, play) != 0) {
+            Change_Skj_Serch(this);
         }
     }
 }
 
-void EnSkj_SetupDie(EnSkj* this) {
-    EnSkj_ChangeAnim(this, SKJ_ANIM_DIE);
-    EnSkj_SetupAction(this, SKJ_ACTION_WAIT_FOR_DEATH_ANIM);
+void Change_Skj_Down(EnSkj* this) {
+    CHG_Skj_Animation(this, SKJ_ANIM_DIE);
+    CHG_Skj_Mode(this, SKJ_ACTION_WAIT_FOR_DEATH_ANIM);
 }
 
-void EnSkj_WaitForDeathAnim(EnSkj* this, PlayState* play) {
-    s16 lastFrame = Animation_GetLastFrame(&gSkullKidDieAnim);
+void Skj_Down(EnSkj* this, PlayState* play) {
+    s16 lastFrame = Si2_anime_end_frame(&gSkullKidDieAnim);
 
     if (this->skelAnime.curFrame == lastFrame) {
-        EnSkj_SetupSpawnDeathEffect(this);
+        Change_Skj_Burn(this);
     }
 }
 
-void func_80AFF1F0(EnSkj* this) {
-    EnSkj_ChangeAnim(this, SKJ_ANIM_HIT);
-    EnSkj_SetupAction(this, SKJ_ACTION_PICK_NEXT_FIHGT_ACTION);
+void Change_Skj_Hit(EnSkj* this) {
+    CHG_Skj_Animation(this, SKJ_ANIM_HIT);
+    CHG_Skj_Mode(this, SKJ_ACTION_PICK_NEXT_FIHGT_ACTION);
 }
 
-void EnSkj_PickNextFightAction(EnSkj* this, PlayState* play) {
-    s16 lastFrame = Animation_GetLastFrame(&gSkullKidHitAnim);
+void Skj_Hit(EnSkj* this, PlayState* play) {
+    s16 lastFrame = Si2_anime_end_frame(&gSkullKidHitAnim);
 
     if (this->skelAnime.curFrame == lastFrame) {
         if (this->hitsUntilDodge == 0) {
             this->hitsUntilDodge = 3;
-            EnSkj_Backflip(this);
+            Change_Skj_Back_Jump(this);
         } else {
-            EnSkj_SetupStand(this);
+            Change_Skj_Side_Walk(this);
         }
     }
 }
 
-void func_80AFF2A0(EnSkj* this) {
-    EnSkj_CalculateCenter(this);
+void Change_Skj_Landing(EnSkj* this) {
+    Skj_CenterPositionSet(this);
     this->actor.speed = 0.0f;
-    EnSkj_ChangeAnim(this, SKJ_ANIM_LAND);
-    EnSkj_SetupAction(this, SKJ_ACTION_WAIT_FOR_LAND_ANIM);
+    CHG_Skj_Animation(this, SKJ_ANIM_LAND);
+    CHG_Skj_Mode(this, SKJ_ACTION_WAIT_FOR_LAND_ANIM);
 }
 
-void EnSkj_WaitForLandAnim(EnSkj* this, PlayState* play) {
-    s16 lastFrame = Animation_GetLastFrame(&gSkullKidLandAnim);
+void Skj_Landing(EnSkj* this, PlayState* play) {
+    s16 lastFrame = Si2_anime_end_frame(&gSkullKidLandAnim);
 
     if (this->skelAnime.curFrame == lastFrame) {
-        EnSkj_SetupStand(this);
+        Change_Skj_Side_Walk(this);
     }
 }
 
-void func_80AFF334(EnSkj* this) {
+void Change_Skj_Serch(EnSkj* this) {
     this->unk_2C8 = 0x2000;
     this->battleExitTimer = 400;
     this->unk_2EC = 600.0f;
-    EnSkj_ChangeAnim(this, SKJ_ANIM_LOOK_LEFT_RIGHT);
-    EnSkj_SetupAction(this, SKJ_ACTION_RESET_FIGHT);
+    CHG_Skj_Animation(this, SKJ_ANIM_LOOK_LEFT_RIGHT);
+    CHG_Skj_Mode(this, SKJ_ACTION_RESET_FIGHT);
 }
 
-void EnSkj_ResetFight(EnSkj* this, PlayState* play) {
+void Skj_Serch(EnSkj* this, PlayState* play) {
     if (this->battleExitTimer == 0) {
-        EnSkj_SetupResetFight(this);
-    } else if (func_80AFEDF8(this, play) != 0) {
+        Change_Skj_Dance(this);
+    } else if (Skj_Search_Player(this, play) != 0) {
         this->battleExitTimer = 600;
-        EnSkj_SetupStand(this);
+        Change_Skj_Side_Walk(this);
     }
 }
 
-void EnSkj_SetupStand(EnSkj* this) {
+void Change_Skj_Side_Walk(EnSkj* this) {
     this->needleShootTimer = 60;
     this->unk_2C8 = 0x2000;
     this->unk_2F0 = 0.0f;
     this->unk_2EC = 600.0f;
-    EnSkj_ChangeAnim(this, SKJ_ANIM_FIGHTING_STANCE);
-    EnSkj_SetupAction(this, SKJ_ACTION_FIGHT);
+    CHG_Skj_Animation(this, SKJ_ANIM_FIGHTING_STANCE);
+    CHG_Skj_Mode(this, SKJ_ACTION_FIGHT);
 }
 
-void EnSkj_Fight(EnSkj* this, PlayState* play) {
+void Skj_Side_Walk(EnSkj* this, PlayState* play) {
     Vec3f pos1;
     Vec3f pos2;
     s32 pad[3];
@@ -818,19 +818,19 @@ void EnSkj_Fight(EnSkj* this, PlayState* play) {
     s16 yawDistToPlayer;
 
     if (this->needleShootTimer == 0) {
-        EnSkj_SetupWaitToShootNeedle(this);
+        Change_Skj_Attack(this);
     } else if (this->battleExitTimer != 0) {
         yawDistToPlayer =
-            Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 5, this->unk_2F0, 0);
+            add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 5, this->unk_2F0, 0);
         this->actor.world.rot.y = this->actor.shape.rot.y;
-        Math_ApproachF(&this->unk_2F0, 2000.0f, 1.0f, 200.0f);
+        add_calc2(&this->unk_2F0, 2000.0f, 1.0f, 200.0f);
 
         pos1.x = 0.0f;
         pos1.y = 0.0f;
         pos1.z = -120.0f;
 
-        Matrix_RotateY(BINANG_TO_RAD_ALT(this->actor.shape.rot.y), MTXMODE_NEW);
-        Matrix_MultVec3f(&pos1, &pos2);
+        Matrix_rotateY(BINANG_TO_RAD_ALT(this->actor.shape.rot.y), MTXMODE_NEW);
+        Matrix_Position(&pos1, &pos2);
         prevPosX = this->actor.world.pos.x;
         prevPosZ = this->actor.world.pos.z;
         if (1) {}
@@ -843,31 +843,31 @@ void EnSkj_Fight(EnSkj* this, PlayState* play) {
 
         this->skelAnime.playSpeed = (yawDistToPlayer < 0) ? -(1.0f + phi_f14) : (1.0f + phi_f14);
 
-    } else if (func_80AFEDF8(this, play) != 0) {
+    } else if (Skj_Search_Player(this, play) != 0) {
         this->backflipFlag = 1;
-        EnSkj_Backflip(this);
+        Change_Skj_Back_Jump(this);
     } else {
-        EnSkj_SetupResetFight(this);
+        Change_Skj_Dance(this);
     }
 }
 
-void EnSkj_SetupNeedleRecover(EnSkj* this) {
-    Animation_Reverse(&this->skelAnime);
-    EnSkj_SetupAction(this, SKJ_ACTION_NEEDLE_RECOVER);
+void Change_Skj_Attack_Reverse(EnSkj* this) {
+    Skeleton_Info_reverse(&this->skelAnime);
+    CHG_Skj_Mode(this, SKJ_ACTION_NEEDLE_RECOVER);
 }
 
-void EnSkj_NeedleRecover(EnSkj* this, PlayState* play) {
+void Skj_Attack_Reverse(EnSkj* this, PlayState* play) {
     if (this->skelAnime.curFrame == 0.0f) {
-        EnSkj_SetupStand(this);
+        Change_Skj_Side_Walk(this);
     }
 }
 
-void EnSkj_SetupSpawnDeathEffect(EnSkj* this) {
+void Change_Skj_Burn(EnSkj* this) {
     this->backflipFlag = 1;
-    EnSkj_SetupAction(this, SKJ_ACTION_SPAWN_DEATH_EFFECT);
+    CHG_Skj_Mode(this, SKJ_ACTION_SPAWN_DEATH_EFFECT);
 }
 
-void EnSkj_SpawnDeathEffect(EnSkj* this, PlayState* play) {
+void Skj_Burn(EnSkj* this, PlayState* play) {
     Vec3f effectPos;
     Vec3f effectVel;
     Vec3f effectAccel;
@@ -881,9 +881,9 @@ void EnSkj_SpawnDeathEffect(EnSkj* this, PlayState* play) {
     this->alpha = phi_v0;
     this->actor.shape.shadowAlpha = phi_v0;
 
-    effectPos.x = Rand_CenteredFloat(30.0f) + this->actor.world.pos.x;
-    effectPos.y = Rand_CenteredFloat(30.0f) + this->actor.world.pos.y;
-    effectPos.z = Rand_CenteredFloat(30.0f) + this->actor.world.pos.z;
+    effectPos.x = rnd_fx(30.0f) + this->actor.world.pos.x;
+    effectPos.y = rnd_fx(30.0f) + this->actor.world.pos.y;
+    effectPos.z = rnd_fx(30.0f) + this->actor.world.pos.z;
 
     effectAccel.z = 0.0f;
     effectAccel.y = 0.0f;
@@ -893,354 +893,354 @@ void EnSkj_SpawnDeathEffect(EnSkj* this, PlayState* play) {
     effectVel.y = 0.0f;
     effectVel.x = 0.0f;
 
-    EffectSsDeadDb_Spawn(play, &effectPos, &effectVel, &effectAccel, 100, 10, 255, 255, 255, 255, 0, 0, 255, 1, 9, 1);
+    _Effect_SS_Db_ct(play, &effectPos, &effectVel, &effectAccel, 100, 10, 255, 255, 255, 255, 0, 0, 255, 1, 9, 1);
 }
 
-void EnSkj_SetupWaitInRange(EnSkj* this) {
+void Change_Skj_Talk_Wait(EnSkj* this) {
     this->textId = 0x10BC;
 
-    EnSkj_ChangeAnim(this, SKJ_ANIM_WAIT);
-    EnSkj_SetupAction(this, SKJ_ACTION_SARIA_SONG_WAIT_IN_RANGE);
+    CHG_Skj_Animation(this, SKJ_ANIM_WAIT);
+    CHG_Skj_Mode(this, SKJ_ACTION_SARIA_SONG_WAIT_IN_RANGE);
 }
 
-void EnSkj_WaitInRange(EnSkj* this, PlayState* play) {
+void Skj_Talk_Wait(EnSkj* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     // When link pulls out the Ocarina center him on the stump
     // Link was probably supposed to be pointed towards skull kid as well
     if (player->stateFlags2 & PLAYER_STATE2_24) {
         player->stateFlags2 |= PLAYER_STATE2_25;
-        player->unk_6A8 = &sSmallStumpSkullKid.skullkid->actor;
-        player->actor.world.pos.x = sSmallStumpSkullKid.skullkid->actor.world.pos.x;
-        player->actor.world.pos.y = sSmallStumpSkullKid.skullkid->actor.world.pos.y;
-        player->actor.world.pos.z = sSmallStumpSkullKid.skullkid->actor.world.pos.z;
-        EnSkj_TurnPlayer(sSmallStumpSkullKid.skullkid, player);
-        Message_StartOcarinaSunsSongDisabled(play, OCARINA_ACTION_CHECK_SARIA);
-        EnSkj_SetupWaitForSong(this);
-    } else if (D_80B01EA0 != 0) {
-        player->actor.world.pos.x = sSmallStumpSkullKid.skullkid->actor.world.pos.x;
-        player->actor.world.pos.y = sSmallStumpSkullKid.skullkid->actor.world.pos.y;
-        player->actor.world.pos.z = sSmallStumpSkullKid.skullkid->actor.world.pos.z;
-        if ((Player_GetMask(play) == PLAYER_MASK_SKULL) && !GET_ITEMGETINF(ITEMGETINF_39)) {
-            Sfx_PlaySfxCentered(NA_SE_SY_TRE_BOX_APPEAR);
-            EnSkj_SetupMaskTrade(this);
+        player->unk_6A8 = &ocarina.skullkid->actor;
+        player->actor.world.pos.x = ocarina.skullkid->actor.world.pos.x;
+        player->actor.world.pos.y = ocarina.skullkid->actor.world.pos.y;
+        player->actor.world.pos.z = ocarina.skullkid->actor.world.pos.z;
+        Skj_OcarinaT_PlayerAngleSet(ocarina.skullkid, player);
+        ocarina_set_111(play, OCARINA_ACTION_CHECK_SARIA);
+        Change_Skj_Ocarina_Duo(this);
+    } else if (skj_talk_flag != 0) {
+        player->actor.world.pos.x = ocarina.skullkid->actor.world.pos.x;
+        player->actor.world.pos.y = ocarina.skullkid->actor.world.pos.y;
+        player->actor.world.pos.z = ocarina.skullkid->actor.world.pos.z;
+        if ((mask_check(play) == PLAYER_MASK_SKULL) && !GET_ITEMGETINF(ITEMGETINF_39)) {
+            Na_StartSystemSe_F(NA_SE_SY_TRE_BOX_APPEAR);
+            Change_Skj_Duo_BuyMaskTalk(this);
         } else {
-            EnSkj_SetupTalk(this);
+            Change_Skj_Duo_MsgWait(this);
         }
-    } else if (!EnSkj_RangeCheck(player, sSmallStumpSkullKid.skullkid)) {
-        EnSkj_SetupResetFight(this);
+    } else if (!CHK_Skj_Ocarina_Player_Distance(player, ocarina.skullkid)) {
+        Change_Skj_Dance(this);
     } else {
         player->stateFlags2 |= PLAYER_STATE2_23;
         if (GET_ITEMGETINF(ITEMGETINF_16)) {
             if (GET_ITEMGETINF(ITEMGETINF_39)) {
-                this->textId = MaskReaction_GetTextId(play, MASK_REACTION_SET_SKULL_KID);
+                this->textId = get_mask_message(play, MASK_REACTION_SET_SKULL_KID);
                 if (this->textId == 0) {
                     this->textId = 0x1020;
                 }
-            } else if (Player_GetMask(play) == PLAYER_MASK_NONE) {
+            } else if (mask_check(play) == PLAYER_MASK_NONE) {
                 this->textId = 0x10BC;
-            } else if (Player_GetMask(play) == PLAYER_MASK_SKULL) {
+            } else if (mask_check(play) == PLAYER_MASK_SKULL) {
                 this->textId = 0x101B;
             } else {
-                this->textId = MaskReaction_GetTextId(play, MASK_REACTION_SET_SKULL_KID);
+                this->textId = get_mask_message(play, MASK_REACTION_SET_SKULL_KID);
             }
-            Actor_OfferTalk(&this->actor, play, EnSkj_GetItemXzRange(this));
+            Actor_talk_request2(&this->actor, play, Skj_TalkDistance(this));
         }
     }
 }
 
-void EnSkj_SetupWaitForSong(EnSkj* this) {
+void Change_Skj_Ocarina_Duo(EnSkj* this) {
     this->unk_2D6 = 0;
-    EnSkj_SetupAction(this, SKJ_ACTION_SARIA_SONG_WAIT_FOR_SONG);
+    CHG_Skj_Mode(this, SKJ_ACTION_SARIA_SONG_WAIT_FOR_SONG);
 }
 
-void EnSkj_WaitForSong(EnSkj* this, PlayState* play) {
+void Skj_Ocarina_Duo(EnSkj* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     // Played a song thats not Saria's song
     if (!GET_ITEMGETINF(ITEMGETINF_16) &&
         ((play->msgCtx.msgMode == MSGMODE_OCARINA_FAIL) || (play->msgCtx.msgMode == MSGMODE_OCARINA_FAIL_NO_TEXT))) {
         play->msgCtx.ocarinaMode = OCARINA_MODE_04;
-        Message_CloseTextbox(play);
+        message_close(play);
         player->unk_6A8 = &this->actor;
-        Actor_OfferTalk(&this->actor, play, EnSkj_GetItemXzRange(this));
-        EnSkj_SetupWrongSong(this);
+        Actor_talk_request2(&this->actor, play, Skj_TalkDistance(this));
+        Change_Skj_Duo_FailureTalkWait(this);
     } else {
         if ((play->msgCtx.msgMode == MSGMODE_OCARINA_CORRECT_PLAYBACK) && (this->unk_2D6 == 0)) {
             this->unk_2D6 = 1;
-            EnSkj_ChangeAnim(this, SKJ_ANIM_PLAY_FLUTE);
+            CHG_Skj_Animation(this, SKJ_ANIM_PLAY_FLUTE);
         } else if ((this->unk_2D6 != 0) && (play->msgCtx.msgMode == MSGMODE_SONG_DEMONSTRATION_DONE)) {
             this->unk_2D6 = 0;
-            EnSkj_ChangeAnim(this, SKJ_ANIM_WAIT);
+            CHG_Skj_Animation(this, SKJ_ANIM_WAIT);
         }
         if (play->msgCtx.ocarinaMode == OCARINA_MODE_04) {
             play->msgCtx.ocarinaMode = OCARINA_MODE_00;
             this->unk_2D6 = 0;
-            EnSkj_ChangeAnim(this, SKJ_ANIM_WAIT);
-            EnSkj_SetupAction(this, SKJ_ACTION_SARIA_SONG_WAIT_IN_RANGE);
+            CHG_Skj_Animation(this, SKJ_ANIM_WAIT);
+            CHG_Skj_Mode(this, SKJ_ACTION_SARIA_SONG_WAIT_IN_RANGE);
         } else if (play->msgCtx.ocarinaMode == OCARINA_MODE_03) {
             if (!GET_ITEMGETINF(ITEMGETINF_16)) {
                 // Saria's song has been played for the first titme
                 play->msgCtx.ocarinaMode = OCARINA_MODE_04;
-                Sfx_PlaySfxCentered(NA_SE_SY_CORRECT_CHIME);
+                Na_StartSystemSe_F(NA_SE_SY_CORRECT_CHIME);
                 player->unk_6A8 = &this->actor;
-                Actor_OfferTalk(&this->actor, play, EnSkj_GetItemXzRange(this));
+                Actor_talk_request2(&this->actor, play, Skj_TalkDistance(this));
                 this->textId = 0x10BB;
-                EnSkj_SetupAfterSong(this);
+                Change_Skj_Duo_Talk(this);
             } else {
                 play->msgCtx.ocarinaMode = OCARINA_MODE_05;
             }
         } else if (play->msgCtx.ocarinaMode == OCARINA_MODE_02) {
             player->stateFlags2 &= ~PLAYER_STATE2_24;
-            Actor_Kill(&this->actor);
+            Actor_delete(&this->actor);
         } else if (play->msgCtx.ocarinaMode == OCARINA_MODE_01) {
             player->stateFlags2 |= PLAYER_STATE2_23;
         } else {
             if (play->msgCtx.ocarinaMode >= OCARINA_MODE_05) {
-                gSaveContext.sunsSongState = SUNSSONG_INACTIVE;
+                z_common_data.sunsSongState = SUNSSONG_INACTIVE;
                 if (GET_ITEMGETINF(ITEMGETINF_16)) {
                     play->msgCtx.ocarinaMode = OCARINA_MODE_04;
                     player->unk_6A8 = &this->actor;
-                    Actor_OfferTalk(&this->actor, play, EnSkj_GetItemXzRange(this));
+                    Actor_talk_request2(&this->actor, play, Skj_TalkDistance(this));
                     this->textId = 0x10BD;
-                    EnSkj_SetupAfterSong(this);
+                    Change_Skj_Duo_Talk(this);
                 } else {
                     play->msgCtx.ocarinaMode = OCARINA_MODE_04;
                     player->unk_6A8 = &this->actor;
-                    Actor_OfferTalk(&this->actor, play, EnSkj_GetItemXzRange(this));
-                    EnSkj_SetupWrongSong(this);
+                    Actor_talk_request2(&this->actor, play, Skj_TalkDistance(this));
+                    Change_Skj_Duo_FailureTalkWait(this);
                 }
             }
         }
     }
 }
 
-void EnSkj_SetupAfterSong(EnSkj* this) {
+void Change_Skj_Duo_Talk(EnSkj* this) {
     this->unk_2D6 = 0;
-    EnSkj_ChangeAnim(this, SKJ_ANIM_WAIT);
-    EnSkj_SetupAction(this, SKJ_ACTION_SARIA_SONG_AFTER_SONG);
+    CHG_Skj_Animation(this, SKJ_ANIM_WAIT);
+    CHG_Skj_Mode(this, SKJ_ACTION_SARIA_SONG_AFTER_SONG);
 }
 
-void EnSkj_AfterSong(EnSkj* this, PlayState* play) {
-    if (D_80B01EA0 != 0) {
-        EnSkj_SetupTalk(this);
+void Skj_Duo_Talk(EnSkj* this, PlayState* play) {
+    if (skj_talk_flag != 0) {
+        Change_Skj_Duo_MsgWait(this);
     } else {
-        Actor_OfferTalk(&this->actor, play, EnSkj_GetItemXzRange(this));
+        Actor_talk_request2(&this->actor, play, Skj_TalkDistance(this));
     }
 }
 
-void EnSkj_SetupTalk(EnSkj* this) {
-    EnSkj_SetupAction(this, SKJ_ACTION_SARIA_TALK);
+void Change_Skj_Duo_MsgWait(EnSkj* this) {
+    CHG_Skj_Mode(this, SKJ_ACTION_SARIA_TALK);
 }
 
-void EnSkj_SariaSongTalk(EnSkj* this, PlayState* play) {
+void Skj_Duo_MsgWait(EnSkj* this, PlayState* play) {
     s32 pad;
 
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_DONE) && Message_ShouldAdvance(play)) {
+    if ((message_check(&play->msgCtx) == TEXT_STATE_DONE) && pad_on_check(play)) {
         if (GET_ITEMGETINF(ITEMGETINF_16)) {
-            EnSkj_SetupWaitInRange(this);
+            Change_Skj_Talk_Wait(this);
         } else {
-            func_80AFFE24(this);
-            Actor_OfferGetItem(&this->actor, play, GI_HEART_PIECE, EnSkj_GetItemXzRange(this),
-                               EnSkj_GetItemYRange(this));
+            Change_Skj_Duo_CarryStart(this);
+            Actor_carry_request_set2(&this->actor, play, GI_HEART_PIECE, Skj_TalkDistance(this),
+                               Skj_TalkHight(this));
         }
     }
 }
 
-void func_80AFFE24(EnSkj* this) {
-    EnSkj_SetupAction(this, SKJ_ACTION_UNK14);
+void Change_Skj_Duo_CarryStart(EnSkj* this) {
+    CHG_Skj_Mode(this, SKJ_ACTION_UNK14);
 }
 
-void func_80AFFE44(EnSkj* this, PlayState* play) {
-    if (Actor_HasParent(&this->actor, play)) {
+void Skj_Duo_CarryStart(EnSkj* this, PlayState* play) {
+    if (Actor_carry_check(&this->actor, play)) {
         this->actor.parent = NULL;
-        EnSkj_SetupPostSariasSong(this);
+        Change_Skj_Duo_CarryFinish(this);
     } else {
-        Actor_OfferGetItem(&this->actor, play, GI_HEART_PIECE, EnSkj_GetItemXzRange(this), EnSkj_GetItemYRange(this));
+        Actor_carry_request_set2(&this->actor, play, GI_HEART_PIECE, Skj_TalkDistance(this), Skj_TalkHight(this));
     }
 }
 
-void EnSkj_SetupPostSariasSong(EnSkj* this) {
-    EnSkj_SetupAction(this, SKJ_ACTION_SARIA_SONG_CHANGE_MODE);
+void Change_Skj_Duo_CarryFinish(EnSkj* this) {
+    CHG_Skj_Mode(this, SKJ_ACTION_SARIA_SONG_CHANGE_MODE);
 }
 
-void EnSkj_ChangeModeAfterSong(EnSkj* this, PlayState* play) {
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_DONE) && Message_ShouldAdvance(play)) {
+void Skj_Duo_CarryFinish(EnSkj* this, PlayState* play) {
+    if ((message_check(&play->msgCtx) == TEXT_STATE_DONE) && pad_on_check(play)) {
         SET_ITEMGETINF(ITEMGETINF_16);
-        EnSkj_SetNaviId(this);
-        EnSkj_SetupWaitInRange(this);
+        Skj_profile_message_set(this);
+        Change_Skj_Talk_Wait(this);
     }
 }
 
-void EnSkj_SetupMaskTrade(EnSkj* this) {
-    EnSkj_SetupAction(this, SKJ_ACTION_SARIA_SONG_START_TRADE);
+void Change_Skj_Duo_BuyMaskTalk(EnSkj* this) {
+    CHG_Skj_Mode(this, SKJ_ACTION_SARIA_SONG_START_TRADE);
 }
 
-void EnSkj_StartMaskTrade(EnSkj* this, PlayState* play) {
-    u8 sp1F = Message_GetState(&play->msgCtx);
+void Skj_Duo_BuyMaskTalk(EnSkj* this, PlayState* play) {
+    u8 sp1F = message_check(&play->msgCtx);
 
-    Player_SetCsActionWithHaltedActors(play, &this->actor, PLAYER_CSACTION_1);
-    if ((sp1F == TEXT_STATE_DONE) && Message_ShouldAdvance(play)) {
-        EnSkj_JumpFromStump(this);
+    player_demo_mode_set(play, &this->actor, PLAYER_CSACTION_1);
+    if ((sp1F == TEXT_STATE_DONE) && pad_on_check(play)) {
+        Change_Skj_Duo_BuyMaskJump(this);
     }
 }
 
-void EnSkj_JumpFromStump(EnSkj* this) {
+void Change_Skj_Duo_BuyMaskJump(EnSkj* this) {
     this->actor.velocity.y = 8.0f;
     this->actor.speed = 2.0f;
-    EnSkj_ChangeAnim(this, SKJ_ANIM_BACKFLIP);
-    Animation_Reverse(&this->skelAnime);
+    CHG_Skj_Animation(this, SKJ_ANIM_BACKFLIP);
+    Skeleton_Info_reverse(&this->skelAnime);
     this->skelAnime.curFrame = this->skelAnime.startFrame;
-    EnSkj_SetupAction(this, SKJ_ACTION_SARIA_SONG_WAIT_FOR_LANDING);
+    CHG_Skj_Mode(this, SKJ_ACTION_SARIA_SONG_WAIT_FOR_LANDING);
 }
 
-void EnSkj_WaitForLanding(EnSkj* this, PlayState* play) {
+void Skj_Duo_BuyMaskJump(EnSkj* this, PlayState* play) {
     if (this->actor.velocity.y <= 0.0f) {
         if (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND_TOUCH) {
             this->actor.bgCheckFlags &= ~BGCHECKFLAG_GROUND_TOUCH;
             this->actor.speed = 0.0f;
-            EnSkj_SetupWaitForLandAnimFinish(this);
+            Change_Skj_Duo_BuyMaskLanding(this);
         }
     }
 }
 
-void EnSkj_SetupWaitForLandAnimFinish(EnSkj* this) {
-    EnSkj_ChangeAnim(this, SKJ_ANIM_LAND);
-    EnSkj_SetupAction(this, SKJ_ACTION_SARIA_SONG_WAIT_FOR_LANDING_ANIM);
+void Change_Skj_Duo_BuyMaskLanding(EnSkj* this) {
+    CHG_Skj_Animation(this, SKJ_ANIM_LAND);
+    CHG_Skj_Mode(this, SKJ_ACTION_SARIA_SONG_WAIT_FOR_LANDING_ANIM);
 }
 
-void EnSkj_WaitForLandAnimFinish(EnSkj* this, PlayState* play) {
-    s16 lastFrame = Animation_GetLastFrame(&gSkullKidLandAnim);
+void Skj_Duo_BuyMaskLanding(EnSkj* this, PlayState* play) {
+    s16 lastFrame = Si2_anime_end_frame(&gSkullKidLandAnim);
 
     if (this->skelAnime.curFrame == lastFrame) {
-        EnSkj_SetupWalkToPlayer(this);
+        Change_Skj_Duo_BuyMaskWalk(this);
     }
 }
 
-void EnSkj_SetupWalkToPlayer(EnSkj* this) {
+void Change_Skj_Duo_BuyMaskWalk(EnSkj* this) {
     this->unk_2F0 = 0.0f;
     this->actor.speed = 2.0f;
-    EnSkj_ChangeAnim(this, SKJ_ANIM_WALK_TO_PLAYER);
-    EnSkj_SetupAction(this, SKJ_ACTION_SARIA_SONG_WALK_TO_PLAYER);
+    CHG_Skj_Animation(this, SKJ_ANIM_WALK_TO_PLAYER);
+    CHG_Skj_Mode(this, SKJ_ACTION_SARIA_SONG_WALK_TO_PLAYER);
 }
 
-void EnSkj_WalkToPlayer(EnSkj* this, PlayState* play) {
-    Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 0xA, this->unk_2F0, 0);
-    Math_ApproachF(&this->unk_2F0, 2000.0f, 1.0f, 100.0f);
+void Skj_Duo_BuyMaskWalk(EnSkj* this, PlayState* play) {
+    add_calc_short_angle2(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 0xA, this->unk_2F0, 0);
+    add_calc2(&this->unk_2F0, 2000.0f, 1.0f, 100.0f);
     this->actor.world.rot.y = this->actor.shape.rot.y;
     if (this->actor.xzDistToPlayer < 120.0f) {
         this->actor.speed = 0.0f;
-        EnSkj_SetupAskForMask(this, play);
+        Change_Skj_Duo_BuyMask(this, play);
     }
 }
 
-void EnSkj_SetupAskForMask(EnSkj* this, PlayState* play) {
-    Message_StartTextbox(play, 0x101C, &this->actor);
-    EnSkj_ChangeAnim(this, SKJ_ANIM_WAIT);
-    EnSkj_SetupAction(this, SKJ_ACTION_SARIA_SONG_ASK_FOR_MASK);
+void Change_Skj_Duo_BuyMask(EnSkj* this, PlayState* play) {
+    message_set(play, 0x101C, &this->actor);
+    CHG_Skj_Animation(this, SKJ_ANIM_WAIT);
+    CHG_Skj_Mode(this, SKJ_ACTION_SARIA_SONG_ASK_FOR_MASK);
 }
 
-void EnSkj_AskForMask(EnSkj* this, PlayState* play) {
-    if (Message_GetState(&play->msgCtx) == TEXT_STATE_CHOICE && Message_ShouldAdvance(play)) {
+void Skj_Duo_BuyMask(EnSkj* this, PlayState* play) {
+    if (message_check(&play->msgCtx) == TEXT_STATE_CHOICE && pad_on_check(play)) {
         switch (play->msgCtx.choiceIndex) {
             case 0: // Yes
-                EnSkj_SetupTakeMask(this, play);
+                Change_Skj_Duo_BuyMaskFinish(this, play);
                 break;
             case 1: // No
-                Message_ContinueTextbox(play, 0x101D);
-                EnSkj_SetupWaitForMaskTextClear(this);
+                message_set2(play, 0x101D);
+                Change_Skj_Duo_BuyMaskEscape(this);
                 break;
         }
     }
 }
 
-void EnSkj_SetupTakeMask(EnSkj* this, PlayState* play) {
-    Message_ContinueTextbox(play, 0x101E);
-    EnSkj_SetupAction(this, SKJ_ACTION_SARIA_SONG_TAKE_MASK);
+void Change_Skj_Duo_BuyMaskFinish(EnSkj* this, PlayState* play) {
+    message_set2(play, 0x101E);
+    CHG_Skj_Mode(this, SKJ_ACTION_SARIA_SONG_TAKE_MASK);
 }
 
-void EnSkj_TakeMask(EnSkj* this, PlayState* play) {
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_DONE) && Message_ShouldAdvance(play)) {
-        Rupees_ChangeBy(10);
+void Skj_Duo_BuyMaskFinish(EnSkj* this, PlayState* play) {
+    if ((message_check(&play->msgCtx) == TEXT_STATE_DONE) && pad_on_check(play)) {
+        lupy_increase(10);
         SET_ITEMGETINF(ITEMGETINF_39);
-        EnSkj_SetNaviId(this);
-        Player_UnsetMask(play);
-        Item_Give(play, ITEM_SOLD_OUT);
-        Message_ContinueTextbox(play, 0x101F);
-        EnSkj_SetupWaitForMaskTextClear(this);
+        Skj_profile_message_set(this);
+        mask_cancel(play);
+        item_get_setting(play, ITEM_SOLD_OUT);
+        message_set2(play, 0x101F);
+        Change_Skj_Duo_BuyMaskEscape(this);
     }
 }
 
-void EnSkj_SetupWaitForMaskTextClear(EnSkj* this) {
-    EnSkj_SetupAction(this, SKJ_ACTION_SARIA_SONG_WAIT_MASK_TEXT);
+void Change_Skj_Duo_BuyMaskEscape(EnSkj* this) {
+    CHG_Skj_Mode(this, SKJ_ACTION_SARIA_SONG_WAIT_MASK_TEXT);
 }
 
-void EnSkj_WaitForMaskTextClear(EnSkj* this, PlayState* play) {
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_DONE) && Message_ShouldAdvance(play)) {
-        Player_SetCsActionWithHaltedActors(play, &this->actor, PLAYER_CSACTION_7);
+void Skj_Duo_BuyMaskEscape(EnSkj* this, PlayState* play) {
+    if ((message_check(&play->msgCtx) == TEXT_STATE_DONE) && pad_on_check(play)) {
+        player_demo_mode_set(play, &this->actor, PLAYER_CSACTION_7);
         this->backflipFlag = 1;
-        EnSkj_Backflip(this);
+        Change_Skj_Back_Jump(this);
     }
 }
 
-void EnSkj_SetupWrongSong(EnSkj* this) {
+void Change_Skj_Duo_FailureTalkWait(EnSkj* this) {
     this->textId = 0x1041;
-    EnSkj_ChangeAnim(this, SKJ_ANIM_WAIT);
-    EnSkj_SetupAction(this, SKJ_ACTION_SARIA_SONG_WRONG_SONG);
+    CHG_Skj_Animation(this, SKJ_ANIM_WAIT);
+    CHG_Skj_Mode(this, SKJ_ACTION_SARIA_SONG_WRONG_SONG);
 }
 
-void EnSkj_WrongSong(EnSkj* this, PlayState* play) {
-    if (D_80B01EA0 != 0) {
-        EnSkj_SetupWaitForTextClear(this);
+void Skj_Duo_FailureTalkWait(EnSkj* this, PlayState* play) {
+    if (skj_talk_flag != 0) {
+        Change_Skj_Duo_FailureTalk(this);
     } else {
-        Actor_OfferTalk(&this->actor, play, EnSkj_GetItemXzRange(this));
+        Actor_talk_request2(&this->actor, play, Skj_TalkDistance(this));
     }
 }
 
-void EnSkj_SetupWaitForTextClear(EnSkj* this) {
-    EnSkj_SetupAction(this, SKJ_ACTION_SARIA_SONG_WAIT_FOR_TEXT);
+void Change_Skj_Duo_FailureTalk(EnSkj* this) {
+    CHG_Skj_Mode(this, SKJ_ACTION_SARIA_SONG_WAIT_FOR_TEXT);
 }
 
-void EnSkj_SariasSongWaitForTextClear(EnSkj* this, PlayState* play) {
-    u8 state = Message_GetState(&play->msgCtx);
+void Skj_Duo_FailureTalk(EnSkj* this, PlayState* play) {
+    u8 state = message_check(&play->msgCtx);
     Player* player = GET_PLAYER(play);
 
-    if (state == TEXT_STATE_DONE && Message_ShouldAdvance(play)) {
-        EnSkj_SetupWaitInRange(this);
+    if (state == TEXT_STATE_DONE && pad_on_check(play)) {
+        Change_Skj_Talk_Wait(this);
         player->stateFlags2 |= PLAYER_STATE2_23;
-        player->unk_6A8 = (Actor*)sSmallStumpSkullKid.skullkid;
+        player->unk_6A8 = (Actor*)ocarina.skullkid;
     }
 }
 
-void EnSkj_OcarinaGameSetupWaitForPlayer(EnSkj* this) {
+void Change_Skj_Trio_Wait(EnSkj* this) {
     this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
-    EnSkj_ChangeAnim(this, SKJ_ANIM_WAIT);
-    EnSkj_SetupAction(this, SKJ_ACTION_OCARINA_GAME_WAIT_FOR_PLAYER);
+    CHG_Skj_Animation(this, SKJ_ANIM_WAIT);
+    CHG_Skj_Mode(this, SKJ_ACTION_OCARINA_GAME_WAIT_FOR_PLAYER);
 }
 
-void EnSkj_OcarinaGameWaitForPlayer(EnSkj* this, PlayState* play) {
+void Skj_Trio_Wait(EnSkj* this, PlayState* play) {
     if (this->playerInRange) {
         this->actor.flags |= ACTOR_FLAG_ATTENTION_ENABLED;
-        EnSkj_SetupAction(this, SKJ_ACTION_OCARINA_GAME_IDLE);
+        CHG_Skj_Mode(this, SKJ_ACTION_OCARINA_GAME_IDLE);
     }
 }
 
-s32 EnSkj_IsLeavingGame(EnSkj* this) {
+s32 Check_Skj_Trio_Ocarina_Escape(EnSkj* this) {
     s32 paramDecr = this->actor.params - 1;
 
-    if (sOcarinaMinigameSkullKids[paramDecr].unk_0 == 2) {
-        EnSkj_SetupLeaveOcarinaGame(this);
+    if (ocarinaT[paramDecr].unk_0 == 2) {
+        Change_Skj_Trio_Ocarina_Escape(this);
         return true;
     }
     return false;
 }
 
-void EnSkj_SetupIdle(EnSkj* this) {
-    EnSkj_ChangeAnim(this, SKJ_ANIM_WAIT);
-    EnSkj_SetupAction(this, SKJ_ACTION_OCARINA_GAME_IDLE);
+void Change_Skj_Trio_Ocarina_Wait(EnSkj* this) {
+    CHG_Skj_Animation(this, SKJ_ANIM_WAIT);
+    CHG_Skj_Mode(this, SKJ_ACTION_OCARINA_GAME_IDLE);
 }
 
-void EnSkj_Appear(EnSkj* this) {
+void Skj_Trio_Alpha_ON(EnSkj* this) {
     if (this->alpha != 255) {
         this->alpha += 20;
 
@@ -1250,49 +1250,49 @@ void EnSkj_Appear(EnSkj* this) {
     }
 }
 
-void EnSkj_OcarinaGameIdle(EnSkj* this, PlayState* play) {
-    EnSkj_Appear(this);
+void Skj_Trio_Ocarina_Wait(EnSkj* this, PlayState* play) {
+    Skj_Trio_Alpha_ON(this);
 
-    if (!EnSkj_IsLeavingGame(this) && (this->minigameState != 0)) {
-        EnSkj_SetupPlayOcarinaGame(this);
+    if (!Check_Skj_Trio_Ocarina_Escape(this) && (this->minigameState != 0)) {
+        Change_Skj_Trio_Ocarina_Dance(this);
     }
 }
 
-void EnSkj_SetupPlayOcarinaGame(EnSkj* this) {
-    EnSkj_ChangeAnim(this, SKJ_ANIM_PLAY_FLUTE);
-    EnSkj_SetupAction(this, SKJ_ACTION_OCARINA_GAME_PLAY);
+void Change_Skj_Trio_Ocarina_Dance(EnSkj* this) {
+    CHG_Skj_Animation(this, SKJ_ANIM_PLAY_FLUTE);
+    CHG_Skj_Mode(this, SKJ_ACTION_OCARINA_GAME_PLAY);
 }
 
-void EnSkj_PlayOcarinaGame(EnSkj* this, PlayState* play) {
-    EnSkj_Appear(this);
+void Skj_Trio_Ocarina_Dance(EnSkj* this, PlayState* play) {
+    Skj_Trio_Alpha_ON(this);
 
-    if (!EnSkj_IsLeavingGame(this) && (this->minigameState == 0)) {
-        EnSkj_SetupIdle(this);
+    if (!Check_Skj_Trio_Ocarina_Escape(this) && (this->minigameState == 0)) {
+        Change_Skj_Trio_Ocarina_Wait(this);
     }
 }
 
-void EnSkj_SetupLeaveOcarinaGame(EnSkj* this) {
+void Change_Skj_Trio_Ocarina_Escape(EnSkj* this) {
     this->actor.velocity.y = 8.0f;
     this->actor.speed = -8.0f;
-    EnSkj_ChangeAnim(this, SKJ_ANIM_BACKFLIP);
-    EnSkj_SetupAction(this, SKJ_ACTION_OCARINA_GAME_LEAVE);
+    CHG_Skj_Animation(this, SKJ_ANIM_BACKFLIP);
+    CHG_Skj_Mode(this, SKJ_ACTION_OCARINA_GAME_LEAVE);
 }
 
-void EnSkj_LeaveOcarinaGame(EnSkj* this, PlayState* play) {
+void Skj_Trio_Ocarina_Escape(EnSkj* this, PlayState* play) {
     s32 paramsDecr = this->actor.params - 1;
 
-    sOcarinaMinigameSkullKids[paramsDecr].unk_0 = 0;
-    sOcarinaMinigameSkullKids[paramsDecr].skullkid = NULL;
+    ocarinaT[paramsDecr].unk_0 = 0;
+    ocarinaT[paramsDecr].skullkid = NULL;
     this->backflipFlag = 1;
-    EnSkj_Backflip(this);
+    Change_Skj_Back_Jump(this);
 }
 
-void EnSkj_Update(Actor* thisx, PlayState* play) {
+void En_Skj_actor_move(Actor* thisx, PlayState* play) {
     Vec3f dropPos;
     s32 pad;
     EnSkj* this = (EnSkj*)thisx;
 
-    D_80B01EA0 = Actor_TalkOfferAccepted(&this->actor, play);
+    skj_talk_flag = Actor_talk_check(&this->actor, play);
 
     this->timer++;
 
@@ -1318,143 +1318,143 @@ void EnSkj_Update(Actor* thisx, PlayState* play) {
             dropPos.y = this->actor.world.pos.y;
             dropPos.z = this->actor.world.pos.z;
 
-            Item_DropCollectible(play, &dropPos, ITEM00_RUPEE_ORANGE);
+            Item_set0(play, &dropPos, ITEM00_RUPEE_ORANGE);
         }
-        Actor_Kill(&this->actor);
+        Actor_delete(&this->actor);
         return;
     }
 
-    Actor_SetFocus(&this->actor, 30.0f);
-    Actor_SetScale(&this->actor, 0.01f);
+    Actor_world_to_eye(&this->actor, 30.0f);
+    Actor_set_scale(&this->actor, 0.01f);
     this->actionFunc(this, play);
     this->actor.textId = this->textId;
-    EnSkj_CollisionCheck(this, play);
-    Collider_UpdateCylinder(&this->actor, &this->collider);
+    Skj_Cross(this, play);
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(&this->actor, &this->collider);
 
-    if ((this->unk_2D3 != 0) && (D_80B01EA0 == 0)) {
-        CollisionCheck_SetAT(play, &play->colChkCtx, &this->collider.base);
+    if ((this->unk_2D3 != 0) && (skj_talk_flag == 0)) {
+        CollisionCheck_setAT(play, &play->colChkCtx, &this->collider.base);
 
         if (this->actor.colorFilterTimer == 0) {
-            CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
+            CollisionCheck_setAC(play, &play->colChkCtx, &this->collider.base);
         }
     }
 
-    CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
-    SkelAnime_Update(&this->skelAnime);
-    Actor_MoveXZGravity(&this->actor);
-    Actor_UpdateBgCheckInfo(play, &this->actor, 20.0f, 20.0f, 20.0f,
+    CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
+    Skeleton_Info2_anime_play(&this->skelAnime);
+    Actor_position_moveF(&this->actor);
+    Actor_BGcheck2(play, &this->actor, 20.0f, 20.0f, 20.0f,
                             UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_1 | UPDBGCHECKINFO_FLAG_2);
 }
 
-void EnSkj_SariasSongShortStumpUpdate(Actor* thisx, PlayState* play) {
+void En_Skj_Ocarina_actor_move(Actor* thisx, PlayState* play) {
     EnSkj* this = (EnSkj*)thisx;
 
-    D_80B01EA0 = Actor_TalkOfferAccepted(&this->actor, play);
+    skj_talk_flag = Actor_talk_check(&this->actor, play);
 
     if (DEBUG_FEATURES && BREG(0) != 0) {
-        DebugDisplay_AddObject(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
+        Debug_Display_new(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
                                this->actor.world.rot.x, this->actor.world.rot.y, this->actor.world.rot.z, 1.0f, 1.0f,
                                1.0f, 255, 0, 0, 255, 4, play->state.gfxCtx);
     }
 }
 
-void EnSkj_TurnPlayer(EnSkj* this, Player* player) {
-    Math_SmoothStepToS(&player->actor.shape.rot.y, this->actor.world.rot.y, 5, 2000, 0);
+void Skj_OcarinaT_PlayerAngleSet(EnSkj* this, Player* player) {
+    add_calc_short_angle2(&player->actor.shape.rot.y, this->actor.world.rot.y, 5, 2000, 0);
     player->actor.world.rot.y = player->actor.shape.rot.y;
     player->yaw = player->actor.shape.rot.y;
 }
 
-void EnSkj_SetupWaitForOcarina(EnSkj* this, PlayState* play) {
+void Skj_OcarinaT_TalkWait(EnSkj* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    if (EnSkj_RangeCheck(player, this)) {
-        sOcarinaMinigameSkullKids[SKULL_KID_LEFT].skullkid->playerInRange = true;
-        sOcarinaMinigameSkullKids[SKULL_KID_RIGHT].skullkid->playerInRange = true;
+    if (CHK_Skj_Ocarina_Player_Distance(player, this)) {
+        ocarinaT[SKULL_KID_LEFT].skullkid->playerInRange = true;
+        ocarinaT[SKULL_KID_RIGHT].skullkid->playerInRange = true;
 
         if (player->stateFlags2 & PLAYER_STATE2_24) {
             player->stateFlags2 |= PLAYER_STATE2_25;
-            func_800F5BF0(NATURE_ID_KOKIRI_REGION);
-            EnSkj_TurnPlayer(this, player);
+            Na_StartForceNatureSound(NATURE_ID_KOKIRI_REGION);
+            Skj_OcarinaT_PlayerAngleSet(this, player);
             player->unk_6A8 = &this->actor;
-            Message_StartTextbox(play, 0x10BE, &this->actor);
-            this->actionFunc = EnSkj_StartOcarinaMinigame;
+            message_set(play, 0x10BE, &this->actor);
+            this->actionFunc = Skj_OcarinaT_Talk;
         } else {
-            this->actionFunc = EnSkj_WaitForOcarina;
+            this->actionFunc = Skj_OcarinaT_TalkWait2;
         }
     }
 }
 
-void EnSkj_WaitForOcarina(EnSkj* this, PlayState* play) {
+void Skj_OcarinaT_TalkWait2(EnSkj* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     if (player->stateFlags2 & PLAYER_STATE2_24) {
         player->stateFlags2 |= PLAYER_STATE2_25;
-        func_800F5BF0(NATURE_ID_KOKIRI_REGION);
-        EnSkj_TurnPlayer(this, player);
+        Na_StartForceNatureSound(NATURE_ID_KOKIRI_REGION);
+        Skj_OcarinaT_PlayerAngleSet(this, player);
         player->unk_6A8 = &this->actor;
-        Message_StartTextbox(play, 0x10BE, &this->actor);
-        this->actionFunc = EnSkj_StartOcarinaMinigame;
-    } else if (EnSkj_RangeCheck(player, this)) {
+        message_set(play, 0x10BE, &this->actor);
+        this->actionFunc = Skj_OcarinaT_Talk;
+    } else if (CHK_Skj_Ocarina_Player_Distance(player, this)) {
         player->stateFlags2 |= PLAYER_STATE2_23;
     }
 }
 
-void EnSkj_StartOcarinaMinigame(EnSkj* this, PlayState* play) {
-    u8 dialogState = Message_GetState(&play->msgCtx);
+void Skj_OcarinaT_Talk(EnSkj* this, PlayState* play) {
+    u8 dialogState = message_check(&play->msgCtx);
     Player* player = GET_PLAYER(play);
 
-    EnSkj_TurnPlayer(this, player);
+    Skj_OcarinaT_PlayerAngleSet(this, player);
 
     if (dialogState == TEXT_STATE_CLOSING) {
-        Message_StartOcarina(play, OCARINA_ACTION_MEMORY_GAME);
-        if (sOcarinaMinigameSkullKids[SKULL_KID_LEFT].skullkid != NULL) {
-            sOcarinaMinigameSkullKids[SKULL_KID_LEFT].skullkid->minigameState = SKULL_KID_OCARINA_PLAY_NOTES;
+        ocarina_set(play, OCARINA_ACTION_MEMORY_GAME);
+        if (ocarinaT[SKULL_KID_LEFT].skullkid != NULL) {
+            ocarinaT[SKULL_KID_LEFT].skullkid->minigameState = SKULL_KID_OCARINA_PLAY_NOTES;
         }
         this->songFailTimer = 160;
-        this->actionFunc = EnSkj_WaitForPlayback;
+        this->actionFunc = Skj_OcarinaT_Play_1;
     }
 }
 
-void EnSkj_WaitForPlayback(EnSkj* this, PlayState* play) {
+void Skj_OcarinaT_Play_1(EnSkj* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    EnSkj_TurnPlayer(this, player);
+    Skj_OcarinaT_PlayerAngleSet(this, player);
 
     if (play->msgCtx.ocarinaMode == OCARINA_MODE_03) { // failed the game
-        Message_CloseTextbox(play);
+        message_close(play);
         play->msgCtx.ocarinaMode = OCARINA_MODE_04;
         player->unk_6A8 = &this->actor;
-        Actor_OfferTalk(&this->actor, play, 26.0f);
+        Actor_talk_request2(&this->actor, play, 26.0f);
         this->textId = 0x102D;
-        this->actionFunc = EnSkj_FailedMiniGame;
+        this->actionFunc = Skj_OcarinaT_Failure;
     } else if (play->msgCtx.ocarinaMode == OCARINA_MODE_0F) { // completed the game
-        Sfx_PlaySfxCentered(NA_SE_SY_CORRECT_CHIME);
-        Message_CloseTextbox(play);
+        Na_StartSystemSe_F(NA_SE_SY_CORRECT_CHIME);
+        message_close(play);
         play->msgCtx.ocarinaMode = OCARINA_MODE_04;
         player->unk_6A8 = &this->actor;
-        Actor_OfferTalk(&this->actor, play, 26.0f);
+        Actor_talk_request2(&this->actor, play, 26.0f);
         this->textId = 0x10BF;
-        this->actionFunc = EnSkj_WonOcarinaMiniGame;
+        this->actionFunc = Skj_OcarinaT_Success;
     } else { // playing the game
         switch (play->msgCtx.msgMode) {
             case MSGMODE_MEMORY_GAME_LEFT_SKULLKID_WAIT:
-                if (sOcarinaMinigameSkullKids[SKULL_KID_LEFT].skullkid != NULL) {
-                    sOcarinaMinigameSkullKids[SKULL_KID_LEFT].skullkid->minigameState = SKULL_KID_OCARINA_WAIT;
+                if (ocarinaT[SKULL_KID_LEFT].skullkid != NULL) {
+                    ocarinaT[SKULL_KID_LEFT].skullkid->minigameState = SKULL_KID_OCARINA_WAIT;
                 }
-                if (!Audio_IsSfxPlaying(NA_SE_SY_METRONOME)) {
-                    if (sOcarinaMinigameSkullKids[SKULL_KID_RIGHT].skullkid != NULL) {
-                        sOcarinaMinigameSkullKids[SKULL_KID_RIGHT].skullkid->minigameState =
+                if (!Nai_FxFlagCheck(NA_SE_SY_METRONOME)) {
+                    if (ocarinaT[SKULL_KID_RIGHT].skullkid != NULL) {
+                        ocarinaT[SKULL_KID_RIGHT].skullkid->minigameState =
                             SKULL_KID_OCARINA_PLAY_NOTES;
                     }
-                    Message_UpdateOcarinaMemoryGame(play);
+                    ocarina_round_next(play);
                 }
                 break;
             case MSGMODE_MEMORY_GAME_RIGHT_SKULLKID_WAIT:
-                if (sOcarinaMinigameSkullKids[SKULL_KID_RIGHT].skullkid != NULL) {
-                    sOcarinaMinigameSkullKids[SKULL_KID_RIGHT].skullkid->minigameState = SKULL_KID_OCARINA_WAIT;
+                if (ocarinaT[SKULL_KID_RIGHT].skullkid != NULL) {
+                    ocarinaT[SKULL_KID_RIGHT].skullkid->minigameState = SKULL_KID_OCARINA_WAIT;
                 }
-                if (!Audio_IsSfxPlaying(NA_SE_SY_METRONOME)) {
-                    Message_UpdateOcarinaMemoryGame(play);
+                if (!Nai_FxFlagCheck(NA_SE_SY_METRONOME)) {
+                    ocarina_round_next(play);
                     this->songFailTimer = 160;
                 }
                 break;
@@ -1462,24 +1462,24 @@ void EnSkj_WaitForPlayback(EnSkj* this, PlayState* play) {
                 if (this->songFailTimer != 0) {
                     this->songFailTimer--;
                 } else { // took too long, game failed
-                    Sfx_PlaySfxCentered(NA_SE_SY_OCARINA_ERROR);
-                    Message_CloseTextbox(play);
+                    Na_StartSystemSe_F(NA_SE_SY_OCARINA_ERROR);
+                    message_close(play);
                     play->msgCtx.ocarinaMode = OCARINA_MODE_04;
                     player->unk_6A8 = &this->actor;
-                    Actor_OfferTalk(&this->actor, play, 26.0f);
+                    Actor_talk_request2(&this->actor, play, 26.0f);
                     this->textId = 0x102D;
-                    this->actionFunc = EnSkj_FailedMiniGame;
+                    this->actionFunc = Skj_OcarinaT_Failure;
                 }
                 break;
             case MSGMODE_MEMORY_GAME_START_NEXT_ROUND:
-                if (!Audio_IsSfxPlaying(NA_SE_SY_METRONOME)) {
-                    if (sOcarinaMinigameSkullKids[SKULL_KID_LEFT].skullkid != NULL) {
-                        sOcarinaMinigameSkullKids[SKULL_KID_LEFT].skullkid->minigameState =
+                if (!Nai_FxFlagCheck(NA_SE_SY_METRONOME)) {
+                    if (ocarinaT[SKULL_KID_LEFT].skullkid != NULL) {
+                        ocarinaT[SKULL_KID_LEFT].skullkid->minigameState =
                             SKULL_KID_OCARINA_PLAY_NOTES;
                     }
                     this->songFailTimer = 160;
-                    AudioOcarina_SetInstrument(OCARINA_INSTRUMENT_FLUTE);
-                    AudioOcarina_SetPlaybackSong(OCARINA_SONG_MEMORY_GAME + 1, 1);
+                    Na_SetOcarinaModeFlag(OCARINA_INSTRUMENT_FLUTE);
+                    Na_SetOcarinaSeq(OCARINA_SONG_MEMORY_GAME + 1, 1);
                     play->msgCtx.msgMode = MSGMODE_MEMORY_GAME_LEFT_SKULLKID_PLAYING;
                     play->msgCtx.stateTimer = 2;
                 }
@@ -1488,105 +1488,105 @@ void EnSkj_WaitForPlayback(EnSkj* this, PlayState* play) {
     }
 }
 
-void EnSkj_FailedMiniGame(EnSkj* this, PlayState* play) {
-    if (D_80B01EA0) {
-        this->actionFunc = EnSkj_WaitForNextRound;
+void Skj_OcarinaT_Failure(EnSkj* this, PlayState* play) {
+    if (skj_talk_flag) {
+        this->actionFunc = Skj_OcarinaT_FailureTalkWait;
     } else {
-        Actor_OfferTalk(&this->actor, play, 26.0f);
+        Actor_talk_request2(&this->actor, play, 26.0f);
     }
 }
 
-void EnSkj_WaitForNextRound(EnSkj* this, PlayState* play) {
-    if (Message_GetState(&play->msgCtx) == TEXT_STATE_DONE && Message_ShouldAdvance(play)) {
-        EnSkj_OfferNextRound(this, play);
+void Skj_OcarinaT_FailureTalkWait(EnSkj* this, PlayState* play) {
+    if (message_check(&play->msgCtx) == TEXT_STATE_DONE && pad_on_check(play)) {
+        Change_Skj_OcarinaT_FailureTalkEnd(this, play);
     }
 }
 
-void EnSkj_OfferNextRound(EnSkj* this, PlayState* play) {
-    Message_ContinueTextbox(play, 0x102E);
-    this->actionFunc = EnSkj_WaitForOfferResponse;
+void Change_Skj_OcarinaT_FailureTalkEnd(EnSkj* this, PlayState* play) {
+    message_set2(play, 0x102E);
+    this->actionFunc = Skj_OcarinaT_FailureTalkEnd;
 }
 
-void EnSkj_WaitForOfferResponse(EnSkj* this, PlayState* play) {
-    if (Message_GetState(&play->msgCtx) == TEXT_STATE_CHOICE && Message_ShouldAdvance(play)) {
+void Skj_OcarinaT_FailureTalkEnd(EnSkj* this, PlayState* play) {
+    if (message_check(&play->msgCtx) == TEXT_STATE_CHOICE && pad_on_check(play)) {
         switch (play->msgCtx.choiceIndex) {
             case 0: { // yes
                 Player* player = GET_PLAYER(play);
 
                 player->stateFlags3 |= PLAYER_STATE3_5; // makes player take ocarina out right away after closing box
-                this->actionFunc = EnSkj_SetupWaitForOcarina;
+                this->actionFunc = Skj_OcarinaT_TalkWait;
                 break;
             }
             case 1: // no
-                this->actionFunc = EnSkj_CleanupOcarinaGame;
+                this->actionFunc = Skj_OcarinaT_Finish;
                 break;
         }
     }
 }
 
-void EnSkj_WonOcarinaMiniGame(EnSkj* this, PlayState* play) {
-    if (D_80B01EA0) {
-        this->actionFunc = EnSkj_WaitToGiveReward;
+void Skj_OcarinaT_Success(EnSkj* this, PlayState* play) {
+    if (skj_talk_flag) {
+        this->actionFunc = Skj_OcarinaT_SuccessTalkWait;
     } else {
-        Actor_OfferTalk(&this->actor, play, 26.0f);
+        Actor_talk_request2(&this->actor, play, 26.0f);
     }
 }
 
-void EnSkj_WaitToGiveReward(EnSkj* this, PlayState* play) {
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_DONE) && Message_ShouldAdvance(play)) {
-        Actor_OfferGetItem(&this->actor, play,
-                           sOcarinaGameRewards[gSaveContext.save.info.playerData.ocarinaGameRoundNum], 26.0f, 26.0f);
-        this->actionFunc = EnSkj_GiveOcarinaGameReward;
+void Skj_OcarinaT_SuccessTalkWait(EnSkj* this, PlayState* play) {
+    if ((message_check(&play->msgCtx) == TEXT_STATE_DONE) && pad_on_check(play)) {
+        Actor_carry_request_set2(&this->actor, play,
+                           Trio_PresentItem[z_common_data.save.info.playerData.ocarinaGameRoundNum], 26.0f, 26.0f);
+        this->actionFunc = Skj_OcarinaT_SuccessCarryWait;
     }
 }
 
-void EnSkj_GiveOcarinaGameReward(EnSkj* this, PlayState* play) {
-    if (Actor_HasParent(&this->actor, play)) {
+void Skj_OcarinaT_SuccessCarryWait(EnSkj* this, PlayState* play) {
+    if (Actor_carry_check(&this->actor, play)) {
         this->actor.parent = NULL;
-        this->actionFunc = EnSkj_FinishOcarinaGameRound;
+        this->actionFunc = Skj_OcarinaT_SuccessCarryFinish;
     } else {
-        Actor_OfferGetItem(&this->actor, play,
-                           sOcarinaGameRewards[gSaveContext.save.info.playerData.ocarinaGameRoundNum], 26.0f, 26.0f);
+        Actor_carry_request_set2(&this->actor, play,
+                           Trio_PresentItem[z_common_data.save.info.playerData.ocarinaGameRoundNum], 26.0f, 26.0f);
     }
 }
 
-void EnSkj_FinishOcarinaGameRound(EnSkj* this, PlayState* play) {
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_DONE) && Message_ShouldAdvance(play)) {
-        s32 ocarinaGameRoundNum = gSaveContext.save.info.playerData.ocarinaGameRoundNum;
+void Skj_OcarinaT_SuccessCarryFinish(EnSkj* this, PlayState* play) {
+    if ((message_check(&play->msgCtx) == TEXT_STATE_DONE) && pad_on_check(play)) {
+        s32 ocarinaGameRoundNum = z_common_data.save.info.playerData.ocarinaGameRoundNum;
 
-        if (gSaveContext.save.info.playerData.ocarinaGameRoundNum < 3) {
-            gSaveContext.save.info.playerData.ocarinaGameRoundNum++;
+        if (z_common_data.save.info.playerData.ocarinaGameRoundNum < 3) {
+            z_common_data.save.info.playerData.ocarinaGameRoundNum++;
         }
 
         if (ocarinaGameRoundNum == 2) {
             SET_ITEMGETINF(ITEMGETINF_17);
-            this->actionFunc = EnSkj_CleanupOcarinaGame;
+            this->actionFunc = Skj_OcarinaT_Finish;
         } else {
-            EnSkj_OfferNextRound(this, play);
+            Change_Skj_OcarinaT_FailureTalkEnd(this, play);
         }
     }
 }
 
-void EnSkj_CleanupOcarinaGame(EnSkj* this, PlayState* play) {
-    if (sOcarinaMinigameSkullKids[SKULL_KID_LEFT].skullkid != NULL) {
-        sOcarinaMinigameSkullKids[SKULL_KID_LEFT].unk_0 = 2;
+void Skj_OcarinaT_Finish(EnSkj* this, PlayState* play) {
+    if (ocarinaT[SKULL_KID_LEFT].skullkid != NULL) {
+        ocarinaT[SKULL_KID_LEFT].unk_0 = 2;
     }
 
-    if (sOcarinaMinigameSkullKids[SKULL_KID_RIGHT].skullkid != NULL) {
-        sOcarinaMinigameSkullKids[SKULL_KID_RIGHT].unk_0 = 2;
+    if (ocarinaT[SKULL_KID_RIGHT].skullkid != NULL) {
+        ocarinaT[SKULL_KID_RIGHT].unk_0 = 2;
     }
 
-    if ((sOcarinaMinigameSkullKids[SKULL_KID_LEFT].unk_0 == 2) &&
-        (sOcarinaMinigameSkullKids[SKULL_KID_RIGHT].unk_0 == 2)) {
-        func_800F5C2C();
-        Actor_Kill(&this->actor);
+    if ((ocarinaT[SKULL_KID_LEFT].unk_0 == 2) &&
+        (ocarinaT[SKULL_KID_RIGHT].unk_0 == 2)) {
+        Na_StopForceNatureSound();
+        Actor_delete(&this->actor);
     }
 }
 
-void EnSkj_OcarinaMinigameShortStumpUpdate(Actor* thisx, PlayState* play) {
+void En_Skj_OcarinaT_actor_move(Actor* thisx, PlayState* play) {
     EnSkj* this = (EnSkj*)thisx;
 
-    D_80B01EA0 = Actor_TalkOfferAccepted(&this->actor, play);
+    skj_talk_flag = Actor_talk_check(&this->actor, play);
     this->timer++;
 
     this->actor.focus.pos.x = 1230.0f;
@@ -1595,7 +1595,7 @@ void EnSkj_OcarinaMinigameShortStumpUpdate(Actor* thisx, PlayState* play) {
 
 #if DEBUG_FEATURES
     if (BREG(0) != 0) {
-        DebugDisplay_AddObject(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
+        Debug_Display_new(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
                                this->actor.world.rot.x, this->actor.world.rot.y, this->actor.world.rot.z, 1.0f, 1.0f,
                                1.0f, 255, 0, 0, 255, 4, play->state.gfxCtx);
     }
@@ -1607,26 +1607,26 @@ void EnSkj_OcarinaMinigameShortStumpUpdate(Actor* thisx, PlayState* play) {
     this->actor.xzDistToPlayer = 50.0;
 }
 
-s32 EnSkj_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+s32 Skj_Display1(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     return 0;
 }
 
-void EnSkj_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
+void Skj_Display2(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
     OPEN_DISPS(play->state.gfxCtx, "../z_en_skj.c", 2417);
 
     if ((limbIndex == 11) && GET_ITEMGETINF(ITEMGETINF_39)) {
-        Gfx_SetupDL_25Opa(play->state.gfxCtx);
-        Matrix_Push();
-        Matrix_RotateZYX(-0x4000, 0, 0, MTXMODE_APPLY);
+        _texture_z_light_fog_prim(play->state.gfxCtx);
+        Matrix_push();
+        Matrix_rotateXYZ(-0x4000, 0, 0, MTXMODE_APPLY);
         MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_en_skj.c", 2430);
         gSPDisplayList(POLY_OPA_DISP++, gSkullKidSkullMaskDL);
-        Matrix_Pop();
+        Matrix_pull();
     }
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_skj.c", 2437);
 }
 
-Gfx* EnSkj_TranslucentDL(GraphicsContext* gfxCtx, u32 alpha) {
+Gfx* skj_xlu(GraphicsContext* gfxCtx, u32 alpha) {
     Gfx* dList;
     Gfx* dListHead;
 
@@ -1639,7 +1639,7 @@ Gfx* EnSkj_TranslucentDL(GraphicsContext* gfxCtx, u32 alpha) {
     return dList;
 }
 
-Gfx* EnSkj_OpaqueDL(GraphicsContext* gfxCtx, u32 alpha) {
+Gfx* skj_opa(GraphicsContext* gfxCtx, u32 alpha) {
     Gfx* dList;
     Gfx* dListHead;
 
@@ -1651,22 +1651,22 @@ Gfx* EnSkj_OpaqueDL(GraphicsContext* gfxCtx, u32 alpha) {
     return dList;
 }
 
-void EnSkj_Draw(Actor* thisx, PlayState* play) {
+void En_Skj_actor_draw(Actor* thisx, PlayState* play) {
     s32 pad;
     EnSkj* this = (EnSkj*)thisx;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_skj.c", 2475);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
 
     if (this->alpha < 255) {
-        gSPSegment(POLY_OPA_DISP++, 0x0C, EnSkj_TranslucentDL(play->state.gfxCtx, this->alpha));
+        gSPSegment(POLY_OPA_DISP++, 0x0C, skj_xlu(play->state.gfxCtx, this->alpha));
     } else {
-        gSPSegment(POLY_OPA_DISP++, 0x0C, EnSkj_OpaqueDL(play->state.gfxCtx, this->alpha));
+        gSPSegment(POLY_OPA_DISP++, 0x0C, skj_opa(play->state.gfxCtx, this->alpha));
     }
 
-    SkelAnime_DrawFlexOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
-                          EnSkj_OverrideLimbDraw, EnSkj_PostLimbDraw, this);
+    Si2_draw_SV(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
+                          Skj_Display1, Skj_Display2, this);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_skj.c", 2495);
 }

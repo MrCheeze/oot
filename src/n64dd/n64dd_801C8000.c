@@ -107,7 +107,7 @@ s32 func_801C81D4(void) {
 void func_801C81EC(struct_801E0D18* arg0) {
     osCreateMesgQueue(&arg0->unk_1C, B_801E0D88, ARRAY_COUNT(B_801E0D88));
 
-    if (gCurrentRegion == 1) {
+    if (z_locale_mode == 1) {
         arg0->unk_68 = LeoCJCreateLeoManager(LEO_PRIORITY_WRK, LEO_PRIORITY_INT, B_801E0D90, ARRAY_COUNT(B_801E0D90));
     } else {
         arg0->unk_68 = LeoCACreateLeoManager(LEO_PRIORITY_WRK, LEO_PRIORITY_INT, B_801E0D90, ARRAY_COUNT(B_801E0D90));

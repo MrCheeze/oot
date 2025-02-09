@@ -10,15 +10,15 @@
 
 #define FLAGS 0
 
-void BgJyaMegami_Init(Actor* thisx, PlayState* play);
-void BgJyaMegami_Destroy(Actor* thisx, PlayState* play);
-void BgJyaMegami_Update(Actor* thisx, PlayState* play);
-void BgJyaMegami_Draw(Actor* thisx, PlayState* play);
+void Bg_Jya_Megami_actor_ct(Actor* thisx, PlayState* play);
+void Bg_Jya_Megami_actor_dt(Actor* thisx, PlayState* play);
+void Bg_Jya_Megami_actor_move(Actor* thisx, PlayState* play);
+void Bg_Jya_Megami_actor_draw(Actor* thisx, PlayState* play);
 
-void BgJyaMegami_SetupDetectLight(BgJyaMegami* this);
-void BgJyaMegami_DetectLight(BgJyaMegami* this, PlayState* play);
-void BgJyaMegami_SetupExplode(BgJyaMegami* this);
-void BgJyaMegami_Explode(BgJyaMegami* this, PlayState* play);
+static void mv_stop_init(BgJyaMegami* this);
+static void mv_stop(BgJyaMegami* this, PlayState* play);
+void mv_break_init(BgJyaMegami* this);
+static void mv_break(BgJyaMegami* this, PlayState* play);
 
 ActorProfile Bg_Jya_Megami_Profile = {
     /**/ ACTOR_BG_JYA_MEGAMI,
@@ -26,13 +26,13 @@ ActorProfile Bg_Jya_Megami_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_JYA_OBJ,
     /**/ sizeof(BgJyaMegami),
-    /**/ BgJyaMegami_Init,
-    /**/ BgJyaMegami_Destroy,
-    /**/ BgJyaMegami_Update,
-    /**/ BgJyaMegami_Draw,
+    /**/ Bg_Jya_Megami_actor_ct,
+    /**/ Bg_Jya_Megami_actor_dt,
+    /**/ Bg_Jya_Megami_actor_move,
+    /**/ Bg_Jya_Megami_actor_draw,
 };
 
-static ColliderJntSphElementInit sJntSphElementsInit[] = {
+static ColliderJntSphElementInit ClSphElemDt_megami[] = {
     {
         {
             ELEM_MATERIAL_UNK0,
@@ -46,7 +46,7 @@ static ColliderJntSphElementInit sJntSphElementsInit[] = {
     },
 };
 
-static ColliderJntSphInit sJntSphInit = {
+static ColliderJntSphInit ClSphDt_megami = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -56,7 +56,7 @@ static ColliderJntSphInit sJntSphInit = {
         COLSHAPE_JNTSPH,
     },
     1,
-    sJntSphElementsInit,
+    ClSphElemDt_megami,
 };
 
 typedef struct BgJyaMegamiPieceInit {
@@ -67,7 +67,7 @@ typedef struct BgJyaMegamiPieceInit {
     /* 0x14 */ s16 delay;
 } BgJyaMegamiPieceInit; // size = 0x18
 
-static BgJyaMegamiPieceInit sPiecesInit[] = {
+static BgJyaMegamiPieceInit M_HAHEN_Data[] = {
     { { -50.0f, -21.28f, -38.92f }, -1.6f, 0xFED4, 0xFE70, 40 },
     { { -4.32f, -13.44f, -13.76f }, 0.0f, 0x04B0, 0x0190, 42 },
     { { 30.92f, -20.480001f, -28.84f }, 1.6f, 0xFCE0, 0x0320, 44 },
@@ -83,122 +83,122 @@ static BgJyaMegamiPieceInit sPiecesInit[] = {
     { { 14.759999f, -125.8f, -44.16f }, 0.2f, 0x0320, 0x0258, 20 },
 };
 
-static s16 D_8089B14C[] = {
+static s16 s[] = {
     0x0005, 0x0008, 0x000B, 0x000E, 0x0011, 0x0014, 0x0017, 0x001A,
 };
 
-static s16 D_8089B15C[] = {
+static s16 counter[] = {
     0x0012, 0x001A, 0x0022, 0x002A, 0x0032, 0x003C, 0x0046, 0x0050,
 };
 
-static s16 D_8089B16C[] = {
+static s16 airK1[] = {
     0x0030, 0x002A, 0x0024, 0x0020, 0x001C, 0x0018, 0x0014, 0x0010,
 };
 
-static s16 D_8089B17C[] = {
+static s16 s_mask[] = {
     0x0001,
     0x0003,
     0x0007,
 };
 
-static Vec3f sVelocity = { 0.0f, 0.0f, 0.8f };
+static Vec3f spd = { 0.0f, 0.0f, 0.8f };
 
-static InitChainEntry sInitChain[] = {
+static InitChainEntry value_init[] = {
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDistance, 1200, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeScale, 800, ICHAIN_CONTINUE),
     ICHAIN_F32(cullingVolumeDownward, 1200, ICHAIN_STOP),
 };
 
-void BgJyaMegami_InitDynaPoly(BgJyaMegami* this, PlayState* play, CollisionHeader* collision, s32 flag) {
+static void set_dynaPoly(BgJyaMegami* this, PlayState* play, CollisionHeader* collision, s32 flag) {
     s32 pad;
     CollisionHeader* colHeader = NULL;
 
-    DynaPolyActor_Init(&this->dyna, flag);
-    CollisionHeader_GetVirtual(collision, &colHeader);
-    this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
+    MoveBG_ct(&this->dyna, flag);
+    DynaPolyUty_bgdi_SG2KSG(collision, &colHeader);
+    this->dyna.bgId = DynaPolyInfo_setActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
 }
 
-void BgJyaMegami_InitCollider(BgJyaMegami* this, PlayState* play) {
+void set_collision_data_megami(BgJyaMegami* this, PlayState* play) {
     s32 pad;
 
-    Collider_InitJntSph(play, &this->collider);
-    Collider_SetJntSph(play, &this->collider, &this->dyna.actor, &sJntSphInit, &this->colliderItem);
+    ClObjJntSph_ct(play, &this->collider);
+    ClObjJntSph_set5_nzm(play, &this->collider, &this->dyna.actor, &ClSphDt_megami, &this->colliderItem);
 }
 
-void BgJyaMegami_SpawnEffect(PlayState* play, Vec3f* pos, Vec3f* velocity, s32 num, s32 arg4) {
+void kakera_megami(PlayState* play, Vec3f* pos, Vec3f* velocity, s32 num, s32 arg4) {
     Vec3f spB4;
     s32 i;
 
     for (i = 0; i < num; i++) {
-        s32 idx = ((s16)(Rand_ZeroOne() * 8.0f)) & D_8089B17C[arg4];
-        s16 arg5 = ((idx < 5) && (Rand_ZeroOne() < 0.7f)) ? 0x40 : 0x20;
-        EffectSsKakera_Spawn(play, pos, velocity, pos, -90, arg5, D_8089B16C[idx], 4, 0, D_8089B14C[idx], 0, 5,
-                             D_8089B15C[idx], KAKERA_COLOR_NONE, OBJECT_JYA_OBJ, gMegami2DL);
-        if (Rand_ZeroOne() < 0.45f) {
-            Math_Vec3f_Copy(&spB4, pos);
+        s32 idx = ((s16)(fqrand() * 8.0f)) & s_mask[arg4];
+        s16 arg5 = ((idx < 5) && (fqrand() < 0.7f)) ? 0x40 : 0x20;
+        Effect_Kakera_ct2(play, pos, velocity, pos, -90, arg5, airK1[idx], 4, 0, s[idx], 0, 5,
+                             counter[idx], KAKERA_COLOR_NONE, OBJECT_JYA_OBJ, gMegami2DL);
+        if (fqrand() < 0.45f) {
+            xyz_t_move(&spB4, pos);
             spB4.z += 25.0f;
-            func_80033480(play, &spB4, 60.0f, 0, D_8089B14C[idx] * 4 + 50, D_8089B14C[idx] * 4 + 70, 1);
+            dust_fly_set2(play, &spB4, 60.0f, 0, s[idx] * 4 + 50, s[idx] * 4 + 70, 1);
         }
     }
 }
 
-void BgJyaMegami_SetupSpawnEffect(BgJyaMegami* this, PlayState* play, f32 arg2) {
+void hibi_megami(BgJyaMegami* this, PlayState* play, f32 arg2) {
     s32 i;
     Vec3f pos;
 
     for (i = 0; i < ARRAY_COUNT(this->pieces); i++) {
-        if (Rand_ZeroOne() < arg2) {
-            Math_Vec3f_Sum(&this->dyna.actor.world.pos, &sPiecesInit[i].unk_00, &pos);
+        if (fqrand() < arg2) {
+            xyz_t_add(&this->dyna.actor.world.pos, &M_HAHEN_Data[i].unk_00, &pos);
             pos.z += 15.0f;
-            BgJyaMegami_SpawnEffect(play, &pos, &sVelocity, 1, 0);
+            kakera_megami(play, &pos, &spd, 1, 0);
         }
     }
 }
 
-void BgJyaMegami_Init(Actor* thisx, PlayState* play) {
+void Bg_Jya_Megami_actor_ct(Actor* thisx, PlayState* play) {
     BgJyaMegami* this = (BgJyaMegami*)thisx;
 
-    BgJyaMegami_InitDynaPoly(this, play, &GMegamiCol, 0);
-    BgJyaMegami_InitCollider(this, play);
-    if (Flags_GetSwitch(play, PARAMS_GET_U(this->dyna.actor.params, 0, 6))) {
-        Actor_Kill(&this->dyna.actor);
+    set_dynaPoly(this, play, &GMegamiCol, 0);
+    set_collision_data_megami(this, play);
+    if (Actor_Environment_sw_Check(play, PARAMS_GET_U(this->dyna.actor.params, 0, 6))) {
+        Actor_delete(&this->dyna.actor);
     } else {
-        Actor_ProcessInitChain(&this->dyna.actor, sInitChain);
-        Actor_SetFocus(&this->dyna.actor, -50.0f);
-        BgJyaMegami_SetupDetectLight(this);
+        ValueSet_process(&this->dyna.actor, value_init);
+        Actor_world_to_eye(&this->dyna.actor, -50.0f);
+        mv_stop_init(this);
     }
 }
 
-void BgJyaMegami_Destroy(Actor* thisx, PlayState* play) {
+void Bg_Jya_Megami_actor_dt(Actor* thisx, PlayState* play) {
     BgJyaMegami* this = (BgJyaMegami*)thisx;
 
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
-    Collider_DestroyJntSph(play, &this->collider);
+    DynaPolyInfo_delReserve(play, &play->colCtx.dyna, this->dyna.bgId);
+    ClObjJntSph_dt_nzf(play, &this->collider);
 }
 
-void BgJyaMegami_SetupDetectLight(BgJyaMegami* this) {
-    this->actionFunc = BgJyaMegami_DetectLight;
+static void mv_stop_init(BgJyaMegami* this) {
+    this->actionFunc = mv_stop;
     this->lightTimer = 0;
     this->crumbleIndex = 0;
 }
 
-void BgJyaMegami_DetectLight(BgJyaMegami* this, PlayState* play) {
+static void mv_stop(BgJyaMegami* this, PlayState* play) {
     if (this->collider.base.acFlags & AC_HIT) {
         this->lightTimer++;
         this->collider.base.acFlags &= ~AC_HIT;
         if (play->gameplayFrames % 4 == 0) {
-            BgJyaMegami_SetupSpawnEffect(this, play, (this->crumbleIndex * 0.04f) + 0.05f);
+            hibi_megami(this, play, (this->crumbleIndex * 0.04f) + 0.05f);
         }
-        Actor_PlaySfx_Flagged(&this->dyna.actor, NA_SE_EV_FACE_CRUMBLE_SLOW - SFX_FLAG);
+        Actor_level_SE_set(&this->dyna.actor, NA_SE_EV_FACE_CRUMBLE_SLOW - SFX_FLAG);
     } else if (this->lightTimer > 0) {
         this->lightTimer--;
     }
     if (this->lightTimer > 40) {
-        Flags_SetSwitch(play, PARAMS_GET_U(this->dyna.actor.params, 0, 6));
-        BgJyaMegami_SetupExplode(this);
-        SfxSource_PlaySfxAtFixedWorldPos(play, &this->dyna.actor.world.pos, 100, NA_SE_EV_FACE_EXPLOSION);
-        OnePointCutscene_Init(play, 3440, -99, &this->dyna.actor, CAM_ID_MAIN);
+        Actor_Environment_sw_On(play, PARAMS_GET_U(this->dyna.actor.params, 0, 6));
+        mv_break_init(this);
+        Effect_SE_Info_new(play, &this->dyna.actor.world.pos, 100, NA_SE_EV_FACE_EXPLOSION);
+        makeOnepointDemo(play, 3440, -99, &this->dyna.actor, CAM_ID_MAIN);
     } else {
         if (this->lightTimer < 8) {
             this->crumbleIndex = 0;
@@ -211,24 +211,24 @@ void BgJyaMegami_DetectLight(BgJyaMegami* this, PlayState* play) {
         } else {
             this->crumbleIndex = 4;
         }
-        CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
+        CollisionCheck_setAC(play, &play->colChkCtx, &this->collider.base);
     }
 }
 
-void BgJyaMegami_SetupExplode(BgJyaMegami* this) {
+void mv_break_init(BgJyaMegami* this) {
     u32 i;
     Vec3f* pos = &this->dyna.actor.world.pos;
 
-    this->actionFunc = BgJyaMegami_Explode;
+    this->actionFunc = mv_break;
     for (i = 0; i < ARRAY_COUNT(this->pieces); i++) {
-        Math_Vec3f_Copy(&this->pieces[i].pos, pos);
-        this->pieces[i].vel.x = sPiecesInit[i].velX;
+        xyz_t_move(&this->pieces[i].pos, pos);
+        this->pieces[i].vel.x = M_HAHEN_Data[i].velX;
     }
     this->explosionTimer = 0;
 }
 
-void BgJyaMegami_Explode(BgJyaMegami* this, PlayState* play) {
-    static Vec3f sVec = { 0.0f, 0.0f, 0.0f };
+static void mv_break(BgJyaMegami* this, PlayState* play) {
+    static Vec3f spd = { 0.0f, 0.0f, 0.0f };
     BgJyaMegamiPiece* temp;
     u32 i;
     Vec3f sp8C;
@@ -237,12 +237,12 @@ void BgJyaMegami_Explode(BgJyaMegami* this, PlayState* play) {
 
     this->explosionTimer++;
     if (this->explosionTimer == 30) {
-        SfxSource_PlaySfxAtFixedWorldPos(play, &this->dyna.actor.world.pos, 100, NA_SE_EV_FACE_BREAKDOWN);
+        Effect_SE_Info_new(play, &this->dyna.actor.world.pos, 100, NA_SE_EV_FACE_BREAKDOWN);
     }
 
     for (i = 0; i < ARRAY_COUNT(this->pieces); i++) {
         temp = &this->pieces[i];
-        temp2 = &sPiecesInit[i];
+        temp2 = &M_HAHEN_Data[i];
         if (this->explosionTimer > temp2->delay) {
             temp->vel.y -= 0.6f;
             if (temp->vel.y < -18.0f) {
@@ -253,106 +253,106 @@ void BgJyaMegami_Explode(BgJyaMegami* this, PlayState* play) {
             temp->pos.y += temp->vel.y;
             temp->rotVelX += temp2->rotVelX;
             temp->rotVelY += temp2->rotVelY;
-            if (Rand_ZeroOne() < 0.067f) {
-                Math_Vec3f_Sum(&temp->pos, &temp2->unk_00, &sp8C);
+            if (fqrand() < 0.067f) {
+                xyz_t_add(&temp->pos, &temp2->unk_00, &sp8C);
                 sp8C.z += 10.0f;
-                BgJyaMegami_SpawnEffect(play, &sp8C, &temp->vel, 3, 2);
+                kakera_megami(play, &sp8C, &temp->vel, 3, 2);
             }
         } else if (this->explosionTimer == temp2->delay) {
-            Math_Vec3f_Sum(&temp->pos, &temp2->unk_00, &sp8C);
+            xyz_t_add(&temp->pos, &temp2->unk_00, &sp8C);
             sp8C.z += 10.0f;
-            BgJyaMegami_SpawnEffect(play, &sp8C, &temp->vel, 4, 2);
+            kakera_megami(play, &sp8C, &temp->vel, 4, 2);
         }
     }
 
     if ((this->explosionTimer % 4 == 0) && (this->explosionTimer > 30) && (this->explosionTimer < 80) &&
         (this->explosionTimer > 40)) {
-        sp8C.x = ((Rand_ZeroOne() - 0.5f) * 90.0f) + this->dyna.actor.world.pos.x;
-        sp8C.y = (this->dyna.actor.world.pos.y - (Rand_ZeroOne() * 80.0f)) - 20.0f;
-        sp8C.z = this->dyna.actor.world.pos.z - (Rand_ZeroOne() - 0.5f) * 50.0f;
-        BgJyaMegami_SpawnEffect(play, &sp8C, &sVec, 1, 0);
+        sp8C.x = ((fqrand() - 0.5f) * 90.0f) + this->dyna.actor.world.pos.x;
+        sp8C.y = (this->dyna.actor.world.pos.y - (fqrand() * 80.0f)) - 20.0f;
+        sp8C.z = this->dyna.actor.world.pos.z - (fqrand() - 0.5f) * 50.0f;
+        kakera_megami(play, &sp8C, &spd, 1, 0);
     }
     if (this->explosionTimer < ARRAY_COUNT(this->pieces)) {
         sp8C.x = this->dyna.actor.world.pos.x;
         sp8C.y = this->dyna.actor.world.pos.y - 60.0f;
         sp8C.z = this->dyna.actor.world.pos.z;
-        func_80033480(play, &sp8C, 100.0f, 1, 150, 100, 1);
+        dust_fly_set2(play, &sp8C, 100.0f, 1, 150, 100, 1);
     }
     if (this->explosionTimer == 60) {
-        Sfx_PlaySfxCentered(NA_SE_SY_CORRECT_CHIME);
+        Na_StartSystemSe_F(NA_SE_SY_CORRECT_CHIME);
     }
     if (this->explosionTimer >= 100) {
-        Actor_Kill(&this->dyna.actor);
+        Actor_delete(&this->dyna.actor);
     }
 }
 
-void BgJyaMegami_Update(Actor* thisx, PlayState* play) {
+void Bg_Jya_Megami_actor_move(Actor* thisx, PlayState* play) {
     BgJyaMegami* this = (BgJyaMegami*)thisx;
 
     this->actionFunc(this, play);
 }
 
-static void* sRightSideCrumbles[] = {
+static void* face_1_txt[] = {
     gMegamiRightCrumble1Tex, gMegamiRightCrumble2Tex, gMegamiRightCrumble3Tex,
     gMegamiRightCrumble4Tex, gMegamiRightCrumble5Tex,
 };
 
-static void* sLeftSideCrumbles[] = {
+static void* face_2_txt[] = {
     gMegamiLeftCrumble1Tex, gMegamiLeftCrumble2Tex, gMegamiLeftCrumble3Tex,
     gMegamiLeftCrumble4Tex, gMegamiLeftCrumble5Tex,
 };
 
-void BgJyaMegami_DrawFace(BgJyaMegami* this, PlayState* play) {
+void draw_face_megami(BgJyaMegami* this, PlayState* play) {
     OPEN_DISPS(play->state.gfxCtx, "../z_bg_jya_megami.c", 706);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
-    gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(sRightSideCrumbles[this->crumbleIndex]));
-    gSPSegment(POLY_OPA_DISP++, 0x09, SEGMENTED_TO_VIRTUAL(sLeftSideCrumbles[this->crumbleIndex]));
+    _texture_z_light_fog_prim(play->state.gfxCtx);
+    gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(face_1_txt[this->crumbleIndex]));
+    gSPSegment(POLY_OPA_DISP++, 0x09, SEGMENTED_TO_VIRTUAL(face_2_txt[this->crumbleIndex]));
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_bg_jya_megami.c", 716);
     gSPDisplayList(POLY_OPA_DISP++, gMegami1DL);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_bg_jya_megami.c", 720);
 }
 
-static Gfx* sDLists[] = {
+static Gfx* hahen_model[] = {
     gMegamiPiece1DL,  gMegamiPiece2DL,  gMegamiPiece3DL,  gMegamiPiece4DL, gMegamiPiece5DL,
     gMegamiPiece6DL,  gMegamiPiece7DL,  gMegamiPiece8DL,  gMegamiPiece9DL, gMegamiPiece10DL,
     gMegamiPiece11DL, gMegamiPiece12DL, gMegamiPiece13DL,
 };
 
-void BgJyaMegami_DrawExplode(BgJyaMegami* this, PlayState* play) {
+void draw_hahen_megami(BgJyaMegami* this, PlayState* play) {
     s32 pad;
     BgJyaMegamiPiece* piece;
     u32 i;
 
     OPEN_DISPS(play->state.gfxCtx, "../z_bg_jya_megami.c", 746);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
 
     for (i = 0; i < ARRAY_COUNT(this->pieces); i++) {
         piece = &this->pieces[i];
-        Matrix_Translate(piece->pos.x + sPiecesInit[i].unk_00.x, piece->pos.y + sPiecesInit[i].unk_00.y,
-                         piece->pos.z + sPiecesInit[i].unk_00.z, MTXMODE_NEW);
-        Matrix_RotateY(BINANG_TO_RAD(piece->rotVelY), MTXMODE_APPLY);
-        Matrix_RotateX(BINANG_TO_RAD(piece->rotVelX), MTXMODE_APPLY);
-        Matrix_Scale(0.1f, 0.1f, 0.1f, MTXMODE_APPLY);
-        Matrix_Translate(sPiecesInit[i].unk_00.x * -10.0f, sPiecesInit[i].unk_00.y * -10.0f,
-                         sPiecesInit[i].unk_00.z * -10.0f, MTXMODE_APPLY);
+        Matrix_translate(piece->pos.x + M_HAHEN_Data[i].unk_00.x, piece->pos.y + M_HAHEN_Data[i].unk_00.y,
+                         piece->pos.z + M_HAHEN_Data[i].unk_00.z, MTXMODE_NEW);
+        Matrix_rotateY(BINANG_TO_RAD(piece->rotVelY), MTXMODE_APPLY);
+        Matrix_rotateX(BINANG_TO_RAD(piece->rotVelX), MTXMODE_APPLY);
+        Matrix_scale(0.1f, 0.1f, 0.1f, MTXMODE_APPLY);
+        Matrix_translate(M_HAHEN_Data[i].unk_00.x * -10.0f, M_HAHEN_Data[i].unk_00.y * -10.0f,
+                         M_HAHEN_Data[i].unk_00.z * -10.0f, MTXMODE_APPLY);
 
         MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx, "../z_bg_jya_megami.c", 778);
-        gSPDisplayList(POLY_OPA_DISP++, sDLists[i]);
+        gSPDisplayList(POLY_OPA_DISP++, hahen_model[i]);
     }
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_bg_jya_megami.c", 783);
 }
 
-void BgJyaMegami_Draw(Actor* thisx, PlayState* play) {
+void Bg_Jya_Megami_actor_draw(Actor* thisx, PlayState* play) {
     BgJyaMegami* this = (BgJyaMegami*)thisx;
 
-    Collider_UpdateSpheres(0, &this->collider);
-    if (this->actionFunc == BgJyaMegami_Explode) {
-        BgJyaMegami_DrawExplode(this, play);
+    CollisionCheck_Uty_convJntSphL2G(0, &this->collider);
+    if (this->actionFunc == mv_break) {
+        draw_hahen_megami(this, play);
     } else {
-        BgJyaMegami_DrawFace(this, play);
+        draw_face_megami(this, play);
     }
 }

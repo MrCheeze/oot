@@ -2,7 +2,7 @@
 
 #include "global.h"
 
-void SfxSource_InitAll(PlayState* play) {
+void Effect_SE_Info_ct(PlayState* play) {
     SfxSource* sources = &play->sfxSources[0];
     s32 i;
 
@@ -11,16 +11,16 @@ void SfxSource_InitAll(PlayState* play) {
     // clang-format on
 }
 
-void SfxSource_UpdateAll(PlayState* play) {
+void Effect_SE_Info_proc(PlayState* play) {
     SfxSource* source = &play->sfxSources[0];
     s32 i;
 
     for (i = 0; i < ARRAY_COUNT(play->sfxSources); i++) {
         if (source->countdown != 0) {
             if (DECR(source->countdown) == 0) {
-                Audio_StopSfxByPos(&source->projectedPos);
+                Nai_StopAllObjFx(&source->projectedPos);
             } else {
-                SkinMatrix_Vec3fMtxFMultXYZ(&play->viewProjectionMtxF, &source->worldPos, &source->projectedPos);
+                Skin_Matrix_MulVector(&play->viewProjectionMtxF, &source->worldPos, &source->projectedPos);
             }
         }
 
@@ -28,7 +28,7 @@ void SfxSource_UpdateAll(PlayState* play) {
     }
 }
 
-void SfxSource_PlaySfxAtFixedWorldPos(PlayState* play, Vec3f* worldPos, s32 duration, u16 sfxId) {
+void Effect_SE_Info_new(PlayState* play, Vec3f* worldPos, s32 duration, u16 sfxId) {
     s32 countdown;
     SfxSource* source;
     s32 smallestCountdown = 0xFFFF;
@@ -53,13 +53,13 @@ void SfxSource_PlaySfxAtFixedWorldPos(PlayState* play, Vec3f* worldPos, s32 dura
     // If no sfx source is available, replace the sfx source with the smallest remaining countdown
     if (i >= ARRAY_COUNT(play->sfxSources)) {
         source = backupSource;
-        Audio_StopSfxByPos(&source->projectedPos);
+        Nai_StopAllObjFx(&source->projectedPos);
     }
 
     source->worldPos = *worldPos;
     source->countdown = duration;
 
-    SkinMatrix_Vec3fMtxFMultXYZ(&play->viewProjectionMtxF, &source->worldPos, &source->projectedPos);
-    Audio_PlaySfxGeneral(sfxId, &source->projectedPos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
-                         &gSfxDefaultReverb);
+    Skin_Matrix_MulVector(&play->viewProjectionMtxF, &source->worldPos, &source->projectedPos);
+    Nai_FxFlagEntry(sfxId, &source->projectedPos, 4, &_dummy_one, &_dummy_one,
+                         &_dummy_zero_s8);
 }

@@ -10,13 +10,13 @@
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY)
 
-void EnHs_Init(Actor* thisx, PlayState* play);
-void EnHs_Destroy(Actor* thisx, PlayState* play);
-void EnHs_Update(Actor* thisx, PlayState* play);
-void EnHs_Draw(Actor* thisx, PlayState* play);
+void En_Hs_Actor_ct(Actor* thisx, PlayState* play);
+void En_Hs_Actor_dt(Actor* thisx, PlayState* play);
+void En_Hs_Actor_move(Actor* thisx, PlayState* play);
+void En_Hs_Actor_draw(Actor* thisx, PlayState* play);
 
-void func_80A6E9AC(EnHs* this, PlayState* play);
-void func_80A6E6B0(EnHs* this, PlayState* play);
+static void matsu(EnHs* this, PlayState* play);
+static void matsu2(EnHs* this, PlayState* play);
 
 ActorProfile En_Hs_Profile = {
     /**/ ACTOR_EN_HS,
@@ -24,13 +24,13 @@ ActorProfile En_Hs_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_HS,
     /**/ sizeof(EnHs),
-    /**/ EnHs_Init,
-    /**/ EnHs_Destroy,
-    /**/ EnHs_Update,
-    /**/ EnHs_Draw,
+    /**/ En_Hs_Actor_ct,
+    /**/ En_Hs_Actor_dt,
+    /**/ En_Hs_Actor_move,
+    /**/ En_Hs_Actor_draw,
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInit EnHsOcInfoData = {
     {
         COL_MATERIAL_NONE,
         AT_NONE,
@@ -50,22 +50,22 @@ static ColliderCylinderInit sCylinderInit = {
     { 40, 40, 0, { 0, 0, 0 } },
 };
 
-void func_80A6E3A0(EnHs* this, EnHsActionFunc actionFunc) {
+void En_Hs_actor_set_process(EnHs* this, EnHsActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
 
-void EnHs_Init(Actor* thisx, PlayState* play) {
+void En_Hs_Actor_ct(Actor* thisx, PlayState* play) {
     EnHs* this = (EnHs*)thisx;
     s32 pad;
 
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 36.0f);
-    SkelAnime_InitFlex(play, &this->skelAnime, &object_hs_Skel_006260, &object_hs_Anim_0005C0, this->jointTable,
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 36.0f);
+    Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &object_hs_Skel_006260, &object_hs_Anim_0005C0, this->jointTable,
                        this->morphTable, 16);
-    Animation_PlayLoop(&this->skelAnime, &object_hs_Anim_0005C0);
-    Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
+    Skeleton_Info2_init_standard_repeat(&this->skelAnime, &object_hs_Anim_0005C0);
+    ClObjPipe_ct(play, &this->collider);
+    ClObjPipe_set5(play, &this->collider, &this->actor, &EnHsOcInfoData);
     this->actor.colChkInfo.mass = MASS_IMMOVABLE;
-    Actor_SetScale(&this->actor, 0.01f);
+    Actor_set_scale(&this->actor, 0.01f);
 
     if (!LINK_IS_ADULT) {
         this->actor.params = 0;
@@ -76,33 +76,33 @@ void EnHs_Init(Actor* thisx, PlayState* play) {
     if (this->actor.params == 1) {
         // "chicken shop (adult era)"
         PRINTF(VT_FGCOL(CYAN) " ヒヨコの店(大人の時) \n" VT_RST);
-        func_80A6E3A0(this, func_80A6E9AC);
+        En_Hs_actor_set_process(this, matsu);
         if (GET_ITEMGETINF(ITEMGETINF_30)) {
             // "chicken shop closed"
             PRINTF(VT_FGCOL(CYAN) " ヒヨコ屋閉店 \n" VT_RST);
-            Actor_Kill(&this->actor);
+            Actor_delete(&this->actor);
         }
     } else {
         // "chicken shop (child era)"
         PRINTF(VT_FGCOL(CYAN) " ヒヨコの店(子人の時) \n" VT_RST);
-        func_80A6E3A0(this, func_80A6E9AC);
+        En_Hs_actor_set_process(this, matsu);
     }
 
     this->unk_2A8 = 0;
     this->actor.attentionRangeType = ATTENTION_RANGE_6;
 }
 
-void EnHs_Destroy(Actor* thisx, PlayState* play) {
+void En_Hs_Actor_dt(Actor* thisx, PlayState* play) {
     EnHs* this = (EnHs*)thisx;
 
-    Collider_DestroyCylinder(play, &this->collider);
+    ClObjPipe_dt(play, &this->collider);
 }
 
-s32 func_80A6E53C(EnHs* this, PlayState* play, u16 textId, EnHsActionFunc actionFunc) {
+static s32 kihon_process(EnHs* this, PlayState* play, u16 textId, EnHsActionFunc actionFunc) {
     s16 yawDiff;
 
-    if (Actor_TalkOfferAccepted(&this->actor, play)) {
-        func_80A6E3A0(this, actionFunc);
+    if (Actor_talk_check(&this->actor, play)) {
+        En_Hs_actor_set_process(this, actionFunc);
         return 1;
     }
 
@@ -110,148 +110,148 @@ s32 func_80A6E53C(EnHs* this, PlayState* play, u16 textId, EnHsActionFunc action
     yawDiff = this->actor.yawTowardsPlayer - this->actor.shape.rot.y;
     if ((ABS(yawDiff) <= 0x2150) && (this->actor.xzDistToPlayer < 100.0f)) {
         this->unk_2A8 |= 1;
-        Actor_OfferTalk(&this->actor, play, 100.0f);
+        Actor_talk_request2(&this->actor, play, 100.0f);
     }
 
     return 0;
 }
 
-void func_80A6E5EC(EnHs* this, PlayState* play) {
-    if (Actor_TextboxIsClosing(&this->actor, play)) {
-        func_80A6E3A0(this, func_80A6E6B0);
+static void talk_matsu2(EnHs* this, PlayState* play) {
+    if (Actor_talk_end_check(&this->actor, play)) {
+        En_Hs_actor_set_process(this, matsu2);
     }
 
     this->unk_2A8 |= 1;
 }
 
-void func_80A6E630(EnHs* this, PlayState* play) {
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_DONE) && Message_ShouldAdvance(play)) {
-        Interface_SetSubTimer(180);
-        func_80A6E3A0(this, func_80A6E6B0);
+void end_matsu2(EnHs* this, PlayState* play) {
+    if ((message_check(&play->msgCtx) == TEXT_STATE_DONE) && pad_on_check(play)) {
+        total_event_timer_set(180);
+        En_Hs_actor_set_process(this, matsu2);
         CLEAR_EVENTINF(EVENTINF_MARATHON_ACTIVE);
     }
 
     this->unk_2A8 |= 1;
 }
 
-void func_80A6E6B0(EnHs* this, PlayState* play) {
-    func_80A6E53C(this, play, 0x10B6, func_80A6E5EC);
+static void matsu2(EnHs* this, PlayState* play) {
+    kihon_process(this, play, 0x10B6, talk_matsu2);
 }
 
-void func_80A6E6D8(EnHs* this, PlayState* play) {
-    if (Actor_TextboxIsClosing(&this->actor, play)) {
-        func_80A6E3A0(this, func_80A6E9AC);
+static void talk_matsu(EnHs* this, PlayState* play) {
+    if (Actor_talk_end_check(&this->actor, play)) {
+        En_Hs_actor_set_process(this, matsu);
     }
 }
 
-void func_80A6E70C(EnHs* this, PlayState* play) {
-    if (Actor_TextboxIsClosing(&this->actor, play)) {
-        func_80A6E3A0(this, func_80A6E9AC);
+static void end_matsu(EnHs* this, PlayState* play) {
+    if (Actor_talk_end_check(&this->actor, play)) {
+        En_Hs_actor_set_process(this, matsu);
     }
 }
 
-void func_80A6E740(EnHs* this, PlayState* play) {
-    if (Actor_HasParent(&this->actor, play)) {
+void get_matsu2(EnHs* this, PlayState* play) {
+    if (Actor_carry_check(&this->actor, play)) {
         this->actor.parent = NULL;
-        func_80A6E3A0(this, func_80A6E630);
+        En_Hs_actor_set_process(this, end_matsu2);
     } else {
-        Actor_OfferGetItem(&this->actor, play, GI_ODD_MUSHROOM, 10000.0f, 50.0f);
+        Actor_carry_request_set2(&this->actor, play, GI_ODD_MUSHROOM, 10000.0f, 50.0f);
     }
 
     this->unk_2A8 |= 1;
 }
 
-void func_80A6E7BC(EnHs* this, PlayState* play) {
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_CHOICE) && Message_ShouldAdvance(play)) {
+void talk_start1(EnHs* this, PlayState* play) {
+    if ((message_check(&play->msgCtx) == TEXT_STATE_CHOICE) && pad_on_check(play)) {
         switch (play->msgCtx.choiceIndex) {
             case 0:
-                func_80A6E3A0(this, func_80A6E740);
-                Actor_OfferGetItem(&this->actor, play, GI_ODD_MUSHROOM, 10000.0f, 50.0f);
+                En_Hs_actor_set_process(this, get_matsu2);
+                Actor_carry_request_set2(&this->actor, play, GI_ODD_MUSHROOM, 10000.0f, 50.0f);
                 break;
             case 1:
-                Message_ContinueTextbox(play, 0x10B4);
-                func_80A6E3A0(this, func_80A6E70C);
+                message_set2(play, 0x10B4);
+                En_Hs_actor_set_process(this, end_matsu);
                 break;
         }
 
-        Animation_Change(&this->skelAnime, &object_hs_Anim_0005C0, 1.0f, 0.0f,
-                         Animation_GetLastFrame(&object_hs_Anim_0005C0), ANIMMODE_LOOP, 8.0f);
+        Skeleton_Info2_init(&this->skelAnime, &object_hs_Anim_0005C0, 1.0f, 0.0f,
+                         Si2_anime_end_frame(&object_hs_Anim_0005C0), ANIMMODE_LOOP, 8.0f);
     }
 
     this->unk_2A8 |= 1;
 }
 
-void func_80A6E8CC(EnHs* this, PlayState* play) {
+void talk_start0(EnHs* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_EVENT) && Message_ShouldAdvance(play)) {
-        Message_ContinueTextbox(play, 0x10B3);
-        func_80A6E3A0(this, func_80A6E7BC);
-        Animation_Change(&this->skelAnime, &object_hs_Anim_000528, 1.0f, 0.0f,
-                         Animation_GetLastFrame(&object_hs_Anim_000528), ANIMMODE_LOOP, 8.0f);
+    if ((message_check(&play->msgCtx) == TEXT_STATE_EVENT) && pad_on_check(play)) {
+        message_set2(play, 0x10B3);
+        En_Hs_actor_set_process(this, talk_start1);
+        Skeleton_Info2_init(&this->skelAnime, &object_hs_Anim_000528, 1.0f, 0.0f,
+                         Si2_anime_end_frame(&object_hs_Anim_000528), ANIMMODE_LOOP, 8.0f);
     }
 
     if (this->unk_2AA > 0) {
         this->unk_2AA--;
         if (this->unk_2AA == 0) {
-            Player_PlaySfx(player, NA_SE_EV_CHICKEN_CRY_M);
+            player_SE_set(player, NA_SE_EV_CHICKEN_CRY_M);
         }
     }
 
     this->unk_2A8 |= 1;
 }
 
-void func_80A6E9AC(EnHs* this, PlayState* play) {
+static void matsu(EnHs* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     s16 yawDiff;
 
-    if (Actor_TalkOfferAccepted(&this->actor, play)) {
-        if (Actor_GetPlayerExchangeItemId(play) == EXCH_ITEM_COJIRO) {
+    if (Actor_talk_check(&this->actor, play)) {
+        if (Actor_get_item_check(play) == EXCH_ITEM_COJIRO) {
             player->actor.textId = 0x10B2;
-            func_80A6E3A0(this, func_80A6E8CC);
-            Animation_Change(&this->skelAnime, &object_hs_Anim_000304, 1.0f, 0.0f,
-                             Animation_GetLastFrame(&object_hs_Anim_000304), ANIMMODE_LOOP, 8.0f);
+            En_Hs_actor_set_process(this, talk_start0);
+            Skeleton_Info2_init(&this->skelAnime, &object_hs_Anim_000304, 1.0f, 0.0f,
+                             Si2_anime_end_frame(&object_hs_Anim_000304), ANIMMODE_LOOP, 8.0f);
             this->unk_2AA = 40;
-            Sfx_PlaySfxCentered(NA_SE_SY_TRE_BOX_APPEAR);
+            Na_StartSystemSe_F(NA_SE_SY_TRE_BOX_APPEAR);
         } else {
             player->actor.textId = 0x10B1;
-            func_80A6E3A0(this, func_80A6E6D8);
+            En_Hs_actor_set_process(this, talk_matsu);
         }
     } else {
         yawDiff = this->actor.yawTowardsPlayer - this->actor.shape.rot.y;
         this->actor.textId = 0x10B1;
         if ((ABS(yawDiff) <= 0x2150) && (this->actor.xzDistToPlayer < 100.0f)) {
-            Actor_OfferTalkExchangeEquiCylinder(&this->actor, play, 100.0f, EXCH_ITEM_COJIRO);
+            Actor_talk_request_get_item(&this->actor, play, 100.0f, EXCH_ITEM_COJIRO);
         }
     }
 }
 
-void EnHs_Update(Actor* thisx, PlayState* play) {
+void En_Hs_Actor_move(Actor* thisx, PlayState* play) {
     EnHs* this = (EnHs*)thisx;
     s32 pad;
 
-    Collider_UpdateCylinder(thisx, &this->collider);
-    CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
-    Actor_MoveXZGravity(&this->actor);
-    Actor_UpdateBgCheckInfo(play, &this->actor, 0.0f, 0.0f, 0.0f, UPDBGCHECKINFO_FLAG_2);
-    if (SkelAnime_Update(&this->skelAnime)) {
+    CollisionCheck_Uty_ActorWorldPosSetPipeC(thisx, &this->collider);
+    CollisionCheck_setOC(play, &play->colChkCtx, &this->collider.base);
+    Actor_position_moveF(&this->actor);
+    Actor_BGcheck2(play, &this->actor, 0.0f, 0.0f, 0.0f, UPDBGCHECKINFO_FLAG_2);
+    if (Skeleton_Info2_anime_play(&this->skelAnime)) {
         this->skelAnime.curFrame = 0.0f;
     }
 
     this->actionFunc(this, play);
 
     if (this->unk_2A8 & 1) {
-        Actor_TrackPlayer(play, &this->actor, &this->unk_29C, &this->unk_2A2, this->actor.focus.pos);
+        eye_move2(play, &this->actor, &this->unk_29C, &this->unk_2A2, this->actor.focus.pos);
         this->unk_2A8 &= ~1;
     } else {
-        Math_SmoothStepToS(&this->unk_29C.x, 12800, 6, 6200, 100);
-        Math_SmoothStepToS(&this->unk_29C.y, 0, 6, 6200, 100);
-        Math_SmoothStepToS(&this->unk_2A2.x, 0, 6, 6200, 100);
-        Math_SmoothStepToS(&this->unk_2A2.y, 0, 6, 6200, 100);
+        add_calc_short_angle2(&this->unk_29C.x, 12800, 6, 6200, 100);
+        add_calc_short_angle2(&this->unk_29C.y, 0, 6, 6200, 100);
+        add_calc_short_angle2(&this->unk_2A2.x, 0, 6, 6200, 100);
+        add_calc_short_angle2(&this->unk_2A2.y, 0, 6, 6200, 100);
     }
 }
 
-s32 EnHs_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+static s32 before_display(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     EnHs* this = (EnHs*)thisx;
 
     switch (limbIndex) {
@@ -281,19 +281,19 @@ s32 EnHs_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* po
     return false;
 }
 
-void EnHs_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
-    static Vec3f D_80A6EDFC = { 300.0f, 1000.0f, 0.0f };
+static void after_display(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
+    static Vec3f pos = { 300.0f, 1000.0f, 0.0f };
     EnHs* this = (EnHs*)thisx;
 
     if (limbIndex == 9) {
-        Matrix_MultVec3f(&D_80A6EDFC, &this->actor.focus.pos);
+        Matrix_Position(&pos, &this->actor.focus.pos);
     }
 }
 
-void EnHs_Draw(Actor* thisx, PlayState* play) {
+void En_Hs_Actor_draw(Actor* thisx, PlayState* play) {
     EnHs* this = (EnHs*)thisx;
 
-    Gfx_SetupDL_37Opa(play->state.gfxCtx);
-    SkelAnime_DrawFlexOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
-                          EnHs_OverrideLimbDraw, EnHs_PostLimbDraw, this);
+    _polygon_z_light_fog_prim(play->state.gfxCtx);
+    Si2_draw_SV(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
+                          before_display, after_display, this);
 }

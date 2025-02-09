@@ -60,7 +60,7 @@ void AudioDebug_SetInput(void) {
     Input inputs[MAXCONTROLLERS];
     u32 btn;
 
-    PadMgr_RequestPadData(&gPadMgr, inputs, false);
+    padmgr_RequestPadData(&padmgr, inputs, false);
     btn = inputs[3].cur.button;
     sDebugPadHold = btn & 0xFFFF;
     sDebugPadPress = (btn ^ sDebugPadBtnLast) & btn;
@@ -83,7 +83,7 @@ char* AudioDebug_ToStringBinary(u32 num, u8 bits) {
     return sBinToStrBuf;
 }
 
-void AudioDebug_Draw(GfxPrint* printer) {
+void Na_AudioPrint(GfxPrint* printer) {
     s32 pad[3];
     u8 i;
     u8 j;
@@ -96,20 +96,20 @@ void AudioDebug_Draw(GfxPrint* printer) {
     char digitStr[2] = "1";
 
 #define SETCOL_COMMON(v, r, g, b) \
-    GfxPrint_SetColor(printer, ((v & 4) >> 2) * (r), ((v & 2) >> 1) * (g), (v & 1) * (b), 255)
+    gfxprint_color(printer, ((v & 4) >> 2) * (r), ((v & 2) >> 1) * (g), (v & 1) * (b), 255)
 #define SETCOL(r, g, b) SETCOL_COMMON(sAudioDebugTextColor, r, g, b)
 #define SETCOL_SCROLLPRINT(r, g, b) SETCOL_COMMON(sAudioScrPrtWork[2], r, g, b)
 
     sAudioDebugEverOpened = true;
-    GfxPrint_SetPos(printer, 3, 2);
+    gfxprint_locate8x8(printer, 3, 2);
     SETCOL(255, 255, 255);
-    GfxPrint_Printf(printer, "Audio Debug Mode");
+    gfxprint_printf(printer, "Audio Debug Mode");
 
-    GfxPrint_SetPos(printer, 3, 3);
-    GfxPrint_Printf(printer, "- %s -", sAudioDebugPageNames[sAudioDebugPage]);
+    gfxprint_locate8x8(printer, 3, 3);
+    gfxprint_printf(printer, "- %s -", sAudioDebugPageNames[sAudioDebugPage]);
 
-    for (i = 0; i < gAudioSpecs[gAudioSpecId].numNotes; i++) {
-        if (gAudioCtx.notes[i].noteSubEu.bitField0.enabled == 1) {
+    for (i = 0; i < NA_SPEC_CONFIG[SndSpecNum].numNotes; i++) {
+        if (AG.notes[i].noteSubEu.bitField0.enabled == 1) {
             numEnabledNotes++;
         }
     }
@@ -117,14 +117,14 @@ void AudioDebug_Draw(GfxPrint* printer) {
     if (sPeakNumNotes < numEnabledNotes) {
         sPeakNumNotes = numEnabledNotes;
     }
-    if (sAudioSpecPeakNumNotes[gAudioSpecId] < numEnabledNotes) {
-        sAudioSpecPeakNumNotes[gAudioSpecId] = numEnabledNotes;
+    if (sAudioSpecPeakNumNotes[SndSpecNum] < numEnabledNotes) {
+        sAudioSpecPeakNumNotes[SndSpecNum] = numEnabledNotes;
     }
 
     if (sAudioScrPrtWork[0] != 0) {
-        GfxPrint_SetPos(printer, sAudioScrPrtX, sAudioScrPrtY);
+        gfxprint_locate8x8(printer, sAudioScrPrtX, sAudioScrPrtY);
         SETCOL_SCROLLPRINT(200, 200, 200);
-        GfxPrint_Printf(printer, "Audio ScrPrt");
+        gfxprint_printf(printer, "Audio ScrPrt");
 
         ind = sAudioScrPrtInd;
         for (k = 0; k < sAudioScrPrtWork[1] + 1; k++) {
@@ -143,81 +143,81 @@ void AudioDebug_Draw(GfxPrint* printer) {
                 } else {
                     SETCOL_SCROLLPRINT(120, 120, 120);
                 }
-                GfxPrint_SetPos(printer, 2 + sAudioScrPrtX, sAudioScrPrtY + sAudioScrPrtWork[1] + 1 - k);
-                GfxPrint_Printf(printer, "%s", sAudioScrPrtBuf[ind].str);
+                gfxprint_locate8x8(printer, 2 + sAudioScrPrtX, sAudioScrPrtY + sAudioScrPrtWork[1] + 1 - k);
+                gfxprint_printf(printer, "%s", sAudioScrPrtBuf[ind].str);
 
-                GfxPrint_SetPos(printer, 7 + sAudioScrPrtX, sAudioScrPrtY + sAudioScrPrtWork[1] + 1 - k);
-                GfxPrint_Printf(printer, "%04X", sAudioScrPrtBuf[ind].num);
+                gfxprint_locate8x8(printer, 7 + sAudioScrPrtX, sAudioScrPrtY + sAudioScrPrtWork[1] + 1 - k);
+                gfxprint_printf(printer, "%04X", sAudioScrPrtBuf[ind].num);
             }
         }
     }
 
     switch (sAudioDebugPage) {
         case PAGE_NON:
-            GfxPrint_SetPos(printer, 3, 4);
+            gfxprint_locate8x8(printer, 3, 4);
             SETCOL(255, 64, 64);
-            GfxPrint_Printf(printer, "BGM CANCEL:%s", sBoolStrs[sAudioSndContWork[5]]);
+            gfxprint_printf(printer, "BGM CANCEL:%s", sBoolStrs[sAudioSndContWork[5]]);
 
-            GfxPrint_SetPos(printer, 3, 5);
-            GfxPrint_Printf(printer, "SE MUTE:%s", sBoolStrs[sAudioSfxMuted]);
+            gfxprint_locate8x8(printer, 3, 5);
+            gfxprint_printf(printer, "SE MUTE:%s", sBoolStrs[sAudioSfxMuted]);
 
-            GfxPrint_SetPos(printer, 18, 4);
+            gfxprint_locate8x8(printer, 18, 4);
             SETCOL(255, 255, 255);
-            GfxPrint_Printf(printer, "PUSH CONT-4 A-BTN");
+            gfxprint_printf(printer, "PUSH CONT-4 A-BTN");
 
             ind = (s8)sAudioSndContWork[2];
-            i = gSfxBanks[ind][0].next;
+            i = EntrySeStatus[ind][0].next;
             j = 0;
             SETCOL(255, 255, 255);
-            GfxPrint_SetPos(printer, 3, 6);
-            GfxPrint_Printf(printer, "SE HANDLE:%s", sSfxBankNames[ind]);
+            gfxprint_locate8x8(printer, 3, 6);
+            gfxprint_printf(printer, "SE HANDLE:%s", sSfxBankNames[ind]);
 
             while (i != 0xFF) {
-                GfxPrint_SetPos(printer, 3, 7 + j++);
-                GfxPrint_Printf(printer, "%02x %04x %02x %08x", i, gSfxBanks[ind][i].sfxId, gSfxBanks[ind][i].state,
-                                gSfxBanks[ind][i].priority);
-                i = gSfxBanks[ind][i].next;
+                gfxprint_locate8x8(printer, 3, 7 + j++);
+                gfxprint_printf(printer, "%02x %04x %02x %08x", i, EntrySeStatus[ind][i].sfxId, EntrySeStatus[ind][i].state,
+                                EntrySeStatus[ind][i].priority);
+                i = EntrySeStatus[ind][i].next;
             }
             break;
 
         case PAGE_SOUND_CONTROL:
-            GfxPrint_SetPos(printer, 2, 4 + sAudioSndContSel);
+            gfxprint_locate8x8(printer, 2, 4 + sAudioSndContSel);
             SETCOL(127, 255, 127);
-            GfxPrint_Printf(printer, "*");
+            gfxprint_printf(printer, "*");
 
             SETCOL(255, 255, 255);
-            GfxPrint_SetPos(printer, 3, 4);
-            GfxPrint_Printf(printer, "Seq 0  : %2x", sAudioSndContWork[0]);
+            gfxprint_locate8x8(printer, 3, 4);
+            gfxprint_printf(printer, "Seq 0  : %2x", sAudioSndContWork[0]);
 
-            GfxPrint_SetPos(printer, 3, 5);
-            GfxPrint_Printf(printer, "Seq 1  : %2x", sAudioSndContWork[1]);
+            gfxprint_locate8x8(printer, 3, 5);
+            gfxprint_printf(printer, "Seq 1  : %2x", sAudioSndContWork[1]);
 
-            GfxPrint_SetPos(printer, 3, 6);
-            GfxPrint_Printf(printer, "SE HD  : %2x %s", sAudioSndContWork[2], sSfxBankNames[sAudioSndContWork[2]]);
+            gfxprint_locate8x8(printer, 3, 6);
+            gfxprint_printf(printer, "SE HD  : %2x %s", sAudioSndContWork[2], sSfxBankNames[sAudioSndContWork[2]]);
 
-            GfxPrint_SetPos(printer, 3, 7);
-            GfxPrint_Printf(printer, "SE No. :%3x", sAudioSndContWork[3]);
+            gfxprint_locate8x8(printer, 3, 7);
+            gfxprint_printf(printer, "SE No. :%3x", sAudioSndContWork[3]);
 
-            GfxPrint_SetPos(printer, 3, 8);
-            GfxPrint_Printf(printer, "S-Out  : %2x %s", sAudioSndContWork[4], sSoundModeNames[sAudioSndContWork[4]]);
+            gfxprint_locate8x8(printer, 3, 8);
+            gfxprint_printf(printer, "S-Out  : %2x %s", sAudioSndContWork[4], sSoundModeNames[sAudioSndContWork[4]]);
 
-            GfxPrint_SetPos(printer, 3, 9);
-            GfxPrint_Printf(printer, "BGM Ent: %2x", sAudioSndContWork[5]);
+            gfxprint_locate8x8(printer, 3, 9);
+            gfxprint_printf(printer, "BGM Ent: %2x", sAudioSndContWork[5]);
 
-            GfxPrint_SetPos(printer, 3, 10);
-            GfxPrint_Printf(printer, "Spec   : %2x", sAudioSndContWork[6]);
+            gfxprint_locate8x8(printer, 3, 10);
+            gfxprint_printf(printer, "Spec   : %2x", sAudioSndContWork[6]);
 
-            GfxPrint_SetPos(printer, 3, 11);
-            GfxPrint_Printf(printer, "Na Snd : %2x", sAudioSndContWork[7]);
+            gfxprint_locate8x8(printer, 3, 11);
+            gfxprint_printf(printer, "Na Snd : %2x", sAudioSndContWork[7]);
 
-            GfxPrint_SetPos(printer, 3, 12);
-            GfxPrint_Printf(printer, "Cam Wt : %s", sBoolStrs[sAudioSndContWork[8]]);
+            gfxprint_locate8x8(printer, 3, 12);
+            gfxprint_printf(printer, "Cam Wt : %s", sBoolStrs[sAudioSndContWork[8]]);
 
-            GfxPrint_SetPos(printer, 3, 13);
-            GfxPrint_Printf(printer, "Lnk Wt : %s", sBoolStrs[sAudioSndContWork[9]]);
+            gfxprint_locate8x8(printer, 3, 13);
+            gfxprint_printf(printer, "Lnk Wt : %s", sBoolStrs[sAudioSndContWork[9]]);
 
-            GfxPrint_SetPos(printer, 3, 14);
-            GfxPrint_Printf(printer, "SE Ent : %2x", sAudioSndContWork[10]);
+            gfxprint_locate8x8(printer, 3, 14);
+            gfxprint_printf(printer, "SE Ent : %2x", sAudioSndContWork[10]);
             break;
 
         case PAGE_INTERFACE_INFO:
@@ -228,47 +228,47 @@ void AudioDebug_Draw(GfxPrint* printer) {
                 } else {
                     SETCOL(255, 255, 255);
                 }
-                GfxPrint_SetPos(printer, 2 + sAudioIntInfoX, 4 + ind + sAudioIntInfoY);
-                GfxPrint_Printf(printer, "%s <%d>", sSfxBankNames[k], sAudioIntInfoBankPage[k]);
+                gfxprint_locate8x8(printer, 2 + sAudioIntInfoX, 4 + ind + sAudioIntInfoY);
+                gfxprint_printf(printer, "%s <%d>", sSfxBankNames[k], sAudioIntInfoBankPage[k]);
 
-                for (k2 = 0; k2 < gChannelsPerBank[gSfxChannelLayout][k]; k2++) {
-#define entryIndex (gActiveSfx[k][k2].entryIndex)
-#define entry (&gSfxBanks[k][entryIndex])
-#define chan (gAudioCtx.seqPlayers[SEQ_PLAYER_SFX].channels[entry->channelIndex])
-                    GfxPrint_SetPos(printer, 2 + sAudioIntInfoX, 5 + ind + sAudioIntInfoY);
+                for (k2 = 0; k2 < _se_handle_sounds[se_scene_mode][k]; k2++) {
+#define entryIndex (play_next[k][k2].entryIndex)
+#define entry (&EntrySeStatus[k][entryIndex])
+#define chan (AG.seqPlayers[SEQ_PLAYER_SFX].channels[entry->channelIndex])
+                    gfxprint_locate8x8(printer, 2 + sAudioIntInfoX, 5 + ind + sAudioIntInfoY);
                     if (sAudioIntInfoBankPage[k] == 1) {
                         if ((entryIndex != 0xFF) &&
                             ((entry->state == SFX_STATE_PLAYING_1) || (entry->state == SFX_STATE_PLAYING_2))) {
-                            GfxPrint_Printf(printer, "%2X %5d %5d %5d %02X %04X %04X", entryIndex, (s32)*entry->posX,
+                            gfxprint_printf(printer, "%2X %5d %5d %5d %02X %04X %04X", entryIndex, (s32)*entry->posX,
                                             (s32)*entry->posY, (s32)*entry->posZ, entry->sfxImportance,
                                             entry->sfxParams, entry->sfxId);
                         } else {
-                            GfxPrint_Printf(printer, "FF ----- ----- ----- -- ---- ----");
+                            gfxprint_printf(printer, "FF ----- ----- ----- -- ---- ----");
                         }
                     } else if (sAudioIntInfoBankPage[k] == 2) {
                         if ((entryIndex != 0xFF) &&
                             ((entry->state == SFX_STATE_PLAYING_1) || (entry->state == SFX_STATE_PLAYING_2))) {
-                            GfxPrint_Printf(printer, "%2X %5d %5d %5d %3d %3d %04X", entryIndex, (s32)*entry->posX,
+                            gfxprint_printf(printer, "%2X %5d %5d %5d %3d %3d %04X", entryIndex, (s32)*entry->posX,
                                             (s32)*entry->posY, (s32)*entry->posZ, (s32)(chan->volume * 127.1f),
                                             chan->newPan, entry->sfxId);
                         } else {
-                            GfxPrint_Printf(printer, "FF ----- ----- ----- --- --- ----");
+                            gfxprint_printf(printer, "FF ----- ----- ----- --- --- ----");
                         }
                     } else if (sAudioIntInfoBankPage[k] == 3) {
                         if ((entryIndex != 0xFF) &&
                             ((entry->state == SFX_STATE_PLAYING_1) || (entry->state == SFX_STATE_PLAYING_2))) {
-                            GfxPrint_Printf(printer, "%2X %5d %5d %5d %3d %3d %04X", entryIndex, (s32)*entry->posX,
+                            gfxprint_printf(printer, "%2X %5d %5d %5d %3d %3d %04X", entryIndex, (s32)*entry->posX,
                                             (s32)*entry->posY, (s32)*entry->posZ, (s32)(chan->freqScale * 100.0f),
                                             chan->targetReverbVol, entry->sfxId);
                         } else {
-                            GfxPrint_Printf(printer, "FF ----- ----- ----- --- --- ----");
+                            gfxprint_printf(printer, "FF ----- ----- ----- --- --- ----");
                         }
                     } else if (sAudioIntInfoBankPage[k] == 4) {
                         if ((entryIndex != 0xFF) &&
                             ((entry->state == SFX_STATE_PLAYING_1) || (entry->state == SFX_STATE_PLAYING_2))) {
-                            GfxPrint_Printf(printer, "%2X %04X", entryIndex, entry->sfxId);
+                            gfxprint_printf(printer, "%2X %04X", entryIndex, entry->sfxId);
                         } else {
-                            GfxPrint_Printf(printer, "FF ----");
+                            gfxprint_printf(printer, "FF ----");
                         }
                     }
 #undef entryIndex
@@ -284,50 +284,50 @@ void AudioDebug_Draw(GfxPrint* printer) {
             break;
 
         case PAGE_SCROLL_PRINT:
-            GfxPrint_SetPos(printer, 2, 4 + sAudioScrPrtSel);
+            gfxprint_locate8x8(printer, 2, 4 + sAudioScrPrtSel);
             SETCOL(255, 255, 255);
-            GfxPrint_Printf(printer, "*");
+            gfxprint_printf(printer, "*");
 
             SETCOL(255, 255, 255);
-            GfxPrint_SetPos(printer, 3, 4);
-            GfxPrint_Printf(printer, "Swicth  : %d", sAudioScrPrtWork[0]);
+            gfxprint_locate8x8(printer, 3, 4);
+            gfxprint_printf(printer, "Swicth  : %d", sAudioScrPrtWork[0]);
 
-            GfxPrint_SetPos(printer, 3, 5);
-            GfxPrint_Printf(printer, "Lines   : %d", sAudioScrPrtWork[1] + 1);
+            gfxprint_locate8x8(printer, 3, 5);
+            gfxprint_printf(printer, "Lines   : %d", sAudioScrPrtWork[1] + 1);
 
-            GfxPrint_SetPos(printer, 3, 6);
-            GfxPrint_Printf(printer, "Color   : %d", sAudioScrPrtWork[2]);
+            gfxprint_locate8x8(printer, 3, 6);
+            gfxprint_printf(printer, "Color   : %d", sAudioScrPrtWork[2]);
 
-            GfxPrint_SetPos(printer, 3, 7);
-            GfxPrint_Printf(printer, "%s  : %d", sSfxBankNames[0], sAudioScrPrtWork[3]);
+            gfxprint_locate8x8(printer, 3, 7);
+            gfxprint_printf(printer, "%s  : %d", sSfxBankNames[0], sAudioScrPrtWork[3]);
 
-            GfxPrint_SetPos(printer, 3, 8);
-            GfxPrint_Printf(printer, "%s    : %d", sSfxBankNames[1], sAudioScrPrtWork[4]);
+            gfxprint_locate8x8(printer, 3, 8);
+            gfxprint_printf(printer, "%s    : %d", sSfxBankNames[1], sAudioScrPrtWork[4]);
 
-            GfxPrint_SetPos(printer, 3, 9);
-            GfxPrint_Printf(printer, "ENVRONM : %d", sAudioScrPrtWork[5]);
+            gfxprint_locate8x8(printer, 3, 9);
+            gfxprint_printf(printer, "ENVRONM : %d", sAudioScrPrtWork[5]);
 
-            GfxPrint_SetPos(printer, 3, 10);
-            GfxPrint_Printf(printer, "%s   : %d", sSfxBankNames[3], sAudioScrPrtWork[6]);
+            gfxprint_locate8x8(printer, 3, 10);
+            gfxprint_printf(printer, "%s   : %d", sSfxBankNames[3], sAudioScrPrtWork[6]);
 
-            GfxPrint_SetPos(printer, 3, 11);
-            GfxPrint_Printf(printer, "%s  : %d", sSfxBankNames[4], sAudioScrPrtWork[7]);
+            gfxprint_locate8x8(printer, 3, 11);
+            gfxprint_printf(printer, "%s  : %d", sSfxBankNames[4], sAudioScrPrtWork[7]);
 
-            GfxPrint_SetPos(printer, 3, 12);
-            GfxPrint_Printf(printer, "%s : %d", sSfxBankNames[5], sAudioScrPrtWork[8]);
+            gfxprint_locate8x8(printer, 3, 12);
+            gfxprint_printf(printer, "%s : %d", sSfxBankNames[5], sAudioScrPrtWork[8]);
 
-            GfxPrint_SetPos(printer, 3, 13);
-            GfxPrint_Printf(printer, "%s    : %d", sSfxBankNames[6], sAudioScrPrtWork[9]);
+            gfxprint_locate8x8(printer, 3, 13);
+            gfxprint_printf(printer, "%s    : %d", sSfxBankNames[6], sAudioScrPrtWork[9]);
 
-            GfxPrint_SetPos(printer, 3, 14);
-            GfxPrint_Printf(printer, "SEQ ENT : %d", sAudioScrPrtWork[10]);
+            gfxprint_locate8x8(printer, 3, 14);
+            gfxprint_printf(printer, "SEQ ENT : %d", sAudioScrPrtWork[10]);
             break;
 
         case PAGE_SFX_SWAP:
-            GfxPrint_SetPos(printer, 3, 4);
+            gfxprint_locate8x8(printer, 3, 4);
             SETCOL(255, 255, 255);
             if (gAudioSfxSwapOff) {
-                GfxPrint_Printf(printer, "SWAP OFF");
+                gfxprint_printf(printer, "SWAP OFF");
             }
 
             if (sAudioSfxSwapIsEditing == 0) {
@@ -335,8 +335,8 @@ void AudioDebug_Draw(GfxPrint* printer) {
             } else {
                 SETCOL(127, 127, 127);
             }
-            GfxPrint_SetPos(printer, 2, 6 + sAudioSfxSwapSel);
-            GfxPrint_Printf(printer, "*");
+            gfxprint_locate8x8(printer, 2, 6 + sAudioSfxSwapSel);
+            gfxprint_printf(printer, "*");
 
             ctr = sAudioSfxSwapNibbleSel;
             if (sAudioSfxSwapNibbleSel >= 4) {
@@ -344,8 +344,8 @@ void AudioDebug_Draw(GfxPrint* printer) {
             }
             if (sAudioSfxSwapIsEditing == 1) {
                 SETCOL(255, 255, 255);
-                GfxPrint_SetPos(printer, 3 + ctr, 5);
-                GfxPrint_Printf(printer, "V");
+                gfxprint_locate8x8(printer, 3 + ctr, 5);
+                gfxprint_printf(printer, "V");
             }
 
             for (i = 0; i < 10; i++) {
@@ -360,31 +360,31 @@ void AudioDebug_Draw(GfxPrint* printer) {
                 } else {
                     SETCOL(96, 96, 96);
                 }
-                GfxPrint_SetPos(printer, 3, 6 + i);
-                GfxPrint_Printf(printer, "%04x %04x %s", gAudioSfxSwapSource[i], gAudioSfxSwapTarget[i],
+                gfxprint_locate8x8(printer, 3, 6 + i);
+                gfxprint_printf(printer, "%04x %04x %s", gAudioSfxSwapSource[i], gAudioSfxSwapTarget[i],
                                 sAudioSfxSwapModeNames[gAudioSfxSwapMode[i]]);
             }
             break;
 
         case PAGE_SUB_TRACK_INFO:
-            GfxPrint_SetPos(printer, 3, 4);
+            gfxprint_locate8x8(printer, 3, 4);
             SETCOL(255, 255, 255);
-            GfxPrint_Printf(printer, "Group Track:%d", sAudioSubTrackInfoPlayerSel);
+            gfxprint_printf(printer, "Group Track:%d", sAudioSubTrackInfoPlayerSel);
 
-            GfxPrint_SetPos(printer, 3, 5);
-            GfxPrint_Printf(printer, "Sub Track  :%d", sAudioSubTrackInfoChannelSel);
+            gfxprint_locate8x8(printer, 3, 5);
+            gfxprint_printf(printer, "Sub Track  :%d", sAudioSubTrackInfoChannelSel);
 
-            GfxPrint_SetPos(printer, 3, 6);
-            GfxPrint_Printf(printer, "TRK NO. ");
+            gfxprint_locate8x8(printer, 3, 6);
+            gfxprint_printf(printer, "TRK NO. ");
 
-            GfxPrint_SetPos(printer, 3, 7);
-            GfxPrint_Printf(printer, "ENTRY   ");
+            gfxprint_locate8x8(printer, 3, 7);
+            gfxprint_printf(printer, "ENTRY   ");
 
-            GfxPrint_SetPos(printer, 3, 8);
-            GfxPrint_Printf(printer, "MUTE    ");
+            gfxprint_locate8x8(printer, 3, 8);
+            gfxprint_printf(printer, "MUTE    ");
 
-            GfxPrint_SetPos(printer, 3, 9);
-            GfxPrint_Printf(printer, "OPENNOTE");
+            gfxprint_locate8x8(printer, 3, 9);
+            gfxprint_printf(printer, "OPENNOTE");
 
             ctr2 = 0;
             for (i = 0; i < 16; i++) {
@@ -393,32 +393,32 @@ void AudioDebug_Draw(GfxPrint* printer) {
                 } else {
                     SETCOL(200, 200, 200);
                 }
-                GfxPrint_SetPos(printer, 15 + i, 6);
-                GfxPrint_Printf(printer, "%1X", i);
+                gfxprint_locate8x8(printer, 15 + i, 6);
+                gfxprint_printf(printer, "%1X", i);
 
-                GfxPrint_SetPos(printer, 15 + i, 7);
-                if (gAudioCtx.seqPlayers[sAudioSubTrackInfoPlayerSel].channels[i]->enabled) {
-                    GfxPrint_Printf(printer, "O");
+                gfxprint_locate8x8(printer, 15 + i, 7);
+                if (AG.seqPlayers[sAudioSubTrackInfoPlayerSel].channels[i]->enabled) {
+                    gfxprint_printf(printer, "O");
                 } else {
-                    GfxPrint_Printf(printer, "X");
+                    gfxprint_printf(printer, "X");
                 }
 
-                GfxPrint_SetPos(printer, 15 + i, 8);
-                if (gAudioCtx.seqPlayers[sAudioSubTrackInfoPlayerSel].channels[i]->muted) {
-                    GfxPrint_Printf(printer, "O");
+                gfxprint_locate8x8(printer, 15 + i, 8);
+                if (AG.seqPlayers[sAudioSubTrackInfoPlayerSel].channels[i]->muted) {
+                    gfxprint_printf(printer, "O");
                 } else {
-                    GfxPrint_Printf(printer, "X");
+                    gfxprint_printf(printer, "X");
                 }
 
-                GfxPrint_SetPos(printer, 15 + i, 9);
+                gfxprint_locate8x8(printer, 15 + i, 9);
                 ctr = 0;
                 for (j = 0; j < 4; j++) {
-                    if (gAudioCtx.seqPlayers[sAudioSubTrackInfoPlayerSel].channels[i]->layers[j] != NULL) {
+                    if (AG.seqPlayers[sAudioSubTrackInfoPlayerSel].channels[i]->layers[j] != NULL) {
                         ctr++;
                     }
                 }
 
-                GfxPrint_Printf(printer, "%1X", ctr);
+                gfxprint_printf(printer, "%1X", ctr);
                 ctr2 += ctr;
             }
 
@@ -426,74 +426,74 @@ void AudioDebug_Draw(GfxPrint* printer) {
             if (sSeqPlayerPeakNumLayers[sAudioSubTrackInfoPlayerSel] < ctr2) {
                 sSeqPlayerPeakNumLayers[sAudioSubTrackInfoPlayerSel] = ctr2;
             }
-            GfxPrint_SetPos(printer, 16 + i, 9);
-            GfxPrint_Printf(printer, "%2d,%2d", ctr2, sSeqPlayerPeakNumLayers[sAudioSubTrackInfoPlayerSel]);
+            gfxprint_locate8x8(printer, 16 + i, 9);
+            gfxprint_printf(printer, "%2d,%2d", ctr2, sSeqPlayerPeakNumLayers[sAudioSubTrackInfoPlayerSel]);
 
-            GfxPrint_SetPos(printer, 3, 11);
-            GfxPrint_Printf(printer, "VOL     ");
+            gfxprint_locate8x8(printer, 3, 11);
+            gfxprint_printf(printer, "VOL     ");
 
-            GfxPrint_SetPos(printer, 3, 12);
-            GfxPrint_Printf(printer, "E VOL   ");
+            gfxprint_locate8x8(printer, 3, 12);
+            gfxprint_printf(printer, "E VOL   ");
 
-            GfxPrint_SetPos(printer, 3, 13);
-            GfxPrint_Printf(printer, "BANK ID ");
+            gfxprint_locate8x8(printer, 3, 13);
+            gfxprint_printf(printer, "BANK ID ");
 
-            GfxPrint_SetPos(printer, 3, 14);
-            GfxPrint_Printf(printer, "PROG    ");
+            gfxprint_locate8x8(printer, 3, 14);
+            gfxprint_printf(printer, "PROG    ");
 
-            GfxPrint_SetPos(printer, 3, 15);
-            GfxPrint_Printf(printer, "PAN    ");
+            gfxprint_locate8x8(printer, 3, 15);
+            gfxprint_printf(printer, "PAN    ");
 
-            GfxPrint_SetPos(printer, 3, 16);
-            GfxPrint_Printf(printer, "PANPOW  ");
+            gfxprint_locate8x8(printer, 3, 16);
+            gfxprint_printf(printer, "PANPOW  ");
 
-            GfxPrint_SetPos(printer, 3, 17);
-            GfxPrint_Printf(printer, "FXMIX   ");
+            gfxprint_locate8x8(printer, 3, 17);
+            gfxprint_printf(printer, "FXMIX   ");
 
-            GfxPrint_SetPos(printer, 3, 18);
-            GfxPrint_Printf(printer, "PRIO    ");
+            gfxprint_locate8x8(printer, 3, 18);
+            gfxprint_printf(printer, "PRIO    ");
 
-            GfxPrint_SetPos(printer, 3, 19);
-            GfxPrint_Printf(printer, "VIB PIT ");
+            gfxprint_locate8x8(printer, 3, 19);
+            gfxprint_printf(printer, "VIB PIT ");
 
-            GfxPrint_SetPos(printer, 3, 20);
-            GfxPrint_Printf(printer, "VIB DEP ");
+            gfxprint_locate8x8(printer, 3, 20);
+            gfxprint_printf(printer, "VIB DEP ");
 
-            GfxPrint_SetPos(printer, 3, 21);
-            GfxPrint_Printf(printer, "TUNE    ");
+            gfxprint_locate8x8(printer, 3, 21);
+            gfxprint_printf(printer, "TUNE    ");
 
-            GfxPrint_SetPos(printer, 3, 22);
-            GfxPrint_Printf(printer, "TUNE    ");
+            gfxprint_locate8x8(printer, 3, 22);
+            gfxprint_printf(printer, "TUNE    ");
 
             for (i = 0; i < 8; i++) {
-                GfxPrint_SetPos(printer, 15 + 3 * i, 22);
-                GfxPrint_Printf(printer, "%02X ",
-                                (u8)gAudioCtx.seqPlayers[sAudioSubTrackInfoPlayerSel]
+                gfxprint_locate8x8(printer, 15 + 3 * i, 22);
+                gfxprint_printf(printer, "%02X ",
+                                (u8)AG.seqPlayers[sAudioSubTrackInfoPlayerSel]
                                     .channels[sAudioSubTrackInfoChannelSel]
                                     ->seqScriptIO[i]);
             }
 
-            if (gAudioCtx.seqPlayers[sAudioSubTrackInfoPlayerSel].channels[sAudioSubTrackInfoChannelSel]->enabled) {
-                GfxPrint_SetPos(printer, 15, 11);
-                GfxPrint_Printf(printer, "%d",
-                                (u8)(gAudioCtx.seqPlayers[sAudioSubTrackInfoPlayerSel]
+            if (AG.seqPlayers[sAudioSubTrackInfoPlayerSel].channels[sAudioSubTrackInfoChannelSel]->enabled) {
+                gfxprint_locate8x8(printer, 15, 11);
+                gfxprint_printf(printer, "%d",
+                                (u8)(AG.seqPlayers[sAudioSubTrackInfoPlayerSel]
                                          .channels[sAudioSubTrackInfoChannelSel]
                                          ->volume *
                                      127.1));
 
-                GfxPrint_SetPos(printer, 15, 12);
-                GfxPrint_Printf(printer, "%d",
-                                (u8)(gAudioCtx.seqPlayers[sAudioSubTrackInfoPlayerSel]
+                gfxprint_locate8x8(printer, 15, 12);
+                gfxprint_printf(printer, "%d",
+                                (u8)(AG.seqPlayers[sAudioSubTrackInfoPlayerSel]
                                          .channels[sAudioSubTrackInfoChannelSel]
                                          ->volumeScale *
                                      127.1));
 
-                GfxPrint_SetPos(printer, 15, 13);
-                GfxPrint_Printf(
+                gfxprint_locate8x8(printer, 15, 13);
+                gfxprint_printf(
                     printer, "%X",
-                    gAudioCtx.seqPlayers[sAudioSubTrackInfoPlayerSel].channels[sAudioSubTrackInfoChannelSel]->fontId);
+                    AG.seqPlayers[sAudioSubTrackInfoPlayerSel].channels[sAudioSubTrackInfoChannelSel]->fontId);
 
-                ctr = (u8)(gAudioCtx.seqPlayers[sAudioSubTrackInfoPlayerSel]
+                ctr = (u8)(AG.seqPlayers[sAudioSubTrackInfoPlayerSel]
                                .channels[sAudioSubTrackInfoChannelSel]
                                ->instOrWave);
 
@@ -505,49 +505,49 @@ void AudioDebug_Draw(GfxPrint* printer) {
                     ctr2 = ctr;
                 }
 
-                GfxPrint_SetPos(printer, 15, 14);
-                GfxPrint_Printf(printer, "%d", ctr2);
+                gfxprint_locate8x8(printer, 15, 14);
+                gfxprint_printf(printer, "%d", ctr2);
 
-                GfxPrint_SetPos(printer, 15, 15);
-                GfxPrint_Printf(
+                gfxprint_locate8x8(printer, 15, 15);
+                gfxprint_printf(
                     printer, "%d",
-                    gAudioCtx.seqPlayers[sAudioSubTrackInfoPlayerSel].channels[sAudioSubTrackInfoChannelSel]->newPan);
+                    AG.seqPlayers[sAudioSubTrackInfoPlayerSel].channels[sAudioSubTrackInfoChannelSel]->newPan);
 
-                GfxPrint_SetPos(printer, 15, 16);
-                GfxPrint_Printf(printer, "%d",
-                                gAudioCtx.seqPlayers[sAudioSubTrackInfoPlayerSel]
+                gfxprint_locate8x8(printer, 15, 16);
+                gfxprint_printf(printer, "%d",
+                                AG.seqPlayers[sAudioSubTrackInfoPlayerSel]
                                     .channels[sAudioSubTrackInfoChannelSel]
                                     ->panChannelWeight);
 
-                GfxPrint_SetPos(printer, 15, 17);
-                GfxPrint_Printf(printer, "%d",
-                                gAudioCtx.seqPlayers[sAudioSubTrackInfoPlayerSel]
+                gfxprint_locate8x8(printer, 15, 17);
+                gfxprint_printf(printer, "%d",
+                                AG.seqPlayers[sAudioSubTrackInfoPlayerSel]
                                     .channels[sAudioSubTrackInfoChannelSel]
                                     ->targetReverbVol);
 
-                GfxPrint_SetPos(printer, 15, 18);
-                GfxPrint_Printf(printer, "%d",
-                                gAudioCtx.seqPlayers[sAudioSubTrackInfoPlayerSel]
+                gfxprint_locate8x8(printer, 15, 18);
+                gfxprint_printf(printer, "%d",
+                                AG.seqPlayers[sAudioSubTrackInfoPlayerSel]
                                     .channels[sAudioSubTrackInfoChannelSel]
                                     ->notePriority);
 
-                GfxPrint_SetPos(printer, 15, 19);
-                GfxPrint_Printf(printer, "%d",
-                                (u8)(gAudioCtx.seqPlayers[sAudioSubTrackInfoPlayerSel]
+                gfxprint_locate8x8(printer, 15, 19);
+                gfxprint_printf(printer, "%d",
+                                (u8)(AG.seqPlayers[sAudioSubTrackInfoPlayerSel]
                                          .channels[sAudioSubTrackInfoChannelSel]
                                          ->vibratoRateTarget /
                                      32));
 
-                GfxPrint_SetPos(printer, 15, 20);
-                GfxPrint_Printf(printer, "%d",
-                                (u8)(gAudioCtx.seqPlayers[sAudioSubTrackInfoPlayerSel]
+                gfxprint_locate8x8(printer, 15, 20);
+                gfxprint_printf(printer, "%d",
+                                (u8)(AG.seqPlayers[sAudioSubTrackInfoPlayerSel]
                                          .channels[sAudioSubTrackInfoChannelSel]
                                          ->vibratoDepthTarget /
                                      8));
 
-                GfxPrint_SetPos(printer, 15, 21);
-                GfxPrint_Printf(printer, "%d",
-                                (u16)(gAudioCtx.seqPlayers[sAudioSubTrackInfoPlayerSel]
+                gfxprint_locate8x8(printer, 15, 21);
+                gfxprint_printf(printer, "%d",
+                                (u16)(AG.seqPlayers[sAudioSubTrackInfoPlayerSel]
                                           .channels[sAudioSubTrackInfoChannelSel]
                                           ->freqScale *
                                       100));
@@ -556,162 +556,162 @@ void AudioDebug_Draw(GfxPrint* printer) {
 
         case PAGE_HEAP_INFO:
             SETCOL(255, 255, 255);
-            GfxPrint_SetPos(printer, 3, 4);
-            GfxPrint_Printf(printer, "TOTAL  %d", gAudioHeapInitSizes.heapSize);
+            gfxprint_locate8x8(printer, 3, 4);
+            gfxprint_printf(printer, "TOTAL  %d", gAudioHeapInitSizes.heapSize);
 
-            GfxPrint_SetPos(printer, 3, 5);
-            GfxPrint_Printf(printer, "DRIVER %05X / %05X",
-                            gAudioCtx.miscPool.curRamAddr - gAudioCtx.miscPool.startRamAddr, gAudioCtx.miscPool.size);
+            gfxprint_locate8x8(printer, 3, 5);
+            gfxprint_printf(printer, "DRIVER %05X / %05X",
+                            AG.miscPool.curRamAddr - AG.miscPool.startRamAddr, AG.miscPool.size);
 
-            GfxPrint_SetPos(printer, 3, 6);
-            GfxPrint_Printf(
-                printer, "AT-SEQ %02X-%02X (%05X-%05X / %05X)", (u8)gAudioCtx.seqCache.temporary.entries[0].id,
-                (u8)gAudioCtx.seqCache.temporary.entries[1].id, gAudioCtx.seqCache.temporary.entries[0].size,
-                gAudioCtx.seqCache.temporary.entries[1].size, gAudioCtx.seqCache.temporary.pool.size);
+            gfxprint_locate8x8(printer, 3, 6);
+            gfxprint_printf(
+                printer, "AT-SEQ %02X-%02X (%05X-%05X / %05X)", (u8)AG.seqCache.temporary.entries[0].id,
+                (u8)AG.seqCache.temporary.entries[1].id, AG.seqCache.temporary.entries[0].size,
+                AG.seqCache.temporary.entries[1].size, AG.seqCache.temporary.pool.size);
 
-            GfxPrint_SetPos(printer, 3, 7);
-            GfxPrint_Printf(
-                printer, "AT-BNK %02X-%02X (%05X-%05X / %05X)", (u8)gAudioCtx.fontCache.temporary.entries[0].id,
-                (u8)gAudioCtx.fontCache.temporary.entries[1].id, gAudioCtx.fontCache.temporary.entries[0].size,
-                gAudioCtx.fontCache.temporary.entries[1].size, gAudioCtx.fontCache.temporary.pool.size);
+            gfxprint_locate8x8(printer, 3, 7);
+            gfxprint_printf(
+                printer, "AT-BNK %02X-%02X (%05X-%05X / %05X)", (u8)AG.fontCache.temporary.entries[0].id,
+                (u8)AG.fontCache.temporary.entries[1].id, AG.fontCache.temporary.entries[0].size,
+                AG.fontCache.temporary.entries[1].size, AG.fontCache.temporary.pool.size);
 
-            GfxPrint_SetPos(printer, 3, 8);
-            GfxPrint_Printf(printer, "ST-SEQ %02Xseqs  (%05X / %06X)", gAudioCtx.seqCache.persistent.numEntries,
-                            gAudioCtx.seqCache.persistent.pool.curRamAddr -
-                                gAudioCtx.seqCache.persistent.pool.startRamAddr,
-                            gAudioCtx.seqCache.persistent.pool.size);
+            gfxprint_locate8x8(printer, 3, 8);
+            gfxprint_printf(printer, "ST-SEQ %02Xseqs  (%05X / %06X)", AG.seqCache.persistent.numEntries,
+                            AG.seqCache.persistent.pool.curRamAddr -
+                                AG.seqCache.persistent.pool.startRamAddr,
+                            AG.seqCache.persistent.pool.size);
 
-            for (k = 0; (u32)k < gAudioCtx.seqCache.persistent.numEntries; k++) {
-                GfxPrint_SetPos(printer, 3 + 3 * k, 9);
-                GfxPrint_Printf(printer, "%02x", gAudioCtx.seqCache.persistent.entries[k].id);
+            for (k = 0; (u32)k < AG.seqCache.persistent.numEntries; k++) {
+                gfxprint_locate8x8(printer, 3 + 3 * k, 9);
+                gfxprint_printf(printer, "%02x", AG.seqCache.persistent.entries[k].id);
             }
 
-            GfxPrint_SetPos(printer, 3, 10);
-            GfxPrint_Printf(printer, "ST-BNK %02Xbanks (%05X / %06X)", gAudioCtx.fontCache.persistent.numEntries,
-                            gAudioCtx.fontCache.persistent.pool.curRamAddr -
-                                gAudioCtx.fontCache.persistent.pool.startRamAddr,
-                            gAudioCtx.fontCache.persistent.pool.size);
+            gfxprint_locate8x8(printer, 3, 10);
+            gfxprint_printf(printer, "ST-BNK %02Xbanks (%05X / %06X)", AG.fontCache.persistent.numEntries,
+                            AG.fontCache.persistent.pool.curRamAddr -
+                                AG.fontCache.persistent.pool.startRamAddr,
+                            AG.fontCache.persistent.pool.size);
 
-            for (k = 0; (u32)k < gAudioCtx.fontCache.persistent.numEntries; k++) {
-                GfxPrint_SetPos(printer, 3 + 3 * k, 11);
-                GfxPrint_Printf(printer, "%02x", gAudioCtx.fontCache.persistent.entries[k].id);
+            for (k = 0; (u32)k < AG.fontCache.persistent.numEntries; k++) {
+                gfxprint_locate8x8(printer, 3 + 3 * k, 11);
+                gfxprint_printf(printer, "%02x", AG.fontCache.persistent.entries[k].id);
             }
 
-            GfxPrint_SetPos(printer, 3, 12);
-            GfxPrint_Printf(printer, "E-MEM  %05X / %05X",
-                            gAudioCtx.permanentPool.curRamAddr - gAudioCtx.permanentPool.startRamAddr,
-                            gAudioCtx.permanentPool.size);
+            gfxprint_locate8x8(printer, 3, 12);
+            gfxprint_printf(printer, "E-MEM  %05X / %05X",
+                            AG.permanentPool.curRamAddr - AG.permanentPool.startRamAddr,
+                            AG.permanentPool.size);
             break;
 
         case PAGE_BLOCK_CHANGE_BGM:
             SETCOL(255, 255, 255);
-            GfxPrint_SetPos(printer, 3, 4);
-            GfxPrint_Printf(printer, "BGM No.    %02X", sAudioBlkChgBgmWork[0]);
+            gfxprint_locate8x8(printer, 3, 4);
+            gfxprint_printf(printer, "BGM No.    %02X", sAudioBlkChgBgmWork[0]);
 
-            GfxPrint_SetPos(printer, 3, 5);
-            GfxPrint_Printf(printer, "SCENE SET  %02X %s", sAudioBlkChgBgmWork[1],
+            gfxprint_locate8x8(printer, 3, 5);
+            gfxprint_printf(printer, "SCENE SET  %02X %s", sAudioBlkChgBgmWork[1],
                             sAudioSceneNames[sAudioBlkChgBgmWork[1]]);
 
             SETCOL(0x64, 255, 0x64);
-            GfxPrint_SetPos(printer, 2, 4 + sAudioBlkChgBgmSel);
-            GfxPrint_Printf(printer, "*");
+            gfxprint_locate8x8(printer, 2, 4 + sAudioBlkChgBgmSel);
+            gfxprint_printf(printer, "*");
 
             SETCOL(255, 255, 255);
-            GfxPrint_SetPos(printer, 3, 7);
-            GfxPrint_Printf(printer, "NEXT SCENE %02X %s", (u8)gAudioCtx.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[2],
-                            sAudioSceneNames[(u8)gAudioCtx.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[2]]);
+            gfxprint_locate8x8(printer, 3, 7);
+            gfxprint_printf(printer, "NEXT SCENE %02X %s", (u8)AG.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[2],
+                            sAudioSceneNames[(u8)AG.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[2]]);
 
-            GfxPrint_SetPos(printer, 3, 8);
-            GfxPrint_Printf(printer, "NOW SCENE  %02X %s", (u8)gAudioCtx.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[4],
-                            sAudioSceneNames[(u8)gAudioCtx.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[4]]);
+            gfxprint_locate8x8(printer, 3, 8);
+            gfxprint_printf(printer, "NOW SCENE  %02X %s", (u8)AG.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[4],
+                            sAudioSceneNames[(u8)AG.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[4]]);
 
-            GfxPrint_SetPos(printer, 3, 9);
-            GfxPrint_Printf(printer, "NOW BLOCK  %02X",
-                            (gAudioCtx.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[5] + 1) & 0xFF);
+            gfxprint_locate8x8(printer, 3, 9);
+            gfxprint_printf(printer, "NOW BLOCK  %02X",
+                            (AG.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[5] + 1) & 0xFF);
 
-            GfxPrint_SetPos(printer, 3, 11);
-            GfxPrint_Printf(printer, "PORT");
+            gfxprint_locate8x8(printer, 3, 11);
+            gfxprint_printf(printer, "PORT");
 
-            GfxPrint_SetPos(printer, 3, 12);
-            GfxPrint_Printf(printer, "%02X %02X %02X %02X",
-                            (u8)gAudioCtx.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[0],
-                            (u8)gAudioCtx.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[1],
-                            (u8)gAudioCtx.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[2],
-                            (u8)gAudioCtx.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[3]);
+            gfxprint_locate8x8(printer, 3, 12);
+            gfxprint_printf(printer, "%02X %02X %02X %02X",
+                            (u8)AG.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[0],
+                            (u8)AG.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[1],
+                            (u8)AG.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[2],
+                            (u8)AG.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[3]);
 
-            GfxPrint_SetPos(printer, 3, 13);
-            GfxPrint_Printf(printer, "%02X %02X %02X %02X",
-                            (u8)gAudioCtx.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[4],
-                            (u8)gAudioCtx.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[5],
-                            (u8)gAudioCtx.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[6],
-                            (u8)gAudioCtx.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[7]);
+            gfxprint_locate8x8(printer, 3, 13);
+            gfxprint_printf(printer, "%02X %02X %02X %02X",
+                            (u8)AG.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[4],
+                            (u8)AG.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[5],
+                            (u8)AG.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[6],
+                            (u8)AG.seqPlayers[SEQ_PLAYER_BGM_MAIN].seqScriptIO[7]);
             break;
 
         case PAGE_OCARINA_TEST:
             SETCOL(255, 255, 255);
-            GfxPrint_SetPos(printer, 3, 4);
-            GfxPrint_Printf(printer, "SEQ INFO  : %2d %02x %d", sPlaybackStaff.buttonIndex, sPlaybackStaff.state,
-                            sPlaybackStaff.pos);
+            gfxprint_locate8x8(printer, 3, 4);
+            gfxprint_printf(printer, "SEQ INFO  : %2d %02x %d", na_oca_seq_info.buttonIndex, na_oca_seq_info.state,
+                            na_oca_seq_info.pos);
 
-            GfxPrint_SetPos(printer, 3, 5);
-            GfxPrint_Printf(printer, "PLAY INFO : %2d %02x %d", sPlayingStaff.buttonIndex, sPlayingStaff.state,
-                            sPlayingStaff.pos);
+            gfxprint_locate8x8(printer, 3, 5);
+            gfxprint_printf(printer, "PLAY INFO : %2d %02x %d", na_oca_play_info.buttonIndex, na_oca_play_info.state,
+                            na_oca_play_info.pos);
 
-            GfxPrint_SetPos(printer, 3, 6);
-            GfxPrint_Printf(printer, "8note REC POINTER : %08x", gScarecrowSpawnSongPtr);
+            gfxprint_locate8x8(printer, 3, 6);
+            gfxprint_printf(printer, "8note REC POINTER : %08x", na_oca_rec_buf2_ptr);
 
             ctr = 0;
             for (j = 0; j < 4; j++) {
                 for (i = 0; i < 8; i++) {
-                    GfxPrint_SetPos(printer, 3 + 3 * i, 7 + j);
-                    GfxPrint_Printf(printer, "%02x", gScarecrowSpawnSongPtr[ctr++]);
+                    gfxprint_locate8x8(printer, 3 + 3 * i, 7 + j);
+                    gfxprint_printf(printer, "%02x", na_oca_rec_buf2_ptr[ctr++]);
                 }
             }
 
-            GfxPrint_SetPos(printer, 3, 24);
-            GfxPrint_Printf(printer, "OCA:%02x SEQ:%04x PLAY:%02x REC:%02x", sOcarinaInstrumentId, sOcarinaFlags,
-                            sPlaybackState, sRecordingState);
+            gfxprint_locate8x8(printer, 3, 24);
+            gfxprint_printf(printer, "OCA:%02x SEQ:%04x PLAY:%02x REC:%02x", na_oca_flag, na_oca_check,
+                            na_oca_play, na_oca_record);
             break;
 
         case PAGE_SFX_PARAMETER_CHANGE:
-            GfxPrint_SetPos(printer, 2, 4 + sAudioSfxParamChgSel);
+            gfxprint_locate8x8(printer, 2, 4 + sAudioSfxParamChgSel);
             SETCOL(127, 255, 127);
-            GfxPrint_Printf(printer, "*");
+            gfxprint_printf(printer, "*");
 
             SETCOL(255, 255, 255);
-            GfxPrint_SetPos(printer, 3, 4);
-            GfxPrint_Printf(printer, "SE HD  : %02x %s", sAudioSfxParamChgWork[0],
+            gfxprint_locate8x8(printer, 3, 4);
+            gfxprint_printf(printer, "SE HD  : %02x %s", sAudioSfxParamChgWork[0],
                             sSfxBankNames[sAudioSfxParamChgWork[0]]);
 
-            GfxPrint_SetPos(printer, 3, 5);
-            GfxPrint_Printf(printer, "SE No. : %02x", sAudioSfxParamChgWork[1]);
+            gfxprint_locate8x8(printer, 3, 5);
+            gfxprint_printf(printer, "SE No. : %02x", sAudioSfxParamChgWork[1]);
 
-            GfxPrint_SetPos(printer, 20, 6);
-            GfxPrint_Printf(printer, "       : %04x",
-                            gSfxParams[sAudioSfxParamChgWork[0]][sAudioSfxParamChgWork[1]].params);
+            gfxprint_locate8x8(printer, 20, 6);
+            gfxprint_printf(printer, "       : %04x",
+                            se_indi_info_adrs[sAudioSfxParamChgWork[0]][sAudioSfxParamChgWork[1]].params);
 
-            GfxPrint_SetPos(printer, 3, 6);
-            GfxPrint_Printf(
+            gfxprint_locate8x8(printer, 3, 6);
+            gfxprint_printf(
                 printer, "SE SW    %s",
-                AudioDebug_ToStringBinary(gSfxParams[sAudioSfxParamChgWork[0]][sAudioSfxParamChgWork[1]].params, 16));
+                AudioDebug_ToStringBinary(se_indi_info_adrs[sAudioSfxParamChgWork[0]][sAudioSfxParamChgWork[1]].params, 16));
 
             SETCOL(127, 255, 127);
-            digitStr[0] = (char)('0' + ((gSfxParams[sAudioSfxParamChgWork[0]][sAudioSfxParamChgWork[1]].params >>
+            digitStr[0] = (char)('0' + ((se_indi_info_adrs[sAudioSfxParamChgWork[0]][sAudioSfxParamChgWork[1]].params >>
                                          (15 - sAudioSfxParamChgBitSel)) &
                                         1));
-            GfxPrint_SetPos(printer, 12 + sAudioSfxParamChgBitSel, 6);
-            GfxPrint_Printf(printer, "%s", digitStr);
+            gfxprint_locate8x8(printer, 12 + sAudioSfxParamChgBitSel, 6);
+            gfxprint_printf(printer, "%s", digitStr);
 
             SETCOL(255, 255, 255);
-            GfxPrint_SetPos(printer, 3, 7);
-            GfxPrint_Printf(printer, "SE PR  : %02x",
-                            gSfxParams[sAudioSfxParamChgWork[0]][sAudioSfxParamChgWork[1]].importance);
+            gfxprint_locate8x8(printer, 3, 7);
+            gfxprint_printf(printer, "SE PR  : %02x",
+                            se_indi_info_adrs[sAudioSfxParamChgWork[0]][sAudioSfxParamChgWork[1]].importance);
             break;
 
         case PAGE_FREE_AREA:
-            GfxPrint_SetPos(printer, 3, 4);
+            gfxprint_locate8x8(printer, 3, 4);
             SETCOL(255, 255, 255);
-            GfxPrint_Printf(printer, "env_fx %d code_fx %d SPEC %d", sAudioEnvReverb, sAudioCodeReverb, gAudioSpecId);
+            gfxprint_printf(printer, "env_fx %d code_fx %d SPEC %d", enviroment_fx, code_fx_ofs, SndSpecNum);
 
             if (sAudioUpdateTaskStart == sAudioUpdateTaskEnd) {
                 sAudioUpdateDuration = OS_CYCLES_TO_NSEC(sAudioUpdateEndTime - sAudioUpdateStartTime) / (1e9f / 20);
@@ -720,47 +720,47 @@ void AudioDebug_Draw(GfxPrint* printer) {
                 }
             }
 
-            GfxPrint_SetPos(printer, 3, 6);
-            GfxPrint_Printf(printer, "SOUND GAME FRAME NOW %f", sAudioUpdateDuration);
+            gfxprint_locate8x8(printer, 3, 6);
+            gfxprint_printf(printer, "SOUND GAME FRAME NOW %f", sAudioUpdateDuration);
 
-            GfxPrint_SetPos(printer, 3, 7);
-            GfxPrint_Printf(printer, "SOUND GAME FRAME MAX %f", sAudioUpdateDurationMax);
+            gfxprint_locate8x8(printer, 3, 7);
+            gfxprint_printf(printer, "SOUND GAME FRAME MAX %f", sAudioUpdateDurationMax);
 
-            GfxPrint_SetPos(printer, 3, 9);
-            GfxPrint_Printf(printer, "SWITCH BGM MODE %d %d %d (FLAG %d)", sPrevSeqMode, sNumFramesStill,
-                            sNumFramesMoving, sSeqModeInput);
+            gfxprint_locate8x8(printer, 3, 9);
+            gfxprint_printf(printer, "SWITCH BGM MODE %d %d %d (FLAG %d)", na_seq_switch_flag, na_seq_switch_int_time,
+                            na_seq_switch_normal_time, sSeqModeInput);
 
-            GfxPrint_SetPos(printer, 3, 10);
-            GfxPrint_Printf(printer, "ENEMY DIST %f VOL %3d", sAudioEnemyDist, sAudioEnemyVol);
+            gfxprint_locate8x8(printer, 3, 10);
+            gfxprint_printf(printer, "ENEMY DIST %f VOL %3d", na_bgm_enm_dist, na_bgm_enm_vol);
 
-            GfxPrint_SetPos(printer, 3, 11);
-            GfxPrint_Printf(printer, "GANON DIST VOL %3d", sGanonsTowerVol);
+            gfxprint_locate8x8(printer, 3, 11);
+            gfxprint_printf(printer, "GANON DIST VOL %3d", na_trigger_mute_vol_now);
 
-            GfxPrint_SetPos(printer, 3, 12);
-            GfxPrint_Printf(printer, "DEMO FLAG %d", sAudioCutsceneFlag);
+            gfxprint_locate8x8(printer, 3, 12);
+            gfxprint_printf(printer, "DEMO FLAG %d", na_mes_flag);
 
-            GfxPrint_SetPos(printer, 3, 12);
+            gfxprint_locate8x8(printer, 3, 12);
             if (sIsMalonSinging == true) {
-                GfxPrint_Printf(printer, "MARON BGM DIST %f", sMalonSingingDist);
+                gfxprint_printf(printer, "MARON BGM DIST %f", sMalonSingingDist);
                 sIsMalonSinging = false;
             }
 
-            GfxPrint_SetPos(printer, 3, 23);
+            gfxprint_locate8x8(printer, 3, 23);
             if (sAudioNatureFailed != false) {
-                GfxPrint_Printf(printer, "NATURE FAILED %01x", sAudioNatureFailed);
+                gfxprint_printf(printer, "NATURE FAILED %01x", sAudioNatureFailed);
             }
 
-            GfxPrint_SetPos(printer, 3, 24);
-            if (sSariaBgmPtr != NULL) {
-                GfxPrint_Printf(printer, "SARIA BGM PTR %08x", sSariaBgmPtr);
+            gfxprint_locate8x8(printer, 3, 24);
+            if (saria_oca_pos != NULL) {
+                gfxprint_printf(printer, "SARIA BGM PTR %08x", saria_oca_pos);
             }
 
-            GfxPrint_SetPos(printer, 3, 25);
-            GfxPrint_Printf(printer, "POLI %d(%d)", sPeakNumNotes, numEnabledNotes);
+            gfxprint_locate8x8(printer, 3, 25);
+            gfxprint_printf(printer, "POLI %d(%d)", sPeakNumNotes, numEnabledNotes);
 
             for (i = 0; i < 11; i++) {
-                GfxPrint_SetPos(printer, 3 + 3 * i, 26);
-                GfxPrint_Printf(printer, "%d", sAudioSpecPeakNumNotes[i]);
+                gfxprint_locate8x8(printer, 3 + 3 * i, 26);
+                gfxprint_printf(printer, "%d", sAudioSpecPeakNumNotes[i]);
             }
             break;
     }
@@ -820,17 +820,17 @@ void AudioDebug_ProcessInput_SndCont(void) {
 
     if (sAudioSndContSel == 8) {
         if (sAudioSndContWork[sAudioSndContSel] != 0) {
-            Audio_SetExtraFilter(0x20);
+            Na_SetWaterSeModeFlag(0x20);
         } else {
-            Audio_SetExtraFilter(0);
+            Na_SetWaterSeModeFlag(0);
         }
     }
 
     if (sAudioSndContSel == 9) {
         if (sAudioSndContWork[sAudioSndContSel] != 0) {
-            Audio_SetBaseFilter(0x20);
+            Na_SetDirectFir(0x20);
         } else {
-            Audio_SetBaseFilter(0);
+            Na_SetDirectFir(0);
         }
     }
 
@@ -842,12 +842,12 @@ void AudioDebug_ProcessInput_SndCont(void) {
                 break;
             case 2:
             case 3:
-                Audio_PlaySfxGeneral(((sAudioSndContWork[2] << 12) & 0xFFFF) + sAudioSndContWork[3] + SFX_FLAG,
-                                     &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
-                                     &gSfxDefaultReverb);
+                Nai_FxFlagEntry(((sAudioSndContWork[2] << 12) & 0xFFFF) + sAudioSndContWork[3] + SFX_FLAG,
+                                     &_dummy_zero_f, 4, &_dummy_one, &_dummy_one,
+                                     &_dummy_zero_s8);
                 break;
             case 4:
-                func_800F6700(sAudioSndContWork[sAudioSndContSel]);
+                Na_SetSoundOutputMode(sAudioSndContWork[sAudioSndContSel]);
                 break;
             case 5:
                 SEQCMD_DISABLE_PLAY_SEQUENCES(sAudioSndContWork[sAudioSndContSel]);
@@ -855,18 +855,18 @@ void AudioDebug_ProcessInput_SndCont(void) {
             case 6:
                 SEQCMD_RESET_AUDIO_HEAP(0, sAudioSndContWork[sAudioSndContSel]);
                 sAudioSubTrackInfoSpec = sAudioSndContWork[6];
-                if (sAudioSubTrackInfoPlayerSel > gAudioSpecs[sAudioSubTrackInfoSpec].numSequencePlayers - 1) {
-                    sAudioSubTrackInfoPlayerSel = gAudioSpecs[sAudioSubTrackInfoSpec].numSequencePlayers - 1;
+                if (sAudioSubTrackInfoPlayerSel > NA_SPEC_CONFIG[sAudioSubTrackInfoSpec].numSequencePlayers - 1) {
+                    sAudioSubTrackInfoPlayerSel = NA_SPEC_CONFIG[sAudioSubTrackInfoSpec].numSequencePlayers - 1;
                 }
                 break;
             case 7:
-                Audio_PlayNatureAmbienceSequence(sAudioSndContWork[sAudioSndContSel]);
+                Na_NscInitStart(sAudioSndContWork[sAudioSndContSel]);
                 break;
             case 8:
             case 9:
                 break;
             case 10:
-                Audio_SetSfxBanksMute(sAudioSndContWork[sAudioSndContSel] * 0x7F);
+                Nai_FxSetLockFlag(sAudioSndContWork[sAudioSndContSel] * 0x7F);
                 break;
         }
     }
@@ -882,7 +882,7 @@ void AudioDebug_ProcessInput_SndCont(void) {
                 break;
             case 2:
             case 3:
-                Audio_StopSfxByBank(sAudioSndContWork[2]);
+                Nai_StopAllHandleFx(sAudioSndContWork[2]);
                 break;
         }
     }
@@ -890,14 +890,14 @@ void AudioDebug_ProcessInput_SndCont(void) {
     if (CHECK_BTN_ANY(sDebugPadPress, BTN_CDOWN)) {
         if (sAudioSndContSel == 0) {
             if (1) {}
-            Audio_PlaySequenceInCutscene(sAudioSndContWork[sAudioSndContSel]);
+            Na_StartDemoBgm(sAudioSndContWork[sAudioSndContSel]);
         }
     }
 
     if (CHECK_BTN_ANY(sDebugPadPress, BTN_CRIGHT)) {
         if (sAudioSndContSel == 0) {
             if (1) {}
-            func_800F5ACC(sAudioSndContWork[sAudioSndContSel]);
+            Na_StartMiddleBossBgm(sAudioSndContWork[sAudioSndContSel]);
         }
     }
 }
@@ -1110,11 +1110,11 @@ void AudioDebug_ProcessInput_SubTrackInfo(void) {
         if (sAudioSubTrackInfoPlayerSel != 0) {
             sAudioSubTrackInfoPlayerSel--;
         } else {
-            sAudioSubTrackInfoPlayerSel = gAudioSpecs[sAudioSubTrackInfoSpec].numSequencePlayers - 1;
+            sAudioSubTrackInfoPlayerSel = NA_SPEC_CONFIG[sAudioSubTrackInfoSpec].numSequencePlayers - 1;
         }
     }
     if (CHECK_BTN_ANY(sDebugPadPress, BTN_DUP)) {
-        if (sAudioSubTrackInfoPlayerSel < gAudioSpecs[sAudioSubTrackInfoSpec].numSequencePlayers - 1) {
+        if (sAudioSubTrackInfoPlayerSel < NA_SPEC_CONFIG[sAudioSubTrackInfoSpec].numSequencePlayers - 1) {
             sAudioSubTrackInfoPlayerSel++;
         } else {
             sAudioSubTrackInfoPlayerSel = SEQ_PLAYER_BGM_MAIN;
@@ -1154,7 +1154,7 @@ void AudioDebug_ProcessInput_BlkChgBgm(void) {
     if (CHECK_BTN_ANY(sDebugPadPress, BTN_DLEFT)) {
         sAudioBlkChgBgmWork[sAudioBlkChgBgmSel]--;
         if (sAudioBlkChgBgmSel == 1) {
-            Audio_SetSequenceMode(sAudioBlkChgBgmWork[1]);
+            Na_SetBgmPattern(sAudioBlkChgBgmWork[1]);
             ; // might be a fake match?
         }
     }
@@ -1162,7 +1162,7 @@ void AudioDebug_ProcessInput_BlkChgBgm(void) {
     if (CHECK_BTN_ANY(sDebugPadPress, BTN_DRIGHT)) {
         sAudioBlkChgBgmWork[sAudioBlkChgBgmSel]++;
         if (sAudioBlkChgBgmSel == 1) {
-            Audio_SetSequenceMode(sAudioBlkChgBgmWork[1]);
+            Na_SetBgmPattern(sAudioBlkChgBgmWork[1]);
         }
     }
 
@@ -1218,7 +1218,7 @@ void AudioDebug_ProcessInput_SfxParamChg(void) {
                 sAudioSfxParamChgWork[sAudioSfxParamChgSel] &= 0x1FF;
             }
         } else if (sAudioSfxParamChgSel == 3) {
-            gSfxParams[sAudioSfxParamChgWork[0]][sAudioSfxParamChgWork[1]].importance -= step;
+            se_indi_info_adrs[sAudioSfxParamChgWork[0]][sAudioSfxParamChgWork[1]].importance -= step;
         } else {
             sAudioSfxParamChgBitSel = (sAudioSfxParamChgBitSel - 1) & 0xF;
         }
@@ -1237,7 +1237,7 @@ void AudioDebug_ProcessInput_SfxParamChg(void) {
                 sAudioSfxParamChgWork[sAudioSfxParamChgSel] &= 0x1FF;
             }
         } else if (sAudioSfxParamChgSel == 3) {
-            gSfxParams[sAudioSfxParamChgWork[0]][sAudioSfxParamChgWork[1]].importance += step;
+            se_indi_info_adrs[sAudioSfxParamChgWork[0]][sAudioSfxParamChgWork[1]].importance += step;
         } else {
             sAudioSfxParamChgBitSel = (sAudioSfxParamChgBitSel + 1) & 0xF;
         }
@@ -1245,17 +1245,17 @@ void AudioDebug_ProcessInput_SfxParamChg(void) {
 
     if (CHECK_BTN_ANY(sDebugPadPress, BTN_A)) {
         sfx = (u16)(sAudioSfxParamChgWork[0] << 12) + sAudioSfxParamChgWork[1] + SFX_FLAG;
-        Audio_PlaySfxGeneral(sfx, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
-                             &gSfxDefaultReverb);
+        Nai_FxFlagEntry(sfx, &_dummy_zero_f, 4, &_dummy_one, &_dummy_one,
+                             &_dummy_zero_s8);
     }
 
     if (CHECK_BTN_ANY(sDebugPadPress, BTN_B)) {
-        Audio_StopSfxByBank(sAudioSfxParamChgWork[0]);
+        Nai_StopAllHandleFx(sAudioSfxParamChgWork[0]);
     }
 
     if (CHECK_BTN_ANY(sDebugPadPress, BTN_CDOWN)) {
         if (sAudioSfxParamChgSel == 2) {
-            gSfxParams[sAudioSfxParamChgWork[0]][sAudioSfxParamChgWork[1]].params ^=
+            se_indi_info_adrs[sAudioSfxParamChgWork[0]][sAudioSfxParamChgWork[1]].params ^=
                 (1 << (0xF - sAudioSfxParamChgBitSel));
         }
     }
@@ -1267,7 +1267,7 @@ void AudioDebug_ProcessInput_SfxParamChg(void) {
     }
 }
 
-void AudioDebug_ScrPrt(const char* str, u16 num) {
+void Nad_GameScrollPrint(const char* str, u16 num) {
     u8 i = 0;
 
     sAudioScrPrtBuf[sAudioScrPrtInd].num = num;
@@ -1296,7 +1296,7 @@ void AudioDebug_ProcessInput(void) {
     }
 
     if (sAudioSfxMuted) {
-        Audio_SetSfxBanksMute(0x6F);
+        Nai_FxSetLockFlag(0x6F);
     }
 
     if (CHECK_BTN_ANY(sDebugPadPress, BTN_L)) {
@@ -1325,7 +1325,7 @@ void AudioDebug_ProcessInput(void) {
             if (CHECK_BTN_ANY(sDebugPadPress, BTN_A)) {
                 sAudioSndContWork[5] ^= 1;
                 SEQCMD_DISABLE_PLAY_SEQUENCES(sAudioSndContWork[5]);
-                if (Audio_GetActiveSeqId(SEQ_PLAYER_BGM_MAIN) != NA_BGM_NATURE_AMBIENCE) {
+                if (Nai_GetPlayingSeqFlag(SEQ_PLAYER_BGM_MAIN) != NA_BGM_NATURE_AMBIENCE) {
                     SEQCMD_STOP_SEQUENCE(SEQ_PLAYER_BGM_MAIN, 0);
                 }
                 SEQCMD_STOP_SEQUENCE(SEQ_PLAYER_FANFARE, 0);
@@ -1335,7 +1335,7 @@ void AudioDebug_ProcessInput(void) {
             if (CHECK_BTN_ANY(sDebugPadPress, BTN_B)) {
                 sAudioSfxMuted ^= 1;
                 if (!sAudioSfxMuted) {
-                    Audio_SetSfxBanksMute(0);
+                    Nai_FxSetLockFlag(0);
                 }
             }
             break;

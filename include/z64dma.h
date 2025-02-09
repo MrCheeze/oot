@@ -22,18 +22,18 @@ typedef struct DmaEntry {
     /* 0x0C */ uintptr_t romEnd;
 } DmaEntry;
 
-extern DmaEntry gDmaDataTable[];
+extern DmaEntry dma_rom_ad[];
 
-extern u32 gDmaMgrVerbose;
-extern size_t gDmaMgrDmaBuffSize;
+extern u32 _dma_verbose;
+extern size_t _dma_split_size;
 
 #define DMAMGR_DEFAULT_BUFSIZE ALIGN16(0x2000)
 
 // Standard DMA Requests
 
-s32 DmaMgr_RequestAsync(DmaRequest* req, void* ram, uintptr_t vrom, size_t size, u32 unk5, OSMesgQueue* queue,
+s32 dmacopy_bg(DmaRequest* req, void* ram, uintptr_t vrom, size_t size, u32 unk5, OSMesgQueue* queue,
                         OSMesg msg);
-s32 DmaMgr_RequestSync(void* ram, uintptr_t vrom, size_t size);
+s32 dmacopy_fg(void* ram, uintptr_t vrom, size_t size);
 #if DEBUG_FEATURES
 s32 DmaMgr_RequestAsyncDebug(DmaRequest* req, void* ram, uintptr_t vrom, size_t size, u32 unk5, OSMesgQueue* queue,
                              OSMesg msg, const char* file, int line);
@@ -42,12 +42,12 @@ s32 DmaMgr_RequestSyncDebug(void* ram, uintptr_t vrom, size_t size, const char* 
 
 // Special-purpose DMA Requests
 
-s32 DmaMgr_DmaRomToRam(uintptr_t rom, void* ram, size_t size);
-void DmaMgr_DmaFromDriveRom(void* ram, uintptr_t rom, size_t size);
-s32 DmaMgr_AudioDmaHandler(OSPiHandle* pihandle, OSIoMesg* mb, s32 direction);
+s32 percial_DMA(uintptr_t rom, void* ram, size_t size);
+void dmacopy_ddrom_fg(void* ram, uintptr_t rom, size_t size);
+s32 dmaSoundRomHandler(OSPiHandle* pihandle, OSIoMesg* mb, s32 direction);
 
 // Initialization
 
-void DmaMgr_Init(void);
+void CreateDmaManager(void);
 
 #endif

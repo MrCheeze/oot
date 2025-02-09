@@ -13,17 +13,17 @@
     (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY | ACTOR_FLAG_UPDATE_CULLING_DISABLED | \
      ACTOR_FLAG_DRAW_CULLING_DISABLED | ACTOR_FLAG_LOCK_ON_DISABLED)
 
-void EnTakaraMan_Init(Actor* thisx, PlayState* play);
-void EnTakaraMan_Destroy(Actor* thisx, PlayState* play);
-void EnTakaraMan_Update(Actor* thisx, PlayState* play);
-void EnTakaraMan_Draw(Actor* thisx, PlayState* play);
+void En_Takara_Man_actor_ct(Actor* thisx, PlayState* play);
+void En_Takara_Man_actor_dt(Actor* thisx, PlayState* play);
+void En_Takara_Man_actor_move(Actor* thisx, PlayState* play);
+void En_Takara_Man_actor_disp(Actor* thisx, PlayState* play);
 
-void func_80B176E0(EnTakaraMan* this, PlayState* play);
-void func_80B1778C(EnTakaraMan* this, PlayState* play);
-void func_80B17B14(EnTakaraMan* this, PlayState* play);
-void func_80B17934(EnTakaraMan* this, PlayState* play);
-void func_80B17A6C(EnTakaraMan* this, PlayState* play);
-void func_80B17AC4(EnTakaraMan* this, PlayState* play);
+static void mode_wait_init(EnTakaraMan* this, PlayState* play);
+static void mode_wait(EnTakaraMan* this, PlayState* play);
+static void mode_message_check(EnTakaraMan* this, PlayState* play);
+void mode_select_chance(EnTakaraMan* this, PlayState* play);
+static void mode_player_item_request(EnTakaraMan* this, PlayState* play);
+static void mode_player_item_up(EnTakaraMan* this, PlayState* play);
 
 ActorProfile En_Takara_Man_Profile = {
     /**/ ACTOR_EN_TAKARA_MAN,
@@ -31,69 +31,69 @@ ActorProfile En_Takara_Man_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_TS,
     /**/ sizeof(EnTakaraMan),
-    /**/ EnTakaraMan_Init,
-    /**/ EnTakaraMan_Destroy,
-    /**/ EnTakaraMan_Update,
-    /**/ EnTakaraMan_Draw,
+    /**/ En_Takara_Man_actor_ct,
+    /**/ En_Takara_Man_actor_dt,
+    /**/ En_Takara_Man_actor_move,
+    /**/ En_Takara_Man_actor_disp,
 };
 
-static u8 sTakaraIsInitialized = false;
+static u8 izure_sakujyo = false;
 
-void EnTakaraMan_Destroy(Actor* thisx, PlayState* play) {
+void En_Takara_Man_actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void EnTakaraMan_Init(Actor* thisx, PlayState* play) {
+void En_Takara_Man_actor_ct(Actor* thisx, PlayState* play) {
     EnTakaraMan* this = (EnTakaraMan*)thisx;
 
-    if (sTakaraIsInitialized) {
-        Actor_Kill(&this->actor);
+    if (izure_sakujyo) {
+        Actor_delete(&this->actor);
         PRINTF(VT_FGCOL(GREEN) "☆☆☆☆☆ もういてる原 ☆☆☆☆☆ \n" VT_RST); // "Already initialized"
         return;
     }
 
-    sTakaraIsInitialized = true;
+    izure_sakujyo = true;
     PRINTF("\n\n");
     // "Bun! %x" (needs a better translation)
     PRINTF(VT_FGCOL(MAGENTA) "☆☆☆☆☆ ばぅん！ ☆☆☆☆☆ %x\n" VT_RST, play->actorCtx.flags.chest);
     play->actorCtx.flags.chest = 0;
-    gSaveContext.save.info.inventory.dungeonKeys[gSaveContext.mapIndex] = -1;
-    SkelAnime_InitFlex(play, &this->skelAnime, &object_ts_Skel_004FE0, &object_ts_Anim_000498, this->jointTable,
+    z_common_data.save.info.inventory.dungeonKeys[z_common_data.mapIndex] = -1;
+    Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &object_ts_Skel_004FE0, &object_ts_Anim_000498, this->jointTable,
                        this->morphTable, 10);
     thisx->focus.pos = thisx->world.pos;
     this->pos = thisx->world.pos;
     thisx->world.pos.x = 133.0f;
     thisx->world.pos.y = -12.0f;
     thisx->world.pos.z = 102.0f;
-    Actor_SetScale(&this->actor, 0.013f);
+    Actor_set_scale(&this->actor, 0.013f);
     this->height = 90.0f;
     this->originalRoomNum = thisx->room;
     thisx->room = -1;
     thisx->world.rot.y = thisx->shape.rot.y = -0x4E20;
     thisx->attentionRangeType = ATTENTION_RANGE_1;
-    this->actionFunc = func_80B176E0;
+    this->actionFunc = mode_wait_init;
 }
 
-void func_80B176E0(EnTakaraMan* this, PlayState* play) {
-    f32 frameCount = Animation_GetLastFrame(&object_ts_Anim_000498);
+static void mode_wait_init(EnTakaraMan* this, PlayState* play) {
+    f32 frameCount = Si2_anime_end_frame(&object_ts_Anim_000498);
 
-    Animation_Change(&this->skelAnime, &object_ts_Anim_000498, 1.0f, 0.0f, (s16)frameCount, ANIMMODE_LOOP, -10.0f);
+    Skeleton_Info2_init(&this->skelAnime, &object_ts_Anim_000498, 1.0f, 0.0f, (s16)frameCount, ANIMMODE_LOOP, -10.0f);
     if (!this->unk_214) {
         this->actor.textId = 0x6D;
         this->dialogState = TEXT_STATE_CHOICE;
     }
-    this->actionFunc = func_80B1778C;
+    this->actionFunc = mode_wait;
 }
 
-void func_80B1778C(EnTakaraMan* this, PlayState* play) {
+static void mode_wait(EnTakaraMan* this, PlayState* play) {
     s16 absYawDiff;
     s16 yawDiff;
 
-    SkelAnime_Update(&this->skelAnime);
-    if (Actor_TalkOfferAccepted(&this->actor, play) && this->dialogState != TEXT_STATE_DONE) {
+    Skeleton_Info2_anime_play(&this->skelAnime);
+    if (Actor_talk_check(&this->actor, play) && this->dialogState != TEXT_STATE_DONE) {
         if (!this->unk_214) {
-            this->actionFunc = func_80B17934;
+            this->actionFunc = mode_select_chance;
         } else {
-            this->actionFunc = func_80B17B14;
+            this->actionFunc = mode_message_check;
         }
     } else {
         yawDiff = this->actor.yawTowardsPlayer - this->actor.shape.rot.y;
@@ -104,7 +104,7 @@ void func_80B1778C(EnTakaraMan* this, PlayState* play) {
         }
 
         if (!this->unk_21A && this->unk_214) {
-            if (Flags_GetSwitch(play, 0x32)) {
+            if (Actor_Environment_sw_Check(play, 0x32)) {
                 this->actor.textId = 0x84;
                 this->dialogState = TEXT_STATE_EVENT;
             } else {
@@ -123,88 +123,88 @@ void func_80B1778C(EnTakaraMan* this, PlayState* play) {
                     this->actor.flags |= ACTOR_FLAG_ATTENTION_ENABLED;
                     this->unk_218 = 1;
                 }
-                Actor_OfferTalk(&this->actor, play, 100.0f);
+                Actor_talk_request2(&this->actor, play, 100.0f);
             }
         }
     }
 }
 
-void func_80B17934(EnTakaraMan* this, PlayState* play) {
-    if (this->dialogState == Message_GetState(&play->msgCtx) && Message_ShouldAdvance(play)) {
+void mode_select_chance(EnTakaraMan* this, PlayState* play) {
+    if (this->dialogState == message_check(&play->msgCtx) && pad_on_check(play)) {
         switch (play->msgCtx.choiceIndex) {
             case 0: // Yes
-                if (gSaveContext.save.info.playerData.rupees >= 10) {
-                    Message_CloseTextbox(play);
-                    Rupees_ChangeBy(-10);
+                if (z_common_data.save.info.playerData.rupees >= 10) {
+                    message_close(play);
+                    lupy_increase(-10);
                     this->unk_214 = 1;
                     this->actor.parent = NULL;
-                    Actor_OfferGetItem(&this->actor, play, GI_DOOR_KEY, 2000.0f, 1000.0f);
-                    this->actionFunc = func_80B17A6C;
+                    Actor_carry_request_set2(&this->actor, play, GI_DOOR_KEY, 2000.0f, 1000.0f);
+                    this->actionFunc = mode_player_item_request;
                 } else {
-                    Message_CloseTextbox(play);
+                    message_close(play);
                     this->actor.textId = 0x85;
-                    Message_ContinueTextbox(play, this->actor.textId);
+                    message_set2(play, this->actor.textId);
                     this->dialogState = TEXT_STATE_EVENT;
-                    this->actionFunc = func_80B17B14;
+                    this->actionFunc = mode_message_check;
                 }
                 break;
             case 1: // No
-                Message_CloseTextbox(play);
+                message_close(play);
                 this->actor.textId = 0x2D;
-                Message_ContinueTextbox(play, this->actor.textId);
+                message_set2(play, this->actor.textId);
                 this->dialogState = TEXT_STATE_EVENT;
-                this->actionFunc = func_80B17B14;
+                this->actionFunc = mode_message_check;
                 break;
         }
     }
 }
 
-void func_80B17A6C(EnTakaraMan* this, PlayState* play) {
-    if (Actor_HasParent(&this->actor, play)) {
-        this->actionFunc = func_80B17AC4;
+static void mode_player_item_request(EnTakaraMan* this, PlayState* play) {
+    if (Actor_carry_check(&this->actor, play)) {
+        this->actionFunc = mode_player_item_up;
     } else {
 #if OOT_VERSION < NTSC_1_1
-        Actor_OfferGetItem(&this->actor, play, GI_SMALL_KEY, 2000.0f, 1000.0f);
+        Actor_carry_request_set2(&this->actor, play, GI_SMALL_KEY, 2000.0f, 1000.0f);
 #else
-        Actor_OfferGetItem(&this->actor, play, GI_DOOR_KEY, 2000.0f, 1000.0f);
+        Actor_carry_request_set2(&this->actor, play, GI_DOOR_KEY, 2000.0f, 1000.0f);
 #endif
     }
 }
 
-void func_80B17AC4(EnTakaraMan* this, PlayState* play) {
-    if (Message_GetState(&play->msgCtx) == TEXT_STATE_DONE && Message_ShouldAdvance(play)) {
-        this->actionFunc = func_80B176E0;
+static void mode_player_item_up(EnTakaraMan* this, PlayState* play) {
+    if (message_check(&play->msgCtx) == TEXT_STATE_DONE && pad_on_check(play)) {
+        this->actionFunc = mode_wait_init;
     }
 }
 
-void func_80B17B14(EnTakaraMan* this, PlayState* play) {
-    if (this->dialogState == Message_GetState(&play->msgCtx) && Message_ShouldAdvance(play)) {
-        Message_CloseTextbox(play);
-        this->actionFunc = func_80B176E0;
+static void mode_message_check(EnTakaraMan* this, PlayState* play) {
+    if (this->dialogState == message_check(&play->msgCtx) && pad_on_check(play)) {
+        message_close(play);
+        this->actionFunc = mode_wait_init;
     }
 }
 
-void EnTakaraMan_Update(Actor* thisx, PlayState* play) {
+void En_Takara_Man_actor_move(Actor* thisx, PlayState* play) {
     EnTakaraMan* this = (EnTakaraMan*)thisx;
 
     if (this->eyeTimer != 0) {
         this->eyeTimer--;
     }
 
-    Actor_SetFocus(&this->actor, this->height);
-    Actor_TrackPlayer(play, &this->actor, &this->unk_22C, &this->unk_232, this->actor.focus.pos);
+    Actor_world_to_eye(&this->actor, this->height);
+    eye_move2(play, &this->actor, &this->unk_22C, &this->unk_232, this->actor.focus.pos);
     if (this->eyeTimer == 0) {
         this->eyeTextureIdx++;
         if (this->eyeTextureIdx >= 2) {
             this->eyeTextureIdx = 0;
-            this->eyeTimer = (s16)Rand_ZeroFloat(60.0f) + 20;
+            this->eyeTimer = (s16)rnd_f(60.0f) + 20;
         }
     }
     this->unk_212++;
     this->actionFunc(this, play);
 }
 
-s32 EnTakaraMan_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+s32 En_Takara_Man_draw_sub(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     EnTakaraMan* this = (EnTakaraMan*)thisx;
 
     if (limbIndex == 1) {
@@ -217,8 +217,8 @@ s32 EnTakaraMan_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Ve
     return false;
 }
 
-void EnTakaraMan_Draw(Actor* thisx, PlayState* play) {
-    static void* eyeTextures[] = {
+void En_Takara_Man_actor_disp(Actor* thisx, PlayState* play) {
+    static void* ts_eye_txt[] = {
         object_ts_Tex_000970,
         object_ts_Tex_000D70,
     };
@@ -226,10 +226,10 @@ void EnTakaraMan_Draw(Actor* thisx, PlayState* play) {
 
     OPEN_DISPS(play->state.gfxCtx, "../z_en_takara_man.c", 528);
 
-    Gfx_SetupDL_25Opa(play->state.gfxCtx);
-    gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(eyeTextures[this->eyeTextureIdx]));
-    SkelAnime_DrawFlexOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
-                          EnTakaraMan_OverrideLimbDraw, NULL, this);
+    _texture_z_light_fog_prim(play->state.gfxCtx);
+    gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(ts_eye_txt[this->eyeTextureIdx]));
+    Si2_draw_SV(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
+                          En_Takara_Man_draw_sub, NULL, this);
 
     CLOSE_DISPS(play->state.gfxCtx, "../z_en_takara_man.c", 544);
 }

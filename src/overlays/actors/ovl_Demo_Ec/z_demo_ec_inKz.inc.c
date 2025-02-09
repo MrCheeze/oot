@@ -1,40 +1,40 @@
-void DemoEc_InitKingZora(DemoEc* this, PlayState* play) {
-    DemoEc_UseDrawObject(this, play);
-    DemoEc_InitSkelAnime(this, play, &gKzSkel);
-    DemoEc_UseAnimationObject(this, play);
-    DemoEc_ChangeAnimation(this, &gDemoEcKingZoraAnim, 0, 0.0f, false);
-    func_8096D5D4(this, play);
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 30.0f);
+void Demo_Ec_main_init_Kz(DemoEc* this, PlayState* play) {
+    Demo_Ec_Change_ShapeBank(this, play);
+    Demo_Ec_Setup_Mdl(this, play, &gKzSkel);
+    Demo_Ec_Change_AnimeBank(this, play);
+    Demo_Ec_Change_Anime(this, &gDemoEcKingZoraAnim, 0, 0.0f, false);
+    Demo_Ec_Start_Movement_byAnimation(this, play);
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 30.0f);
     this->updateMode = EC_UPDATE_KING_ZORA;
     this->drawConfig = EC_DRAW_KING_ZORA;
-    DemoEc_SetEyeTexIndex(this, 3);
+    Demo_Ec_set_eye_Num(this, 3);
 }
 
-void func_8096F1D4(DemoEc* this) {
+void Demo_Ec_inKz_SetEyePattern_forStandup(DemoEc* this) {
     f32 currentFrame = this->skelAnime.curFrame;
 
     if (currentFrame <= 32.0f) {
-        DemoEc_SetEyeTexIndex(this, 3);
+        Demo_Ec_set_eye_Num(this, 3);
     } else {
-        DemoEc_UpdateEyes(this);
+        Demo_Ec_set_eye_pattern(this);
     }
 }
 
-void func_8096F224(DemoEc* this, PlayState* play) {
-    DemoEc_UseAnimationObject(this, play);
-    DemoEc_ChangeAnimation(this, &gDemoEcAnim_006930, 2, -8.0f, false);
+void Demo_Ec_inKz_Setup_Stand(DemoEc* this, PlayState* play) {
+    Demo_Ec_Change_AnimeBank(this, play);
+    Demo_Ec_Change_Anime(this, &gDemoEcAnim_006930, 2, -8.0f, false);
     this->updateMode = EC_UPDATE_17;
 }
 
-void func_8096F26C(DemoEc* this, s32 arg1) {
+void Demo_Ec_inKz_Check_StandupToStand(DemoEc* this, s32 arg1) {
     if (arg1 != 0) {
-        DemoEc_ChangeAnimation(this, &gDemoEcAnim_006220, 0, 0.0f, false);
+        Demo_Ec_Change_Anime(this, &gDemoEcAnim_006220, 0, 0.0f, false);
         this->updateMode = EC_UPDATE_18;
     }
 }
 
-void func_8096F2B0(DemoEc* this, PlayState* play, s32 cueChannel) {
-    CsCmdActorCue* cue = DemoEc_GetCue(play, cueChannel);
+void Demo_Ec_inKz_Check_DemoMode(DemoEc* this, PlayState* play, s32 cueChannel) {
+    CsCmdActorCue* cue = Demo_Ec_Get_npcdemopnt(play, cueChannel);
 
     if (cue != NULL) {
         s32 nextCueId = cue->id;
@@ -43,7 +43,7 @@ void func_8096F2B0(DemoEc* this, PlayState* play, s32 cueChannel) {
         if (nextCueId != currentCueId) {
             switch (nextCueId) {
                 case 2:
-                    func_8096F224(this, play);
+                    Demo_Ec_inKz_Setup_Stand(this, play);
                     break;
             }
 
@@ -52,34 +52,34 @@ void func_8096F2B0(DemoEc* this, PlayState* play, s32 cueChannel) {
     }
 }
 
-void DemoEc_UpdateKingZora(DemoEc* this, PlayState* play) {
-    DemoEc_UpdateSkelAnime(this);
-    func_8096D594(this, play);
-    DemoEc_SetStartPosRotFromCue(this, play, 6);
-    DemoEc_UpdateBgFlags(this, play);
-    func_8096F2B0(this, play, 6);
+void Demo_Ec_main_Kz_Wait(DemoEc* this, PlayState* play) {
+    Demo_Ec_Animation_Base(this);
+    Demo_Ec_Movement_byAnimation_CorrectNone(this, play);
+    Demo_Ec_Set_StartPos_npcdemopnt(this, play, 6);
+    Demo_Ec_BGcheck(this, play);
+    Demo_Ec_inKz_Check_DemoMode(this, play, 6);
 }
 
-void func_8096F378(DemoEc* this, PlayState* play) {
-    s32 animDone = DemoEc_UpdateSkelAnime(this);
+void Demo_Ec_main_Kz_Standup(DemoEc* this, PlayState* play) {
+    s32 animDone = Demo_Ec_Animation_Base(this);
 
-    func_8096D594(this, play);
-    func_8096F1D4(this);
-    DemoEc_UpdateBgFlags(this, play);
-    func_8096F26C(this, animDone);
+    Demo_Ec_Movement_byAnimation_CorrectNone(this, play);
+    Demo_Ec_inKz_SetEyePattern_forStandup(this);
+    Demo_Ec_BGcheck(this, play);
+    Demo_Ec_inKz_Check_StandupToStand(this, animDone);
 }
 
-void func_8096F3D4(DemoEc* this, PlayState* play) {
-    DemoEc_UpdateSkelAnime(this);
-    func_8096D594(this, play);
-    DemoEc_UpdateEyes(this);
-    DemoEc_UpdateBgFlags(this, play);
+void Demo_Ec_main_Kz_Stand(DemoEc* this, PlayState* play) {
+    Demo_Ec_Animation_Base(this);
+    Demo_Ec_Movement_byAnimation_CorrectNone(this, play);
+    Demo_Ec_set_eye_pattern(this);
+    Demo_Ec_BGcheck(this, play);
 }
 
-void DemoEc_DrawKingZora(DemoEc* this, PlayState* play) {
-    static void* eyeTextures[] = { gKzEyeOpenTex, gKzEyeHalfTex, gKzEyeClosedTex, gKzEyeOpen2Tex };
+void Demo_Ec_draw_normal_Kz(DemoEc* this, PlayState* play) {
+    static void* Demo_Ec_inKz_eye[] = { gKzEyeOpenTex, gKzEyeHalfTex, gKzEyeClosedTex, gKzEyeOpen2Tex };
     s32 eyeTexIndex = this->eyeTexIndex;
-    void* eyeTexture = eyeTextures[eyeTexIndex];
+    void* eyeTexture = Demo_Ec_inKz_eye[eyeTexIndex];
 
-    DemoEc_DrawSkeleton(this, play, eyeTexture, NULL, NULL, NULL);
+    Demo_Ec_draw_normal_1(this, play, eyeTexture, NULL, NULL, NULL);
 }

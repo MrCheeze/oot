@@ -15,16 +15,16 @@
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_UPDATE_DURING_OCARINA)
 
-void EnOkarinaTag_Init(Actor* thisx, PlayState* play);
-void EnOkarinaTag_Destroy(Actor* thisx, PlayState* play);
-void EnOkarinaTag_Update(Actor* thisx, PlayState* play);
+void En_Okarina_Tag_actor_ct(Actor* thisx, PlayState* play);
+void En_Okarina_Tag_actor_dt(Actor* thisx, PlayState* play);
+void En_Okarina_Tag_actor_move(Actor* thisx, PlayState* play);
 
-void func_80ABEF2C(EnOkarinaTag* this, PlayState* play);
-void func_80ABF708(EnOkarinaTag* this, PlayState* play);
-void func_80ABF28C(EnOkarinaTag* this, PlayState* play);
-void func_80ABF0CC(EnOkarinaTag* this, PlayState* play);
-void func_80ABF4C8(EnOkarinaTag* this, PlayState* play);
-void func_80ABF7CC(EnOkarinaTag* this, PlayState* play);
+void mode_okarina_nomal_init(EnOkarinaTag* this, PlayState* play);
+void mode_hakaana_demo_wait(EnOkarinaTag* this, PlayState* play);
+void mode_okarina_demo_init(EnOkarinaTag* this, PlayState* play);
+void mode_okarina_nomal_wait(EnOkarinaTag* this, PlayState* play);
+void mode_okarina_demo_wait(EnOkarinaTag* this, PlayState* play);
+void mode_hakaana_demo_check(EnOkarinaTag* this, PlayState* play);
 
 ActorProfile En_Okarina_Tag_Profile = {
     /**/ ACTOR_EN_OKARINA_TAG,
@@ -32,19 +32,19 @@ ActorProfile En_Okarina_Tag_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(EnOkarinaTag),
-    /**/ EnOkarinaTag_Init,
-    /**/ EnOkarinaTag_Destroy,
-    /**/ EnOkarinaTag_Update,
+    /**/ En_Okarina_Tag_actor_ct,
+    /**/ En_Okarina_Tag_actor_dt,
+    /**/ En_Okarina_Tag_actor_move,
     /**/ NULL,
 };
 
-extern CutsceneData gWindmillSpinningFasterCs[];
-extern CutsceneData gDoorOfTimeOpeningCs[];
+extern CutsceneData fuusa_data[];
+extern CutsceneData tokinoma_sekiban_data[];
 
-void EnOkarinaTag_Destroy(Actor* thisx, PlayState* play) {
+void En_Okarina_Tag_actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void EnOkarinaTag_Init(Actor* thisx, PlayState* play) {
+void En_Okarina_Tag_actor_ct(Actor* thisx, PlayState* play) {
     EnOkarinaTag* this = (EnOkarinaTag*)thisx;
 
     PRINTF("\n\n");
@@ -80,45 +80,45 @@ void EnOkarinaTag_Init(Actor* thisx, PlayState* play) {
     PRINTF(VT_FGCOL(GREEN) "☆☆☆☆☆ 当り？\t\t ☆☆☆☆☆ %d\n" VT_RST, this->unk_158);
     PRINTF("\n\n");
 
-    if ((this->switchFlag >= 0) && (Flags_GetSwitch(play, this->switchFlag))) {
-        Actor_Kill(&this->actor);
+    if ((this->switchFlag >= 0) && (Actor_Environment_sw_Check(play, this->switchFlag))) {
+        Actor_delete(&this->actor);
     } else {
         switch (this->type) {
             case 7:
-                this->actionFunc = func_80ABEF2C;
+                this->actionFunc = mode_okarina_nomal_init;
                 break;
             case 2:
                 if (LINK_IS_ADULT) {
-                    Actor_Kill(&this->actor);
+                    Actor_delete(&this->actor);
                     break;
                 }
                 FALLTHROUGH;
             case 1:
             case 4:
             case 6:
-                this->actionFunc = func_80ABF28C;
+                this->actionFunc = mode_okarina_demo_init;
                 break;
             case 5:
                 this->actor.textId = 0x5021;
-                this->actionFunc = func_80ABF708;
+                this->actionFunc = mode_hakaana_demo_wait;
                 break;
             default:
-                Actor_Kill(&this->actor);
+                Actor_delete(&this->actor);
                 break;
         }
     }
 }
 
-void func_80ABEF2C(EnOkarinaTag* this, PlayState* play) {
+void mode_okarina_nomal_init(EnOkarinaTag* this, PlayState* play) {
     Player* player;
     u16 ocarinaSong;
 
     player = GET_PLAYER(play);
     this->unk_15A++;
-    if ((this->switchFlag >= 0) && (Flags_GetSwitch(play, this->switchFlag))) {
+    if ((this->switchFlag >= 0) && (Actor_Environment_sw_Check(play, this->switchFlag))) {
         this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
     } else {
-        if ((this->ocarinaSong != 6) || (gSaveContext.save.info.scarecrowSpawnSongSet)) {
+        if ((this->ocarinaSong != 6) || (z_common_data.save.info.scarecrowSpawnSongSet)) {
             if (player->stateFlags2 & PLAYER_STATE2_24) {
                 // "North! ! ! ! !"
                 PRINTF(VT_FGCOL(RED) "☆☆☆☆☆ 北！！！！！ ☆☆☆☆☆ %f\n" VT_RST, this->actor.xzDistToPlayer);
@@ -131,8 +131,8 @@ void func_80ABEF2C(EnOkarinaTag* this, PlayState* play) {
                         ocarinaSong = 0xA;
                     }
                     player->stateFlags2 |= PLAYER_STATE2_23;
-                    Message_StartOcarina(play, ocarinaSong + OCARINA_ACTION_CHECK_SARIA);
-                    this->actionFunc = func_80ABF0CC;
+                    ocarina_set(play, ocarinaSong + OCARINA_ACTION_CHECK_SARIA);
+                    this->actionFunc = mode_okarina_nomal_wait;
                 } else if ((this->actor.xzDistToPlayer < (50.0f + this->interactRange) &&
                             ((fabsf(player->actor.world.pos.y - this->actor.world.pos.y) < 40.0f)))) {
                     this->unk_15A = 0;
@@ -143,15 +143,15 @@ void func_80ABEF2C(EnOkarinaTag* this, PlayState* play) {
     }
 }
 
-void func_80ABF0CC(EnOkarinaTag* this, PlayState* play) {
+void mode_okarina_nomal_wait(EnOkarinaTag* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     if (play->msgCtx.ocarinaMode == OCARINA_MODE_04) {
-        this->actionFunc = func_80ABEF2C;
+        this->actionFunc = mode_okarina_nomal_init;
     } else {
         if (play->msgCtx.ocarinaMode == OCARINA_MODE_03) {
             if (this->switchFlag >= 0) {
-                Flags_SetSwitch(play, this->switchFlag);
+                Actor_Environment_sw_On(play, this->switchFlag);
             }
             if (play->sceneId == SCENE_WATER_TEMPLE) {
                 play->msgCtx.msgMode = MSGMODE_PAUSED;
@@ -164,8 +164,8 @@ void func_80ABF0CC(EnOkarinaTag* this, PlayState* play) {
                 play->msgCtx.ocarinaMode = OCARINA_MODE_04;
             }
 #endif
-            Sfx_PlaySfxCentered(NA_SE_SY_CORRECT_CHIME);
-            this->actionFunc = func_80ABEF2C;
+            Na_StartSystemSe_F(NA_SE_SY_CORRECT_CHIME);
+            this->actionFunc = mode_okarina_nomal_init;
             return;
         }
         if (this->unk_158 != 0) {
@@ -174,29 +174,29 @@ void func_80ABF0CC(EnOkarinaTag* this, PlayState* play) {
                 (play->msgCtx.ocarinaMode == OCARINA_MODE_09) || (play->msgCtx.ocarinaMode == OCARINA_MODE_0A) ||
                 (play->msgCtx.ocarinaMode == OCARINA_MODE_0D)) {
                 if (this->switchFlag >= 0) {
-                    Flags_SetSwitch(play, this->switchFlag);
+                    Actor_Environment_sw_On(play, this->switchFlag);
                 }
                 play->msgCtx.ocarinaMode = OCARINA_MODE_04;
-                Sfx_PlaySfxCentered(NA_SE_SY_CORRECT_CHIME);
-                this->actionFunc = func_80ABEF2C;
+                Na_StartSystemSe_F(NA_SE_SY_CORRECT_CHIME);
+                this->actionFunc = mode_okarina_nomal_init;
                 return;
             }
         }
         if ((play->msgCtx.ocarinaMode >= OCARINA_MODE_05) && (play->msgCtx.ocarinaMode < OCARINA_MODE_0E)) {
             play->msgCtx.ocarinaMode = OCARINA_MODE_04;
-            this->actionFunc = func_80ABEF2C;
+            this->actionFunc = mode_okarina_nomal_init;
         } else if (play->msgCtx.ocarinaMode == OCARINA_MODE_01) {
             player->stateFlags2 |= PLAYER_STATE2_23;
         }
     }
 }
 
-void func_80ABF28C(EnOkarinaTag* this, PlayState* play) {
+void mode_okarina_demo_init(EnOkarinaTag* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     this->unk_15A++;
-    if ((this->ocarinaSong != 6) || (gSaveContext.save.info.scarecrowSpawnSongSet)) {
-        if ((this->switchFlag >= 0) && Flags_GetSwitch(play, this->switchFlag)) {
+    if ((this->ocarinaSong != 6) || (z_common_data.save.info.scarecrowSpawnSongSet)) {
+        if ((this->switchFlag >= 0) && Actor_Environment_sw_Check(play, this->switchFlag)) {
             this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
         } else if (((this->type != 4) || !GET_EVENTCHKINF(EVENTCHKINF_OPENED_DOOR_OF_TIME)) &&
                    ((this->type != 6) || !GET_EVENTCHKINF(EVENTCHKINF_1D)) &&
@@ -205,26 +205,26 @@ void func_80ABF28C(EnOkarinaTag* this, PlayState* play) {
             if (player->stateFlags2 & PLAYER_STATE2_24) {
                 switch (this->type) {
                     case 1:
-                        Message_StartOcarina(play, OCARINA_ACTION_CHECK_LULLABY);
+                        ocarina_set(play, OCARINA_ACTION_CHECK_LULLABY);
                         break;
                     case 2:
-                        Message_StartOcarina(play, OCARINA_ACTION_CHECK_STORMS);
+                        ocarina_set(play, OCARINA_ACTION_CHECK_STORMS);
                         break;
                     case 4:
-                        Message_StartOcarina(play, OCARINA_ACTION_CHECK_TIME);
+                        ocarina_set(play, OCARINA_ACTION_CHECK_TIME);
                         break;
                     case 6:
-                        Message_StartOcarina(play, OCARINA_ACTION_CHECK_LULLABY);
+                        ocarina_set(play, OCARINA_ACTION_CHECK_LULLABY);
                         break;
                     default:
                         // "Ocarina Invisible-kun demo start check error source"
                         PRINTF(VT_FGCOL(GREEN) "☆☆☆☆☆ オカリナ透明君デモ開始チェックエラー原 ☆☆☆☆☆ %d\n" VT_RST,
                                this->type);
-                        Actor_Kill(&this->actor);
+                        Actor_delete(&this->actor);
                         break;
                 }
                 player->stateFlags2 |= PLAYER_STATE2_23;
-                this->actionFunc = func_80ABF4C8;
+                this->actionFunc = mode_okarina_demo_wait;
             } else if ((this->actor.xzDistToPlayer < (50.0f + this->interactRange)) &&
                        (fabsf(player->actor.world.pos.y - this->actor.world.pos.y) < 40.0f)) {
                 this->unk_15A = 0;
@@ -234,49 +234,49 @@ void func_80ABF28C(EnOkarinaTag* this, PlayState* play) {
     }
 }
 
-void func_80ABF4C8(EnOkarinaTag* this, PlayState* play) {
+void mode_okarina_demo_wait(EnOkarinaTag* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     if (play->msgCtx.ocarinaMode == OCARINA_MODE_04) {
-        this->actionFunc = func_80ABF28C;
+        this->actionFunc = mode_okarina_demo_init;
     } else if (play->msgCtx.ocarinaMode == OCARINA_MODE_03) {
-        Sfx_PlaySfxCentered(NA_SE_SY_CORRECT_CHIME);
+        Na_StartSystemSe_F(NA_SE_SY_CORRECT_CHIME);
         if (this->switchFlag >= 0) {
-            Flags_SetSwitch(play, this->switchFlag);
+            Actor_Environment_sw_On(play, this->switchFlag);
         }
         switch (this->type) {
             case 1:
-                Flags_SetSwitch(play, this->switchFlag);
+                Actor_Environment_sw_On(play, this->switchFlag);
                 SET_EVENTCHKINF(EVENTCHKINF_39);
                 break;
             case 2:
-                play->csCtx.script = gWindmillSpinningFasterCs;
-                gSaveContext.cutsceneTrigger = 1;
+                play->csCtx.script = fuusa_data;
+                z_common_data.cutsceneTrigger = 1;
                 // Increase pitch by 3 semitones i.e. 2^(3/12), scale tempo by same ratio
                 // Applies to the windmill bgm once the song of storms fanfare is complete
-                Audio_SetMainBgmTempoFreqAfterFanfare(1.18921f, 90);
+                Na_SetBgmPitch(1.18921f, 90);
                 break;
             case 4:
-                play->csCtx.script = gDoorOfTimeOpeningCs;
-                gSaveContext.cutsceneTrigger = 1;
+                play->csCtx.script = tokinoma_sekiban_data;
+                z_common_data.cutsceneTrigger = 1;
                 break;
             case 6:
                 play->csCtx.script = LINK_IS_ADULT ? SEGMENTED_TO_VIRTUAL(gGraveyardTombOpeningAdultCs)
                                                    : SEGMENTED_TO_VIRTUAL(gGraveyardTombOpeningChildCs);
-                gSaveContext.cutsceneTrigger = 1;
+                z_common_data.cutsceneTrigger = 1;
                 SET_EVENTCHKINF(EVENTCHKINF_1D);
-                Sfx_PlaySfxCentered(NA_SE_SY_CORRECT_CHIME);
+                Na_StartSystemSe_F(NA_SE_SY_CORRECT_CHIME);
                 break;
             default:
                 break;
         }
         play->msgCtx.ocarinaMode = OCARINA_MODE_04;
-        this->actionFunc = func_80ABF28C;
+        this->actionFunc = mode_okarina_demo_init;
     } else {
         if (play->msgCtx.ocarinaMode >= OCARINA_MODE_05) {
             if (play->msgCtx.ocarinaMode < OCARINA_MODE_0E) {
                 play->msgCtx.ocarinaMode = OCARINA_MODE_04;
-                this->actionFunc = func_80ABF28C;
+                this->actionFunc = mode_okarina_demo_init;
                 return;
             }
         }
@@ -286,12 +286,12 @@ void func_80ABF4C8(EnOkarinaTag* this, PlayState* play) {
     }
 }
 
-void func_80ABF708(EnOkarinaTag* this, PlayState* play) {
+void mode_hakaana_demo_wait(EnOkarinaTag* this, PlayState* play) {
     s16 yawDiff;
     s16 yawDiffNew;
 
-    if (Actor_TalkOfferAccepted(&this->actor, play)) {
-        this->actionFunc = func_80ABF7CC;
+    if (Actor_talk_check(&this->actor, play)) {
+        this->actionFunc = mode_hakaana_demo_check;
     } else {
         yawDiff = this->actor.yawTowardsPlayer - this->actor.world.rot.y;
         this->unk_15A++;
@@ -302,27 +302,27 @@ void func_80ABF708(EnOkarinaTag* this, PlayState* play) {
             yawDiffNew = ABS(yawDiff);
             if (yawDiffNew < 0x4300) {
                 this->unk_15A = 0;
-                Actor_OfferTalk(&this->actor, play, 70.0f);
+                Actor_talk_request2(&this->actor, play, 70.0f);
             }
         }
     }
 }
 
-void func_80ABF7CC(EnOkarinaTag* this, PlayState* play) {
+void mode_hakaana_demo_check(EnOkarinaTag* this, PlayState* play) {
     // "Open sesame sesame!"
-    PRINTF(VT_FGCOL(MAGENTA) "☆☆☆☆☆ 開けゴマゴマゴマ！ ☆☆☆☆☆ %d\n" VT_RST, Message_GetState(&play->msgCtx));
+    PRINTF(VT_FGCOL(MAGENTA) "☆☆☆☆☆ 開けゴマゴマゴマ！ ☆☆☆☆☆ %d\n" VT_RST, message_check(&play->msgCtx));
 
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_EVENT) && Message_ShouldAdvance(play)) {
-        Message_CloseTextbox(play);
+    if ((message_check(&play->msgCtx) == TEXT_STATE_EVENT) && pad_on_check(play)) {
+        message_close(play);
         if (!CHECK_QUEST_ITEM(QUEST_SONG_SUN)) {
             play->csCtx.script = SEGMENTED_TO_VIRTUAL(gSunSongGraveSunSongTeachCs);
-            gSaveContext.cutsceneTrigger = 1;
+            z_common_data.cutsceneTrigger = 1;
         }
-        this->actionFunc = func_80ABF708;
+        this->actionFunc = mode_hakaana_demo_wait;
     }
 }
 
-void EnOkarinaTag_Update(Actor* thisx, PlayState* play) {
+void En_Okarina_Tag_actor_move(Actor* thisx, PlayState* play) {
     EnOkarinaTag* this = (EnOkarinaTag*)thisx;
 
     this->actionFunc(this, play);
@@ -330,12 +330,12 @@ void EnOkarinaTag_Update(Actor* thisx, PlayState* play) {
     if (DEBUG_FEATURES && BREG(0) != 0) {
         if (this->unk_15A != 0) {
             if (!(this->unk_15A & 1)) {
-                DebugDisplay_AddObject(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
+                Debug_Display_new(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
                                        this->actor.world.rot.x, this->actor.world.rot.y, this->actor.world.rot.z, 1.0f,
                                        1.0f, 1.0f, 120, 120, 120, 255, 4, play->state.gfxCtx);
             }
         } else {
-            DebugDisplay_AddObject(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
+            Debug_Display_new(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
                                    this->actor.world.rot.x, this->actor.world.rot.y, this->actor.world.rot.z, 1.0f,
                                    1.0f, 1.0f, 255, 0, 0, 255, 4, play->state.gfxCtx);
         }

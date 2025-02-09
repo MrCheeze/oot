@@ -9,12 +9,12 @@
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY)
 
-void EnDs_Init(Actor* thisx, PlayState* play);
-void EnDs_Destroy(Actor* thisx, PlayState* play);
-void EnDs_Update(Actor* thisx, PlayState* play);
-void EnDs_Draw(Actor* thisx, PlayState* play);
+void En_Ds_Actor_ct(Actor* thisx, PlayState* play);
+void En_Ds_Actor_dt(Actor* thisx, PlayState* play);
+void En_Ds_Actor_move(Actor* thisx, PlayState* play);
+void En_Ds_Actor_draw(Actor* thisx, PlayState* play);
 
-void EnDs_Wait(EnDs* this, PlayState* play);
+static void move_matsu(EnDs* this, PlayState* play);
 
 ActorProfile En_Ds_Profile = {
     /**/ ACTOR_EN_DS,
@@ -22,198 +22,198 @@ ActorProfile En_Ds_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_DS,
     /**/ sizeof(EnDs),
-    /**/ EnDs_Init,
-    /**/ EnDs_Destroy,
-    /**/ EnDs_Update,
-    /**/ EnDs_Draw,
+    /**/ En_Ds_Actor_ct,
+    /**/ En_Ds_Actor_dt,
+    /**/ En_Ds_Actor_move,
+    /**/ En_Ds_Actor_draw,
 };
 
-void EnDs_Init(Actor* thisx, PlayState* play) {
+void En_Ds_Actor_ct(Actor* thisx, PlayState* play) {
     EnDs* this = (EnDs*)thisx;
 
-    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 36.0f);
-    SkelAnime_InitFlex(play, &this->skelAnime, &gPotionShopLadySkel, &gPotionShopLadyAnim, this->jointTable,
+    Shape_Info_init(&this->actor.shape, 0.0f, Actor_shadow_circle, 36.0f);
+    Skeleton_Info2_SV_M_ct(play, &this->skelAnime, &gPotionShopLadySkel, &gPotionShopLadyAnim, this->jointTable,
                        this->morphTable, 6);
-    Animation_PlayOnce(&this->skelAnime, &gPotionShopLadyAnim);
+    Skeleton_Info2_init_standard_stop(&this->skelAnime, &gPotionShopLadyAnim);
 
     this->actor.colChkInfo.mass = MASS_IMMOVABLE;
 
-    Actor_SetScale(&this->actor, 0.013f);
+    Actor_set_scale(&this->actor, 0.013f);
 
-    this->actionFunc = EnDs_Wait;
+    this->actionFunc = move_matsu;
     this->actor.attentionRangeType = ATTENTION_RANGE_1;
     this->unk_1E8 = 0;
     this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
     this->unk_1E4 = 0.0f;
 }
 
-void EnDs_Destroy(Actor* thisx, PlayState* play) {
+void En_Ds_Actor_dt(Actor* thisx, PlayState* play) {
 }
 
-void EnDs_Talk(EnDs* this, PlayState* play) {
-    if (Actor_TextboxIsClosing(&this->actor, play)) {
-        this->actionFunc = EnDs_Wait;
+static void talk_matsu(EnDs* this, PlayState* play) {
+    if (Actor_talk_end_check(&this->actor, play)) {
+        this->actionFunc = move_matsu;
         this->actor.flags &= ~ACTOR_FLAG_TALK_OFFER_AUTO_ACCEPTED;
     }
     this->unk_1E8 |= 1;
 }
 
-void EnDs_TalkNoEmptyBottle(EnDs* this, PlayState* play) {
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_EVENT) && Message_ShouldAdvance(play)) {
-        Message_CloseTextbox(play);
-        this->actionFunc = EnDs_Wait;
+static void end_matsu(EnDs* this, PlayState* play) {
+    if ((message_check(&play->msgCtx) == TEXT_STATE_EVENT) && pad_on_check(play)) {
+        message_close(play);
+        this->actionFunc = move_matsu;
     }
     this->unk_1E8 |= 1;
 }
 
-void EnDs_TalkAfterGiveOddPotion(EnDs* this, PlayState* play) {
-    if (Actor_TalkOfferAccepted(&this->actor, play)) {
-        this->actionFunc = EnDs_Talk;
+void request_matsu(EnDs* this, PlayState* play) {
+    if (Actor_talk_check(&this->actor, play)) {
+        this->actionFunc = talk_matsu;
     } else {
         this->actor.flags |= ACTOR_FLAG_TALK_OFFER_AUTO_ACCEPTED;
-        Actor_OfferTalk(&this->actor, play, 1000.0f);
+        Actor_talk_request2(&this->actor, play, 1000.0f);
     }
 }
 
-void EnDs_DisplayOddPotionText(EnDs* this, PlayState* play) {
-    if (Actor_TextboxIsClosing(&this->actor, play)) {
+void demo5_matsu(EnDs* this, PlayState* play) {
+    if (Actor_talk_end_check(&this->actor, play)) {
         this->actor.textId = 0x504F;
-        this->actionFunc = EnDs_TalkAfterGiveOddPotion;
+        this->actionFunc = request_matsu;
         this->actor.flags &= ~ACTOR_FLAG_TALK;
         SET_ITEMGETINF(ITEMGETINF_30);
     }
 }
 
-void EnDs_GiveOddPotion(EnDs* this, PlayState* play) {
-    if (Actor_HasParent(&this->actor, play)) {
+void demo4_matsu(EnDs* this, PlayState* play) {
+    if (Actor_carry_check(&this->actor, play)) {
         this->actor.parent = NULL;
-        this->actionFunc = EnDs_DisplayOddPotionText;
-        gSaveContext.subTimerState = SUBTIMER_STATE_OFF;
+        this->actionFunc = demo5_matsu;
+        z_common_data.subTimerState = SUBTIMER_STATE_OFF;
     } else {
-        Actor_OfferGetItem(&this->actor, play, GI_ODD_POTION, 10000.0f, 50.0f);
+        Actor_carry_request_set2(&this->actor, play, GI_ODD_POTION, 10000.0f, 50.0f);
     }
 }
 
-void EnDs_TalkAfterBrewOddPotion(EnDs* this, PlayState* play) {
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_EVENT) && Message_ShouldAdvance(play)) {
-        Message_CloseTextbox(play);
-        this->actionFunc = EnDs_GiveOddPotion;
-        Actor_OfferGetItem(&this->actor, play, GI_ODD_POTION, 10000.0f, 50.0f);
+void demo3_matsu(EnDs* this, PlayState* play) {
+    if ((message_check(&play->msgCtx) == TEXT_STATE_EVENT) && pad_on_check(play)) {
+        message_close(play);
+        this->actionFunc = demo4_matsu;
+        Actor_carry_request_set2(&this->actor, play, GI_ODD_POTION, 10000.0f, 50.0f);
     }
 }
 
-void EnDs_BrewOddPotion3(EnDs* this, PlayState* play) {
+static void move_demo2(EnDs* this, PlayState* play) {
     if (this->brewTimer > 0) {
         this->brewTimer--;
     } else {
-        this->actionFunc = EnDs_TalkAfterBrewOddPotion;
-        Message_ContinueTextbox(play, 0x504D);
+        this->actionFunc = demo3_matsu;
+        message_set2(play, 0x504D);
     }
 
-    Math_StepToF(&this->unk_1E4, 0, 0.03f);
-    Environment_AdjustLights(play, this->unk_1E4 * (2.0f - this->unk_1E4), 0.0f, 0.1f, 1.0f);
+    chase_f(&this->unk_1E4, 0, 0.03f);
+    set_add_light_global(play, this->unk_1E4 * (2.0f - this->unk_1E4), 0.0f, 0.1f, 1.0f);
 }
 
-void EnDs_BrewOddPotion2(EnDs* this, PlayState* play) {
+static void move_demo1(EnDs* this, PlayState* play) {
     if (this->brewTimer > 0) {
         this->brewTimer--;
     } else {
-        this->actionFunc = EnDs_BrewOddPotion3;
+        this->actionFunc = move_demo2;
         this->brewTimer = 60;
-        Flags_UnsetSwitch(play, 0x3F);
+        Actor_Environment_sw_Off(play, 0x3F);
     }
 }
 
-void EnDs_BrewOddPotion1(EnDs* this, PlayState* play) {
+static void move_demo0(EnDs* this, PlayState* play) {
     if (this->brewTimer > 0) {
         this->brewTimer--;
     } else {
-        this->actionFunc = EnDs_BrewOddPotion2;
+        this->actionFunc = move_demo1;
         this->brewTimer = 20;
     }
 
-    Math_StepToF(&this->unk_1E4, 1.0f, 0.01f);
-    Environment_AdjustLights(play, this->unk_1E4 * (2.0f - this->unk_1E4), 0.0f, 0.1f, 1.0f);
+    chase_f(&this->unk_1E4, 1.0f, 0.01f);
+    set_add_light_global(play, this->unk_1E4 * (2.0f - this->unk_1E4), 0.0f, 0.1f, 1.0f);
 }
 
-void EnDs_OfferOddPotion(EnDs* this, PlayState* play) {
+void which_matsu(EnDs* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_CHOICE) && Message_ShouldAdvance(play)) {
+    if ((message_check(&play->msgCtx) == TEXT_STATE_CHOICE) && pad_on_check(play)) {
         switch (play->msgCtx.choiceIndex) {
             case 0: // yes
-                this->actionFunc = EnDs_BrewOddPotion1;
+                this->actionFunc = move_demo0;
                 this->brewTimer = 60;
-                Flags_SetSwitch(play, 0x3F);
+                Actor_Environment_sw_On(play, 0x3F);
                 play->msgCtx.msgMode = MSGMODE_PAUSED;
                 player->exchangeItemId = EXCH_ITEM_NONE;
                 break;
             case 1: // no
-                Message_ContinueTextbox(play, 0x504C);
-                this->actionFunc = EnDs_Talk;
+                message_set2(play, 0x504C);
+                this->actionFunc = talk_matsu;
         }
     }
 }
 
-s32 EnDs_CheckRupeesAndBottle(void) {
-    if (gSaveContext.save.info.playerData.rupees < 100) {
+s32 BLDrcCheck(void) {
+    if (z_common_data.save.info.playerData.rupees < 100) {
         return 0;
-    } else if (Inventory_HasEmptyBottle() == 0) {
+    } else if (findEmptyBottle() == 0) {
         return 1;
     } else {
         return 2;
     }
 }
 
-void EnDs_GiveBluePotion(EnDs* this, PlayState* play) {
-    if (Actor_HasParent(&this->actor, play)) {
+void handshake(EnDs* this, PlayState* play) {
+    if (Actor_carry_check(&this->actor, play)) {
         this->actor.parent = NULL;
-        this->actionFunc = EnDs_Talk;
+        this->actionFunc = talk_matsu;
     } else {
-        Actor_OfferGetItem(&this->actor, play, GI_BOTTLE_POTION_BLUE, 10000.0f, 50.0f);
+        Actor_carry_request_set2(&this->actor, play, GI_BOTTLE_POTION_BLUE, 10000.0f, 50.0f);
     }
 }
 
-void EnDs_OfferBluePotion(EnDs* this, PlayState* play) {
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_CHOICE) && Message_ShouldAdvance(play)) {
+void which_syobai0(EnDs* this, PlayState* play) {
+    if ((message_check(&play->msgCtx) == TEXT_STATE_CHOICE) && pad_on_check(play)) {
         switch (play->msgCtx.choiceIndex) {
             case 0: // yes
-                switch (EnDs_CheckRupeesAndBottle()) {
+                switch (BLDrcCheck()) {
                     case 0: // have less than 100 rupees
-                        Message_ContinueTextbox(play, 0x500E);
+                        message_set2(play, 0x500E);
                         break;
                     case 1: // have 100 rupees but no empty bottle
-                        Message_ContinueTextbox(play, 0x96);
-                        this->actionFunc = EnDs_TalkNoEmptyBottle;
+                        message_set2(play, 0x96);
+                        this->actionFunc = end_matsu;
                         return;
                     case 2: // have 100 rupees and empty bottle
-                        Rupees_ChangeBy(-100);
+                        lupy_increase(-100);
                         this->actor.flags &= ~ACTOR_FLAG_TALK_OFFER_AUTO_ACCEPTED;
-                        Actor_OfferGetItem(&this->actor, play, GI_BOTTLE_POTION_BLUE, 10000.0f, 50.0f);
-                        this->actionFunc = EnDs_GiveBluePotion;
+                        Actor_carry_request_set2(&this->actor, play, GI_BOTTLE_POTION_BLUE, 10000.0f, 50.0f);
+                        this->actionFunc = handshake;
                         return;
                 }
                 break;
             case 1: // no
-                Message_ContinueTextbox(play, 0x500D);
+                message_set2(play, 0x500D);
         }
-        this->actionFunc = EnDs_Talk;
+        this->actionFunc = talk_matsu;
     }
 }
 
-void EnDs_Wait(EnDs* this, PlayState* play) {
+static void move_matsu(EnDs* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     s16 yawDiff;
 
-    if (Actor_TalkOfferAccepted(&this->actor, play)) {
-        if (Actor_GetPlayerExchangeItemId(play) == EXCH_ITEM_ODD_MUSHROOM) {
-            Audio_PlaySfxGeneral(NA_SE_SY_TRE_BOX_APPEAR, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                 &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+    if (Actor_talk_check(&this->actor, play)) {
+        if (Actor_get_item_check(play) == EXCH_ITEM_ODD_MUSHROOM) {
+            Nai_FxFlagEntry(NA_SE_SY_TRE_BOX_APPEAR, &_dummy_zero_f, 4, &_dummy_one,
+                                 &_dummy_one, &_dummy_zero_s8);
             player->actor.textId = 0x504A;
-            this->actionFunc = EnDs_OfferOddPotion;
+            this->actionFunc = which_matsu;
         } else if (GET_ITEMGETINF(ITEMGETINF_30)) {
             player->actor.textId = 0x500C;
-            this->actionFunc = EnDs_OfferBluePotion;
+            this->actionFunc = which_syobai0;
         } else {
             s16 pad;
 
@@ -222,39 +222,39 @@ void EnDs_Wait(EnDs* this, PlayState* play) {
             } else {
                 player->actor.textId = 0x5048;
             }
-            this->actionFunc = EnDs_Talk;
+            this->actionFunc = talk_matsu;
         }
     } else {
         yawDiff = this->actor.yawTowardsPlayer - this->actor.shape.rot.y;
         this->actor.textId = 0x5048;
 
         if ((ABS(yawDiff) < 0x2151) && (this->actor.xzDistToPlayer < 200.0f)) {
-            Actor_OfferTalkExchangeEquiCylinder(&this->actor, play, 100.0f, EXCH_ITEM_ODD_MUSHROOM);
+            Actor_talk_request_get_item(&this->actor, play, 100.0f, EXCH_ITEM_ODD_MUSHROOM);
             this->unk_1E8 |= 1;
         }
     }
 }
 
-void EnDs_Update(Actor* thisx, PlayState* play) {
+void En_Ds_Actor_move(Actor* thisx, PlayState* play) {
     EnDs* this = (EnDs*)thisx;
 
-    if (SkelAnime_Update(&this->skelAnime)) {
+    if (Skeleton_Info2_anime_play(&this->skelAnime)) {
         this->skelAnime.curFrame = 0.0f;
     }
 
     this->actionFunc(this, play);
 
     if (this->unk_1E8 & 1) {
-        Actor_TrackPlayer(play, &this->actor, &this->unk_1D8, &this->unk_1DE, this->actor.focus.pos);
+        eye_move2(play, &this->actor, &this->unk_1D8, &this->unk_1DE, this->actor.focus.pos);
     } else {
-        Math_SmoothStepToS(&this->unk_1D8.x, 0, 6, 0x1838, 100);
-        Math_SmoothStepToS(&this->unk_1D8.y, 0, 6, 0x1838, 100);
-        Math_SmoothStepToS(&this->unk_1DE.x, 0, 6, 0x1838, 100);
-        Math_SmoothStepToS(&this->unk_1DE.y, 0, 6, 0x1838, 100);
+        add_calc_short_angle2(&this->unk_1D8.x, 0, 6, 0x1838, 100);
+        add_calc_short_angle2(&this->unk_1D8.y, 0, 6, 0x1838, 100);
+        add_calc_short_angle2(&this->unk_1DE.x, 0, 6, 0x1838, 100);
+        add_calc_short_angle2(&this->unk_1DE.y, 0, 6, 0x1838, 100);
     }
 }
 
-s32 EnDs_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
+static s32 before_display(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* thisx) {
     EnDs* this = (EnDs*)thisx;
 
     if (limbIndex == 5) {
@@ -264,19 +264,19 @@ s32 EnDs_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* po
     return false;
 }
 
-void EnDs_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
-    static Vec3f sMultVec = { 1100.0f, 500.0f, 0.0f };
+static void after_display(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, void* thisx) {
+    static Vec3f pos = { 1100.0f, 500.0f, 0.0f };
     EnDs* this = (EnDs*)thisx;
 
     if (limbIndex == 5) {
-        Matrix_MultVec3f(&sMultVec, &this->actor.focus.pos);
+        Matrix_Position(&pos, &this->actor.focus.pos);
     }
 }
 
-void EnDs_Draw(Actor* thisx, PlayState* play) {
+void En_Ds_Actor_draw(Actor* thisx, PlayState* play) {
     EnDs* this = (EnDs*)thisx;
 
-    Gfx_SetupDL_37Opa(play->state.gfxCtx);
-    SkelAnime_DrawFlexOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
-                          EnDs_OverrideLimbDraw, EnDs_PostLimbDraw, this);
+    _polygon_z_light_fog_prim(play->state.gfxCtx);
+    Si2_draw_SV(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
+                          before_display, after_display, this);
 }

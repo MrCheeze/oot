@@ -8,10 +8,10 @@
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED)
 
-void EnRiverSound_Init(Actor* thisx, PlayState* play);
-void EnRiverSound_Destroy(Actor* thisx, PlayState* play);
-void EnRiverSound_Update(Actor* thisx, PlayState* play);
-void EnRiverSound_Draw(Actor* thisx, PlayState* play);
+void En_River_Sound_actor_ct(Actor* thisx, PlayState* play);
+void En_River_Sound_actor_dt(Actor* thisx, PlayState* play);
+void En_River_Sound_actor_move(Actor* thisx, PlayState* play);
+void En_River_Sound_actor_draw(Actor* thisx, PlayState* play);
 
 ActorProfile En_River_Sound_Profile = {
     /**/ ACTOR_EN_RIVER_SOUND,
@@ -19,13 +19,13 @@ ActorProfile En_River_Sound_Profile = {
     /**/ FLAGS,
     /**/ OBJECT_GAMEPLAY_KEEP,
     /**/ sizeof(EnRiverSound),
-    /**/ EnRiverSound_Init,
-    /**/ EnRiverSound_Destroy,
-    /**/ EnRiverSound_Update,
-    /**/ EnRiverSound_Draw,
+    /**/ En_River_Sound_actor_ct,
+    /**/ En_River_Sound_actor_dt,
+    /**/ En_River_Sound_actor_move,
+    /**/ En_River_Sound_actor_draw,
 };
 
-void EnRiverSound_Init(Actor* thisx, PlayState* play) {
+void En_River_Sound_actor_ct(Actor* thisx, PlayState* play) {
     EnRiverSound* this = (EnRiverSound*)thisx;
 
     this->playSfx = false;
@@ -34,25 +34,25 @@ void EnRiverSound_Init(Actor* thisx, PlayState* play) {
 
     if (this->actor.params >= RS_GANON_TOWER_0) {
         // Incrementally increase volume of NA_BGM_GANON_TOWER for each new room during the climb of Ganon's Tower
-        Audio_SetGanonsTowerBgmVolumeLevel(this->actor.params - RS_GANON_TOWER_0);
-        Actor_Kill(&this->actor);
+        Na_SetVolumeDistanceBgm(this->actor.params - RS_GANON_TOWER_0);
+        Actor_delete(&this->actor);
     } else if (this->actor.params == RS_NATURE_AMBIENCE) {
-        Audio_PlayNatureAmbienceSequence(NATURE_ID_KOKIRI_REGION);
-        Actor_Kill(&this->actor);
+        Na_NscInitStart(NATURE_ID_KOKIRI_REGION);
+        Actor_delete(&this->actor);
     } else if (this->actor.params == RS_LOST_WOODS_SARIAS_SONG) {
         if (!CHECK_QUEST_ITEM(QUEST_SONG_LULLABY) || CHECK_QUEST_ITEM(QUEST_SONG_SARIA)) {
-            Actor_Kill(&this->actor);
+            Actor_delete(&this->actor);
         }
     }
 }
 
-void EnRiverSound_Destroy(Actor* thisx, PlayState* play) {
+void En_River_Sound_actor_dt(Actor* thisx, PlayState* play) {
     EnRiverSound* this = (EnRiverSound*)thisx;
 
     if (this->actor.params == RS_LOST_WOODS_SARIAS_SONG) {
-        Audio_ClearSariaBgmAtPos(&this->actor.projectedPos);
+        Na_ClearSariaMelodyTag2(&this->actor.projectedPos);
     } else if (this->actor.params == RS_GORON_CITY_SARIAS_SONG) {
-        Audio_ClearSariaBgm2();
+        Na_ClearCrossBgmTag();
     }
 }
 
@@ -61,7 +61,7 @@ void EnRiverSound_Destroy(Actor* thisx, PlayState* play) {
  * If the closest point on the line will not be on the line segment connecting points A or B, return false.
  * Otherwise, calculate the point between A & B, assign it to `newSoundPos`, and return true
  */
-s32 EnRiverSound_FindClosestPointOnLineSegment(Vec3f* pointA, Vec3f* pointB, Vec3f* hearPos, Vec3f* newSoundPos) {
+s32 get_norm_line_pos(Vec3f* pointA, Vec3f* pointB, Vec3f* hearPos, Vec3f* newSoundPos) {
     Vec3f lineSeg[3];
     f32 temp;
 
@@ -112,7 +112,7 @@ s32 EnRiverSound_FindClosestPointOnLineSegment(Vec3f* pointA, Vec3f* pointB, Vec
  * player.
  * Returns true if the distance between the `hearPos` and `sfxPos` is less than 10000, false if not.
  */
-s32 EnRiverSound_GetSfxPos(Vec3s* points, s32 numPoints, Vec3f* hearPos, Vec3f* sfxPos) {
+s32 get_river_sound_pos(Vec3s* points, s32 numPoints, Vec3f* hearPos, Vec3f* sfxPos) {
     s32 i;
     s32 closestPointIdx;
     s32 useAdjacentPoints[2] = {
@@ -132,7 +132,7 @@ s32 EnRiverSound_GetSfxPos(Vec3s* points, s32 numPoints, Vec3f* hearPos, Vec3f* 
         point.x = points[i].x;
         point.y = points[i].y;
         point.z = points[i].z;
-        dist = Math_Vec3f_DistXYZ(hearPos, &point);
+        dist = search_position_distance(hearPos, &point);
 
         if (dist < closestPointDist) {
             closestPointDist = dist;
@@ -155,7 +155,7 @@ s32 EnRiverSound_GetSfxPos(Vec3s* points, s32 numPoints, Vec3f* hearPos, Vec3f* 
         point.y = closestPoint[-1].y;
         point.z = closestPoint[-1].z;
         useAdjacentPoints[0] =
-            EnRiverSound_FindClosestPointOnLineSegment(&point, &closestPointPos, hearPos, &prevLineSegClosestPos);
+            get_norm_line_pos(&point, &closestPointPos, hearPos, &prevLineSegClosestPos);
     }
 
     // point on path after closest point
@@ -164,11 +164,11 @@ s32 EnRiverSound_GetSfxPos(Vec3s* points, s32 numPoints, Vec3f* hearPos, Vec3f* 
         point.y = closestPoint[1].y;
         point.z = closestPoint[1].z;
         useAdjacentPoints[1] =
-            EnRiverSound_FindClosestPointOnLineSegment(&closestPointPos, &point, hearPos, &nextLineSegClosestPos);
+            get_norm_line_pos(&closestPointPos, &point, hearPos, &nextLineSegClosestPos);
     }
 
     if (useAdjacentPoints[0] && useAdjacentPoints[1]) {
-        if (!EnRiverSound_FindClosestPointOnLineSegment(&prevLineSegClosestPos, &nextLineSegClosestPos, hearPos,
+        if (!get_norm_line_pos(&prevLineSegClosestPos, &nextLineSegClosestPos, hearPos,
                                                         sfxPos)) {
             sfxPos->x = (prevLineSegClosestPos.x + nextLineSegClosestPos.x) * 0.5f;
             sfxPos->y = (prevLineSegClosestPos.y + nextLineSegClosestPos.y) * 0.5f;
@@ -191,7 +191,7 @@ s32 EnRiverSound_GetSfxPos(Vec3s* points, s32 numPoints, Vec3f* hearPos, Vec3f* 
     return true;
 }
 
-void EnRiverSound_Update(Actor* thisx, PlayState* play) {
+void En_River_Sound_actor_move(Actor* thisx, PlayState* play) {
     Path* path;
     Vec3f* pos;
     Player* player = GET_PLAYER(play);
@@ -203,10 +203,10 @@ void EnRiverSound_Update(Actor* thisx, PlayState* play) {
         path = &play->pathList[this->pathIndex];
         pos = &thisx->world.pos;
 
-        if (EnRiverSound_GetSfxPos(SEGMENTED_TO_VIRTUAL(path->points), path->count, &player->actor.world.pos, pos)) {
-            if (BgCheck_EntityRaycastDown4(&play->colCtx, &thisx->floorPoly, &bgId, thisx, pos) != BGCHECK_Y_MIN) {
+        if (get_river_sound_pos(SEGMENTED_TO_VIRTUAL(path->points), path->count, &player->actor.world.pos, pos)) {
+            if (T_BGCheck_ObjGroundCheck_aiac(&play->colCtx, &thisx->floorPoly, &bgId, thisx, pos) != BGCHECK_Y_MIN) {
                 // Get the river sfx frequency based on the speed of the river current under the actor
-                this->sfxFreqIndex = SurfaceType_GetConveyorSpeed(&play->colCtx, thisx->floorPoly, bgId);
+                this->sfxFreqIndex = T_BGCheck_getSlidePowerIndex(&play->colCtx, thisx->floorPoly, bgId);
             } else {
                 this->sfxFreqIndex = CONVEYOR_SPEED_DISABLED;
             }
@@ -226,14 +226,14 @@ void EnRiverSound_Update(Actor* thisx, PlayState* play) {
             }
         }
     } else if ((thisx->params == RS_GORON_CITY_SARIAS_SONG) || (thisx->params == RS_GREAT_FAIRY)) {
-        Actor_WorldToActorCoords(&player->actor, &thisx->home.pos, &thisx->world.pos);
-    } else if (play->sceneId == SCENE_DODONGOS_CAVERN_BOSS && Flags_GetClear(play, thisx->room)) {
-        Actor_Kill(thisx);
+        Actor_search_position_project_distanceXZ(&player->actor, &thisx->home.pos, &thisx->world.pos);
+    } else if (play->sceneId == SCENE_DODONGOS_CAVERN_BOSS && Actor_Environment_room_clear_Check(play, thisx->room)) {
+        Actor_delete(thisx);
     }
 }
 
-void EnRiverSound_Draw(Actor* thisx, PlayState* play) {
-    static s16 soundEffects[] = {
+void En_River_Sound_actor_draw(Actor* thisx, PlayState* play) {
+    static s16 sound_type[] = {
         0,
         NA_SE_EV_WATER_WALL - SFX_FLAG,
         NA_SE_EV_MAGMA_LEVEL - SFX_FLAG,
@@ -257,7 +257,7 @@ void EnRiverSound_Draw(Actor* thisx, PlayState* play) {
         NA_SE_EV_TORCH - SFX_FLAG,
         NA_SE_EV_COW_CRY_LV - SFX_FLAG,
     };
-    static f32 sfxFreqs[CONVEYOR_SPEED_MAX - 1] = {
+    static f32 river_sound_type[CONVEYOR_SPEED_MAX - 1] = {
         0.7f, // CONVEYOR_SPEED_SLOW
         1.0f, // CONVEYOR_SPEED_MEDIUM
         1.4f, // CONVEYOR_SPEED_FAST
@@ -269,29 +269,29 @@ void EnRiverSound_Draw(Actor* thisx, PlayState* play) {
     } else if ((this->actor.params == RS_RIVER_DEFAULT_LOW_FREQ) ||
                (this->actor.params == RS_RIVER_DEFAULT_MEDIUM_FREQ) ||
                (this->actor.params == RS_RIVER_DEFAULT_HIGH_FREQ)) {
-        Audio_PlaySfxRiver(&this->actor.projectedPos, sfxFreqs[this->sfxFreqIndex]);
+        Na_SetRiverSe(&this->actor.projectedPos, river_sound_type[this->sfxFreqIndex]);
     } else if (this->actor.params == RS_LOWER_MAIN_BGM_VOLUME) {
         // Responsible for lowering market bgm in Child Market Entrance and Child Market Back Alley
         // Lower volume from default 127 to a volume of 90
-        Audio_LowerMainBgmVolume(90);
+        Na_SetLevelMuteFlag(90);
     } else if (this->actor.params == RS_LOST_WOODS_SARIAS_SONG) {
         // Play Sarias Song at the next correct Lost Woods path to Sacred Forest Meadow
         // Volume depends on distance to source
-        func_800F4E30(&this->actor.projectedPos, this->actor.xzDistToPlayer);
+        Na_SetSariaMelodyTag2(&this->actor.projectedPos, this->actor.xzDistToPlayer);
     } else if (this->actor.params == RS_GORON_CITY_SARIAS_SONG) {
         // Play Sarias Song in Goron City at the entrance to lost woods
         // Volume depends on distance to source
-        Audio_PlaySariaBgm(&this->actor.home.pos, NA_BGM_SARIA_THEME, 1000);
+        Na_SetCrossBgmTag(&this->actor.home.pos, NA_BGM_SARIA_THEME, 1000);
     } else if (this->actor.params == RS_GREAT_FAIRY) {
         // Play the Great Fairy Song inside the fairy fountain
         // Volume depends on distance to source
-        Audio_PlaySariaBgm(&this->actor.home.pos, NA_BGM_GREAT_FAIRY, 800);
+        Na_SetCrossBgmTag(&this->actor.home.pos, NA_BGM_GREAT_FAIRY, 800);
     } else if ((this->actor.params == RS_SANDSTORM) || (this->actor.params == RS_CHAMBER_OF_SAGES_1) ||
                (this->actor.params == RS_CHAMBER_OF_SAGES_2) || (this->actor.params == RS_RUMBLING)) {
         // Play sfx in the fixed center of the screen
-        Sfx_PlaySfxCentered2(soundEffects[this->actor.params]);
+        Na_StartFixSe_F(sound_type[this->actor.params]);
     } else {
         // Play sfx at the location of riverSounds projected position
-        Actor_PlaySfx(&this->actor, soundEffects[this->actor.params]);
+        Actor_SE_set(&this->actor, sound_type[this->actor.params]);
     }
 }
