@@ -1,5 +1,11 @@
 # The Legend of Zelda: Ocarina of Time
 
+This is a modified version of the OoT decompilation project that uses the original filenames and symbols whenever possible, for research purposes.
+
+It builds a matching rom of the [hiratsu@crucian 03-02-28 17:24:12](https://archive.org/details/oot-ique-prototypes) build of the game.
+
+Original decomp readme follows:
+
 [![Build Status][jenkins-badge]][jenkins] [![Decompilation Progress][progress-badge]][progress] [![Contributors][contributors-badge]][contributors] [![Discord Channel][discord-badge]][discord]
 
 [jenkins]: https://jenkins.deco.mp/job/OOT/job/main
